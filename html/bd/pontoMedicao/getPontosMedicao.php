@@ -1,7 +1,7 @@
 <?php
 /**
- * SIMP - Sistema Integrado de Macromedição e Pitometria
- * Endpoint: Buscar Pontos de Medição com Filtros e Paginação
+ * SIMP - Sistema Integrado de Macromedicao e Pitometria
+ * Endpoint: Buscar Pontos de Medicao com Filtros e Paginacao
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -17,31 +17,33 @@ ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 try {
-    // Verificação de autenticação
+    // Verificacao de autenticacao
     require_once '../verificarAuth.php';
     verificarPermissaoAjax('CADASTRO DE PONTO', ACESSO_LEITURA);
 
     include_once '../conexao.php';
     
     if (!isset($pdoSIMP)) {
-        throw new Exception('Conexão com banco de dados não estabelecida');
+        throw new Exception('Conexao com banco de dados nao estabelecida');
     }
-    // Captura parâmetros
+
+    // Captura parametros
     $cdUnidade = isset($_GET['cd_unidade']) && $_GET['cd_unidade'] !== '' ? (int)$_GET['cd_unidade'] : null;
     $cdLocalidade = isset($_GET['cd_localidade']) && $_GET['cd_localidade'] !== '' ? (int)$_GET['cd_localidade'] : null;
+    $cdPontoMedicao = isset($_GET['cd_ponto_medicao']) && $_GET['cd_ponto_medicao'] !== '' ? (int)$_GET['cd_ponto_medicao'] : null;
     $tipoMedidor = isset($_GET['tipo_medidor']) && $_GET['tipo_medidor'] !== '' ? (int)$_GET['tipo_medidor'] : null;
     $tipoLeitura = isset($_GET['tipo_leitura']) && $_GET['tipo_leitura'] !== '' ? (int)$_GET['tipo_leitura'] : null;
     $status = isset($_GET['status']) ? trim($_GET['status']) : '';
     $busca = isset($_GET['busca']) ? trim($_GET['busca']) : '';
     
-    // Paginação
+    // Paginacao
     $pagina = isset($_GET['pagina']) && $_GET['pagina'] !== '' ? (int)$_GET['pagina'] : 1;
     $porPagina = 20;
     $offset = ($pagina - 1) * $porPagina;
 
     // Verifica se pelo menos um filtro foi preenchido
-    $temFiltro = ($cdUnidade !== null || $cdLocalidade !== null || $tipoMedidor !== null || 
-                  $tipoLeitura !== null || $status !== '' || $busca !== '');
+    $temFiltro = ($cdUnidade !== null || $cdLocalidade !== null || $cdPontoMedicao !== null ||
+                  $tipoMedidor !== null || $tipoLeitura !== null || $status !== '' || $busca !== '');
 
     if (!$temFiltro) {
         echo json_encode([
@@ -60,7 +62,7 @@ try {
     $where = [];
     $params = [];
 
-    // Filtro por Unidade (através da LOCALIDADE)
+    // Filtro por Unidade (atraves da LOCALIDADE)
     if ($cdUnidade !== null) {
         $where[] = "L.CD_UNIDADE = :cd_unidade";
         $params[':cd_unidade'] = $cdUnidade;
@@ -69,6 +71,12 @@ try {
     if ($cdLocalidade !== null) {
         $where[] = "PM.CD_LOCALIDADE = :cd_localidade";
         $params[':cd_localidade'] = $cdLocalidade;
+    }
+
+    // Filtro por Ponto de Medicao especifico
+    if ($cdPontoMedicao !== null) {
+        $where[] = "PM.CD_PONTO_MEDICAO = :cd_ponto_medicao";
+        $params[':cd_ponto_medicao'] = $cdPontoMedicao;
     }
 
     if ($tipoMedidor !== null) {
@@ -81,9 +89,9 @@ try {
         $params[':tipo_leitura'] = $tipoLeitura;
     }
 
-    if ($status === 'ativo') {
+    if ($status === '1') {
         $where[] = "PM.DT_DESATIVACAO IS NULL";
-    } elseif ($status === 'inativo') {
+    } elseif ($status === '0') {
         $where[] = "PM.DT_DESATIVACAO IS NOT NULL";
     }
 
@@ -142,7 +150,7 @@ try {
         exit;
     }
 
-    // Query principal com paginação
+    // Query principal com paginacao
     $sql = "SELECT 
                 PM.CD_PONTO_MEDICAO,
                 PM.CD_LOCALIDADE,
@@ -199,65 +207,82 @@ try {
         // Mapeamento de tipo de medidor para letra
         $letrasTipoMedidor = [
             1 => 'M', // Macromedidor
-            2 => 'E', // Estação Pitométrica
-            4 => 'P', // Medidor Pressão
-            6 => 'R', // Nível Reservatório
-            8 => 'H'  // Hidrômetro
+            2 => 'E', // Estacao Pitometrica
+            4 => 'P', // Medidor Pressao
+            6 => 'R', // Nivel Reservatorio
+            8 => 'H'  // Hidrometro
         ];
         $letraTipo = $letrasTipoMedidor[$pm['ID_TIPO_MEDIDOR']] ?? 'X';
 
-        // Formato: LOCALIDADE-ID_PONTO-LETRA
-        $codigoLocalidade = $pm['CD_LOCALIDADE_CODIGO'] ?? $pm['CD_LOCALIDADE'];
-        $codigoCompleto = $codigoLocalidade . '-' . str_pad($pm['CD_PONTO_MEDICAO'], 6, '0', STR_PAD_LEFT) . '-' . $letraTipo;
+        // Codigo formatado: LOCALIDADE-CD_PONTO-LETRA-CD_UNIDADE
+        $codigoFormatado = $pm['CD_LOCALIDADE_CODIGO'] . '-' . 
+                           str_pad($pm['CD_PONTO_MEDICAO'], 6, '0', STR_PAD_LEFT) . '-' . 
+                           $letraTipo . '-' . 
+                           $pm['CD_UNIDADE'];
+
+        // Tipo de Medidor por extenso
+        $tiposMedidor = [
+            1 => 'Macromedidor',
+            2 => 'Estacao Pitometrica',
+            4 => 'Medidor Pressao',
+            6 => 'Nivel Reservatorio',
+            8 => 'Hidrometro'
+        ];
+        $dsTipoMedidor = $tiposMedidor[$pm['ID_TIPO_MEDIDOR']] ?? 'Desconhecido';
+
+        // Tipo de Leitura por extenso
+        $tiposLeitura = [
+            2 => 'Manual',
+            4 => 'Planilha',
+            6 => 'Integracao CesanLims',
+            8 => 'Integracao CCO'
+        ];
+        $dsTipoLeitura = $tiposLeitura[$pm['ID_TIPO_LEITURA']] ?? 'Desconhecido';
+
+        // Status
+        $opSituacao = empty($pm['DT_DESATIVACAO']) ? 1 : 0;
 
         $dadosProcessados[] = [
             'CD_PONTO_MEDICAO' => $pm['CD_PONTO_MEDICAO'],
-            'CD_LOCALIDADE' => $pm['CD_LOCALIDADE'],
-            'ID_TIPO_MEDIDOR' => $pm['ID_TIPO_MEDIDOR'],
+            'CD_CODIGO' => $codigoFormatado,
             'DS_NOME' => $pm['DS_NOME'],
             'DS_LOCALIZACAO' => $pm['DS_LOCALIZACAO'],
+            'CD_LOCALIDADE' => $pm['CD_LOCALIDADE'],
+            'CD_LOCALIDADE_CODIGO' => $pm['CD_LOCALIDADE_CODIGO'],
+            'DS_LOCALIDADE' => $pm['DS_LOCALIDADE'],
+            'CD_UNIDADE' => $pm['CD_UNIDADE'],
+            'CD_UNIDADE_CODIGO' => $pm['CD_UNIDADE_CODIGO'],
+            'DS_UNIDADE' => $pm['DS_UNIDADE'],
+            'ID_TIPO_MEDIDOR' => $pm['ID_TIPO_MEDIDOR'],
+            'DS_TIPO_MEDIDOR' => $dsTipoMedidor,
             'ID_TIPO_LEITURA' => $pm['ID_TIPO_LEITURA'],
+            'DS_TIPO_LEITURA' => $dsTipoLeitura,
             'DT_ATIVACAO' => $pm['DT_ATIVACAO'],
             'DT_DESATIVACAO' => $pm['DT_DESATIVACAO'],
-            'LOCALIDADE' => ($pm['CD_LOCALIDADE_CODIGO'] ?? '') . ' - ' . ($pm['DS_LOCALIDADE'] ?? ''),
-            'CODIGO' => $codigoCompleto,
-            'CODIGO_TAG' => $codigoTag,
-            'CD_LOCALIDADE_CODIGO' => $pm['CD_LOCALIDADE_CODIGO'] ?? '',
-            'DS_LOCALIDADE' => $pm['DS_LOCALIDADE'] ?? '',
-            'CD_UNIDADE' => $pm['CD_UNIDADE'] ?? '',
-            'DS_UNIDADE' => $pm['DS_UNIDADE'] ?? '',
-            'CD_UNIDADE_CODIGO' => $pm['CD_UNIDADE_CODIGO'] ?? '',
-            'UNIDADE' => ($pm['CD_UNIDADE_CODIGO'] ?? '') . ' - ' . ($pm['DS_UNIDADE'] ?? ''),
-            'ATIVO' => empty($pm['DT_DESATIVACAO']) ? 1 : 0
+            'OP_SITUACAO' => $opSituacao,
+            'CODIGO_TAG' => $codigoTag
         ];
     }
 
-    $response = [
+    echo json_encode([
         'success' => true,
-        'total' => (int)$totalRegistros,
+        'total' => $totalRegistros,
         'pagina' => $pagina,
         'porPagina' => $porPagina,
         'totalPaginas' => $totalPaginas,
         'data' => $dadosProcessados
-    ];
-    
-    if (!empty($errors)) {
-        $response['warnings'] = $errors;
-    }
-    
-    echo json_encode($response);
+    ]);
 
 } catch (PDOException $e) {
     echo json_encode([
         'success' => false,
-        'message' => 'Erro ao buscar pontos de medição: ' . $e->getMessage(),
-        'error_code' => $e->getCode(),
-        'data' => []
+        'message' => 'Erro no banco de dados: ' . $e->getMessage(),
+        'errors' => $errors
     ]);
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage(),
-        'data' => []
+        'message' => 'Erro: ' . $e->getMessage(),
+        'errors' => $errors
     ]);
 }

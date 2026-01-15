@@ -4,10 +4,10 @@ include_once 'includes/header.inc.php';
 include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
-// Verifica permissão para acessar Ponto de Medição (busca por nome na tabela FUNCIONALIDADE)
+// Verifica permissao para acessar Ponto de Medicao (busca por nome na tabela FUNCIONALIDADE)
 exigePermissaoTela('Cadastro de Ponto de Medição', ACESSO_LEITURA);
 
-// Permissão do usuário para este módulo
+// Permissao do usuario para este modulo
 $podeEditar = podeEditarTela('Cadastro de Ponto de Medição');
 
 // Buscar Unidades
@@ -18,10 +18,10 @@ $unidades = $sqlUnidades->fetchAll(PDO::FETCH_ASSOC);
 $tiposMedidor = [
     ['value' => '', 'text' => 'Todos os Tipos'],
     ['value' => '1', 'text' => 'M - Macromedidor'],
-    ['value' => '2', 'text' => 'E - Estação Pitométrica'],
-    ['value' => '4', 'text' => 'P - Medidor Pressão'],
-    ['value' => '8', 'text' => 'H - Hidrômetro'],
-    ['value' => '6', 'text' => 'R - Nível Reservatório'],
+    ['value' => '2', 'text' => 'E - Estacao Pitometrica'],
+    ['value' => '4', 'text' => 'P - Medidor Pressao'],
+    ['value' => '8', 'text' => 'H - Hidrometro'],
+    ['value' => '6', 'text' => 'R - Nivel Reservatorio'],
 ];
 
 // Tipos de Leitura (fixo)
@@ -29,15 +29,15 @@ $tiposLeitura = [
     ['value' => '', 'text' => 'Todos os Tipos'],
     ['value' => '2', 'text' => 'Manual'],
     ['value' => '4', 'text' => 'Planilha'],
-    ['value' => '8', 'text' => 'Integração CCO'],
-    ['value' => '6', 'text' => 'Integração CesanLims'],
+    ['value' => '8', 'text' => 'Integracao CCO'],
+    ['value' => '6', 'text' => 'Integracao CesanLims'],
 ];
 ?>
 
-<!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-<link rel="stylesheet" href="style/css/pontoMedicao.css">
+<!-- CSS da pagina -->
+<link href="style/css/pontoMedicao.css?v=<?= time() ?>" rel="stylesheet" />
 
 <div class="page-container">
     <!-- Page Header -->
@@ -48,8 +48,8 @@ $tiposLeitura = [
                     <ion-icon name="pin-outline"></ion-icon>
                 </div>
                 <div>
-                    <h1>Ponto de Medição</h1>
-                    <p class="page-header-subtitle">Gerencie os pontos de medição do sistema</p>
+                    <h1>Ponto de Medicao</h1>
+                    <p class="page-header-subtitle">Gerencie os pontos de medicao do sistema</p>
                 </div>
             </div>
             <?php if ($podeEditar): ?>
@@ -102,10 +102,28 @@ $tiposLeitura = [
                 </select>
             </div>
 
-            <!-- Tipo Medidor -->
+            <!-- Ponto de Medicao -->
             <div class="form-group">
                 <label class="form-label">
                     <ion-icon name="speedometer-outline"></ion-icon>
+                    Ponto de Medicao
+                </label>
+                <div class="autocomplete-container">
+                    <input type="text" id="filtroPontoMedicaoInput" class="form-control"
+                        placeholder="Clique para selecionar ou digite para filtrar..." autocomplete="off">
+                    <input type="hidden" id="filtroPontoMedicao" value="">
+                    <div id="filtroPontoMedicaoDropdown" class="autocomplete-dropdown"></div>
+                    <button type="button" id="btnLimparPonto" class="btn-limpar-autocomplete" style="display: none;"
+                        title="Limpar">
+                        <ion-icon name="close-circle"></ion-icon>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tipo Medidor -->
+            <div class="form-group">
+                <label class="form-label">
+                    <ion-icon name="hardware-chip-outline"></ion-icon>
                     Tipo Medidor
                 </label>
                 <select id="selectTipoMedidor" class="form-control select2-default">
@@ -129,7 +147,7 @@ $tiposLeitura = [
             </div>
 
             <!-- Campo de Busca Geral -->
-            <div class="form-group form-group-span-2">
+            <div class="form-group">
                 <label class="form-label">
                     <ion-icon name="search-outline"></ion-icon>
                     Busca Geral
@@ -139,112 +157,70 @@ $tiposLeitura = [
                     <input type="text" 
                            id="inputBusca" 
                            class="form-control input-search" 
-                           placeholder="Buscar por código, nome, TAG, localização, observação...">
-                    <button type="button" class="btn-search-clear" id="btnLimparBusca" style="display: none;">
+                           placeholder="Buscar por nome, codigo...">
+                    <button type="button" class="btn-search-clear" onclick="limparBusca()" style="display: none;">
                         <ion-icon name="close-circle"></ion-icon>
                     </button>
                 </div>
             </div>
 
-            <!-- Radio Button Status -->
-            <div class="form-group">
+            <!-- Status -->
+            <div class="form-group form-group-span-2">
                 <label class="form-label">
                     <ion-icon name="toggle-outline"></ion-icon>
                     Status
                 </label>
                 <div class="radio-group">
                     <label class="radio-item">
-                        <input type="radio" name="status" value="" checked>
+                        <input type="radio" name="status" value="">
                         <span class="radio-label">Todos</span>
                     </label>
                     <label class="radio-item">
-                        <input type="radio" name="status" value="ativo">
-                        <span class="radio-label ativo">Ativos</span>
+                        <input type="radio" name="status" value="1" checked>
+                        <span class="radio-label">Ativos</span>
                     </label>
                     <label class="radio-item">
-                        <input type="radio" name="status" value="inativo">
-                        <span class="radio-label inativo">Inativos</span>
+                        <input type="radio" name="status" value="0">
+                        <span class="radio-label">Inativos</span>
                     </label>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Results Info -->
-    <div class="results-info">
-        <div class="results-count">
-            <ion-icon name="list-outline"></ion-icon>
-            <span><strong id="totalRegistros">0</strong> registros encontrados</span>
-        </div>
-    </div>
-
-    <!-- Data Table -->
+    <!-- Table -->
     <div class="table-container">
         <div class="loading-overlay" id="loadingOverlay">
             <div class="loading-spinner"></div>
         </div>
 
-        <div class="table-wrapper">
-            <table class="data-table" id="dataTable">
+        <div class="table-header">
+            <div class="results-info">
+                <span>Exibindo <span class="results-count" id="resultsCount">0</span> registros</span>
+            </div>
+        </div>
+
+        <div class="table-scroll">
+            <table class="data-table">
                 <thead>
                     <tr>
-                        <th data-sort="UNIDADE">
-                            Unidade
-                            <span class="sort-indicator">
-                                <span class="sort-asc"><ion-icon name="caret-up"></ion-icon></span>
-                                <span class="sort-desc"><ion-icon name="caret-down"></ion-icon></span>
-                            </span>
+                        <th>Unidade</th>
+                        <th>Localidade</th>
+                        <th class="sortable" data-column="CD_CODIGO">
+                            Codigo <ion-icon name="swap-vertical-outline"></ion-icon>
                         </th>
-                        <th data-sort="LOCALIDADE">
-                            Localidade
-                            <span class="sort-indicator">
-                                <span class="sort-asc"><ion-icon name="caret-up"></ion-icon></span>
-                                <span class="sort-desc"><ion-icon name="caret-down"></ion-icon></span>
-                            </span>
+                        <th class="sortable" data-column="DS_NOME">
+                            Nome <ion-icon name="swap-vertical-outline"></ion-icon>
                         </th>
-                        <th data-sort="CODIGO">
-                            Código
-                            <span class="sort-indicator">
-                                <span class="sort-asc"><ion-icon name="caret-up"></ion-icon></span>
-                                <span class="sort-desc"><ion-icon name="caret-down"></ion-icon></span>
-                            </span>
+                        <th>Codigo TAG</th>
+                        <th class="sortable" data-column="DS_TIPO_MEDIDOR">
+                            Tipo Medidor <ion-icon name="swap-vertical-outline"></ion-icon>
                         </th>
-                        <th data-sort="DS_NOME">
-                            Nome
-                            <span class="sort-indicator">
-                                <span class="sort-asc"><ion-icon name="caret-up"></ion-icon></span>
-                                <span class="sort-desc"><ion-icon name="caret-down"></ion-icon></span>
-                            </span>
+                        <th>Tipo Leitura</th>
+                        <th class="sortable" data-column="OP_SITUACAO">
+                            Status <ion-icon name="swap-vertical-outline"></ion-icon>
                         </th>
-                        <th data-sort="CODIGO_TAG">
-                            Código TAG
-                            <span class="sort-indicator">
-                                <span class="sort-asc"><ion-icon name="caret-up"></ion-icon></span>
-                                <span class="sort-desc"><ion-icon name="caret-down"></ion-icon></span>
-                            </span>
-                        </th>
-                        <th data-sort="ID_TIPO_MEDIDOR">
-                            Tipo Medidor
-                            <span class="sort-indicator">
-                                <span class="sort-asc"><ion-icon name="caret-up"></ion-icon></span>
-                                <span class="sort-desc"><ion-icon name="caret-down"></ion-icon></span>
-                            </span>
-                        </th>
-                        <th data-sort="ID_TIPO_LEITURA">
-                            Tipo Leitura
-                            <span class="sort-indicator">
-                                <span class="sort-asc"><ion-icon name="caret-up"></ion-icon></span>
-                                <span class="sort-desc"><ion-icon name="caret-down"></ion-icon></span>
-                            </span>
-                        </th>
-                        <th data-sort="ATIVO">
-                            Status
-                            <span class="sort-indicator">
-                                <span class="sort-asc"><ion-icon name="caret-up"></ion-icon></span>
-                                <span class="sort-desc"><ion-icon name="caret-down"></ion-icon></span>
-                            </span>
-                        </th>
-                        <th class="no-sort">Ações</th>
+                        <th>Acoes</th>
                     </tr>
                 </thead>
                 <tbody id="tabelaResultados">
@@ -264,231 +240,289 @@ $tiposLeitura = [
         </div>
     </div>
 
-    <!-- Paginação -->
-    <div class="pagination-container" id="paginacao"></div>
+    <!-- Pagination -->
+    <div class="pagination-container" id="paginationContainer" style="display: none;">
+        <div class="page-info" id="pageInfo"></div>
+        <div class="pagination" id="pagination"></div>
+    </div>
 </div>
 
-<!-- Select2 JS -->
+<!-- jQuery e Select2 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-    // ============================================
-    // Variáveis Globais
-    // ============================================
+    // Variaveis globais
     let dadosTabela = [];
-    let sortColumn = null;
-    let sortDirection = 'asc';
     let paginaAtual = 1;
     let totalPaginas = 0;
     let totalRegistros = 0;
+    let colunaOrdenacao = 'CD_CODIGO';
+    let direcaoOrdenacao = 'ASC';
+    const registrosPorPagina = 20;
+    const podeEditar = <?= $podeEditar ? 'true' : 'false' ?>;
 
-    // Permissão do usuário (vindo do PHP)
-    const permissoes = {
-        podeEditar: <?= $podeEditar ? 'true' : 'false' ?>
+    // Mapeamento de letras por tipo de medidor
+    const letrasTipoMedidor = {
+        1: 'M',
+        2: 'E',
+        4: 'P',
+        6: 'R',
+        8: 'H'
     };
 
-    // ============================================
-    // Mapeamentos de Tipos
-    // ============================================
-    const tiposMedidorMap = {
-        '1': { text: 'Macromedidor', class: 'macromedidor', abbr: 'M' },
-        '2': { text: 'Est. Pitométrica', class: 'estacao', abbr: 'E' },
-        '4': { text: 'Med. Pressão', class: 'pressao', abbr: 'P' },
-        '6': { text: 'Nív. Reservatório', class: 'reservatorio', abbr: 'R' },
-        '8': { text: 'Hidrômetro', class: 'hidrometro', abbr: 'H' }
-    };
+    // Autocomplete
+    let autocompletePontoTimeout = null;
+    let autocompletePontoIndex = -1;
 
-    const tiposLeituraMap = {
-        '2': 'Manual',
-        '4': 'Planilha',
-        '6': 'Int. CesanLims',
-        '8': 'Int. CCO'
-    };
-
-    // ============================================
-    // Inicialização Select2
-    // ============================================
     $(document).ready(function() {
-        // Select2 para Unidade
+        // Inicializa Select2
         $('.select2-unidade').select2({
-            placeholder: 'Digite para buscar...',
-            allowClear: true,
-            language: {
-                noResults: function() { return "Nenhuma unidade encontrada"; },
-                searching: function() { return "Buscando..."; }
-            }
+            width: '100%',
+            placeholder: 'Todas as Unidades',
+            allowClear: true
         });
 
-        // Select2 para Localidade
         $('.select2-localidade').select2({
+            width: '100%',
             placeholder: 'Selecione uma Unidade primeiro',
-            allowClear: true,
-            language: {
-                noResults: function() { return "Nenhuma localidade encontrada"; }
-            }
+            allowClear: true
         });
 
-        // Select2 para dropdowns simples
         $('.select2-default').select2({
-            minimumResultsForSearch: Infinity
+            width: '100%',
+            minimumResultsForSearch: -1
         });
 
-        // Events
+        // Eventos
         $('#selectUnidade').on('change', function() {
-            carregarLocalidades($(this).val());
-            buscarPontosMedicao(1); // Reset para página 1
+            const cdUnidade = $(this).val();
+            carregarLocalidades(cdUnidade);
+            buscarPontosMedicao(1);
         });
 
-        $('#selectLocalidade, #selectTipoMedidor, #selectTipoLeitura').on('change', function() {
-            buscarPontosMedicao(1); // Reset para página 1
+        $('#selectLocalidade').on('change', function() {
+            buscarPontosMedicao(1);
         });
 
-        // Event: Campo de busca com debounce
-        let buscaTimeout;
-        $('#inputBusca').on('input', function() {
-            const valor = $(this).val();
-            
-            // Mostra/esconde botão limpar
-            $('#btnLimparBusca').toggle(valor.length > 0);
-            
-            // Debounce de 400ms
-            clearTimeout(buscaTimeout);
-            buscaTimeout = setTimeout(function() {
-                buscarPontosMedicao(1); // Reset para página 1
-            }, 400);
+        $('#selectTipoMedidor, #selectTipoLeitura').on('change', function() {
+            buscarPontosMedicao(1);
         });
 
-        // Event: Limpar campo de busca
-        $('#btnLimparBusca').on('click', function() {
-            $('#inputBusca').val('').focus();
-            $(this).hide();
-            buscarPontosMedicao(1); // Reset para página 1
-        });
-
-        // Event: Radio buttons de status
         $('input[name="status"]').on('change', function() {
-            buscarPontosMedicao(1); // Reset para página 1
+            buscarPontosMedicao(1);
         });
 
-        // Inicializa ordenação
-        initSorting();
+        // Busca com debounce
+        let searchTimeout;
+        $('#inputBusca').on('input', function() {
+            clearTimeout(searchTimeout);
+            const valor = $(this).val();
+            $('.btn-search-clear').toggle(valor.length > 0);
+            searchTimeout = setTimeout(() => buscarPontosMedicao(1), 400);
+        });
 
-        // Não carrega dados automaticamente - aguarda preenchimento de filtro
+        // Ordenacao
+        $('.data-table th.sortable').on('click', function() {
+            const coluna = $(this).data('column');
+            if (colunaOrdenacao === coluna) {
+                direcaoOrdenacao = direcaoOrdenacao === 'ASC' ? 'DESC' : 'ASC';
+            } else {
+                colunaOrdenacao = coluna;
+                direcaoOrdenacao = 'ASC';
+            }
+            
+            $('.data-table th.sortable').removeClass('asc desc');
+            $(this).addClass(direcaoOrdenacao.toLowerCase());
+            
+            buscarPontosMedicao(paginaAtual);
+        });
+
+        // Inicializa autocomplete de Ponto de Medicao
+        initAutocompletePontoMedicao();
     });
 
     // ============================================
-    // Sistema de Ordenação
+    // Autocomplete para Ponto de Medicao
     // ============================================
-    function initSorting() {
-        document.querySelectorAll('.data-table th[data-sort]').forEach(th => {
-            th.addEventListener('click', function() {
-                const column = this.getAttribute('data-sort');
-                
-                // Remove classes de outros headers
-                document.querySelectorAll('.data-table th').forEach(h => {
-                    h.classList.remove('sorted-asc', 'sorted-desc');
-                });
+    function initAutocompletePontoMedicao() {
+        const input = document.getElementById('filtroPontoMedicaoInput');
+        const hidden = document.getElementById('filtroPontoMedicao');
+        const dropdown = document.getElementById('filtroPontoMedicaoDropdown');
+        const btnLimpar = document.getElementById('btnLimparPonto');
 
-                // Alterna direção se mesma coluna
-                if (sortColumn === column) {
-                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                } else {
-                    sortColumn = column;
-                    sortDirection = 'asc';
-                }
-
-                // Adiciona classe ao header atual
-                this.classList.add(sortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc');
-
-                // Reordena e renderiza
-                sortData();
-                renderizarTabela(dadosTabela);
-            });
-        });
-    }
-
-    function sortData() {
-        if (!sortColumn || dadosTabela.length === 0) return;
-
-        dadosTabela.sort((a, b) => {
-            let valA = a[sortColumn] || '';
-            let valB = b[sortColumn] || '';
-
-            // Converte para string para comparação
-            valA = String(valA).toLowerCase();
-            valB = String(valB).toLowerCase();
-
-            // Tenta comparar como número se possível
-            const numA = parseFloat(valA);
-            const numB = parseFloat(valB);
-            
-            if (!isNaN(numA) && !isNaN(numB)) {
-                return sortDirection === 'asc' ? numA - numB : numB - numA;
+        input.addEventListener('focus', function() {
+            if (!hidden.value) {
+                buscarPontosMedicaoAutocomplete('');
             }
+        });
 
-            // Comparação de string
-            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-            return 0;
+        input.addEventListener('input', function() {
+            const termo = this.value.trim();
+            hidden.value = '';
+            btnLimpar.style.display = 'none';
+            autocompletePontoIndex = -1;
+
+            clearTimeout(autocompletePontoTimeout);
+            autocompletePontoTimeout = setTimeout(() => {
+                buscarPontosMedicaoAutocomplete(termo);
+            }, 300);
+        });
+
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.autocomplete-item');
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                autocompletePontoIndex = Math.min(autocompletePontoIndex + 1, items.length - 1);
+                atualizarHighlightPonto(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                autocompletePontoIndex = Math.max(autocompletePontoIndex - 1, 0);
+                atualizarHighlightPonto(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (autocompletePontoIndex >= 0 && items[autocompletePontoIndex]) {
+                    items[autocompletePontoIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.autocomplete-container')) {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        btnLimpar.addEventListener('click', function() {
+            input.value = '';
+            hidden.value = '';
+            btnLimpar.style.display = 'none';
+            dropdown.classList.remove('active');
+            input.focus();
+            buscarPontosMedicao(1);
         });
     }
 
+    function atualizarHighlightPonto(items) {
+        items.forEach((item, index) => {
+            if (index === autocompletePontoIndex) {
+                item.classList.add('highlighted');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('highlighted');
+            }
+        });
+    }
+
+    function buscarPontosMedicaoAutocomplete(termo) {
+        const dropdown = document.getElementById('filtroPontoMedicaoDropdown');
+        const cdUnidade = document.getElementById('selectUnidade').value;
+        const cdLocalidade = document.getElementById('selectLocalidade').value;
+
+        dropdown.innerHTML = '<div class="autocomplete-loading">Buscando...</div>';
+        dropdown.classList.add('active');
+
+        const params = new URLSearchParams({ busca: termo });
+        if (cdUnidade) params.append('cd_unidade', cdUnidade);
+        if (cdLocalidade) params.append('cd_localidade', cdLocalidade);
+
+        fetch(`bd/pontoMedicao/buscarPontosMedicao.php?${params}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data.length > 0) {
+                    let html = '';
+                    data.data.forEach(item => {
+                        const letraTipo = letrasTipoMedidor[item.ID_TIPO_MEDIDOR] || 'X';
+                        const codigoPonto = item.CD_LOCALIDADE + '-' +
+                            String(item.CD_PONTO_MEDICAO).padStart(6, '0') + '-' +
+                            letraTipo + '-' +
+                            item.CD_UNIDADE;
+                        html += `
+                            <div class="autocomplete-item" 
+                                 data-value="${item.CD_PONTO_MEDICAO}" 
+                                 data-label="${codigoPonto} - ${item.DS_NOME}">
+                                <span class="item-code">${codigoPonto}</span>
+                                <span class="item-name">${item.DS_NOME}</span>
+                            </div>
+                        `;
+                    });
+                    dropdown.innerHTML = html;
+
+                    dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            selecionarPontoMedicaoAutocomplete(this.dataset.value, this.dataset.label);
+                        });
+                    });
+                } else {
+                    dropdown.innerHTML = '<div class="autocomplete-empty">Nenhum ponto encontrado</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar pontos:', error);
+                dropdown.innerHTML = '<div class="autocomplete-empty">Erro ao buscar</div>';
+            });
+    }
+
+    function selecionarPontoMedicaoAutocomplete(value, label) {
+        const input = document.getElementById('filtroPontoMedicaoInput');
+        const hidden = document.getElementById('filtroPontoMedicao');
+        const dropdown = document.getElementById('filtroPontoMedicaoDropdown');
+        const btnLimpar = document.getElementById('btnLimparPonto');
+
+        input.value = label;
+        hidden.value = value;
+        dropdown.classList.remove('active');
+        btnLimpar.style.display = 'flex';
+        
+        buscarPontosMedicao(1);
+    }
+
     // ============================================
-    // Carregar Localidades via AJAX
+    // Carregar Localidades
     // ============================================
     function carregarLocalidades(cdUnidade) {
-        const select = $('#selectLocalidade');
+        const $select = $('#selectLocalidade');
         
         if (!cdUnidade) {
-            select.prop('disabled', true);
-            select.html('<option value="">Selecione uma Unidade primeiro</option>');
-            select.trigger('change');
+            $select.prop('disabled', true);
+            $select.empty().append('<option value="">Selecione uma Unidade primeiro</option>');
             return;
         }
 
-        select.prop('disabled', true);
-        select.html('<option value="">Carregando...</option>');
+        $select.prop('disabled', false);
+        $select.empty().append('<option value="">Carregando...</option>');
 
-        $.ajax({
-            url: 'bd/pontoMedicao/getLocalidades.php',
-            type: 'GET',
-            data: { cd_unidade: cdUnidade },
-            dataType: 'json',
-            success: function(response) {
-                let options = '<option value="">Todas as Localidades</option>';
-                
-                if (response.success && response.data.length > 0) {
-                    response.data.forEach(function(item) {
-                        // Usa CD_CHAVE como value (é a FK em PONTO_MEDICAO.CD_LOCALIDADE)
-                        options += `<option value="${item.CD_CHAVE}">${item.CD_LOCALIDADE} - ${item.DS_NOME}</option>`;
-                    });
-                }
-                
-                select.html(options);
-                select.prop('disabled', false);
-                select.trigger('change.select2');
-            },
-            error: function() {
-                select.html('<option value="">Erro ao carregar</option>');
-                showToast('Erro ao carregar localidades', 'erro');
+        $.get('bd/pontoMedicao/getLocalidades.php', { cd_unidade: cdUnidade }, function(response) {
+            $select.empty().append('<option value="">Todas as Localidades</option>');
+            
+            if (response.success && response.data.length > 0) {
+                response.data.forEach(function(item) {
+                    $select.append(`<option value="${item.CD_CHAVE}">${item.CD_LOCALIDADE} - ${item.DS_NOME}</option>`);
+                });
             }
+        }, 'json').fail(function() {
+            $select.empty().append('<option value="">Erro ao carregar</option>');
+            showToast('Erro ao carregar localidades', 'erro');
         });
     }
 
     // ============================================
-    // Buscar Pontos de Medição via AJAX
+    // Buscar Pontos de Medicao via AJAX
     // ============================================
     function buscarPontosMedicao(pagina = 1) {
         const cdUnidade = $('#selectUnidade').val() || '';
         const cdLocalidade = $('#selectLocalidade').val() || '';
+        const cdPontoMedicao = $('#filtroPontoMedicao').val() || '';
         const tipoMedidor = $('#selectTipoMedidor').val() || '';
         const tipoLeitura = $('#selectTipoLeitura').val() || '';
         const busca = document.getElementById('inputBusca').value.trim();
         const status = $('input[name="status"]:checked').val() || '';
 
-        // Verifica se pelo menos um filtro foi preenchido
-        const temFiltro = cdUnidade !== '' || cdLocalidade !== '' || tipoMedidor !== '' || 
-                          tipoLeitura !== '' || busca !== '' || status !== '';
+        const temFiltro = cdUnidade !== '' || cdLocalidade !== '' || cdPontoMedicao !== '' ||
+                          tipoMedidor !== '' || tipoLeitura !== '' || busca !== '' || status !== '';
 
         if (!temFiltro) {
             dadosTabela = [];
@@ -508,8 +542,8 @@ $tiposLeitura = [
                     </td>
                 </tr>
             `);
-            $('#totalRegistros').text('0');
-            renderizarPaginacao();
+            $('#resultsCount').text('0');
+            $('#paginationContainer').hide();
             return;
         }
 
@@ -522,86 +556,170 @@ $tiposLeitura = [
             data: {
                 cd_unidade: cdUnidade,
                 cd_localidade: cdLocalidade,
+                cd_ponto_medicao: cdPontoMedicao,
                 tipo_medidor: tipoMedidor,
                 tipo_leitura: tipoLeitura,
                 busca: busca,
                 status: status,
-                pagina: pagina
+                pagina: pagina,
+                registros_por_pagina: registrosPorPagina,
+                coluna_ordenacao: colunaOrdenacao,
+                direcao_ordenacao: direcaoOrdenacao
             },
             dataType: 'json',
             success: function(response) {
                 $('#loadingOverlay').removeClass('active');
                 
-                if (response.success && response.data && response.data.length > 0) {
+                if (response.success) {
                     dadosTabela = response.data;
                     totalRegistros = response.total;
-                    totalPaginas = response.totalPaginas;
+                    totalPaginas = Math.ceil(totalRegistros / registrosPorPagina);
                     
-                    if (sortColumn) {
-                        sortData();
-                    }
-                    
-                    renderizarTabela(dadosTabela);
-                    $('#totalRegistros').text(totalRegistros);
+                    renderizarTabela();
                     renderizarPaginacao();
+                    
+                    $('#resultsCount').text(totalRegistros);
+                    $('#paginationContainer').toggle(totalPaginas > 1);
                 } else {
-                    dadosTabela = [];
-                    totalRegistros = 0;
-                    totalPaginas = 0;
-                    
-                    const mensagem = response.message || 'Nenhum registro encontrado';
-                    $('#tabelaResultados').html(`
-                        <tr>
-                            <td colspan="9">
-                                <div class="empty-state">
-                                    <div class="empty-state-icon">
-                                        <ion-icon name="file-tray-outline"></ion-icon>
-                                    </div>
-                                    <h3>${mensagem}</h3>
-                                    <p>Tente ajustar os filtros de pesquisa</p>
-                                </div>
-                            </td>
-                        </tr>
-                    `);
-                    $('#totalRegistros').text('0');
-                    renderizarPaginacao();
+                    showToast(response.message || 'Erro ao buscar dados', 'erro');
                 }
             },
-            error: function(xhr, status, error) {
+            error: function() {
                 $('#loadingOverlay').removeClass('active');
-                console.error('Erro AJAX:', { xhr, status, error });
-                showToast('Erro ao buscar pontos de medição', 'erro');
+                showToast('Erro ao comunicar com o servidor', 'erro');
             }
         });
     }
 
     // ============================================
-    // Renderizar Paginação
+    // Renderizar Tabela
     // ============================================
-    function renderizarPaginacao() {
-        const container = $('#paginacao');
-        
-        if (totalPaginas <= 1) {
-            container.html('');
+    function renderizarTabela() {
+        if (dadosTabela.length === 0) {
+            $('#tabelaResultados').html(`
+                <tr>
+                    <td colspan="9">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <ion-icon name="search-outline"></ion-icon>
+                            </div>
+                            <h3>Nenhum registro encontrado</h3>
+                            <p>Tente ajustar os filtros de pesquisa</p>
+                        </div>
+                    </td>
+                </tr>
+            `);
             return;
         }
 
-        let html = '<div class="pagination">';
+        let html = '';
+        dadosTabela.forEach(function(item) {
+            const isAtivo = item.OP_SITUACAO == 1;
+            const statusClass = isAtivo ? 'badge-ativo' : 'badge-inativo';
+            const statusText = isAtivo ? 'Ativo' : 'Inativo';
+            
+            // Classes de cor baseadas no ID do tipo
+            const tipoMedidorClass = item.ID_TIPO_MEDIDOR ? `badge-tipo-${item.ID_TIPO_MEDIDOR}` : 'badge-tipo';
+            const tipoLeituraClass = item.ID_TIPO_LEITURA ? `badge-leitura-${item.ID_TIPO_LEITURA}` : 'badge-leitura';
+            
+            html += `
+                <tr>
+                    <td class="truncate" title="${item.DS_UNIDADE || ''}">${item.DS_UNIDADE || '-'}</td>
+                    <td class="truncate" title="${item.DS_LOCALIDADE || ''}">${item.DS_LOCALIDADE || '-'}</td>
+                    <td class="code">${item.CD_CODIGO || '-'}</td>
+                    <td class="name" title="${item.DS_NOME || ''}">${item.DS_NOME || '-'}</td>
+                    <td class="code">${item.CODIGO_TAG || '-'}</td>
+                    <td><span class="badge ${tipoMedidorClass}">${item.DS_TIPO_MEDIDOR || '-'}</span></td>
+                    <td><span class="badge ${tipoLeituraClass}">${item.DS_TIPO_LEITURA || '-'}</span></td>
+                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    <td>
+                        <div class="actions-cell">
+                            <button type="button" class="btn-action" onclick="visualizar(${item.CD_PONTO_MEDICAO})" title="Visualizar">
+                                <ion-icon name="eye-outline"></ion-icon>
+                            </button>
+                            ${podeEditar ? `
+                            <button type="button" class="btn-action" onclick="editar(${item.CD_PONTO_MEDICAO})" title="Editar">
+                                <ion-icon name="create-outline"></ion-icon>
+                            </button>
+                            ` : ''}
+                            ${podeEditar && isAtivo ? `
+                            <button type="button" class="btn-action btn-action-delete" onclick="desativar(${item.CD_PONTO_MEDICAO})" title="Desativar">
+                                <ion-icon name="trash-outline"></ion-icon>
+                            </button>
+                            ` : ''}
+                            ${podeEditar && !isAtivo ? `
+                            <button type="button" class="btn-action btn-action-activate" onclick="ativar(${item.CD_PONTO_MEDICAO})" title="Ativar">
+                                <ion-icon name="checkmark-circle-outline"></ion-icon>
+                            </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        $('#tabelaResultados').html(html);
+    }
+
+    // ============================================
+    // Acoes da Tabela
+    // ============================================
+    function visualizar(id) {
+        window.location.href = `pontoMedicaoView.php?id=${id}`;
+    }
+
+    function editar(id) {
+        window.location.href = `pontoMedicaoForm.php?id=${id}`;
+    }
+
+    function desativar(id) {
+        if (confirm('Tem certeza que deseja desativar este ponto de medicao?')) {
+            $.post('bd/pontoMedicao/excluirPontoMedicao.php', { cd_ponto_medicao: id }, function(response) {
+                if (response.success) {
+                    showToast(response.message || 'Ponto desativado com sucesso', 'sucesso');
+                    buscarPontosMedicao(paginaAtual);
+                } else {
+                    showToast(response.message || 'Erro ao desativar', 'erro');
+                }
+            }, 'json').fail(function() {
+                showToast('Erro ao comunicar com o servidor', 'erro');
+            });
+        }
+    }
+
+    function ativar(id) {
+        if (confirm('Deseja reativar este ponto de medicao?')) {
+            $.post('bd/pontoMedicao/ativarPontoMedicao.php', { cd_ponto_medicao: id }, function(response) {
+                if (response.success) {
+                    showToast(response.message || 'Ponto ativado com sucesso', 'sucesso');
+                    buscarPontosMedicao(paginaAtual);
+                } else {
+                    showToast(response.message || 'Erro ao ativar', 'erro');
+                }
+            }, 'json').fail(function() {
+                showToast('Erro ao comunicar com o servidor', 'erro');
+            });
+        }
+    }
+
+    // ============================================
+    // Renderizar Paginacao
+    // ============================================
+    function renderizarPaginacao() {
+        if (totalPaginas <= 1) {
+            $('#paginationContainer').hide();
+            return;
+        }
+
+        let html = '';
         
-        // Botão Anterior
         html += `<button type="button" class="btn-page ${paginaAtual === 1 ? 'disabled' : ''}" 
                   onclick="irParaPagina(${paginaAtual - 1})" ${paginaAtual === 1 ? 'disabled' : ''}>
                     <ion-icon name="chevron-back-outline"></ion-icon>
-                 </button>`;
+                </button>`;
 
-        // Números das páginas
-        const maxPaginas = 5;
-        let inicio = Math.max(1, paginaAtual - Math.floor(maxPaginas / 2));
-        let fim = Math.min(totalPaginas, inicio + maxPaginas - 1);
-        
-        if (fim - inicio + 1 < maxPaginas) {
-            inicio = Math.max(1, fim - maxPaginas + 1);
-        }
+        let inicio = Math.max(1, paginaAtual - 2);
+        let fim = Math.min(totalPaginas, paginaAtual + 2);
 
         if (inicio > 1) {
             html += `<button type="button" class="btn-page" onclick="irParaPagina(1)">1</button>`;
@@ -622,136 +740,47 @@ $tiposLeitura = [
             html += `<button type="button" class="btn-page" onclick="irParaPagina(${totalPaginas})">${totalPaginas}</button>`;
         }
 
-        // Botão Próximo
         html += `<button type="button" class="btn-page ${paginaAtual === totalPaginas ? 'disabled' : ''}" 
                   onclick="irParaPagina(${paginaAtual + 1})" ${paginaAtual === totalPaginas ? 'disabled' : ''}>
                     <ion-icon name="chevron-forward-outline"></ion-icon>
-                 </button>`;
+                </button>`;
 
-        html += '</div>';
+        $('#pagination').html(html);
         
-        // Info da página
-        const inicio_reg = ((paginaAtual - 1) * 20) + 1;
-        const fim_reg = Math.min(paginaAtual * 20, totalRegistros);
-        html += `<div class="page-info">Exibindo ${inicio_reg}-${fim_reg} de ${totalRegistros}</div>`;
-
-        container.html(html);
+        const inicio_registro = ((paginaAtual - 1) * registrosPorPagina) + 1;
+        const fim_registro = Math.min(paginaAtual * registrosPorPagina, totalRegistros);
+        $('#pageInfo').text(`Exibindo ${inicio_registro} - ${fim_registro} de ${totalRegistros}`);
     }
 
     function irParaPagina(pagina) {
         if (pagina < 1 || pagina > totalPaginas || pagina === paginaAtual) return;
         buscarPontosMedicao(pagina);
-        // Scroll para o topo da tabela
-        document.querySelector('.table-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // ============================================
-    // Renderizar Tabela
-    // ============================================
-    function renderizarTabela(dados) {
-        if (!dados || dados.length === 0) {
-            $('#tabelaResultados').html(`
-                <tr>
-                    <td colspan="9">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">
-                                <ion-icon name="file-tray-outline"></ion-icon>
-                            </div>
-                            <h3>Nenhum registro encontrado</h3>
-                            <p>Tente ajustar os filtros de pesquisa ou realizar uma nova busca</p>
-                        </div>
-                    </td>
-                </tr>
-            `);
-            return;
-        }
-
-        let html = '';
-
-        dados.forEach(function(item) {
-            const tipoMedidor = tiposMedidorMap[item.ID_TIPO_MEDIDOR] || { text: '-', class: '', abbr: '-' };
-            const tipoLeitura = tiposLeituraMap[item.ID_TIPO_LEITURA] || '-';
-            const isAtivo = item.ATIVO == 1;
-
-            html += `
-                <tr>
-                    <td class="truncate" title="${item.UNIDADE || ''}">${item.UNIDADE || '-'}</td>
-                    <td class="truncate" title="${item.LOCALIDADE || ''}">${item.LOCALIDADE || '-'}</td>
-                    <td class="code">${item.CODIGO || '-'}</td>
-                    <td class="name" title="${item.DS_NOME || ''}">${item.DS_NOME || '-'}</td>
-                    <td class="code">${item.CODIGO_TAG || '-'}</td>
-                    <td>
-                        <span class="badge badge-tipo ${tipoMedidor.class}" title="${tipoMedidor.text}">
-                            ${tipoMedidor.abbr} - ${tipoMedidor.text}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge badge-leitura">${tipoLeitura}</span>
-                    </td>
-                    <td>
-                        <span class="badge badge-status ${isAtivo ? 'ativo' : 'inativo'}">
-                            ${isAtivo ? 'Ativo' : 'Inativo'}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="table-actions">
-                            <button type="button" class="btn-action" onclick="visualizar(${item.CD_PONTO_MEDICAO})" title="Visualizar">
-                                <ion-icon name="eye-outline"></ion-icon>
-                            </button>
-                            ${permissoes.podeEditar ? `
-                            <button type="button" class="btn-action" onclick="editar(${item.CD_PONTO_MEDICAO})" title="Editar">
-                                <ion-icon name="create-outline"></ion-icon>
-                            </button>
-                            ` : ''}
-                            ${permissoes.podeEditar && isAtivo ? `
-                            <button type="button" class="btn-action delete" onclick="excluir(${item.CD_PONTO_MEDICAO})" title="Desativar">
-                                <ion-icon name="trash-outline"></ion-icon>
-                            </button>
-                            ` : ''}
-                            ${permissoes.podeEditar && !isAtivo ? `
-                            <button type="button" class="btn-action activate" onclick="ativar(${item.CD_PONTO_MEDICAO})" title="Ativar">
-                                <ion-icon name="checkmark-circle-outline"></ion-icon>
-                            </button>
-                            ` : ''}
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
-
-        $('#tabelaResultados').html(html);
-    }
-
-    // ============================================
-    // Ações
+    // Limpar Filtros
     // ============================================
     function limparFiltros() {
-        // Reset ordenação
-        sortColumn = null;
-        sortDirection = 'asc';
-        document.querySelectorAll('.data-table th').forEach(h => {
-            h.classList.remove('sorted-asc', 'sorted-desc');
-        });
+        $('#selectUnidade').val('').trigger('change');
+        $('#selectLocalidade').prop('disabled', true).empty()
+            .append('<option value="">Selecione uma Unidade primeiro</option>');
+        $('#selectTipoMedidor').val('').trigger('change');
+        $('#selectTipoLeitura').val('').trigger('change');
+        $('#inputBusca').val('');
+        $('.btn-search-clear').hide();
+        $('input[name="status"][value="1"]').prop('checked', true);
+        
+        // Limpar autocomplete de ponto
+        document.getElementById('filtroPontoMedicaoInput').value = '';
+        document.getElementById('filtroPontoMedicao').value = '';
+        document.getElementById('filtroPontoMedicaoDropdown').classList.remove('active');
+        document.getElementById('btnLimparPonto').style.display = 'none';
 
-        // Reset paginação
+        dadosTabela = [];
         paginaAtual = 1;
         totalPaginas = 0;
         totalRegistros = 0;
 
-        // Reset filtros select
-        $('#selectUnidade').val('').trigger('change.select2');
-        $('#selectLocalidade').val('').prop('disabled', true).html('<option value="">Selecione uma Unidade primeiro</option>').trigger('change.select2');
-        $('#selectTipoMedidor').val('').trigger('change.select2');
-        $('#selectTipoLeitura').val('').trigger('change.select2');
-
-        // Reset campo de busca
-        $('#inputBusca').val('');
-        $('#btnLimparBusca').hide();
-
-        // Reset radio buttons (seleciona "Todos")
-        $('input[name="status"][value=""]').prop('checked', true);
-
-        // Limpa tabela e paginação
         $('#tabelaResultados').html(`
             <tr>
                 <td colspan="9">
@@ -765,60 +794,39 @@ $tiposLeitura = [
                 </td>
             </tr>
         `);
-        $('#totalRegistros').text('0');
-        $('#paginacao').html('');
+        $('#resultsCount').text('0');
+        $('#paginationContainer').hide();
     }
 
-    function visualizar(id) {
-        window.location.href = `pontoMedicaoView.php?id=${id}`;
+    function limparBusca() {
+        $('#inputBusca').val('');
+        $('.btn-search-clear').hide();
+        buscarPontosMedicao(1);
     }
 
-    function editar(id) {
-        window.location.href = `pontoMedicaoForm.php?id=${id}`;
+    // ============================================
+    // Toast
+    // ============================================
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container') || createToastContainer();
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <ion-icon name="${type === 'sucesso' ? 'checkmark-circle' : type === 'erro' ? 'alert-circle' : 'information-circle'}"></ion-icon>
+            </div>
+            <span class="toast-message">${message}</span>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
     }
 
-    function excluir(id) {
-        if (confirm('Tem certeza que deseja desativar este ponto de medição?')) {
-            $.ajax({
-                url: 'bd/pontoMedicao/excluirPontoMedicao.php',
-                type: 'POST',
-                data: { cd_ponto_medicao: id },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        showToast(response.message, 'sucesso');
-                        buscarPontosMedicao(paginaAtual);
-                    } else {
-                        showToast(response.message || 'Erro ao desativar', 'erro');
-                    }
-                },
-                error: function() {
-                    showToast('Erro ao comunicar com o servidor', 'erro');
-                }
-            });
-        }
-    }
-
-    function ativar(id) {
-        if (confirm('Deseja reativar este ponto de medição?')) {
-            $.ajax({
-                url: 'bd/pontoMedicao/ativarPontoMedicao.php',
-                type: 'POST',
-                data: { cd_ponto_medicao: id },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        showToast(response.message, 'sucesso');
-                        buscarPontosMedicao(paginaAtual);
-                    } else {
-                        showToast(response.message || 'Erro ao ativar', 'erro');
-                    }
-                },
-                error: function() {
-                    showToast('Erro ao comunicar com o servidor', 'erro');
-                }
-            });
-        }
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+        document.body.appendChild(container);
+        return container;
     }
 </script>
 
