@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * SIMP - Sistema Integrado de Macromedição e Pitometria
  * Registro de Vazão e Pressão
@@ -8,6 +8,7 @@ include_once 'includes/header.inc.php';
 include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
+header('Content-Type: text/html; charset=UTF-8');
 // Verifica permissão
 exigePermissaoTela('Registro de Vazão e Pressão', ACESSO_LEITURA);
 
@@ -949,6 +950,55 @@ $descartes = [
         font-size: 16px;
     }
 
+    /* Botão de descartar no acordeão */
+    .btn-chart.btn-trash {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: #ef4444;
+    }
+
+    .btn-chart.btn-trash:hover:not(:disabled) {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-chart.btn-trash:disabled {
+        background: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #cbd5e1;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .btn-chart.btn-restore {
+        background: #dcfce7;
+        border-color: #86efac;
+        color: #22c55e;
+    }
+
+    .btn-chart.btn-restore:hover:not(:disabled) {
+        background: #22c55e;
+        color: white;
+    }
+
+    .btn-chart.btn-restore:disabled {
+        background: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #cbd5e1;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .btn-action.restore {
+        background: #dcfce7;
+        color: #22c55e;
+    }
+
+    .btn-action.restore:hover {
+        background: #22c55e;
+        color: white;
+    }
+
     /* Checkboxes de seleção para exclusão em massa */
     .checkbox-selecao {
         width: 18px;
@@ -1737,7 +1787,369 @@ $descartes = [
         background: #f1f5f9;
         color: #475569;
     }
+
+    /* ============================================
+       Modal de Confirmação de Exclusão
+       ============================================ */
+    .modal-exclusao-confirmacao {
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .modal-exclusao-confirmacao.active {
+        display: flex;
+        opacity: 1;
+    }
+
+    .modal-exclusao-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 20000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-exclusao-container {
+        background: white;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 500px;
+        max-height: 85vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        animation: slideInUp 0.3s ease;
+    }
+
+    .modal-container-grande {
+        max-width: 700px;
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .modal-exclusao-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 24px;
+        background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%);
+        border-bottom: 1px solid #fecaca;
+        flex-shrink: 0;
+    }
+
+    .modal-exclusao-header .icon-warning {
+        font-size: 28px;
+        color: #ef4444;
+        flex-shrink: 0;
+    }
+
+    .modal-exclusao-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1e293b;
+        flex: 1;
+    }
+
+    .btn-fechar-modal {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.7);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        color: #64748b;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .btn-fechar-modal:hover {
+        background: white;
+        color: #ef4444;
+    }
+
+    .btn-fechar-modal ion-icon {
+        font-size: 20px;
+    }
+
+    .modal-exclusao-body {
+        overflow-y: auto;
+        flex: 1;
+        padding: 24px;
+    }
+
+    .info-box {
+        padding: 16px;
+        border-radius: 10px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 16px;
+    }
+
+    .info-box.info-resumo {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border: 1px solid #bfdbfe;
+    }
+
+    .resumo-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        color: #1e293b;
+    }
+
+    .resumo-item ion-icon {
+        font-size: 20px;
+        color: #3b82f6;
+    }
+
+    .resumo-item strong {
+        font-weight: 600;
+        color: #3b82f6;
+    }
+
+    .info-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .info-header ion-icon {
+        font-size: 20px;
+        color: #f59e0b;
+    }
+
+    .info-header h4 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .info-lista {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .info-lista li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 0;
+        font-size: 13px;
+        color: #475569;
+    }
+
+    .info-lista li ion-icon {
+        font-size: 16px;
+        color: #22c55e;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .info-lista-pequena {
+        list-style: none;
+        padding: 0;
+        margin: 8px 0 0 0;
+    }
+
+    .info-lista-pequena li {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 4px 0;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .info-lista-pequena li ion-icon {
+        font-size: 14px;
+        color: #3b82f6;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    .etapa-exclusao {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        background: white;
+        border-radius: 8px;
+        border-left: 4px solid #3b82f6;
+        margin-bottom: 12px;
+    }
+
+    .etapa-numero {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: #dbeafe;
+        border-radius: 8px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #3b82f6;
+        flex-shrink: 0;
+    }
+
+    .etapa-conteudo {
+        flex: 1;
+    }
+
+    .etapa-conteudo h5 {
+        margin: 0 0 6px 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .etapa-descricao {
+        margin: 0 0 8px 0;
+        font-size: 12px;
+        color: #64748b;
+        line-height: 1.4;
+    }
+
+    .aviso-importante {
+        display: flex;
+        gap: 10px;
+        padding: 12px 14px;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 1px solid #fcd34d;
+        border-radius: 8px;
+        color: #92400e;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .aviso-importante ion-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .aviso-critico {
+        display: flex;
+        gap: 12px;
+        padding: 14px;
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        border: 1px solid #fca5a5;
+        border-radius: 8px;
+        color: #991b1b;
+        font-size: 13px;
+        line-height: 1.5;
+        margin-bottom: 0;
+    }
+
+    .aviso-critico ion-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .aviso-critico p {
+        margin: 0;
+    }
+
+    .aviso-critico ul {
+        margin: 0;
+    }
+
+    .modal-exclusao-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 16px 24px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+
+    .btn-modal-cancelar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-modal-cancelar:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+
+    .btn-modal-cancelar ion-icon {
+        font-size: 16px;
+    }
+
+    .btn-modal-confirmar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-modal-confirmar:hover:not(:disabled) {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-modal-confirmar:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-modal-confirmar ion-icon {
+        font-size: 16px;
+    }
+
+    .btn-modal-confirmar .spin {
+        animation: spin 1s linear infinite;
+    }
 </style>
+
 
 <div class="page-container">
     <!-- Header -->
@@ -1910,6 +2322,10 @@ $descartes = [
                 <ion-icon name="cloud-upload-outline"></ion-icon>
                 Importar Planilha
             </button>
+            <a href="https://compras.cesan.com.br/uploads/anexos/PlanilhaPadraoSIMP.xlsx" class="btn-obter-planilha" target="_blank">
+                <ion-icon name="download-outline"></ion-icon>
+                Obter Planilha
+            </a>
         </div>
     </div>
 
@@ -2289,7 +2705,7 @@ $descartes = [
     // ============================================
     // Buscar Registros (apenas agregadores)
     // ============================================
-    function buscarRegistros() {
+    function buscarRegistros(restaurarEstado = false) {
         // Limpar seleção anterior
         if (typeof registrosSelecionados !== 'undefined') {
             registrosSelecionados.clear();
@@ -2344,6 +2760,11 @@ $descartes = [
                     } else {
                         botoesExpandir.style.display = 'none';
                     }
+
+                    // Restaurar estado dos grupos se solicitado
+                    if (restaurarEstado) {
+                        setTimeout(() => restaurarEstadoGrupos(), 100);
+                    }
                 } else {
                     showToast(response.message || 'Erro ao buscar registros', 'erro');
                     document.getElementById('botoesExpandir').style.display = 'none';
@@ -2380,6 +2801,11 @@ $descartes = [
                         botoesExpandir.style.display = 'flex';
                     } else {
                         botoesExpandir.style.display = 'none';
+                    }
+
+                    // Restaurar estado dos grupos se solicitado
+                    if (restaurarEstado) {
+                        setTimeout(() => restaurarEstadoGrupos(), 100);
                     }
                 } else {
                     showToast(response.message || 'Erro ao buscar registros', 'erro');
@@ -2451,34 +2877,157 @@ $descartes = [
     }
 
     // ============================================
-    // Visualizar Registro
-    // ============================================
-    function visualizarRegistro(id) {
-        // TODO: Implementar modal de visualização
-        showToast('Função de visualização será implementada', 'info');
-    }
-
-    // ============================================
     // Excluir Registro
     // ============================================
     function excluirRegistro(id) {
-        if (!confirm('Deseja realmente descartar este registro?')) return;
+        // Modal de confirmação customizado
+        const modalExclusao = document.createElement('div');
+        modalExclusao.className = 'modal-exclusao-confirmacao';
+        modalExclusao.id = 'modalExclusaoIndividual_' + id;
+        
+        const htmlConteudo = `
+            <div class="modal-exclusao-overlay" onclick="fecharModalExclusao(event)">
+                <div class="modal-exclusao-container" onclick="event.stopPropagation()">
+                    <!-- Cabeçalho -->
+                    <div class="modal-exclusao-header">
+                        <ion-icon name="warning-outline" class="icon-warning"></ion-icon>
+                        <h3>Confirmar Exclusão de Registro</h3>
+                        <button type="button" class="btn-fechar-modal" onclick="fecharModalExclusao(event)">
+                            <ion-icon name="close-outline"></ion-icon>
+                        </button>
+                    </div>
 
+                    <!-- Corpo -->
+                    <div class="modal-exclusao-body">
+                        <div class="info-box info-soft-delete">
+                            <div class="info-header">
+                                <ion-icon name="archive-outline"></ion-icon>
+                                <h4>O que acontecerá:</h4>
+                            </div>
+                            <ul class="info-lista">
+                                <li>
+                                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+                                    <span>Registro será <strong>DESCARTADO</strong> (Soft Delete)</span>
+                                </li>
+                                <li>
+                                    <ion-icon name="eye-off-outline"></ion-icon>
+                                    <span>Desaparecerá das listagens normais</span>
+                                </li>
+                                <li>
+                                    <ion-icon name="refresh-outline"></ion-icon>
+                                    <span>Poderá ser <strong>RECUPERADO</strong> posteriormente</span>
+                                </li>
+                                <li>
+                                    <ion-icon name="timer-outline"></ion-icon>
+                                    <span>Será salvo no banco com status "Descartado"</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="info-box info-proxima-acao" style="margin-top: 16px;">
+                            <div class="info-header">
+                                <ion-icon name="arrow-forward-outline"></ion-icon>
+                                <h4>Próxima ação (se necessário):</h4>
+                            </div>
+                            <p>Se quiser <strong>remover permanentemente</strong> do banco, clique em Descartar novamente quando o registro aparecer marcado como descartado.</p>
+                        </div>
+
+                        <div class="aviso-importante">
+                            <ion-icon name="alert-circle-outline"></ion-icon>
+                            <p><strong>Aviso:</strong> Esta ação é <strong>reversível</strong> nesta etapa.</p>
+                        </div>
+                    </div>
+
+                    <!-- Rodapé -->
+                    <div class="modal-exclusao-footer">
+                        <button type="button" class="btn-modal-cancelar" onclick="fecharModalExclusao(event)">
+                            <ion-icon name="close-outline"></ion-icon>
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn-modal-confirmar" onclick="executarExclusaoIndividual(${id}, 'modalExclusaoIndividual_${id}')">
+                            <ion-icon name="trash-outline"></ion-icon>
+                            Sim, Descartar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        modalExclusao.innerHTML = htmlConteudo;
+        document.body.appendChild(modalExclusao);
+        
+        // Mostrar com animação
+        setTimeout(() => {
+            modalExclusao.classList.add('active');
+        }, 10);
+    }
+
+    // Executar exclusão individual
+    function executarExclusaoIndividual(id, modalId) {
         console.log('Descartando registro ID:', id);
 
         $.post('bd/registroVazaoPressao/excluirRegistro.php', { id: id }, function (response) {
             console.log('Resposta descarte:', response);
+            
+            // Fechar modal
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            }
+
             if (response.success) {
-                showToast(response.message, 'sucesso');
-                buscarRegistros();
+                // Mensagens customizadas conforme tipo
+                let mensagem = response.message;
+                
+                if (response.tipo === 'soft_delete') {
+                    mensagem = 'âœ“ Registro transformado em descartado!\n\n';
+                    mensagem += 'ðŸ“¦ ID_SITUACAO alterado de 1 para 2\n';
+                    mensagem += 'ðŸ‘ï¸ Desaparecerá das listagens normais\n';
+                    mensagem += 'ðŸ”„ Poderá ser recuperado se necessário';
+                } else if (response.tipo === 'hard_delete') {
+                    mensagem = 'âœ“ Registro removido permanentemente!\n\n';
+                    mensagem += 'ðŸ—‘ï¸ ID_SITUACAO = 2 foi deletado do banco\n';
+                    mensagem += 'âŒ Esta ação é irreversível\n';
+                    mensagem += 'ðŸ“¦ Recuperação requer backup do banco';
+                }
+                
+                showToast(mensagem, 'sucesso');
+                buscarRegistrosPreservandoEstado();
             } else {
-                showToast(response.message || 'Erro ao descartar', 'erro');
+                showToast(response.message || 'Erro ao processar exclusão', 'erro');
             }
         }, 'json').fail(function (xhr, status, error) {
             console.error('Erro descarte:', status, error);
             console.error('Response:', xhr.responseText);
-            showToast('Erro ao comunicar com o servidor', 'erro');
+            
+            // Fechar modal
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            }
+            
+            showToast('Erro ao comunicar com o servidor. Verifique sua conexão.', 'erro');
         });
+    }
+
+    // Fechar modal de exclusão
+    function fecharModalExclusao(event) {
+        let modal = event.target;
+        
+        if (modal.classList.contains('modal-exclusao-overlay')) {
+            modal = modal;
+        } else if (modal.classList.contains('btn-fechar-modal') || modal.tagName === 'ION-ICON') {
+            modal = event.target.closest('.modal-exclusao-confirmacao');
+        } else {
+            modal = event.target.closest('.modal-exclusao-confirmacao');
+        }
+
+        if (modal) {
+            modal.classList.remove('active');
+            setTimeout(() => modal.remove(), 300);
+        }
     }
 
     // ============================================
@@ -2520,7 +3069,71 @@ $descartes = [
         } else {
             registrosSelecionados.delete(cdChave);
         }
+        
+        // Atualizar estado dos botões de exclusão
+        atualizarBotoesExclusao();
         atualizarBarraExclusao();
+    }
+
+    // Atualizar botões de exclusão e restauração baseado nos registros selecionados
+    function atualizarBotoesExclusao() {
+        // Desabilitar todos primeiro
+        document.querySelectorAll('.btn-trash-ponto, .btn-trash-dia, .btn-restore-ponto, .btn-restore-dia').forEach(btn => {
+            btn.disabled = true;
+        });
+
+        // Se há registros selecionados, habilitar os botões correspondentes
+        if (registrosSelecionados.size > 0) {
+            // Verificar checkboxes de registros individuais marcados
+            document.querySelectorAll('.checkbox-registro:checked').forEach(cb => {
+                const cdPonto = cb.dataset.ponto;
+                const dataDia = cb.dataset.dia;
+
+                // Habilitar botões do ponto
+                const btnTrashPonto = document.querySelector(`.btn-trash-ponto[data-ponto="${cdPonto}"]`);
+                if (btnTrashPonto) btnTrashPonto.disabled = false;
+                const btnRestorePonto = document.querySelector(`.btn-restore-ponto[data-ponto="${cdPonto}"]`);
+                if (btnRestorePonto) btnRestorePonto.disabled = false;
+
+                // Habilitar botões do dia
+                const btnTrashDia = document.querySelector(`.btn-trash-dia[data-ponto="${cdPonto}"][data-dia="${dataDia}"]`);
+                if (btnTrashDia) btnTrashDia.disabled = false;
+                const btnRestoreDia = document.querySelector(`.btn-restore-dia[data-ponto="${cdPonto}"][data-dia="${dataDia}"]`);
+                if (btnRestoreDia) btnRestoreDia.disabled = false;
+            });
+
+            // Verificar checkboxes de ponto principal marcados
+            document.querySelectorAll('.checkbox-ponto-principal:checked').forEach(cb => {
+                const cdPonto = cb.dataset.ponto;
+                const btnTrashPonto = document.querySelector(`.btn-trash-ponto[data-ponto="${cdPonto}"]`);
+                if (btnTrashPonto) btnTrashPonto.disabled = false;
+                const btnRestorePonto = document.querySelector(`.btn-restore-ponto[data-ponto="${cdPonto}"]`);
+                if (btnRestorePonto) btnRestorePonto.disabled = false;
+
+                // Habilitar todos os botões de dia deste ponto
+                document.querySelectorAll(`.btn-trash-dia[data-ponto="${cdPonto}"], .btn-restore-dia[data-ponto="${cdPonto}"]`).forEach(btn => {
+                    btn.disabled = false;
+                });
+            });
+
+            // Verificar checkboxes de dia marcados
+            document.querySelectorAll('.checkbox-dia-ponto:checked').forEach(cb => {
+                const cdPonto = cb.dataset.ponto;
+                const dataDia = cb.dataset.dia;
+
+                // Habilitar botões do ponto
+                const btnTrashPonto = document.querySelector(`.btn-trash-ponto[data-ponto="${cdPonto}"]`);
+                if (btnTrashPonto) btnTrashPonto.disabled = false;
+                const btnRestorePonto = document.querySelector(`.btn-restore-ponto[data-ponto="${cdPonto}"]`);
+                if (btnRestorePonto) btnRestorePonto.disabled = false;
+
+                // Habilitar botões do dia
+                const btnTrashDia = document.querySelector(`.btn-trash-dia[data-ponto="${cdPonto}"][data-dia="${dataDia}"]`);
+                if (btnTrashDia) btnTrashDia.disabled = false;
+                const btnRestoreDia = document.querySelector(`.btn-restore-dia[data-ponto="${cdPonto}"][data-dia="${dataDia}"]`);
+                if (btnRestoreDia) btnRestoreDia.disabled = false;
+            });
+        }
     }
 
     // Selecionar todos os registros de um ponto de medição
@@ -2552,6 +3165,7 @@ $descartes = [
                     cb.checked = checked;
                 });
 
+                atualizarBotoesExclusao();
                 atualizarBarraExclusao();
             }
         }, 'json');
@@ -2589,6 +3203,7 @@ $descartes = [
                     cb.checked = checked;
                 });
 
+                atualizarBotoesExclusao();
                 atualizarBarraExclusao();
             }
         }, 'json');
@@ -2603,6 +3218,8 @@ $descartes = [
             cb.checked = false;
         });
 
+        // Desabilitar todos os botões de exclusão
+        atualizarBotoesExclusao();
         atualizarBarraExclusao();
     }
 
@@ -2615,19 +3232,113 @@ $descartes = [
             return;
         }
 
-        if (!confirm(`Deseja realmente descartar ${quantidade} registro(s)?\n\nOs registros serão marcados como descartados.`)) {
-            return;
-        }
+        // Modal de confirmação customizado para exclusão em massa
+        const modalExclusao = document.createElement('div');
+        modalExclusao.className = 'modal-exclusao-confirmacao modal-exclusao-massa';
+        modalExclusao.id = 'modalExclusaoMassa';
+        
+        const htmlConteudo = `
+            <div class="modal-exclusao-overlay" onclick="fecharModalExclusaoMassa(event)">
+                <div class="modal-exclusao-container modal-container-grande" onclick="event.stopPropagation()">
+                    <!-- Cabeçalho -->
+                    <div class="modal-exclusao-header">
+                        <ion-icon name="warning-outline" class="icon-warning"></ion-icon>
+                        <h3>Confirmar Exclusão em Massa</h3>
+                        <button type="button" class="btn-fechar-modal" onclick="fecharModalExclusaoMassa(event)">
+                            <ion-icon name="close-outline"></ion-icon>
+                        </button>
+                    </div>
 
-        // Converter Set para Array
+                    <!-- Corpo -->
+                    <div class="modal-exclusao-body">
+                        <!-- Resumo -->
+                        <div class="info-box info-resumo">
+                            <div class="resumo-item">
+                                <ion-icon name="document-outline"></ion-icon>
+                                <span><strong>${quantidade}</strong> registro(s) selecionado(s)</span>
+                            </div>
+                        </div>
+
+                        <!-- O que acontecerá -->
+                        <div class="info-box info-soft-delete">
+                            <div class="info-header">
+                                <ion-icon name="arrow-down-outline"></ion-icon>
+                                <h4>Como funcionará a exclusão:</h4>
+                            </div>
+                            
+                            <div class="etapa-exclusao">
+                                <div class="etapa-numero">1</div>
+                                <div class="etapa-conteudo">
+                                    <h5>Registros Ativos (ID_SITUACAO = 1)</h5>
+                                    <p class="etapa-descricao">Serão <strong>TRANSFORMADOS</strong> em descartados</p>
+                                    <ul class="info-lista-pequena">
+                                        <li><ion-icon name="arrow-forward-outline"></ion-icon> Mudarão de ID_SITUACAO = 1 para 2</li>
+                                        <li><ion-icon name="eye-off-outline"></ion-icon> Desaparecerão da listagem normal</li>
+                                        <li><ion-icon name="refresh-outline"></ion-icon> Poderão ser recuperados se necessário</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="etapa-exclusao">
+                                <div class="etapa-numero">2</div>
+                                <div class="etapa-conteudo">
+                                    <h5>Registros Já Descartados (ID_SITUACAO = 2)</h5>
+                                    <p class="etapa-descricao">Serão <strong>REMOVIDOS PERMANENTEMENTE</strong></p>
+                                    <ul class="info-lista-pequena">
+                                        <li><ion-icon name="trash-outline"></ion-icon> Deletados fisicamente do banco</li>
+                                        <li><ion-icon name="close-circle-outline"></ion-icon> Ação IRREVERSÍVEL</li>
+                                        <li><ion-icon name="alert-circle-outline"></ion-icon> Não poderão ser recuperados</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Aviso -->
+                        <div class="aviso-critico">
+                            <ion-icon name="alert-outline"></ion-icon>
+                            <div>
+                                <p><strong>âš ï¸ Importante:</strong> O resultado dependerá do status de cada registro:</p>
+                                <ul style="margin-top: 8px; margin-left: 20px;">
+                                    <li><strong>Se Ativo (1):</strong> Será marcado como descartado (2) â†’ RECUPERÁVEL</li>
+                                    <li><strong>Se Descartado (2):</strong> Será removido do banco â†’ IRREVERSÍVEL</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rodapé -->
+                    <div class="modal-exclusao-footer">
+                        <button type="button" class="btn-modal-cancelar" onclick="fecharModalExclusaoMassa(event)">
+                            <ion-icon name="close-outline"></ion-icon>
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn-modal-confirmar" onclick="executarExclusaoEmMassa('modalExclusaoMassa')">
+                            <ion-icon name="checkmark-outline"></ion-icon>
+                            Confirmar Exclusão
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        modalExclusao.innerHTML = htmlConteudo;
+        document.body.appendChild(modalExclusao);
+        
+        // Mostrar com animação
+        setTimeout(() => {
+            modalExclusao.classList.add('active');
+        }, 10);
+    }
+
+    // Executar exclusão em massa
+    function executarExclusaoEmMassa(modalId) {
         const chaves = Array.from(registrosSelecionados);
-
         console.log('Descartando chaves:', chaves);
 
         // Mostrar loading
-        const btnExcluir = document.querySelector('.btn-excluir-selecionados');
+        const btnExcluir = document.querySelector('.btn-modal-confirmar');
         const textoOriginal = btnExcluir.innerHTML;
-        btnExcluir.innerHTML = '<ion-icon name="sync-outline" class="spin"></ion-icon> Descartando...';
+        btnExcluir.innerHTML = '<ion-icon name="sync-outline" class="spin"></ion-icon> Processando...';
         btnExcluir.disabled = true;
 
         $.ajax({
@@ -2638,17 +3349,49 @@ $descartes = [
             dataType: 'json',
             success: function (response) {
                 console.log('Resposta:', response);
+                
+                // Fechar modal
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.remove('active');
+                    setTimeout(() => modal.remove(), 300);
+                }
+
                 if (response.success) {
-                    showToast(`${response.excluidos} registro(s) descartado(s) com sucesso!`, 'sucesso');
+                    // Construir mensagem detalhada conforme o que foi processado
+                    let toastMsg = 'âœ“ Exclusão realizada com sucesso!\n\n';
+                    
+                    if (response.descartados > 0) {
+                        toastMsg += `ðŸ“¦ ${response.descartados} registro(s) transformado(s) em descartado(s)\n`;
+                        toastMsg += '   (Poderão ser recuperados se necessário)\n\n';
+                    }
+                    
+                    if (response.deletados > 0) {
+                        toastMsg += `ðŸ—‘ï¸ ${response.deletados} registro(s) removido(s) permanentemente\n`;
+                        toastMsg += '   (Ação irreversível)';
+                    }
+                    
+                    if (response.descartados === 0 && response.deletados === 0) {
+                        toastMsg = 'âœ“ Nenhum registro foi processado (todos já estavam no mesmo estado)';
+                    }
+                    
+                    showToast(toastMsg, 'sucesso');
                     cancelarSelecao();
-                    buscarRegistros();
+                    buscarRegistrosPreservandoEstado();
                 } else {
-                    showToast(response.message || 'Erro ao descartar registros', 'erro');
+                    showToast(response.message || 'Erro ao processar exclusão', 'erro');
                 }
             },
             error: function (xhr, status, error) {
                 console.error('Erro AJAX:', status, error);
                 console.error('Response:', xhr.responseText);
+
+                // Fechar modal
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.remove('active');
+                    setTimeout(() => modal.remove(), 300);
+                }
 
                 // Tentar parsear resposta mesmo em caso de erro
                 try {
@@ -2662,10 +3405,31 @@ $descartes = [
                 showToast('Erro ao comunicar com o servidor. Verifique o console.', 'erro');
             },
             complete: function () {
-                btnExcluir.innerHTML = textoOriginal;
-                btnExcluir.disabled = false;
+                const btnExcluir = document.querySelector('.btn-modal-confirmar');
+                if (btnExcluir) {
+                    btnExcluir.innerHTML = textoOriginal;
+                    btnExcluir.disabled = false;
+                }
             }
         });
+    }
+
+    // Fechar modal de exclusão em massa
+    function fecharModalExclusaoMassa(event) {
+        let modal = event.target;
+        
+        if (modal.classList.contains('modal-exclusao-overlay')) {
+            modal = modal;
+        } else if (modal.classList.contains('btn-fechar-modal') || modal.tagName === 'ION-ICON') {
+            modal = event.target.closest('.modal-exclusao-confirmacao');
+        } else {
+            modal = event.target.closest('.modal-exclusao-confirmacao');
+        }
+
+        if (modal) {
+            modal.classList.remove('active');
+            setTimeout(() => modal.remove(), 300);
+        }
     }
 
     // ============================================
@@ -2709,12 +3473,121 @@ $descartes = [
     let diasPontoCarregados = {}; // Cache de dias carregados por ponto
     let filtrosAtuais = {}; // Filtros atuais para carregamento sob demanda
     let ordenacaoAtual = { coluna: 'DT_LEITURA', direcao: 'desc' };
+    let estadoGruposAbertos = null; // Estado dos grupos abertos para restaurar após ações
+
+    // ============================================
+    // Funções para Preservar Estado dos Grupos
+    // ============================================
+    
+    // Salvar o estado atual dos grupos abertos
+    function salvarEstadoGrupos() {
+        estadoGruposAbertos = {
+            // Grupos de nível 1 (dias ou pontos) expandidos
+            gruposExpandidos: [],
+            // Subgrupos expandidos (pontos dentro de dias ou dias dentro de pontos)
+            subgruposExpandidos: []
+        };
+
+        const modoExibicao = document.querySelector('input[name="modoExibicao"]:checked').value;
+
+        // Salvar headers de grupos expandidos
+        document.querySelectorAll('.row-group-header.expanded').forEach(header => {
+            const grupoId = header.dataset.group || header.dataset.ponto;
+            if (grupoId) {
+                estadoGruposAbertos.gruposExpandidos.push(grupoId);
+            }
+        });
+
+        // Salvar headers de subgrupos expandidos
+        if (modoExibicao === 'ponto') {
+            // Modo Ponto => Dia: subgrupos usam classe row-subgroup-dia
+            document.querySelectorAll('.row-subgroup-dia.expanded').forEach(header => {
+                const pontoId = header.dataset.ponto;
+                const diaId = header.dataset.dia;
+                if (pontoId && diaId) {
+                    estadoGruposAbertos.subgruposExpandidos.push({
+                        ponto: pontoId,
+                        dia: diaId
+                    });
+                }
+            });
+        } else {
+            // Modo Data => Ponto: subgrupos usam classe row-subgroup-header
+            document.querySelectorAll('.row-subgroup-header.expanded').forEach(header => {
+                const pontoId = header.dataset.ponto;
+                const diaId = header.dataset.group;
+                if (pontoId && diaId) {
+                    estadoGruposAbertos.subgruposExpandidos.push({
+                        ponto: pontoId,
+                        dia: diaId
+                    });
+                }
+            });
+        }
+
+        console.log('Estado dos grupos salvo:', estadoGruposAbertos);
+        return estadoGruposAbertos;
+    }
+
+    // Restaurar o estado dos grupos após recarregar dados
+    function restaurarEstadoGrupos() {
+        if (!estadoGruposAbertos) {
+            console.log('Nenhum estado de grupos para restaurar');
+            return;
+        }
+
+        console.log('Restaurando estado dos grupos:', estadoGruposAbertos);
+        
+        const modoExibicao = document.querySelector('input[name="modoExibicao"]:checked').value;
+
+        // Restaurar grupos de nível 1
+        estadoGruposAbertos.gruposExpandidos.forEach(grupoId => {
+            const header = document.querySelector(`.row-group-header[data-group="${grupoId}"], .row-group-header[data-ponto="${grupoId}"]`);
+            if (header && !header.classList.contains('expanded')) {
+                // Simular clique para expandir
+                if (modoExibicao === 'ponto') {
+                    toggleGrupoPontoMedicao(grupoId);
+                } else {
+                    toggleGrupo(grupoId);
+                }
+            }
+        });
+
+        // Restaurar subgrupos (com pequeno delay para garantir que o nível 1 já carregou)
+        setTimeout(() => {
+            estadoGruposAbertos.subgruposExpandidos.forEach(sub => {
+                if (modoExibicao === 'ponto') {
+                    const selector = `.row-subgroup-dia[data-ponto="${sub.ponto}"][data-dia="${sub.dia}"]`;
+                    const header = document.querySelector(selector);
+                    if (header && !header.classList.contains('expanded')) {
+                        toggleGrupoDiaPonto(sub.ponto, sub.dia);
+                    }
+                } else {
+                    const selector = `.row-subgroup-header[data-ponto="${sub.ponto}"][data-group="${sub.dia}"]`;
+                    const header = document.querySelector(selector);
+                    if (header && !header.classList.contains('expanded')) {
+                        toggleGrupoPonto(sub.dia, sub.ponto);
+                    }
+                }
+            });
+            
+            // Limpar estado após restaurar
+            estadoGruposAbertos = null;
+        }, 500);
+    }
+
+    // Buscar registros preservando o estado dos grupos abertos
+    function buscarRegistrosPreservandoEstado() {
+        salvarEstadoGrupos();
+        buscarRegistros(true);
+    }
 
     // Ordenação desabilitada (carregamento sob demanda não suporta ordenação client-side)
     // TODO: Implementar ordenação no backend se necessário
     function ordenarTabela(coluna) {
         showToast('Ordenação não disponível nesta visualização', 'info');
     }
+
 
     function renderizarAgregadores() {
         const tbody = document.getElementById('tabelaRegistros');
@@ -2780,9 +3653,14 @@ $descartes = [
                                     <span class="group-count">${totalExibir}</span>
                                     <span class="group-summary">registro${totalExibir > 1 ? 's' : ''} ${qtdPontos > 1 ? `em ${qtdPontos} pontos` : ''}</span>
                                     ${incompleto ? '<span class="group-alert" title="Menos de 1440 registros válidos"><ion-icon name="warning-outline"></ion-icon></span>' : ''}
-                                    ${qtdPontos === 1 ? `<button type="button" class="btn-chart" onclick="event.stopPropagation(); abrirGrafico('${dataChave}')" title="Ver gráfico por hora">
-                                        <ion-icon name="analytics-outline"></ion-icon>
-                                    </button>` : ''}
+                                    <div class="group-actions">
+                                        ${qtdPontos === 1 ? `<button type="button" class="btn-chart" onclick="event.stopPropagation(); abrirGrafico('${dataChave}')" title="Validação de dados">
+                                            <ion-icon name="analytics-outline"></ion-icon>
+                                        </button>` : ''}
+                                        ${podeEditar ? `<button type="button" class="btn-chart btn-trash" onclick="event.stopPropagation(); excluirSelecionados()" title="Descartar selecionados">
+                                            <ion-icon name="trash-outline"></ion-icon>
+                                        </button>` : ''}
+                                    </div>
                                 </div>
                                 <div class="group-stats">
                                     <span class="stat-item" title="Média Vazão Efetiva">
@@ -2909,6 +3787,12 @@ $descartes = [
                                         </span>
                                         <span class="badge-tipo badge-tipo-leitura" title="Tipo de Leitura">${estatPonto.dsTipoLeitura || '-'}</span>
                                     </div>
+                                    ${podeEditar ? `<button type="button" class="btn-chart btn-trash btn-trash-ponto" data-ponto="${cdPonto}" onclick="event.stopPropagation(); excluirTodosPonto('${cdPonto}')" title="Descartar registros selecionados deste ponto" disabled>
+                                        <ion-icon name="trash-outline"></ion-icon>
+                                    </button>
+                                    <button type="button" class="btn-chart btn-restore btn-restore-ponto" data-ponto="${cdPonto}" onclick="event.stopPropagation(); restaurarTodosPonto('${cdPonto}')" title="Restaurar registros selecionados deste ponto" disabled>
+                                        <ion-icon name="refresh-outline"></ion-icon>
+                                    </button>` : ''}
                                 </div>
                                 <div class="group-stats">
                                     <span class="stat-item" title="Média Vazão Efetiva">
@@ -3067,9 +3951,15 @@ $descartes = [
                                     <span class="subgroup-alert" title="${percentualCompleto}% completo (${totalNaoDescarte}/1440 registros válidos)" style="color: ${corAlerta};">
                                         <ion-icon name="${totalNaoDescarte >= 1440 ? 'checkmark-circle' : 'alert-circle'}-outline"></ion-icon>
                                     </span>
-                                    <button type="button" class="btn-chart" onclick="event.stopPropagation(); abrirGraficoDiaPonto('${cdPonto}', '${dataChave}')" title="Ver gráfico por hora">
+                                    <button type="button" class="btn-chart" onclick="event.stopPropagation(); abrirGraficoDiaPonto('${cdPonto}', '${dataChave}')" title="Validação de dados">
                                         <ion-icon name="analytics-outline"></ion-icon>
                                     </button>
+                                    ${podeEditar ? `<button type="button" class="btn-chart btn-trash btn-trash-dia" data-ponto="${cdPonto}" data-dia="${dataChave}" onclick="event.stopPropagation(); excluirTodosDia('${cdPonto}', '${dataChave}')" title="Descartar registros selecionados deste dia" disabled>
+                                        <ion-icon name="trash-outline"></ion-icon>
+                                    </button>
+                                    <button type="button" class="btn-chart btn-restore btn-restore-dia" data-ponto="${cdPonto}" data-dia="${dataChave}" onclick="event.stopPropagation(); restaurarTodosDia('${cdPonto}', '${dataChave}')" title="Restaurar registros selecionados deste dia" disabled>
+                                        <ion-icon name="refresh-outline"></ion-icon>
+                                    </button>` : ''}
                                 </div>
                                 <div class="subgroup-stats">
                                     <span class="stat-item" title="Média Vazão Efetiva">
@@ -3219,13 +4109,13 @@ $descartes = [
                     <td>${descarteBadge}</td>
                     <td>
                         <div class="table-actions">
-                            <button type="button" class="btn-action" onclick="visualizarRegistro(${item.CD_CHAVE})" title="Visualizar">
-                                <ion-icon name="eye-outline"></ion-icon>
-                            </button>
                             ${podeEditar ? `
                             <button type="button" class="btn-action delete" onclick="excluirRegistro(${item.CD_CHAVE})" title="Descartar">
                                 <ion-icon name="trash-outline"></ion-icon>
                             </button>
+                            ${item.ID_SITUACAO == 2 ? `<button type="button" class="btn-action restore" onclick="restaurarRegistro(${item.CD_CHAVE})" title="Restaurar">
+                                <ion-icon name="refresh-outline"></ion-icon>
+                            </button>` : ''}
                             ` : ''}
                         </div>
                     </td>
@@ -3240,88 +4130,23 @@ $descartes = [
 
     // ============================================
     // Abrir gráfico de um dia de um ponto (modo Ponto => Dia => Registros)
+    // Redireciona para operacoes.php com modal de validação
     // ============================================
     function abrirGraficoDiaPonto(cdPonto, dataChave) {
-        const estatPonto = estatisticasPonto[cdPonto];
-        const diasPonto = diasPontoCarregados[cdPonto];
-
-        if (!estatPonto || !diasPonto || !diasPonto[dataChave]) {
-            showToast('Dados não disponíveis para este dia', 'erro');
-            return;
+        // Extrair mês e ano da dataChave (formato: YYYY-MM-DD)
+        let mes = '';
+        let ano = '';
+        if (dataChave) {
+            const partes = dataChave.split('-');
+            if (partes.length >= 2) {
+                ano = partes[0];
+                mes = parseInt(partes[1]);
+            }
         }
-
-        const estatDia = diasPonto[dataChave];
-        const idTipoMedidor = estatPonto.idTipoMedidor;
-        const codigoFormatado = estatPonto.codigoFormatado || cdPonto;
-
-        // Determinar título, campo e unidade baseado no tipo de medidor
-        let tituloGrafico = 'Gráfico de Vazão';
-        let campoValor = 'mediaVazao';
-        let unidade = 'l/s';
-        let corGradiente = '#3b82f6';
-
-        if (idTipoMedidor == 4) {
-            tituloGrafico = 'Gráfico de Pressão';
-            campoValor = 'mediaPressao';
-            unidade = 'mca';
-            corGradiente = '#f59e0b';
-        } else if (idTipoMedidor == 6) {
-            tituloGrafico = 'Gráfico de Nível de Reservatório';
-            campoValor = 'nivelValor';
-            unidade = 'm';
-            corGradiente = '#06b6d4';
-        }
-
-        // Formatar data para o título
-        const dataObj = new Date(dataChave + 'T12:00:00');
-        const dataFormatada = dataObj.toLocaleDateString('pt-BR', {
-            weekday: 'long',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-        const dataCapitalizada = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
-
-        // Atualizar título
-        document.getElementById('modalGraficoTitulo').textContent = `${tituloGrafico} - ${codigoFormatado} (${dataCapitalizada})`;
-
-        // Atualizar informações
-        const formatarNumero = (val) => val !== null ? val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-
-        document.getElementById('graficoInfo').innerHTML = `
-            <div class="grafico-info-item">
-                <ion-icon name="location-outline"></ion-icon>
-                <span>Ponto: <strong>${codigoFormatado}</strong></span>
-            </div>
-            <div class="grafico-info-item">
-                <ion-icon name="document-text-outline"></ion-icon>
-                <span>Total: <strong>${estatDia.totalGeral || estatDia.total}</strong> registros</span>
-            </div>
-            <div class="grafico-info-item">
-                <ion-icon name="checkmark-circle-outline"></ion-icon>
-                <span>Válidos: <strong>${estatDia.totalNaoDescarte}</strong></span>
-            </div>
-            ${estatDia.totalDescarte > 0 ? `
-            <div class="grafico-info-item" style="color: #dc2626;">
-                <ion-icon name="close-circle-outline"></ion-icon>
-                <span>Descartados: <strong>${estatDia.totalDescarte}</strong></span>
-            </div>
-            ` : ''}
-            <div class="grafico-info-item">
-                <ion-icon name="water-outline"></ion-icon>
-                <span>Média Vazão: <strong>${formatarNumero(estatDia.mediaVazao)} l/s</strong></span>
-            </div>
-            <div class="grafico-info-item">
-                <ion-icon name="speedometer-outline"></ion-icon>
-                <span>Média Pressão: <strong>${formatarNumero(estatDia.mediaPressao)} mca</strong></span>
-            </div>
-        `;
-
-        // Renderizar gráfico
-        renderizarGraficoModal(estatDia.porHora || {}, campoValor, unidade, corGradiente);
-
-        // Abrir modal
-        document.getElementById('modalGrafico').classList.add('active');
+        
+        // Redirecionar para operacoes.php com parâmetros para abrir modal de validação
+        const url = `operacoes.php?abrirValidacao=1&cdPonto=${cdPonto}&dataValidacao=${dataChave}&mes=${mes}&ano=${ano}`;
+        window.location.href = url;
     }
 
     // ============================================
@@ -3355,6 +4180,7 @@ $descartes = [
                     cb.checked = checked;
                 });
 
+                atualizarBotoesExclusao();
                 atualizarBarraExclusao();
             }
         }, 'json');
@@ -3384,9 +4210,209 @@ $descartes = [
                     cb.checked = checked;
                 });
 
+                atualizarBotoesExclusao();
                 atualizarBarraExclusao();
             }
         }, 'json');
+    }
+
+    // ============================================
+    // Excluir registros selecionados de um ponto
+    // ============================================
+    function excluirTodosPonto(cdPonto) {
+        const estatPonto = estatisticasPonto[cdPonto];
+        const nomePonto = estatPonto ? (estatPonto.codigoFormatado || cdPonto) : cdPonto;
+        const quantidade = registrosSelecionados.size;
+
+        if (quantidade === 0) {
+            showToast('Nenhum registro selecionado', 'warning');
+            return;
+        }
+
+        if (!confirm(`Deseja realmente descartar os ${quantidade} registro(s) selecionados do ponto ${nomePonto}?`)) {
+            return;
+        }
+
+        const chaves = Array.from(registrosSelecionados);
+        executarDescarteDireto(chaves);
+    }
+
+    // ============================================
+    // Excluir registros selecionados de um dia específico de um ponto
+    // ============================================
+    function excluirTodosDia(cdPonto, dataChave) {
+        const dataObj = new Date(dataChave + 'T12:00:00');
+        const dataFormatada = dataObj.toLocaleDateString('pt-BR');
+        const quantidade = registrosSelecionados.size;
+
+        if (quantidade === 0) {
+            showToast('Nenhum registro selecionado', 'warning');
+            return;
+        }
+
+        if (!confirm(`Deseja realmente descartar os ${quantidade} registro(s) selecionados do dia ${dataFormatada}?`)) {
+            return;
+        }
+
+        const chaves = Array.from(registrosSelecionados);
+        executarDescarteDireto(chaves);
+    }
+
+    // ============================================
+    // Executar descarte direto (sem modal)
+    // ============================================
+    function executarDescarteDireto(chaves) {
+        showToast(`Descartando ${chaves.length} registro(s)...`, 'info');
+
+        $.ajax({
+            url: 'bd/registroVazaoPressao/excluirRegistrosEmMassa.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ chaves: chaves }),
+            dataType: 'json',
+            success: function (response) {
+                console.log('Resposta descarte:', response);
+                
+                if (response.success) {
+                    let msg = '';
+                    if (response.descartados > 0) {
+                        msg += `${response.descartados} registro(s) descartado(s)`;
+                    }
+                    if (response.deletados > 0) {
+                        if (msg) msg += ', ';
+                        msg += `${response.deletados} removido(s) permanentemente`;
+                    }
+                    showToast(msg || 'Operação concluída', 'sucesso');
+                    cancelarSelecao();
+                    buscarRegistrosPreservandoEstado();
+                } else {
+                    showToast(response.message || 'Erro ao descartar registros', 'erro');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Erro AJAX:', status, error);
+                console.error('Response:', xhr.responseText);
+                
+                try {
+                    const resp = JSON.parse(xhr.responseText);
+                    if (resp.message) {
+                        showToast(resp.message, 'erro');
+                        return;
+                    }
+                } catch (e) { }
+                
+                showToast('Erro ao comunicar com o servidor', 'erro');
+            }
+        });
+    }
+
+    // ============================================
+    // Restaurar registro individual
+    // ============================================
+    function restaurarRegistro(id) {
+        if (!confirm('Deseja restaurar este registro?')) {
+            return;
+        }
+
+        $.ajax({
+            url: 'bd/registroVazaoPressao/restaurarRegistro.php',
+            type: 'POST',
+            data: { id: id },
+            dataType: 'json',
+            success: function (response) {
+                if (response.success) {
+                    showToast('Registro restaurado com sucesso!', 'sucesso');
+                    buscarRegistrosPreservandoEstado();
+                } else {
+                    showToast(response.message || 'Erro ao restaurar registro', 'erro');
+                }
+            },
+            error: function () {
+                showToast('Erro ao comunicar com o servidor', 'erro');
+            }
+        });
+    }
+
+    // ============================================
+    // Restaurar registros selecionados de um ponto
+    // ============================================
+    function restaurarTodosPonto(cdPonto) {
+        const estatPonto = estatisticasPonto[cdPonto];
+        const nomePonto = estatPonto ? (estatPonto.codigoFormatado || cdPonto) : cdPonto;
+        const quantidade = registrosSelecionados.size;
+
+        if (quantidade === 0) {
+            showToast('Nenhum registro selecionado', 'warning');
+            return;
+        }
+
+        if (!confirm(`Deseja realmente restaurar os ${quantidade} registro(s) selecionados do ponto ${nomePonto}?`)) {
+            return;
+        }
+
+        const chaves = Array.from(registrosSelecionados);
+        executarRestauracaoDireto(chaves);
+    }
+
+    // ============================================
+    // Restaurar registros selecionados de um dia específico
+    // ============================================
+    function restaurarTodosDia(cdPonto, dataChave) {
+        const dataObj = new Date(dataChave + 'T12:00:00');
+        const dataFormatada = dataObj.toLocaleDateString('pt-BR');
+        const quantidade = registrosSelecionados.size;
+
+        if (quantidade === 0) {
+            showToast('Nenhum registro selecionado', 'warning');
+            return;
+        }
+
+        if (!confirm(`Deseja realmente restaurar os ${quantidade} registro(s) selecionados do dia ${dataFormatada}?`)) {
+            return;
+        }
+
+        const chaves = Array.from(registrosSelecionados);
+        executarRestauracaoDireto(chaves);
+    }
+
+    // ============================================
+    // Executar restauração em massa
+    // ============================================
+    function executarRestauracaoDireto(chaves) {
+        showToast(`Restaurando ${chaves.length} registro(s)...`, 'info');
+
+        $.ajax({
+            url: 'bd/registroVazaoPressao/restaurarRegistrosEmMassa.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ chaves: chaves }),
+            dataType: 'json',
+            success: function (response) {
+                console.log('Resposta restauração:', response);
+                
+                if (response.success) {
+                    showToast(`${response.restaurados || chaves.length} registro(s) restaurado(s) com sucesso!`, 'sucesso');
+                    cancelarSelecao();
+                    buscarRegistrosPreservandoEstado();
+                } else {
+                    showToast(response.message || 'Erro ao restaurar registros', 'erro');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Erro AJAX:', status, error);
+                console.error('Response:', xhr.responseText);
+                
+                try {
+                    const resp = JSON.parse(xhr.responseText);
+                    if (resp.message) {
+                        showToast(resp.message, 'erro');
+                        return;
+                    }
+                } catch (e) { }
+                
+                showToast('Erro ao comunicar com o servidor', 'erro');
+            }
+        });
     }
 
     // ============================================
@@ -3439,13 +4465,13 @@ $descartes = [
                     <td>${descarteBadge}</td>
                     <td>
                         <div class="table-actions">
-                            <button type="button" class="btn-action" onclick="visualizarRegistro(${item.CD_CHAVE})" title="Visualizar">
-                                <ion-icon name="eye-outline"></ion-icon>
-                            </button>
                             ${podeEditar ? `
                             <button type="button" class="btn-action delete" onclick="excluirRegistro(${item.CD_CHAVE})" title="Descartar">
                                 <ion-icon name="trash-outline"></ion-icon>
                             </button>
+                            ${item.ID_SITUACAO == 2 ? `<button type="button" class="btn-action restore" onclick="restaurarRegistro(${item.CD_CHAVE})" title="Restaurar">
+                                <ion-icon name="refresh-outline"></ion-icon>
+                            </button>` : ''}
                             ` : ''}
                         </div>
                     </td>
@@ -3558,26 +4584,26 @@ $descartes = [
             return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + unidade;
         };
 
-        // Função para calcular cor do gradiente (vermelho claro → verde claro)
+        // Função para calcular cor do gradiente (vermelho claro -> verde claro)
         // 0 registros = vermelho, 1440 registros = verde
         const calcularCorGradiente = (registrosValidos) => {
             const percentual = Math.min(registrosValidos / 1440, 1); // 0 a 1
 
-            // Cores: vermelho claro (0%) → amarelo (50%) → verde claro (100%)
+            // Cores: vermelho claro (0%) -> amarelo (50%) -> verde claro (100%)
             let r, g, b;
 
             if (percentual < 0.5) {
                 // Vermelho para amarelo (0% a 50%)
                 const t = percentual * 2; // 0 a 1
                 r = 254; // Mantém vermelho alto
-                g = Math.round(202 + (227 - 202) * t); // 202 → 227
-                b = Math.round(202 + (183 - 202) * t); // 202 → 183
+                g = Math.round(202 + (227 - 202) * t); // 202 -> 227
+                b = Math.round(202 + (183 - 202) * t); // 202 -> 183
             } else {
                 // Amarelo para verde (50% a 100%)
                 const t = (percentual - 0.5) * 2; // 0 a 1
-                r = Math.round(254 - (254 - 220) * t); // 254 → 220
-                g = Math.round(227 + (252 - 227) * t); // 227 → 252
-                b = Math.round(183 + (231 - 183) * t); // 183 → 231
+                r = Math.round(254 - (254 - 220) * t); // 254 -> 220
+                g = Math.round(227 + (252 - 227) * t); // 227 -> 252
+                b = Math.round(183 + (231 - 183) * t); // 183 -> 231
             }
 
             return {
@@ -3648,7 +4674,7 @@ $descartes = [
                                     <span class="subgroup-alert" title="${percentualCompleto}% completo (${totalNaoDescarte}/1440 registros válidos)" style="color: ${corAlerta};">
                                         <ion-icon name="${totalNaoDescarte >= 1440 ? 'checkmark-circle' : 'alert-circle'}-outline"></ion-icon>
                                     </span>
-                                    <button type="button" class="btn-chart" onclick="event.stopPropagation(); abrirGraficoPonto('${dataChave}', '${cdPonto}')" title="Ver gráfico por hora">
+                                    <button type="button" class="btn-chart" onclick="event.stopPropagation(); abrirGraficoPonto('${dataChave}', '${cdPonto}')" title="Validação de dados">
                                         <ion-icon name="analytics-outline"></ion-icon>
                                     </button>
                                 </div>
@@ -3807,13 +4833,13 @@ $descartes = [
                     <td>${descarteBadge}</td>
                     <td>
                         <div class="table-actions">
-                            <button type="button" class="btn-action" onclick="visualizarRegistro(${item.CD_CHAVE})" title="Visualizar">
-                                <ion-icon name="eye-outline"></ion-icon>
-                            </button>
                             ${podeEditar ? `
                             <button type="button" class="btn-action delete" onclick="excluirRegistro(${item.CD_CHAVE})" title="Descartar">
                                 <ion-icon name="trash-outline"></ion-icon>
                             </button>
+                            ${item.ID_SITUACAO == 2 ? `<button type="button" class="btn-action restore" onclick="restaurarRegistro(${item.CD_CHAVE})" title="Restaurar">
+                                <ion-icon name="refresh-outline"></ion-icon>
+                            </button>` : ''}
                             ` : ''}
                         </div>
                     </td>
@@ -3892,7 +4918,7 @@ $descartes = [
     }
 
     // ============================================
-    // Modal Gráfico por Hora
+    // Modal Gráfico por Hora - Redireciona para operacoes.php
     // ============================================
     function abrirGrafico(dataChave) {
         const estatDia = estatisticasDia[dataChave];
@@ -3901,144 +4927,61 @@ $descartes = [
             return;
         }
 
-        // Formatar data para o título
-        const dataObj = new Date(dataChave + 'T12:00:00');
-        const dataFormatada = dataObj.toLocaleDateString('pt-BR', {
-            weekday: 'long',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
+        // Extrair mês e ano da dataChave (formato: YYYY-MM-DD)
+        let mes = '';
+        let ano = '';
+        if (dataChave) {
+            const partes = dataChave.split('-');
+            if (partes.length >= 2) {
+                ano = partes[0];
+                mes = parseInt(partes[1]);
+            }
+        }
+
+        // Buscar o ponto de medição do dia
+        const params = {
+            data: dataChave,
+            cd_unidade: filtrosAtuais.cd_unidade || '',
+            cd_localidade: filtrosAtuais.cd_localidade || '',
+            cd_ponto_medicao: filtrosAtuais.cd_ponto_medicao || '',
+            tipo_medidor: filtrosAtuais.tipo_medidor || '',
+            tipo_leitura: filtrosAtuais.tipo_leitura || '',
+            descarte: filtrosAtuais.descarte || ''
+        };
+
+        $.get('bd/registroVazaoPressao/getPontosMedicaoDia.php', params, function(response) {
+            if (response.success && response.pontosMedicao && Object.keys(response.pontosMedicao).length > 0) {
+                // Pegar o primeiro ponto (quando há apenas 1)
+                const cdPonto = Object.keys(response.pontosMedicao)[0];
+                const url = `operacoes.php?abrirValidacao=1&cdPonto=${cdPonto}&dataValidacao=${dataChave}&mes=${mes}&ano=${ano}`;
+                window.location.href = url;
+            } else {
+                showToast('Não foi possível identificar o ponto de medição', 'erro');
+            }
+        }, 'json').fail(function() {
+            showToast('Erro ao buscar dados do ponto de medição', 'erro');
         });
-        const dataCapitalizada = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
-
-        // Atualizar título
-        document.getElementById('modalGraficoTitulo').textContent = `Gráfico de Vazão - ${dataCapitalizada}`;
-
-        // Atualizar informações
-        const formatarNumero = (val) => val !== null ? val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-
-        document.getElementById('graficoInfo').innerHTML = `
-            <div class="grafico-info-item">
-                <ion-icon name="document-text-outline"></ion-icon>
-                <span>Total: <strong>${estatDia.total}</strong> registros</span>
-            </div>
-            <div class="grafico-info-item">
-                <ion-icon name="checkmark-circle-outline"></ion-icon>
-                <span>Válidos: <strong>${estatDia.totalNaoDescarte}</strong></span>
-            </div>
-            <div class="grafico-info-item">
-                <ion-icon name="water-outline"></ion-icon>
-                <span>Média Vazão: <strong>${formatarNumero(estatDia.mediaVazao)} l/s</strong></span>
-            </div>
-            <div class="grafico-info-item">
-                <ion-icon name="speedometer-outline"></ion-icon>
-                <span>Média Pressão: <strong>${formatarNumero(estatDia.mediaPressao)} mca</strong></span>
-            </div>
-        `;
-
-        // Renderizar gráfico
-        renderizarGraficoModal(estatDia.porHora || {});
-
-        // Abrir modal
-        document.getElementById('modalGrafico').classList.add('active');
     }
 
     // ============================================
     // Modal Gráfico por Hora - Ponto de Medição
+    // Redireciona para operacoes.php
     // ============================================
     function abrirGraficoPonto(dataChave, cdPonto) {
-        const pontosDia = pontosMedicaoCarregados[dataChave];
-        if (!pontosDia || !pontosDia[cdPonto]) {
-            showToast('Dados não disponíveis para este ponto de medição', 'erro');
-            return;
+        // Extrair mês e ano da dataChave (formato: YYYY-MM-DD)
+        let mes = '';
+        let ano = '';
+        if (dataChave) {
+            const partes = dataChave.split('-');
+            if (partes.length >= 2) {
+                ano = partes[0];
+                mes = parseInt(partes[1]);
+            }
         }
-
-        const ponto = pontosDia[cdPonto];
-        const idTipoMedidor = ponto.idTipoMedidor;
-
-        // Determinar título, campo e unidade baseado no tipo de medidor
-        let tituloGrafico = 'Gráfico de Vazão';
-        let campoValor = 'mediaVazao';
-        let unidade = 'l/s';
-        let icone = 'water-outline';
-        let corGradiente = '#3b82f6'; // Azul
-
-        if (idTipoMedidor == 4) {
-            // Medidor de Pressão
-            tituloGrafico = 'Gráfico de Pressão';
-            campoValor = 'mediaPressao';
-            unidade = 'mca';
-            icone = 'speedometer-outline';
-            corGradiente = '#f59e0b'; // Laranja
-        } else if (idTipoMedidor == 6) {
-            // Nível Reservatório
-            tituloGrafico = 'Gráfico de Nível de Reservatório';
-            campoValor = 'nivelValor';
-            unidade = 'm';
-            icone = 'layers-outline';
-            corGradiente = '#06b6d4'; // Ciano
-        }
-
-        // Formatar data para o título
-        const dataObj = new Date(dataChave + 'T12:00:00');
-        const dataFormatada = dataObj.toLocaleDateString('pt-BR', {
-            weekday: 'long',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-        const dataCapitalizada = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
-
-        // Atualizar título com código formatado do ponto
-        const codigoExibir = ponto.codigoFormatado || cdPonto;
-        document.getElementById('modalGraficoTitulo').textContent = `${tituloGrafico} - ${codigoExibir} (${dataCapitalizada})`;
-
-        // Atualizar informações
-        const formatarNumero = (val) => val !== null ? val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-
-        // Label para nível (Média ou Máx)
-        const nivelLabel = ponto.nivelTipo === 'max' ? 'Máx. Nível' : 'Média Nível';
-
-        document.getElementById('graficoInfo').innerHTML = `
-            <div class="grafico-info-item">
-                <ion-icon name="location-outline"></ion-icon>
-                <span>Ponto: <strong>${codigoExibir}</strong></span>
-            </div>
-            <div class="grafico-info-item">
-                <ion-icon name="document-text-outline"></ion-icon>
-                <span>Total: <strong>${ponto.totalGeral || ponto.total}</strong> registros</span>
-            </div>
-            <div class="grafico-info-item">
-                <ion-icon name="checkmark-circle-outline"></ion-icon>
-                <span>Válidos: <strong>${ponto.totalNaoDescarte}</strong></span>
-            </div>
-            ${ponto.totalDescarte > 0 ? `
-            <div class="grafico-info-item" style="color: #dc2626;">
-                <ion-icon name="close-circle-outline"></ion-icon>
-                <span>Descartados: <strong>${ponto.totalDescarte}</strong></span>
-            </div>
-            ` : ''}
-            <div class="grafico-info-item">
-                <ion-icon name="water-outline"></ion-icon>
-                <span>Média Vazão: <strong>${formatarNumero(ponto.mediaVazao)} l/s</strong></span>
-            </div>
-            <div class="grafico-info-item">
-                <ion-icon name="speedometer-outline"></ion-icon>
-                <span>Média Pressão: <strong>${formatarNumero(ponto.mediaPressao)} mca</strong></span>
-            </div>
-            ${ponto.nivelValor !== null ? `
-            <div class="grafico-info-item">
-                <ion-icon name="${ponto.nivelTipo === 'max' ? 'arrow-up-outline' : 'layers-outline'}"></ion-icon>
-                <span>${nivelLabel}: <strong>${formatarNumero(ponto.nivelValor)} m</strong></span>
-            </div>
-            ` : ''}
-        `;
-
-        // Renderizar gráfico com parâmetros dinâmicos
-        renderizarGraficoModal(ponto.porHora || {}, campoValor, unidade, corGradiente);
-
-        // Abrir modal
-        document.getElementById('modalGrafico').classList.add('active');
+        
+        // Redirecionar para operacoes.php com parâmetros para abrir modal de validação
+        const url = `operacoes.php?abrirValidacao=1&cdPonto=${cdPonto}&dataValidacao=${dataChave}&mes=${mes}&ano=${ano}`;
+        window.location.href = url;
     }
 
     function fecharModalGrafico(event) {
@@ -4213,9 +5156,9 @@ $descartes = [
             <!-- Aviso importante -->
             <div class="import-warning">
                 <ion-icon name="information-circle-outline"></ion-icon>
-                <p>A coluna <strong>PONTO MEDIÇÃO</strong> na PLANILHA de importação deve ser preenchida somente com o
+                <p>A coluna <strong>PONTO MEDICAO</strong> na PLANILHA de importação deve ser preenchida somente com o
                     número inteiro do código.<br>
-                    <strong>Exemplo:</strong> Se o código do PONTO DE MEDIÇÃO for <code>4000-001492-M-1</code>, deve-se
+                    <strong>Exemplo:</strong> Se o código do PONTO DE MEDICAO for <code>4000-001492-M-1</code>, deve-se
                     preencher somente <code>1492</code>.<br>
                     Caso seja <code>3500-000002-M-1</code>, deve-se preencher somente <code>2</code>.
                 </p>
@@ -4334,6 +5277,30 @@ $descartes = [
         background: linear-gradient(135deg, #059669 0%, #047857 100%);
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-obter-planilha {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-obter-planilha:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        color: white;
+        text-decoration: none;
     }
 
     /* Modal de Importação */
@@ -4868,17 +5835,17 @@ $descartes = [
                         colMap['DATA'] = idx;
                     } else if (nomeNorm === 'HORA') {
                         colMap['HORA'] = idx;
-                    } else if (nomeNorm.includes('PONTO') || nomeNorm.includes('MEDICAO') || nomeNorm.includes('MEDIÇÃO')) {
+                    } else if (nomeNorm.includes('PONTO') || nomeNorm.includes('MEDICAO') || nomeNorm.includes('MEDICAO')) {
                         colMap['PONTO_MEDICAO'] = idx;
                     } else if ((nomeNorm.includes('TEMP') && nomeNorm.includes('ÁGUA')) || (nomeNorm.includes('TEMP') && nomeNorm.includes('AGUA'))) {
                         colMap['TEMP_AGUA'] = idx;
                     } else if (nomeNorm.includes('TEMP') && nomeNorm.includes('AMB')) {
                         colMap['TEMP_AMB'] = idx;
-                    } else if (nomeNorm.includes('PRESSÃO') || nomeNorm.includes('PRESSAO')) {
+                    } else if (nomeNorm.includes('PRESSAO') || nomeNorm.includes('PRESSAO')) {
                         colMap['PRESSAO'] = idx;
                     } else if (nomeNorm.includes('VOLUME')) {
                         colMap['VOLUME'] = idx;
-                    } else if (nomeNorm.includes('PERÍODO') || nomeNorm.includes('PERIODO')) {
+                    } else if (nomeNorm.includes('PERIODO') || nomeNorm.includes('PERIODO')) {
                         colMap['PERIODO'] = idx;
                     }
                 });
@@ -4983,7 +5950,7 @@ $descartes = [
                         return;
                     }
                     if (pontoMedicao === null || pontoMedicao === undefined || pontoMedicao === '') {
-                        showToast(`Linha ${i + 1}: Coluna PONTO MEDIÇÃO é obrigatória`, 'error');
+                        showToast(`Linha ${i + 1}: Coluna PONTO MEDICAO é obrigatória`, 'error');
                         return;
                     }
 
