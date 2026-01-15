@@ -19,6 +19,11 @@ try {
     $dataFim = isset($_GET['data_fim']) ? trim($_GET['data_fim']) : '';
     $descarte = isset($_GET['descarte']) ? trim($_GET['descarte']) : '';
 
+    // CORREÇÃO: Validar valor de descarte (aceitar apenas '1' ou '2')
+    if (!in_array($descarte, ['1', '2'], true)) {
+        $descarte = '';
+    }
+
     if (empty($cdPontoMedicao)) {
         throw new Exception('Ponto de medição não informado');
     }
@@ -42,7 +47,7 @@ try {
     // WHERE com filtro de descarte
     $whereCompleto = $whereBase;
     $paramsCompleto = $paramsBase;
-    
+
     if (!empty($descarte)) {
         $whereCompleto .= " AND RVP.ID_SITUACAO = :descarte";
         $paramsCompleto[':descarte'] = $descarte;
@@ -68,7 +73,7 @@ try {
             $whereBase
             GROUP BY CONVERT(DATE, RVP.DT_LEITURA)
             ORDER BY DATA_DIA DESC";
-    
+
     $stmtEstat = $pdoSIMP->prepare($sqlEstatisticas);
     $stmtEstat->execute($paramsBase);
     $estatisticasRaw = $stmtEstat->fetchAll(PDO::FETCH_ASSOC);
@@ -82,13 +87,13 @@ try {
                 FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO RVP
                 $whereCompleto
                 GROUP BY CONVERT(DATE, RVP.DT_LEITURA)";
-        
+
         $stmtFiltrado = $pdoSIMP->prepare($sqlFiltrado);
         $stmtFiltrado->execute($paramsCompleto);
         $filtradosRaw = $stmtFiltrado->fetchAll(PDO::FETCH_ASSOC);
-        
+
         foreach ($filtradosRaw as $f) {
-            $contagemFiltradaPorDia[$f['DATA_DIA']] = (int)$f['TOTAL_FILTRADO'];
+            $contagemFiltradaPorDia[$f['DATA_DIA']] = (int) $f['TOTAL_FILTRADO'];
         }
     }
 
@@ -118,48 +123,53 @@ try {
         if (!isset($estatPorHora[$dataChave])) {
             $estatPorHora[$dataChave] = [];
         }
-        $estatPorHora[$dataChave][(int)$h['HORA']] = [
-            'total' => (int)$h['TOTAL_HORA'],
-            'validos' => (int)$h['TOTAL_VALIDOS'],
-            'mediaVazao' => $h['MEDIA_VAZAO_HORA'] !== null ? round((float)$h['MEDIA_VAZAO_HORA'], 2) : null,
-            'mediaPressao' => $h['MEDIA_PRESSAO_HORA'] !== null ? round((float)$h['MEDIA_PRESSAO_HORA'], 2) : null,
-            'nivelValor' => $h['MEDIA_NIVEL_HORA'] !== null ? round((float)$h['MEDIA_NIVEL_HORA'], 2) : null
+        $estatPorHora[$dataChave][(int) $h['HORA']] = [
+            'total' => (int) $h['TOTAL_HORA'],
+            'validos' => (int) $h['TOTAL_VALIDOS'],
+            'mediaVazao' => $h['MEDIA_VAZAO_HORA'] !== null ? round((float) $h['MEDIA_VAZAO_HORA'], 2) : null,
+            'mediaPressao' => $h['MEDIA_PRESSAO_HORA'] !== null ? round((float) $h['MEDIA_PRESSAO_HORA'], 2) : null,
+            'nivelValor' => $h['MEDIA_NIVEL_HORA'] !== null ? round((float) $h['MEDIA_NIVEL_HORA'], 2) : null
         ];
     }
-    
+
     // Converter para array indexado por data
     $estatisticas = [];
     foreach ($estatisticasRaw as $est) {
         $dataChave = $est['DATA_DIA'];
-        
+
         // Determinar total a exibir
-        $totalExibir = (int)$est['TOTAL_GERAL'];
+        $totalExibir = (int) $est['TOTAL_GERAL'];
         if (!empty($descarte) && isset($contagemFiltradaPorDia[$dataChave])) {
             $totalExibir = $contagemFiltradaPorDia[$dataChave];
         } elseif (!empty($descarte)) {
             $totalExibir = 0;
         }
-        
+
         // Se filtrou e não há registros, pular este dia
         if (!empty($descarte) && $totalExibir == 0) {
             continue;
         }
-        
+
         $estatisticas[$dataChave] = [
             'total' => $totalExibir,
-            'totalGeral' => (int)$est['TOTAL_GERAL'],
-            'totalNaoDescarte' => (int)$est['TOTAL_NAO_DESCARTE'],
-            'totalDescarte' => (int)$est['TOTAL_DESCARTE'],
-            'mediaVazao' => $est['MEDIA_VAZAO'] !== null ? round((float)$est['MEDIA_VAZAO'], 2) : null,
-            'mediaPressao' => $est['MEDIA_PRESSAO'] !== null ? round((float)$est['MEDIA_PRESSAO'], 2) : null,
-            'mediaNivel' => $est['MEDIA_NIVEL'] !== null ? round((float)$est['MEDIA_NIVEL'], 2) : null,
-            'maxNivel' => $est['MAX_NIVEL'] !== null ? round((float)$est['MAX_NIVEL'], 2) : null,
+            'totalGeral' => (int) $est['TOTAL_GERAL'],
+            'totalNaoDescarte' => (int) $est['TOTAL_NAO_DESCARTE'],
+            'totalDescarte' => (int) $est['TOTAL_DESCARTE'],
+            'mediaVazao' => $est['MEDIA_VAZAO'] !== null ? round((float) $est['MEDIA_VAZAO'], 2) : null,
+            'mediaPressao' => $est['MEDIA_PRESSAO'] !== null ? round((float) $est['MEDIA_PRESSAO'], 2) : null,
+            'mediaNivel' => $est['MEDIA_NIVEL'] !== null ? round((float) $est['MEDIA_NIVEL'], 2) : null,
+            'maxNivel' => $est['MAX_NIVEL'] !== null ? round((float) $est['MAX_NIVEL'], 2) : null,
             'porHora' => isset($estatPorHora[$dataChave]) ? $estatPorHora[$dataChave] : []
         ];
     }
-    
+
+    // CORREÇÃO: Garantir que $estatisticas seja sempre um array válido
+    if (!isset($estatisticas) || !is_array($estatisticas)) {
+        $estatisticas = [];
+    }
+
     echo json_encode([
-        'success' => true, 
+        'success' => true,
         'diasPonto' => $estatisticas,
         'totalDias' => count($estatisticas),
         'cdPontoMedicao' => $cdPontoMedicao,

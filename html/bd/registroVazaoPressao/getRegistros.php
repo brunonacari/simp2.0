@@ -1,7 +1,10 @@
 <?php
 /**
  * SIMP - Registro de Vazão e Pressão
- * Endpoint: Buscar Estatísticas por Dia (Agregadores)
+ * Endpoint: Buscar Registros (agrupado por dia)
+ * 
+ * CORREÇÃO: Média diária = SUM / 1440 (não AVG)
+ * CORREÇÃO: Média horária = SUM / 60 (não AVG)
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -14,6 +17,7 @@ verificarPermissaoAjax('REGISTRO DE VAZÃO', ACESSO_LEITURA);
 include_once '../conexao.php';
 
 try {
+    // Parâmetros de filtro
     $cdUnidade = isset($_GET['cd_unidade']) ? trim($_GET['cd_unidade']) : '';
     $cdLocalidade = isset($_GET['cd_localidade']) ? trim($_GET['cd_localidade']) : '';
     $cdPontoMedicao = isset($_GET['cd_ponto_medicao']) ? trim($_GET['cd_ponto_medicao']) : '';
@@ -27,20 +31,22 @@ try {
     $whereBase = "WHERE 1=1";
     $paramsBase = [];
 
-    // Filtro por Ponto de Medição específico
+    // Filtro por Unidade
+    if (!empty($cdUnidade)) {
+        $whereBase .= " AND UNI.CD_UNIDADE = :cd_unidade";
+        $paramsBase[':cd_unidade'] = $cdUnidade;
+    }
+
+    // Filtro por Localidade
+    if (!empty($cdLocalidade)) {
+        $whereBase .= " AND LOC.CD_CHAVE = :cd_localidade";
+        $paramsBase[':cd_localidade'] = $cdLocalidade;
+    }
+
+    // Filtro por Ponto de Medição
     if (!empty($cdPontoMedicao)) {
         $whereBase .= " AND RVP.CD_PONTO_MEDICAO = :cd_ponto_medicao";
         $paramsBase[':cd_ponto_medicao'] = $cdPontoMedicao;
-    } 
-    // Filtro por Localidade
-    elseif (!empty($cdLocalidade)) {
-        $whereBase .= " AND PM.CD_LOCALIDADE = :cd_localidade";
-        $paramsBase[':cd_localidade'] = $cdLocalidade;
-    }
-    // Filtro por Unidade
-    elseif (!empty($cdUnidade)) {
-        $whereBase .= " AND LOC.CD_UNIDADE = :cd_unidade";
-        $paramsBase[':cd_unidade'] = $cdUnidade;
     }
 
     // Filtro por Data Início
@@ -94,15 +100,16 @@ try {
     $total = $stmtCount->fetch(PDO::FETCH_ASSOC)['total'];
 
     // Buscar estatísticas por dia (com todos os campos necessários)
+    // CORREÇÃO: Usando SUM / 1440.0 para média diária em vez de AVG
     $sqlEstatisticas = "SELECT 
                 CONVERT(DATE, RVP.DT_LEITURA) AS DATA_DIA,
                 COUNT(*) AS TOTAL_GERAL,
                 COUNT(DISTINCT RVP.CD_PONTO_MEDICAO) AS QTD_PONTOS,
                 SUM(CASE WHEN RVP.ID_SITUACAO = 1 THEN 1 ELSE 0 END) AS TOTAL_NAO_DESCARTE,
                 SUM(CASE WHEN RVP.ID_SITUACAO = 2 THEN 1 ELSE 0 END) AS TOTAL_DESCARTE,
-                AVG(CASE WHEN $condicaoCalculo THEN RVP.VL_VAZAO_EFETIVA ELSE NULL END) AS MEDIA_VAZAO,
-                AVG(CASE WHEN $condicaoCalculo THEN RVP.VL_PRESSAO ELSE NULL END) AS MEDIA_PRESSAO,
-                AVG(CASE WHEN $condicaoCalculo THEN RVP.VL_RESERVATORIO ELSE NULL END) AS MEDIA_NIVEL
+                SUM(CASE WHEN $condicaoCalculo THEN RVP.VL_VAZAO_EFETIVA ELSE 0 END) / 1440.0 AS MEDIA_VAZAO,
+                SUM(CASE WHEN $condicaoCalculo THEN RVP.VL_PRESSAO ELSE 0 END) / 1440.0 AS MEDIA_PRESSAO,
+                SUM(CASE WHEN $condicaoCalculo THEN RVP.VL_RESERVATORIO ELSE 0 END) / 1440.0 AS MEDIA_NIVEL
             FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO RVP
             LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = RVP.CD_PONTO_MEDICAO
             LEFT JOIN SIMP.dbo.LOCALIDADE LOC ON LOC.CD_CHAVE = PM.CD_LOCALIDADE
@@ -138,12 +145,13 @@ try {
     }
     
     // Buscar estatísticas por hora (para gráfico)
+    // CORREÇÃO: Usando SUM / 60.0 para média horária em vez de AVG
     $sqlEstatHora = "SELECT 
                 CONVERT(DATE, RVP.DT_LEITURA) AS DATA_DIA,
                 DATEPART(HOUR, RVP.DT_LEITURA) AS HORA,
                 COUNT(*) AS TOTAL_HORA,
                 SUM(CASE WHEN RVP.ID_SITUACAO = 1 THEN 1 ELSE 0 END) AS TOTAL_VALIDOS,
-                AVG(CASE WHEN $condicaoCalculo THEN RVP.VL_VAZAO_EFETIVA ELSE NULL END) AS MEDIA_VAZAO_HORA
+                SUM(CASE WHEN $condicaoCalculo THEN RVP.VL_VAZAO_EFETIVA ELSE 0 END) / 60.0 AS MEDIA_VAZAO_HORA
             FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO RVP
             LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = RVP.CD_PONTO_MEDICAO
             LEFT JOIN SIMP.dbo.LOCALIDADE LOC ON LOC.CD_CHAVE = PM.CD_LOCALIDADE

@@ -63,7 +63,8 @@ $letrasTipoMedidor = [
         box-sizing: border-box;
     }
 
-    html, body {
+    html,
+    body {
         overflow-x: hidden;
         max-width: 100vw;
     }
@@ -73,7 +74,7 @@ $letrasTipoMedidor = [
     select {
         max-width: 100%;
     }
-    
+
     table {
         table-layout: auto;
         width: 100%;
@@ -3354,17 +3355,17 @@ $letrasTipoMedidor = [
             align-items: flex-start;
             gap: 12px;
         }
-        
+
         /* Modal de validação responsivo */
         .modal-validacao {
             width: 98%;
             height: 95vh;
         }
-        
+
         .modal-validacao-body {
             flex-direction: column;
         }
-        
+
         .validacao-coluna-ia {
             width: 100%;
             min-width: 100%;
@@ -3373,115 +3374,116 @@ $letrasTipoMedidor = [
             border-top: 1px solid #e2e8f0;
             order: 2;
         }
-        
+
         .validacao-coluna-principal {
             order: 1;
             padding: 12px;
         }
-        
+
         .validacao-coluna-ia .ia-chat-mensagens {
             max-height: 150px;
         }
-        
+
         .validacao-form-row {
             flex-direction: column;
         }
-        
+
         .validacao-resumo {
             flex-wrap: wrap;
         }
-        
+
         .validacao-resumo .resumo-item {
             min-width: calc(50% - 10px);
         }
-        
+
         .grafico-controles {
             flex-direction: column;
             align-items: flex-start;
         }
-        
+
         .validacao-tabela-container {
             margin: 0 -12px;
             width: calc(100% + 24px);
         }
-        
+
         .valores-sugeridos-acoes {
             flex-direction: column;
         }
-        
+
         .valores-sugeridos-acoes button {
             width: 100%;
         }
     }
-    
+
     @media (max-width: 480px) {
         .operacoes-container {
             padding: 10px;
         }
-        
+
         .operacoes-header {
             padding: 16px;
             border-radius: 12px;
         }
-        
+
         .operacoes-header h1 {
             font-size: 16px;
         }
-        
+
         .operacoes-header p {
             font-size: 12px;
         }
-        
+
         .filtros-card {
             padding: 16px;
         }
-        
+
         .resultado-card {
             padding: 16px;
         }
-        
-        .btn-filtrar, .btn-analise-ia {
+
+        .btn-filtrar,
+        .btn-analise-ia {
             width: 100%;
             justify-content: center;
         }
-        
+
         .resultado-tabs {
             width: 100%;
         }
-        
+
         .resultado-tab {
             flex: 1;
             justify-content: center;
         }
-        
+
         .resumo-cards {
             grid-template-columns: 1fr 1fr;
         }
-        
+
         .tabela-container {
             margin: 0 -16px;
             width: calc(100% + 32px);
         }
-        
+
         .legenda-tabela {
             padding: 12px;
         }
-        
+
         .legenda-itens {
             flex-direction: column;
             gap: 10px;
         }
-        
+
         /* Modal análise IA responsivo */
         .modal-analise-ia-content {
             width: 98%;
             max-height: 95vh;
         }
-        
+
         .modal-analise-ia-body {
             padding: 12px;
         }
-        
+
         /* Popup gráfico responsivo */
         .grafico-popup {
             width: 95vw;
@@ -3489,6 +3491,7 @@ $letrasTipoMedidor = [
             right: 2.5vw !important;
         }
     }
+
 </style>
 
 
@@ -3839,7 +3842,8 @@ $letrasTipoMedidor = [
                 <div class="grafico-controles" id="graficoControles">
                     <span class="grafico-controles-titulo">Exibir:</span>
                     <label class="grafico-controle-item">
-                        <input type="checkbox" id="chkLinhaPrincipal" checked onchange="toggleLinhaGrafico('principal')">
+                        <input type="checkbox" id="chkLinhaPrincipal" checked
+                            onchange="toggleLinhaGrafico('principal')">
                         <span class="controle-cor media"></span>
                         <span class="controle-label" id="lblLinhaPrincipal">Média</span>
                     </label>
@@ -3849,12 +3853,14 @@ $letrasTipoMedidor = [
                         <span class="controle-label">Min/Max</span>
                     </label>
                     <label class="grafico-controle-item" id="controleValoresSugeridos" style="display:none;">
-                        <input type="checkbox" id="chkValoresSugeridos" checked onchange="toggleLinhaGrafico('sugeridos')">
+                        <input type="checkbox" id="chkValoresSugeridos" checked
+                            onchange="toggleLinhaGrafico('sugeridos')">
                         <span class="controle-cor sugeridos"></span>
                         <span class="controle-label">Valores Sugeridos</span>
                     </label>
                     <label class="grafico-controle-item" id="controleValoresExcluidos" style="display:none;">
-                        <input type="checkbox" id="chkValoresExcluidos" checked onchange="toggleLinhaGrafico('excluidos')">
+                        <input type="checkbox" id="chkValoresExcluidos" checked
+                            onchange="toggleLinhaGrafico('excluidos')">
                         <span class="controle-cor excluidos"></span>
                         <span class="controle-label">Excluídos</span>
                     </label>
@@ -4082,7 +4088,7 @@ $letrasTipoMedidor = [
     let validacaoDataAtual = null;
     let validacaoTipoMedidorAtual = null;
     let validacaoUnidadeAtual = null;
-    
+
     // Controles de visibilidade do gráfico de validação
     let graficoControlesEstado = {
         principal: true,
@@ -4105,7 +4111,7 @@ $letrasTipoMedidor = [
     const paramPonto = '<?= $pontoIdGet ?>';
     const paramMes = '<?= $mesGet ?>';
     const paramAno = '<?= $anoGet ?>';
-    
+
     // Parâmetros para abrir modal de validação automaticamente
     const paramAbrirValidacao = '<?= $abrirValidacaoGet ?>';
     const paramDataValidacao = '<?= $dataValidacaoGet ?>';
@@ -4136,7 +4142,7 @@ $letrasTipoMedidor = [
                         // Buscar dados automaticamente após um breve delay
                         setTimeout(() => {
                             buscarDados();
-                            
+
                             // Se deve abrir modal de validação, aguardar dados carregarem
                             if (paramAbrirValidacao === '1' && paramDataValidacao && paramCdPontoValidacao) {
                                 setTimeout(() => {
@@ -4155,30 +4161,30 @@ $letrasTipoMedidor = [
             }, 500);
         }
     });
-    
+
     // ============================================
     // Abrir modal de validação via parâmetros da URL
     // ============================================
     function abrirValidacaoPorParametros(cdPonto, data) {
         // Os campos de ano e mês já são preenchidos pelo PHP via $mesGet e $anoGet
         // Não precisa setar via JavaScript, pois o PHP já coloca o 'selected' correto
-        
+
         // Buscar informações do ponto de medição e preencher autocomplete
-        buscarEPreencherPontoAutocomplete(cdPonto, function(pontoInfo) {
+        buscarEPreencherPontoAutocomplete(cdPonto, function (pontoInfo) {
             // Buscar dados após preencher o ponto
             buscarDados();
-            
+
             // Aguardar os dados carregarem antes de abrir o modal
             setTimeout(() => {
                 const tipoMedidor = pontoInfo.tipoMedidor || 1;
                 const pontoNome = pontoInfo.pontoNome || 'Ponto de Medição';
                 const pontoCodigo = pontoInfo.pontoCodigo || cdPonto;
-                
+
                 abrirModalValidacao(cdPonto, data, tipoMedidor, pontoNome, pontoCodigo);
             }, 800);
         });
     }
-    
+
     // ============================================
     // Buscar ponto no autocomplete e selecionar
     // ============================================
@@ -4187,17 +4193,17 @@ $letrasTipoMedidor = [
         const hidden = document.getElementById('filtroPontoMedicao');
         const dropdown = document.getElementById('filtroPontoMedicaoDropdown');
         const btnLimpar = document.getElementById('btnLimparPonto');
-        
+
         // Buscar no autocomplete pelo código do ponto
         fetch(`bd/operacoes/getPontosMedicaoSimples.php?busca=${cdPonto}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.data && data.data.length > 0) {
                     // Procurar o ponto exato pelo CD_PONTO_MEDICAO
-                    const pontoEncontrado = data.data.find(item => 
+                    const pontoEncontrado = data.data.find(item =>
                         String(item.CD_PONTO_MEDICAO) === String(cdPonto)
                     );
-                    
+
                     if (pontoEncontrado) {
                         const letraTipo = letrasTipoMedidor[pontoEncontrado.ID_TIPO_MEDIDOR] || 'X';
                         const codigoPonto = (pontoEncontrado.CD_LOCALIDADE || '000') + '-' +
@@ -4206,7 +4212,7 @@ $letrasTipoMedidor = [
                             (pontoEncontrado.CD_UNIDADE || '00');
                         const nomePonto = pontoEncontrado.DS_NOME || '';
                         const label = `${codigoPonto} - ${nomePonto}`;
-                        
+
                         // Preencher o autocomplete
                         input.value = label;
                         hidden.value = cdPonto;
@@ -4214,7 +4220,7 @@ $letrasTipoMedidor = [
                             btnLimpar.style.display = 'flex';
                         }
                         dropdown.classList.remove('active');
-                        
+
                         // Chamar callback com informações do ponto
                         if (callback) {
                             callback({
@@ -4237,7 +4243,7 @@ $letrasTipoMedidor = [
                 preencherPontoBasico(cdPonto, callback);
             });
     }
-    
+
     // ============================================
     // Preencher ponto com valores básicos (fallback)
     // ============================================
@@ -4245,21 +4251,21 @@ $letrasTipoMedidor = [
         const input = document.getElementById('filtroPontoMedicaoInput');
         const hidden = document.getElementById('filtroPontoMedicao');
         const btnLimpar = document.getElementById('btnLimparPonto');
-        
+
         // Buscar informações detalhadas do ponto
-        $.get('bd/pontoMedicao/getDadosMedidor.php', { cd_ponto_medicao: cdPonto }, function(response) {
+        $.get('bd/pontoMedicao/getDadosMedidor.php', { cd_ponto_medicao: cdPonto }, function (response) {
             if (response.success && response.data) {
                 const ponto = response.data;
                 const pontoCodigo = ponto.CD_CODIGO_FORMATADO || cdPonto;
                 const pontoNome = ponto.DS_PONTO_MEDICAO || '';
                 const label = `${pontoCodigo} - ${pontoNome}`;
-                
+
                 input.value = label;
                 hidden.value = cdPonto;
                 if (btnLimpar) {
                     btnLimpar.style.display = 'flex';
                 }
-                
+
                 if (callback) {
                     callback({
                         tipoMedidor: parseInt(ponto.ID_TIPO_MEDIDOR) || 1,
@@ -4273,7 +4279,7 @@ $letrasTipoMedidor = [
                 if (btnLimpar) {
                     btnLimpar.style.display = 'flex';
                 }
-                
+
                 if (callback) {
                     callback({
                         tipoMedidor: 1,
@@ -4282,13 +4288,13 @@ $letrasTipoMedidor = [
                     });
                 }
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             input.value = `Ponto ${cdPonto}`;
             hidden.value = cdPonto;
             if (btnLimpar) {
                 btnLimpar.style.display = 'flex';
             }
-            
+
             if (callback) {
                 callback({
                     tipoMedidor: 1,
@@ -4298,7 +4304,7 @@ $letrasTipoMedidor = [
             }
         });
     }
-    
+
     // ============================================
     // Preencher dropdown de ponto de medição programaticamente
     // ============================================
@@ -4306,7 +4312,7 @@ $letrasTipoMedidor = [
         const input = document.getElementById('filtroPontoMedicaoInput');
         const hidden = document.getElementById('filtroPontoMedicao');
         const btnLimpar = document.getElementById('btnLimparPonto');
-        
+
         if (input && hidden) {
             input.value = label;
             hidden.value = value;
@@ -6076,7 +6082,7 @@ $letrasTipoMedidor = [
         if (dadosCompletosIA && dadosCompletosIA.historico_por_hora) {
             temValoresSugeridos = true;
         }
-        
+
         // Verificar se há dados inativos
         let temValoresInativos = false;
 
@@ -6097,7 +6103,7 @@ $letrasTipoMedidor = [
                 tratados.push(false);
                 coresPontos.push('#dc2626');
             }
-            
+
             // Valores inativos (excluídos)
             if (d && d.media_inativos !== null && d.media_inativos !== undefined) {
                 valoresInativos.push(d.media_inativos);
@@ -6123,7 +6129,7 @@ $letrasTipoMedidor = [
             afterDatasetsDraw: function (chart) {
                 // Verificar se error bars estão ativos
                 if (!errorBarsPluginAtivo) return;
-                
+
                 const ctx = chart.ctx;
                 const meta = chart.getDatasetMeta(0);
 
@@ -6287,25 +6293,25 @@ $letrasTipoMedidor = [
             },
             plugins: [errorBarsPlugin]
         });
-        
+
         // Atualizar label do checkbox principal baseado no tipo
         const lblPrincipal = document.getElementById('lblLinhaPrincipal');
         if (lblPrincipal) {
             lblPrincipal.textContent = isTipoNivel ? 'Máximo' : 'Média';
         }
-        
+
         // Mostrar/ocultar checkbox de valores sugeridos
         const controleValoresSugeridos = document.getElementById('controleValoresSugeridos');
         if (controleValoresSugeridos) {
             controleValoresSugeridos.style.display = temValoresSugeridos ? 'flex' : 'none';
         }
-        
+
         // Mostrar/ocultar checkbox de valores excluídos
         const controleValoresExcluidos = document.getElementById('controleValoresExcluidos');
         if (controleValoresExcluidos) {
             controleValoresExcluidos.style.display = temValoresInativos ? 'flex' : 'none';
         }
-        
+
         // Resetar checkboxes para estado checked
         const chkPrincipal = document.getElementById('chkLinhaPrincipal');
         const chkErrorBars = document.getElementById('chkErrorBars');
@@ -6315,18 +6321,18 @@ $letrasTipoMedidor = [
         if (chkErrorBars) chkErrorBars.checked = true;
         if (chkSugeridos) chkSugeridos.checked = true;
         if (chkExcluidos) chkExcluidos.checked = true;
-        
+
         // Resetar estado dos controles
         graficoControlesEstado = { principal: true, errorbars: true, sugeridos: true, excluidos: true };
         errorBarsPluginAtivo = true;
     }
-    
+
     // Função para alternar visibilidade das linhas do gráfico
     function toggleLinhaGrafico(tipo) {
         if (!validacaoGrafico) return;
-        
+
         graficoControlesEstado[tipo] = !graficoControlesEstado[tipo];
-        
+
         if (tipo === 'principal') {
             // Mostrar/ocultar linha principal (dataset 0)
             validacaoGrafico.data.datasets[0].hidden = !graficoControlesEstado.principal;
@@ -6341,7 +6347,7 @@ $letrasTipoMedidor = [
                 validacaoGrafico.data.datasets[datasetIndex].hidden = !graficoControlesEstado[tipo];
             }
         }
-        
+
         validacaoGrafico.update();
     }
 
@@ -7477,33 +7483,60 @@ $letrasTipoMedidor = [
         }
 
         // ==========================================
-        // HISTàâ€œRICO DO MESMO DIA DA SEMANA (para cálculos)
+        // HISTÓRICO DO MESMO DIA DA SEMANA (para cálculos)
+        // CORREÇÃO: Agora mostra TODAS as semanas (com e sem dados)
         // ==========================================
         if (dados.historico_mesmo_dia && dados.historico_mesmo_dia.medias_por_dia) {
             const hist = dados.historico_mesmo_dia;
-            const diasComDados = hist.medias_por_dia.filter(d => d.tem_dados);
 
             contexto += `========================================\n`;
-            contexto += `HISTàâ€œRICO DO MESMO DIA DA SEMANA (${hist.dia_semana}):\n`;
+            contexto += `HISTÓRICO DO MESMO DIA DA SEMANA (${hist.dia_semana}):\n`;
             contexto += `========================================\n`;
-            contexto += `Semanas com dados disponà­veis: ${hist.semanas_disponiveis}\n\n`;
-            contexto += `DADOS POR SEMANA (use para calcular médias):\n`;
+            contexto += `Data de consulta: ${hist.data_consulta_formatada || validacaoDataAtual.split('-').reverse().join('/')}\n`;
+            contexto += `Semanas analisadas: ${hist.medias_por_dia.length}\n`;
+            contexto += `Semanas com dados válidos: ${hist.semanas_disponiveis}\n\n`;
+
+            contexto += `DADOS POR SEMANA (TODAS as semanas são listadas):\n`;
+            contexto += `-------------------------------------------------\n`;
+
+            let semanasValidas = 0;
+            let somaMedias = 0;
 
             hist.medias_por_dia.forEach((dia, idx) => {
+                const numSemana = dia.semana_numero || (idx + 1);
+                const dataFmt = dia.data_formatada;
+                const diaSemanaAbrev = dia.dia_semana_abrev || dia.dia_semana?.substring(0, 3) || '???';
+
                 if (dia.tem_dados) {
-                    contexto += `  Semana ${idx + 1} (${dia.data_formatada}): ${formatNum(dia.media_vazao)} L/s\n`;
+                    semanasValidas++;
+                    somaMedias += dia.media_vazao;
+                    contexto += `  Semana ${numSemana} (${dataFmt} - ${diaSemanaAbrev}): ${formatNum(dia.media_vazao)} L/s ✓ USADO (${semanasValidas}ª válida)\n`;
+                } else {
+                    const motivo = dia.motivo_sem_dados || 'Sem dados';
+                    contexto += `  Semana ${numSemana} (${dataFmt} - ${diaSemanaAbrev}): ✗ IGNORADO - ${motivo}\n`;
                 }
             });
 
+            contexto += `\n`;
+
+            if (semanasValidas > 0) {
+                const mediaGeral = somaMedias / semanasValidas;
+                contexto += `>>> RESUMO: ${semanasValidas} semanas válidas encontradas <<<\n`;
+                contexto += `>>> Média geral das semanas válidas: ${formatNum(mediaGeral)} L/s <<<\n`;
+            } else {
+                contexto += `>>> ATENÇÃO: Nenhuma semana com dados válidos encontrada! <<<\n`;
+            }
+
             contexto += `\nPARA CALCULAR MÉDIA DE X SEMANAS:\n`;
-            contexto += `- Some as médias das X primeiras semanas com dados\n`;
+            contexto += `- Use apenas as semanas marcadas com ✓ USADO\n`;
+            contexto += `- Some as médias das X primeiras semanas válidas\n`;
             contexto += `- Divida pela quantidade de semanas somadas\n`;
             contexto += `- Apresente o cálculo detalhado quando solicitado\n`;
             contexto += `========================================\n\n`;
         }
 
         // ==========================================
-        // HISTàâ€œRICO POR HORA (para sugestões especà­ficas)
+        // HISTÓRICO POR HORA (para sugestões específicas)
         // ==========================================
         if (dados.historico_por_hora && dados.historico_por_hora.horas) {
             const histHora = dados.historico_por_hora;

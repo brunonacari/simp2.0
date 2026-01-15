@@ -524,22 +524,28 @@ function calcularMediasDia($pdo, $cdPonto, $data) {
 }
 
 /**
- * Calcula a média das últimas N semanas do MESMO DIA DA SEMANA
- * NÃO inclui o dia atual, apenas semanas anteriores
+ * CORREÇÃO: Calcular a média das últimas N semanas do MESMO DIA DA SEMANA
+ * AGORA MOSTRA TODAS AS SEMANAS (com ou sem dados)
+ * 
  */
+
 function calcularMediaSemanas($pdo, $cdPonto, $dataBase, $numSemanas = 12) {
     $resultado = [
         'dia_semana' => '',
         'dia_semana_numero' => 0,
         'semanas_disponiveis' => 0,
         'datas_analisadas' => [],
-        'medias_por_dia' => []
+        'medias_por_dia' => [],
+        'data_consulta' => $dataBase,
+        'data_consulta_formatada' => date('d/m/Y', strtotime($dataBase))
     ];
     
     try {
         // Descobrir o dia da semana
         $diaSemanaNum = date('w', strtotime($dataBase)); // 0=Dom, 1=Seg, ..., 6=Sab
         $diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+        $diasSemanaAbrev = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        
         $resultado['dia_semana'] = $diasSemana[$diaSemanaNum];
         $resultado['dia_semana_numero'] = $diaSemanaNum;
         
@@ -550,8 +556,8 @@ function calcularMediaSemanas($pdo, $cdPonto, $dataBase, $numSemanas = 12) {
         }
         $resultado['datas_analisadas'] = $datas;
         
-        // Buscar média de cada dia
-        foreach ($datas as $data) {
+        // Buscar média de cada dia - TODAS as semanas serão listadas
+        foreach ($datas as $idx => $data) {
             $sql = "SELECT 
                         CAST(DT_LEITURA AS DATE) as DATA,
                         COUNT(*) as TOTAL_REGISTROS,
@@ -569,25 +575,40 @@ function calcularMediaSemanas($pdo, $cdPonto, $dataBase, $numSemanas = 12) {
             $stmt->execute([':cdPonto' => $cdPonto, ':data' => $data]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             
+            // Calcular o dia da semana REAL da data histórica
+            $diaSemanaHistorico = date('w', strtotime($data));
+            
             $mediaDia = [
                 'data' => $data,
                 'data_formatada' => date('d/m/Y', strtotime($data)),
+                'dia_semana' => $diasSemana[$diaSemanaHistorico],
+                'dia_semana_abrev' => $diasSemanaAbrev[$diaSemanaHistorico],
+                'semana_numero' => $idx + 1,
                 'total_registros' => 0,
                 'soma_vazao' => 0,
                 'media_vazao' => 0,
                 'soma_pressao' => 0,
                 'media_pressao' => 0,
-                'tem_dados' => false
+                'tem_dados' => false,
+                'motivo_sem_dados' => 'Sem registros no banco'
             ];
             
             if ($row && intval($row['TOTAL_REGISTROS'] ?? 0) > 0) {
-                $mediaDia['total_registros'] = intval($row['TOTAL_REGISTROS']);
+                $totalReg = intval($row['TOTAL_REGISTROS']);
+                $mediaDia['total_registros'] = $totalReg;
                 $mediaDia['soma_vazao'] = round(floatval($row['SOMA_VAZAO'] ?? 0), 2);
                 $mediaDia['media_vazao'] = round(floatval($row['MEDIA_VAZAO'] ?? 0), 2);
                 $mediaDia['soma_pressao'] = round(floatval($row['SOMA_PRESSAO'] ?? 0), 2);
                 $mediaDia['media_pressao'] = round(floatval($row['MEDIA_PRESSAO'] ?? 0), 2);
-                $mediaDia['tem_dados'] = true;
-                $resultado['semanas_disponiveis']++;
+                
+                // Considera válido se tiver pelo menos 1000 registros (70% do dia)
+                if ($totalReg >= 1000) {
+                    $mediaDia['tem_dados'] = true;
+                    $mediaDia['motivo_sem_dados'] = null;
+                    $resultado['semanas_disponiveis']++;
+                } else {
+                    $mediaDia['motivo_sem_dados'] = "Dados incompletos ($totalReg/1440 registros)";
+                }
             }
             
             $resultado['medias_por_dia'][] = $mediaDia;

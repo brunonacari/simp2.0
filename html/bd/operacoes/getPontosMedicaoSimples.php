@@ -25,9 +25,19 @@ try {
     
     // Se tem busca, filtrar por código ou nome
     if (!empty($busca)) {
-        $sql .= " AND (PM.DS_NOME LIKE :busca OR CAST(PM.CD_PONTO_MEDICAO AS VARCHAR) LIKE :busca2)";
+        // Remove zeros à esquerda para comparar com o código numérico
+        $buscaSemZeros = ltrim($busca, '0');
+        
+        $sql .= " AND (
+            PM.DS_NOME LIKE :busca 
+            OR CAST(PM.CD_PONTO_MEDICAO AS VARCHAR) LIKE :busca2
+            OR RIGHT('000000' + CAST(PM.CD_PONTO_MEDICAO AS VARCHAR(10)), 6) LIKE :busca3
+            OR CAST(PM.CD_PONTO_MEDICAO AS VARCHAR) = :buscaSemZeros
+        )";
         $params[':busca'] = '%' . $busca . '%';
         $params[':busca2'] = '%' . $busca . '%';
+        $params[':busca3'] = '%' . $busca . '%';
+        $params[':buscaSemZeros'] = $buscaSemZeros !== '' ? $buscaSemZeros : $busca;
     }
     
     $sql .= " ORDER BY PM.DS_NOME";

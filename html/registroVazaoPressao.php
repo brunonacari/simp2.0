@@ -1839,6 +1839,7 @@ $descartes = [
             opacity: 0;
             transform: translateY(30px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -2322,7 +2323,8 @@ $descartes = [
                 <ion-icon name="cloud-upload-outline"></ion-icon>
                 Importar Planilha
             </button>
-            <a href="https://compras.cesan.com.br/uploads/anexos/PlanilhaPadraoSIMP.xlsx" class="btn-obter-planilha" target="_blank">
+            <a href="https://compras.cesan.com.br/uploads/anexos/PlanilhaPadraoSIMP.xlsx" class="btn-obter-planilha"
+                target="_blank">
                 <ion-icon name="download-outline"></ion-icon>
                 Obter Planilha
             </a>
@@ -2884,7 +2886,7 @@ $descartes = [
         const modalExclusao = document.createElement('div');
         modalExclusao.className = 'modal-exclusao-confirmacao';
         modalExclusao.id = 'modalExclusaoIndividual_' + id;
-        
+
         const htmlConteudo = `
             <div class="modal-exclusao-overlay" onclick="fecharModalExclusao(event)">
                 <div class="modal-exclusao-container" onclick="event.stopPropagation()">
@@ -2955,7 +2957,7 @@ $descartes = [
 
         modalExclusao.innerHTML = htmlConteudo;
         document.body.appendChild(modalExclusao);
-        
+
         // Mostrar com animação
         setTimeout(() => {
             modalExclusao.classList.add('active');
@@ -2968,7 +2970,7 @@ $descartes = [
 
         $.post('bd/registroVazaoPressao/excluirRegistro.php', { id: id }, function (response) {
             console.log('Resposta descarte:', response);
-            
+
             // Fechar modal
             const modal = document.getElementById(modalId);
             if (modal) {
@@ -2979,7 +2981,7 @@ $descartes = [
             if (response.success) {
                 // Mensagens customizadas conforme tipo
                 let mensagem = response.message;
-                
+
                 if (response.tipo === 'soft_delete') {
                     mensagem = 'âœ“ Registro transformado em descartado!\n\n';
                     mensagem += 'ðŸ“¦ ID_SITUACAO alterado de 1 para 2\n';
@@ -2991,7 +2993,7 @@ $descartes = [
                     mensagem += 'âŒ Esta ação é irreversível\n';
                     mensagem += 'ðŸ“¦ Recuperação requer backup do banco';
                 }
-                
+
                 showToast(mensagem, 'sucesso');
                 buscarRegistrosPreservandoEstado();
             } else {
@@ -3000,14 +3002,14 @@ $descartes = [
         }, 'json').fail(function (xhr, status, error) {
             console.error('Erro descarte:', status, error);
             console.error('Response:', xhr.responseText);
-            
+
             // Fechar modal
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.classList.remove('active');
                 setTimeout(() => modal.remove(), 300);
             }
-            
+
             showToast('Erro ao comunicar com o servidor. Verifique sua conexão.', 'erro');
         });
     }
@@ -3015,7 +3017,7 @@ $descartes = [
     // Fechar modal de exclusão
     function fecharModalExclusao(event) {
         let modal = event.target;
-        
+
         if (modal.classList.contains('modal-exclusao-overlay')) {
             modal = modal;
         } else if (modal.classList.contains('btn-fechar-modal') || modal.tagName === 'ION-ICON') {
@@ -3069,7 +3071,7 @@ $descartes = [
         } else {
             registrosSelecionados.delete(cdChave);
         }
-        
+
         // Atualizar estado dos botões de exclusão
         atualizarBotoesExclusao();
         atualizarBarraExclusao();
@@ -3236,7 +3238,7 @@ $descartes = [
         const modalExclusao = document.createElement('div');
         modalExclusao.className = 'modal-exclusao-confirmacao modal-exclusao-massa';
         modalExclusao.id = 'modalExclusaoMassa';
-        
+
         const htmlConteudo = `
             <div class="modal-exclusao-overlay" onclick="fecharModalExclusaoMassa(event)">
                 <div class="modal-exclusao-container modal-container-grande" onclick="event.stopPropagation()">
@@ -3323,7 +3325,7 @@ $descartes = [
 
         modalExclusao.innerHTML = htmlConteudo;
         document.body.appendChild(modalExclusao);
-        
+
         // Mostrar com animação
         setTimeout(() => {
             modalExclusao.classList.add('active');
@@ -3349,7 +3351,7 @@ $descartes = [
             dataType: 'json',
             success: function (response) {
                 console.log('Resposta:', response);
-                
+
                 // Fechar modal
                 const modal = document.getElementById(modalId);
                 if (modal) {
@@ -3360,21 +3362,21 @@ $descartes = [
                 if (response.success) {
                     // Construir mensagem detalhada conforme o que foi processado
                     let toastMsg = 'âœ“ Exclusão realizada com sucesso!\n\n';
-                    
+
                     if (response.descartados > 0) {
                         toastMsg += `ðŸ“¦ ${response.descartados} registro(s) transformado(s) em descartado(s)\n`;
                         toastMsg += '   (Poderão ser recuperados se necessário)\n\n';
                     }
-                    
+
                     if (response.deletados > 0) {
                         toastMsg += `ðŸ—‘ï¸ ${response.deletados} registro(s) removido(s) permanentemente\n`;
                         toastMsg += '   (Ação irreversível)';
                     }
-                    
+
                     if (response.descartados === 0 && response.deletados === 0) {
                         toastMsg = 'âœ“ Nenhum registro foi processado (todos já estavam no mesmo estado)';
                     }
-                    
+
                     showToast(toastMsg, 'sucesso');
                     cancelarSelecao();
                     buscarRegistrosPreservandoEstado();
@@ -3417,7 +3419,7 @@ $descartes = [
     // Fechar modal de exclusão em massa
     function fecharModalExclusaoMassa(event) {
         let modal = event.target;
-        
+
         if (modal.classList.contains('modal-exclusao-overlay')) {
             modal = modal;
         } else if (modal.classList.contains('btn-fechar-modal') || modal.tagName === 'ION-ICON') {
@@ -3478,7 +3480,7 @@ $descartes = [
     // ============================================
     // Funções para Preservar Estado dos Grupos
     // ============================================
-    
+
     // Salvar o estado atual dos grupos abertos
     function salvarEstadoGrupos() {
         estadoGruposAbertos = {
@@ -3537,7 +3539,7 @@ $descartes = [
         }
 
         console.log('Restaurando estado dos grupos:', estadoGruposAbertos);
-        
+
         const modoExibicao = document.querySelector('input[name="modoExibicao"]:checked').value;
 
         // Restaurar grupos de nível 1
@@ -3570,7 +3572,7 @@ $descartes = [
                     }
                 }
             });
-            
+
             // Limpar estado após restaurar
             estadoGruposAbertos = null;
         }, 500);
@@ -3883,8 +3885,10 @@ $descartes = [
             descarte: filtrosAtuais.descarte || ''
         }, function (response) {
             if (response.success) {
-                diasPontoCarregados[cdPonto] = response.diasPonto;
-                renderizarDiasPonto(cdPonto, response.diasPonto);
+                // CORREÇÃO: Garantir que diasPonto seja sempre um objeto válido
+                const diasPonto = response.diasPonto || {};
+                diasPontoCarregados[cdPonto] = diasPonto;
+                renderizarDiasPonto(cdPonto, diasPonto);
             } else {
                 showToast(response.message || 'Erro ao carregar dias', 'erro');
             }
@@ -3899,6 +3903,28 @@ $descartes = [
     function renderizarDiasPonto(cdPonto, diasPonto) {
         const placeholder = document.querySelector(`.row-dia-placeholder[data-ponto="${cdPonto}"]`);
         if (!placeholder) return;
+
+        // CORREÇÃO: Verificar se diasPonto é válido
+        if (!diasPonto || typeof diasPonto !== 'object') {
+            console.error('diasPonto inválido para ponto:', cdPonto, diasPonto);
+            placeholder.innerHTML = `<td colspan="11">
+                <div class="empty-inline" style="padding: 20px; text-align: center; color: #94a3b8;">
+                    <ion-icon name="alert-circle-outline" style="font-size: 24px; margin-bottom: 8px; display: block;"></ion-icon>
+                    Erro ao carregar dados
+                </div>
+            </td>`;
+            return;
+        }
+
+        if (Object.keys(diasPonto).length === 0) {
+            placeholder.innerHTML = `<td colspan="11">
+                <div class="empty-inline" style="padding: 20px; text-align: center; color: #94a3b8;">
+                    <ion-icon name="calendar-outline" style="font-size: 24px; margin-bottom: 8px; display: block;"></ion-icon>
+                    Nenhum dia encontrado no período filtrado
+                </div>
+            </td>`;
+            return;
+        }
 
         const estatPonto = estatisticasPonto[cdPonto];
         const idTipoMedidor = estatPonto ? estatPonto.idTipoMedidor : 1;
@@ -4143,7 +4169,7 @@ $descartes = [
                 mes = parseInt(partes[1]);
             }
         }
-        
+
         // Redirecionar para operacoes.php com parâmetros para abrir modal de validação
         const url = `operacoes.php?abrirValidacao=1&cdPonto=${cdPonto}&dataValidacao=${dataChave}&mes=${mes}&ano=${ano}`;
         window.location.href = url;
@@ -4272,7 +4298,7 @@ $descartes = [
             dataType: 'json',
             success: function (response) {
                 console.log('Resposta descarte:', response);
-                
+
                 if (response.success) {
                     let msg = '';
                     if (response.descartados > 0) {
@@ -4292,7 +4318,7 @@ $descartes = [
             error: function (xhr, status, error) {
                 console.error('Erro AJAX:', status, error);
                 console.error('Response:', xhr.responseText);
-                
+
                 try {
                     const resp = JSON.parse(xhr.responseText);
                     if (resp.message) {
@@ -4300,7 +4326,7 @@ $descartes = [
                         return;
                     }
                 } catch (e) { }
-                
+
                 showToast('Erro ao comunicar com o servidor', 'erro');
             }
         });
@@ -4389,7 +4415,7 @@ $descartes = [
             dataType: 'json',
             success: function (response) {
                 console.log('Resposta restauração:', response);
-                
+
                 if (response.success) {
                     showToast(`${response.restaurados || chaves.length} registro(s) restaurado(s) com sucesso!`, 'sucesso');
                     cancelarSelecao();
@@ -4401,7 +4427,7 @@ $descartes = [
             error: function (xhr, status, error) {
                 console.error('Erro AJAX:', status, error);
                 console.error('Response:', xhr.responseText);
-                
+
                 try {
                     const resp = JSON.parse(xhr.responseText);
                     if (resp.message) {
@@ -4409,7 +4435,7 @@ $descartes = [
                         return;
                     }
                 } catch (e) { }
-                
+
                 showToast('Erro ao comunicar com o servidor', 'erro');
             }
         });
@@ -4949,7 +4975,7 @@ $descartes = [
             descarte: filtrosAtuais.descarte || ''
         };
 
-        $.get('bd/registroVazaoPressao/getPontosMedicaoDia.php', params, function(response) {
+        $.get('bd/registroVazaoPressao/getPontosMedicaoDia.php', params, function (response) {
             if (response.success && response.pontosMedicao && Object.keys(response.pontosMedicao).length > 0) {
                 // Pegar o primeiro ponto (quando há apenas 1)
                 const cdPonto = Object.keys(response.pontosMedicao)[0];
@@ -4958,7 +4984,7 @@ $descartes = [
             } else {
                 showToast('Não foi possível identificar o ponto de medição', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao buscar dados do ponto de medição', 'erro');
         });
     }
@@ -4978,7 +5004,7 @@ $descartes = [
                 mes = parseInt(partes[1]);
             }
         }
-        
+
         // Redirecionar para operacoes.php com parâmetros para abrir modal de validação
         const url = `operacoes.php?abrirValidacao=1&cdPonto=${cdPonto}&dataValidacao=${dataChave}&mes=${mes}&ano=${ano}`;
         window.location.href = url;
