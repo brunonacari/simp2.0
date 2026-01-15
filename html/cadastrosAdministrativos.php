@@ -1527,11 +1527,11 @@ $gruposUsuario = $sqlGrupos->fetchAll(PDO::FETCH_ASSOC);
                     </label>
                     <div class="radio-group">
                         <label class="radio-item">
-                            <input type="radio" name="filtroUsuarioStatus" value="">
+                            <input type="radio" name="filtroUsuarioStatus" value="" checked>
                             <span class="radio-label">Todos</span>
                         </label>
                         <label class="radio-item">
-                            <input type="radio" name="filtroUsuarioStatus" value="ativo" checked>
+                            <input type="radio" name="filtroUsuarioStatus" value="ativo">
                             <span class="radio-label">Ativos</span>
                         </label>
                         <label class="radio-item">
