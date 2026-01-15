@@ -72,3 +72,9 @@ ACESSAR A PASTA ONDE SALVO OS ARQUIVOS JSON
 https://nfs.cesan.com.br/simp20-php/files/uploads/
 usuário: cesan
 senha: a6BLRCPJ2yefub
+
+
+```
+ACESSAR O LINK DO DEEPSEEK QUE CONTROLA CRÉDITOS DA IA
+```
+https://platform.deepseek.com/usage

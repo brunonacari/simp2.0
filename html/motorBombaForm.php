@@ -10,27 +10,18 @@ $isEdicao = $id > 0;
 $motorBomba = null;
 
 if ($isEdicao) {
-    $sql = "SELECT 
-                CMB.*,
-                L.CD_LOCALIDADE AS CD_LOCALIDADE_CODIGO,
-                L.DS_NOME AS DS_LOCALIDADE,
-                L.CD_UNIDADE,
-                U.DS_NOME AS DS_UNIDADE,
-                U.CD_CODIGO AS CD_UNIDADE_CODIGO,
-                UA.DS_NOME AS DS_USUARIO_ATUALIZACAO,
-                UR.DS_NOME AS DS_USUARIO_RESPONSAVEL_NOME
+    $sql = "SELECT CMB.*, L.CD_LOCALIDADE AS CD_LOCALIDADE_CODIGO, L.DS_NOME AS DS_LOCALIDADE, L.CD_UNIDADE,
+                   U.DS_NOME AS DS_UNIDADE, U.CD_CODIGO AS CD_UNIDADE_CODIGO
             FROM SIMP.dbo.CONJUNTO_MOTOR_BOMBA CMB
             INNER JOIN SIMP.dbo.LOCALIDADE L ON CMB.CD_LOCALIDADE = L.CD_CHAVE
             INNER JOIN SIMP.dbo.UNIDADE U ON L.CD_UNIDADE = U.CD_UNIDADE
-            LEFT JOIN SIMP.dbo.USUARIO UA ON CMB.CD_USUARIO_ULTIMA_ATUALIZACAO = UA.CD_USUARIO
-            LEFT JOIN SIMP.dbo.USUARIO UR ON CMB.CD_USUARIO_RESPONSAVEL = UR.CD_USUARIO
             WHERE CMB.CD_CHAVE = :id";
     $stmt = $pdoSIMP->prepare($sql);
     $stmt->execute([':id' => $id]);
     $motorBomba = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$motorBomba) {
-        $_SESSION['msg'] = 'Registro nao encontrado.';
+        $_SESSION['msg'] = 'Registro não encontrado.';
         $_SESSION['msg_tipo'] = 'erro';
         header('Location: motorBomba.php');
         exit;
@@ -43,125 +34,443 @@ $unidades = $sqlUnidades->fetchAll(PDO::FETCH_ASSOC);
 $sqlUsuarios = $pdoSIMP->query("SELECT CD_USUARIO, DS_NOME, DS_MATRICULA FROM SIMP.dbo.USUARIO WHERE OP_BLOQUEADO = 2 ORDER BY DS_NOME");
 $usuarios = $sqlUsuarios->fetchAll(PDO::FETCH_ASSOC);
 
-$tiposEixo = [
-    ['value' => 'H', 'text' => 'Horizontal'],
-    ['value' => 'V', 'text' => 'Vertical'],
-];
+$tiposEixo = [['value' => 'H', 'text' => 'Horizontal'], ['value' => 'V', 'text' => 'Vertical']];
 ?>
 
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="style/css/motorBomba.css">
 
 <style>
-.form-card {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e2e8f0;
-}
+    /* ============================================
+       Reset e Box Sizing
+       ============================================ */
+    *, *::before, *::after {
+        box-sizing: border-box;
+    }
 
-.form-card-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #1e3a5f;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e2e8f0;
-}
+    /* ============================================
+       Page Container
+       ============================================ */
+    .page-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+        overflow-x: hidden;
+    }
 
-.form-card-title ion-icon {
-    font-size: 20px;
-    color: #3b82f6;
-}
+    /* ============================================
+       Page Header
+       ============================================ */
+    .page-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        color: white;
+    }
 
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-}
+    .page-header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
 
-.form-group.span-2 { grid-column: span 2; }
-.form-group.span-3 { grid-column: span 3; }
-.form-group.span-4 { grid-column: span 4; }
+    .page-header-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
 
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 24px;
-    padding-top: 20px;
-    border-top: 1px solid #e2e8f0;
-}
+    .page-header-icon {
+        width: 42px;
+        height: 42px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
 
-.btn-salvar {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
+    .page-header h1 {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 4px 0;
+        color: white;
+    }
 
-.btn-salvar:hover { background: #2563eb; }
+    .page-header-subtitle {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.7);
+        margin: 0;
+    }
 
-.btn-cancelar {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    background: #f1f5f9;
-    color: #64748b;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-}
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
 
-.btn-cancelar:hover { background: #e2e8f0; color: #475569; }
+    .btn-voltar {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
 
-.required-field::after {
-    content: ' *';
-    color: #dc2626;
-}
+    .btn-voltar:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
 
-@media (max-width: 1200px) {
-    .form-grid { grid-template-columns: repeat(2, 1fr); }
-    .form-group.span-3, .form-group.span-4 { grid-column: span 2; }
-}
+    .btn-voltar ion-icon {
+        font-size: 14px;
+    }
 
-@media (max-width: 768px) {
-    .form-grid { grid-template-columns: 1fr; }
-    .form-group.span-2, .form-group.span-3, .form-group.span-4 { grid-column: span 1; }
-    .form-actions { flex-direction: column; }
-    .btn-salvar, .btn-cancelar { width: 100%; justify-content: center; }
-}
+    /* ============================================
+       Form Card
+       ============================================ */
+    .form-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        margin-bottom: 12px;
+    }
+
+    .form-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 20px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .form-card-header ion-icon {
+        font-size: 16px;
+        color: #3b82f6;
+    }
+
+    .form-card-header h2 {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .form-card-body {
+        padding: 16px 20px;
+        overflow: hidden;
+    }
+
+    /* ============================================
+       Form Grid - Sistema de Grid Robusto
+       ============================================ */
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -8px 12px -8px;
+    }
+
+    .form-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-group {
+        padding: 0 8px;
+        margin-bottom: 0;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    /* Colunas baseadas em porcentagem */
+    .col-12 { width: 100%; }
+    .col-8 { width: 66.666667%; }
+    .col-6 { width: 50%; }
+    .col-4 { width: 33.333333%; }
+    .col-3 { width: 25%; }
+    .col-2 { width: 16.666667%; }
+
+    /* ============================================
+       Form Controls
+       ============================================ */
+    .form-group .form-control,
+    .form-group .select2-container {
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .form-label .required {
+        color: #ef4444;
+    }
+
+    .form-label ion-icon {
+        font-size: 12px;
+        color: #94a3b8;
+    }
+
+    .form-control {
+        width: 100%;
+        max-width: 100%;
+        padding: 8px 12px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 12px;
+        color: #334155;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .form-control:focus {
+        outline: none;
+        background-color: #ffffff;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-control:disabled,
+    .form-control[readonly] {
+        background-color: #f1f5f9;
+        color: #64748b;
+        cursor: not-allowed;
+    }
+
+    .form-control::placeholder {
+        color: #94a3b8;
+    }
+
+    textarea.form-control {
+        min-height: 60px;
+        resize: vertical;
+    }
+
+    /* Select2 Custom Styling */
+    .select2-container--default .select2-selection--single {
+        height: 36px;
+        padding: 4px 8px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .select2-container--default.select2-container--focus .select2-selection--single,
+    .select2-container--default.select2-container--open .select2-selection--single {
+        background-color: #ffffff;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #334155;
+        font-size: 12px;
+        line-height: 26px;
+        padding-left: 0;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__placeholder {
+        color: #94a3b8;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 34px;
+        right: 8px;
+    }
+
+    .select2-dropdown {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #3b82f6;
+    }
+
+    /* ============================================
+       Form Actions
+       ============================================ */
+    .form-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 12px 20px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        text-decoration: none;
+    }
+
+    .btn ion-icon {
+        font-size: 14px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+    /* ============================================
+       Responsive
+       ============================================ */
+    @media (max-width: 1200px) {
+        .col-3 { width: 33.333333%; }
+        .col-2 { width: 25%; }
+    }
+
+    @media (max-width: 992px) {
+        .col-3 { width: 50%; }
+        .col-4 { width: 50%; }
+        .col-8 { width: 100%; }
+        .col-2 { width: 33.333333%; }
+    }
+
+    @media (max-width: 768px) {
+        .page-container {
+            padding: 12px;
+        }
+
+        .page-header {
+            padding: 16px;
+        }
+
+        .page-header-content {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+
+        .page-header-info {
+            flex-direction: column;
+            text-align: center;
+            gap: 10px;
+        }
+
+        .page-header-icon {
+            margin: 0 auto;
+        }
+
+        .page-header h1 {
+            font-size: 16px;
+        }
+
+        .btn-voltar {
+            width: 100%;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        .form-card-header {
+            padding: 10px 16px;
+        }
+
+        .form-card-body {
+            padding: 12px 16px;
+        }
+
+        .form-row {
+            margin: 0 -4px 10px -4px;
+        }
+
+        .form-group {
+            padding: 0 4px;
+        }
+
+        .col-2, .col-3, .col-4, .col-6, .col-8 {
+            width: 100%;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            padding: 12px 16px;
+        }
+
+        .form-actions .btn {
+            width: 100%;
+        }
+    }
 </style>
 
 <div class="page-container">
+    <!-- Page Header -->
     <div class="page-header">
         <div class="page-header-content">
             <div class="page-header-info">
                 <div class="page-header-icon">
-                    <ion-icon name="cog-outline"></ion-icon>
+                    <ion-icon name="<?= $isEdicao ? 'create-outline' : 'add-outline' ?>"></ion-icon>
                 </div>
                 <div>
-                    <h1><?= $isEdicao ? 'Editar' : 'Novo' ?> Conjunto Motor Bomba</h1>
-                    <p class="page-header-subtitle"><?= $isEdicao ? 'Altere os dados do conjunto' : 'Preencha os dados do novo conjunto' ?></p>
+                    <h1><?= $isEdicao ? 'Editar Conjunto Motor Bomba' : 'Novo Conjunto Motor Bomba' ?></h1>
+                    <p class="page-header-subtitle">
+                        <?= $isEdicao ? 'Atualize as informações do conjunto' : 'Cadastre um novo conjunto motor bomba no sistema' ?>
+                    </p>
                 </div>
+            </div>
+            <div class="header-actions">
+                <a href="motorBomba.php" class="btn-voltar">
+                    <ion-icon name="arrow-back-outline"></ion-icon>
+                    Voltar
+                </a>
             </div>
         </div>
     </div>
@@ -169,219 +478,289 @@ $tiposEixo = [
     <form id="formMotorBomba" method="post">
         <input type="hidden" name="cd_chave" value="<?= $id ?>">
 
-        <!-- Dados Gerais -->
+        <!-- Identificação -->
         <div class="form-card">
-            <div class="form-card-title">
+            <div class="form-card-header">
                 <ion-icon name="information-circle-outline"></ion-icon>
-                Dados Gerais
+                <h2>Identificação</h2>
             </div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label class="form-label required-field">Unidade</label>
-                    <select id="selectUnidade" name="cd_unidade" class="form-control" required>
-                        <option value="">Selecione...</option>
-                        <?php foreach ($unidades as $u): ?>
-                            <option value="<?= $u['CD_UNIDADE'] ?>" <?= ($isEdicao && $motorBomba['CD_UNIDADE'] == $u['CD_UNIDADE']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+            <div class="form-card-body">
+                <div class="form-row">
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="business-outline"></ion-icon>
+                            Unidade <span class="required">*</span>
+                        </label>
+                        <select id="selectUnidade" name="cd_unidade" class="form-control select2" required>
+                            <option value="">Selecione a Unidade</option>
+                            <?php foreach ($unidades as $u): ?>
+                                <option value="<?= $u['CD_UNIDADE'] ?>" <?= ($isEdicao && $motorBomba['CD_UNIDADE'] == $u['CD_UNIDADE']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="location-outline"></ion-icon>
+                            Localidade <span class="required">*</span>
+                        </label>
+                        <select id="selectLocalidade" name="cd_localidade" class="form-control select2" required <?= !$isEdicao ? 'disabled' : '' ?>>
+                            <?php if ($isEdicao): ?>
+                                <option value="<?= $motorBomba['CD_LOCALIDADE'] ?>" selected>
+                                    <?= htmlspecialchars($motorBomba['CD_LOCALIDADE_CODIGO'] . ' - ' . $motorBomba['DS_LOCALIDADE']) ?>
+                                </option>
+                            <?php else: ?>
+                                <option value="">Selecione a Unidade primeiro</option>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="pricetag-outline"></ion-icon>
+                            Código <span class="required">*</span>
+                        </label>
+                        <input type="text" name="ds_codigo" class="form-control" maxlength="20" required 
+                               value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_CODIGO']) : '' ?>" placeholder="Ex: CMB-001">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="git-compare-outline"></ion-icon>
+                            Tipo de Eixo <span class="required">*</span>
+                        </label>
+                        <select name="tp_eixo" class="form-control select2" required>
+                            <option value="">Selecione</option>
+                            <?php foreach ($tiposEixo as $t): ?>
+                                <option value="<?= $t['value'] ?>" <?= ($isEdicao && $motorBomba['TP_EIXO'] == $t['value']) ? 'selected' : '' ?>><?= $t['text'] ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label required-field">Localidade</label>
-                    <select id="selectLocalidade" name="cd_localidade" class="form-control" required <?= !$isEdicao ? 'disabled' : '' ?>>
-                        <?php if ($isEdicao): ?>
-                            <option value="<?= $motorBomba['CD_LOCALIDADE'] ?>" selected>
-                                <?= htmlspecialchars($motorBomba['CD_LOCALIDADE_CODIGO'] . ' - ' . $motorBomba['DS_LOCALIDADE']) ?>
-                            </option>
-                        <?php else: ?>
-                            <option value="">Selecione uma Unidade primeiro</option>
-                        <?php endif; ?>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label class="form-label">
+                            <ion-icon name="text-outline"></ion-icon>
+                            Nome <span class="required">*</span>
+                        </label>
+                        <input type="text" name="ds_nome" class="form-control" maxlength="50" required 
+                               value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_NOME']) : '' ?>" placeholder="Nome do conjunto">
+                    </div>
+                    <div class="form-group col-6">
+                        <label class="form-label">
+                            <ion-icon name="person-outline"></ion-icon>
+                            Responsável <span class="required">*</span>
+                        </label>
+                        <select name="cd_usuario_responsavel" class="form-control select2" required>
+                            <option value="">Selecione</option>
+                            <?php foreach ($usuarios as $u): ?>
+                                <option value="<?= $u['CD_USUARIO'] ?>" <?= ($isEdicao && $motorBomba['CD_USUARIO_RESPONSAVEL'] == $u['CD_USUARIO']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($u['DS_MATRICULA'] . ' - ' . $u['DS_NOME']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label required-field">Codigo</label>
-                    <input type="text" name="ds_codigo" class="form-control" maxlength="20" required
-                           value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_CODIGO']) : '' ?>">
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <label class="form-label">
+                            <ion-icon name="navigate-outline"></ion-icon>
+                            Localização <span class="required">*</span>
+                        </label>
+                        <input type="text" name="ds_localizacao" class="form-control" maxlength="200" required 
+                               value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_LOCALIZACAO']) : '' ?>" placeholder="Descrição da localização física">
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label required-field">Nome</label>
-                    <input type="text" name="ds_nome" class="form-control" maxlength="50" required
-                           value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_NOME']) : '' ?>">
-                </div>
-
-                <div class="form-group span-2">
-                    <label class="form-label required-field">Localizacao</label>
-                    <input type="text" name="ds_localizacao" class="form-control" maxlength="200" required
-                           value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_LOCALIZACAO']) : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label required-field">Responsavel</label>
-                    <select name="cd_usuario_responsavel" class="form-control" required>
-                        <option value="">Selecione...</option>
-                        <?php foreach ($usuarios as $u): ?>
-                            <option value="<?= $u['CD_USUARIO'] ?>" <?= ($isEdicao && $motorBomba['CD_USUARIO_RESPONSAVEL'] == $u['CD_USUARIO']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($u['DS_MATRICULA'] . ' - ' . $u['DS_NOME']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label required-field">Tipo de Eixo</label>
-                    <select name="tp_eixo" class="form-control" required>
-                        <option value="">Selecione...</option>
-                        <?php foreach ($tiposEixo as $t): ?>
-                            <option value="<?= $t['value'] ?>" <?= ($isEdicao && $motorBomba['TP_EIXO'] == $t['value']) ? 'selected' : '' ?>>
-                                <?= $t['text'] ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-group span-4">
-                    <label class="form-label">Observacao</label>
-                    <textarea name="ds_observacao" class="form-control" maxlength="200" rows="2"><?= $isEdicao ? htmlspecialchars($motorBomba['DS_OBSERVACAO'] ?? '') : '' ?></textarea>
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <label class="form-label">
+                            <ion-icon name="chatbox-outline"></ion-icon>
+                            Observação
+                        </label>
+                        <textarea name="ds_observacao" class="form-control" rows="2" maxlength="200" 
+                                  placeholder="Observações adicionais"><?= $isEdicao ? htmlspecialchars($motorBomba['DS_OBSERVACAO'] ?? '') : '' ?></textarea>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Dados da Bomba -->
         <div class="form-card">
-            <div class="form-card-title">
+            <div class="form-card-header">
                 <ion-icon name="water-outline"></ion-icon>
-                Dados da Bomba
+                <h2>Dados da Bomba</h2>
             </div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label class="form-label">Fabricante</label>
-                    <input type="text" name="ds_fabricante_bomba" class="form-control" maxlength="20"
-                           value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_FABRICANTE_BOMBA'] ?? '') : '' ?>">
+            <div class="form-card-body">
+                <div class="form-row">
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="construct-outline"></ion-icon>
+                            Fabricante
+                        </label>
+                        <input type="text" name="ds_fabricante_bomba" class="form-control" maxlength="20" 
+                               value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_FABRICANTE_BOMBA'] ?? '') : '' ?>">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="options-outline"></ion-icon>
+                            Tipo
+                        </label>
+                        <input type="text" name="ds_tipo_bomba" class="form-control" maxlength="20" 
+                               value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_TIPO_BOMBA'] ?? '') : '' ?>">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="barcode-outline"></ion-icon>
+                            Série
+                        </label>
+                        <input type="text" name="ds_serie_bomba" class="form-control" maxlength="20" 
+                               value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_SERIE_BOMBA'] ?? '') : '' ?>">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="disc-outline"></ion-icon>
+                            Diâmetro Rotor (mm) <span class="required">*</span>
+                        </label>
+                        <input type="number" name="vl_diametro_rotor_bomba" class="form-control" step="0.01" required 
+                               value="<?= $isEdicao ? $motorBomba['VL_DIAMETRO_ROTOR_BOMBA'] : '' ?>" placeholder="0.00">
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label">Tipo</label>
-                    <input type="text" name="ds_tipo_bomba" class="form-control" maxlength="20"
-                           value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_TIPO_BOMBA'] ?? '') : '' ?>">
+                <div class="form-row">
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="speedometer-outline"></ion-icon>
+                            Vazão (L/s)
+                        </label>
+                        <input type="number" name="vl_vazao_bomba" class="form-control" step="0.01" 
+                               value="<?= $isEdicao ? $motorBomba['VL_VAZAO_BOMBA'] : '' ?>" placeholder="0.00">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="trending-up-outline"></ion-icon>
+                            Altura Manométrica (mca) <span class="required">*</span>
+                        </label>
+                        <input type="number" name="vl_altura_manometrica_bomba" class="form-control" step="0.01" required 
+                               value="<?= $isEdicao ? $motorBomba['VL_ALTURA_MANOMETRICA_BOMBA'] : '' ?>" placeholder="0.00">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="sync-outline"></ion-icon>
+                            Rotação (rpm)
+                        </label>
+                        <input type="number" name="vl_rotacao_bomba" class="form-control" step="0.01" 
+                               value="<?= $isEdicao ? $motorBomba['VL_ROTACAO_BOMBA'] : '' ?>" placeholder="0">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="enter-outline"></ion-icon>
+                            Área Sucção (mm²)
+                        </label>
+                        <input type="number" name="vl_area_succao_bomba" class="form-control" step="0.01" readonly 
+                               value="<?= $isEdicao ? $motorBomba['VL_AREA_SUCCAO_BOMBA'] : '' ?>" placeholder="Calculado">
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label">Serie</label>
-                    <input type="text" name="ds_serie_bomba" class="form-control" maxlength="20"
-                           value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_SERIE_BOMBA'] ?? '') : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label required-field">Diametro Rotor (mm)</label>
-                    <input type="number" name="vl_diametro_rotor_bomba" class="form-control" step="0.01" required
-                           value="<?= $isEdicao ? $motorBomba['VL_DIAMETRO_ROTOR_BOMBA'] : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Vazao (m3/h)</label>
-                    <input type="number" name="vl_vazao_bomba" class="form-control" step="0.01"
-                           value="<?= $isEdicao ? $motorBomba['VL_VAZAO_BOMBA'] : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label required-field">Altura Manometrica (mca)</label>
-                    <input type="number" name="vl_altura_manometrica_bomba" class="form-control" step="0.01" required
-                           value="<?= $isEdicao ? $motorBomba['VL_ALTURA_MANOMETRICA_BOMBA'] : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Rotacao (rpm)</label>
-                    <input type="number" name="vl_rotacao_bomba" class="form-control" step="0.01"
-                           value="<?= $isEdicao ? $motorBomba['VL_ROTACAO_BOMBA'] : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Area Succao (mm2)</label>
-                    <input type="number" name="vl_area_succao_bomba" class="form-control" step="0.01"
-                           value="<?= $isEdicao ? $motorBomba['VL_AREA_SUCCAO_BOMBA'] : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Area Recalque (mm2)</label>
-                    <input type="number" name="vl_area_recalque_bomba" class="form-control" step="0.01"
-                           value="<?= $isEdicao ? $motorBomba['VL_AREA_RECALQUE_BOMBA'] : '' ?>">
+                <div class="form-row">
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="exit-outline"></ion-icon>
+                            Área Recalque (mm²)
+                        </label>
+                        <input type="number" name="vl_area_recalque_bomba" class="form-control" step="0.01" readonly 
+                               value="<?= $isEdicao ? $motorBomba['VL_AREA_RECALQUE_BOMBA'] : '' ?>" placeholder="Calculado">
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Dados do Motor -->
         <div class="form-card">
-            <div class="form-card-title">
+            <div class="form-card-header">
                 <ion-icon name="flash-outline"></ion-icon>
-                Dados do Motor
+                <h2>Dados do Motor</h2>
             </div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label class="form-label">Fabricante</label>
-                    <input type="text" name="ds_fabricante_motor" class="form-control" maxlength="20"
-                           value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_FABRICANTE_MOTOR'] ?? '') : '' ?>">
+            <div class="form-card-body">
+                <div class="form-row">
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="construct-outline"></ion-icon>
+                            Fabricante
+                        </label>
+                        <input type="text" name="ds_fabricante_motor" class="form-control" maxlength="20" 
+                               value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_FABRICANTE_MOTOR'] ?? '') : '' ?>">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="options-outline"></ion-icon>
+                            Tipo
+                        </label>
+                        <input type="text" name="ds_tipo_motor" class="form-control" maxlength="20" 
+                               value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_TIPO_MOTOR'] ?? '') : '' ?>">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="barcode-outline"></ion-icon>
+                            Série
+                        </label>
+                        <input type="text" name="ds_serie_motor" class="form-control" maxlength="20" 
+                               value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_SERIE_MOTOR'] ?? '') : '' ?>">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="pulse-outline"></ion-icon>
+                            Tensão (V) <span class="required">*</span>
+                        </label>
+                        <input type="number" name="vl_tensao_motor" class="form-control" step="0.01" required 
+                               value="<?= $isEdicao ? $motorBomba['VL_TENSAO_MOTOR'] : '' ?>" placeholder="0">
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label">Tipo</label>
-                    <input type="text" name="ds_tipo_motor" class="form-control" maxlength="20"
-                           value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_TIPO_MOTOR'] ?? '') : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Serie</label>
-                    <input type="text" name="ds_serie_motor" class="form-control" maxlength="20"
-                           value="<?= $isEdicao ? htmlspecialchars($motorBomba['DS_SERIE_MOTOR'] ?? '') : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label required-field">Tensao (V)</label>
-                    <input type="number" name="vl_tensao_motor" class="form-control" step="0.01" required
-                           value="<?= $isEdicao ? $motorBomba['VL_TENSAO_MOTOR'] : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label required-field">Corrente Eletrica (A)</label>
-                    <input type="number" name="vl_corrente_eletrica_motor" class="form-control" step="0.01" required
-                           value="<?= $isEdicao ? $motorBomba['VL_CORRENTE_ELETRICA_MOTOR'] : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label required-field">Potencia (CV)</label>
-                    <input type="number" name="vl_potencia_motor" class="form-control" step="0.01" required
-                           value="<?= $isEdicao ? $motorBomba['VL_POTENCIA_MOTOR'] : '' ?>">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Rotacao (rpm)</label>
-                    <input type="number" name="vl_rotacao_motor" class="form-control" step="0.01"
-                           value="<?= $isEdicao ? $motorBomba['VL_ROTACAO_MOTOR'] : '' ?>">
+                <div class="form-row">
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="flash-outline"></ion-icon>
+                            Corrente Elétrica (A) <span class="required">*</span>
+                        </label>
+                        <input type="number" name="vl_corrente_eletrica_motor" class="form-control" step="0.01" required 
+                               value="<?= $isEdicao ? $motorBomba['VL_CORRENTE_ELETRICA_MOTOR'] : '' ?>" placeholder="0.00">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="fitness-outline"></ion-icon>
+                            Potência (CV) <span class="required">*</span>
+                        </label>
+                        <input type="number" name="vl_potencia_motor" class="form-control" step="0.01" required 
+                               value="<?= $isEdicao ? $motorBomba['VL_POTENCIA_MOTOR'] : '' ?>" placeholder="0.00">
+                    </div>
+                    <div class="form-group col-3">
+                        <label class="form-label">
+                            <ion-icon name="sync-outline"></ion-icon>
+                            Rotação (rpm)
+                        </label>
+                        <input type="number" name="vl_rotacao_motor" class="form-control" step="0.01" 
+                               value="<?= $isEdicao ? $motorBomba['VL_ROTACAO_MOTOR'] : '' ?>" placeholder="0">
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <div class="form-actions">
-            <a href="motorBomba.php" class="btn-cancelar">
-                <ion-icon name="close-outline"></ion-icon>
-                Cancelar
-            </a>
-            <button type="submit" class="btn-salvar">
-                <ion-icon name="checkmark-outline"></ion-icon>
-                Salvar
-            </button>
+            <div class="form-actions">
+                <a href="motorBomba.php" class="btn btn-secondary">
+                    <ion-icon name="close-outline"></ion-icon>
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <ion-icon name="checkmark-outline"></ion-icon>
+                    Salvar
+                </button>
+            </div>
         </div>
     </form>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
 <script>
 $(document).ready(function() {
-    $('select').select2({ width: '100%', placeholder: 'Selecione...', allowClear: true });
+    $('.select2').select2({
+        width: '100%',
+        placeholder: 'Selecione...',
+        allowClear: true
+    });
 
     $('#selectUnidade').on('change', function() {
         const cdUnidade = $(this).val();
@@ -389,7 +768,7 @@ $(document).ready(function() {
             carregarLocalidades(cdUnidade);
         } else {
             $('#selectLocalidade').val('').prop('disabled', true)
-                .html('<option value="">Selecione uma Unidade primeiro</option>')
+                .html('<option value="">Selecione a Unidade primeiro</option>')
                 .trigger('change.select2');
         }
     });
@@ -404,12 +783,12 @@ function carregarLocalidades(cdUnidade) {
     $('#selectLocalidade').prop('disabled', true).html('<option value="">Carregando...</option>');
     
     $.ajax({
-        url: 'bd/getLocalidadesPorUnidade.php',
+        url: 'bd/pontoMedicao/getLocalidades.php',
         method: 'GET',
         data: { cd_unidade: cdUnidade },
         dataType: 'json',
         success: function(response) {
-            let options = '<option value="">Selecione...</option>';
+            let options = '<option value="">Selecione a Localidade</option>';
             if (response.success && response.data) {
                 response.data.forEach(function(loc) {
                     options += `<option value="${loc.CD_CHAVE}">${loc.CD_LOCALIDADE} - ${loc.DS_NOME}</option>`;

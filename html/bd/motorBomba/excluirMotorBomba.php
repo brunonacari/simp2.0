@@ -1,6 +1,6 @@
 <?php
-include_once '../conexao.php';
 header('Content-Type: application/json; charset=utf-8');
+include_once '../conexao.php';
 
 try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -18,11 +18,13 @@ try {
     $stmt->execute([':id' => $id]);
 
     if ($stmt->rowCount() > 0) {
-        echo json_encode(['success' => true, 'message' => 'Registro excluido com sucesso']);
+        echo json_encode(['success' => true, 'message' => 'Registro excluido com sucesso!']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Registro nao encontrado']);
     }
 
+} catch (PDOException $e) {
+    echo json_encode(['success' => false, 'message' => 'Erro no banco de dados: ' . $e->getMessage()]);
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
