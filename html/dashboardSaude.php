@@ -174,6 +174,29 @@ exigePermissaoTela('Dashboard Saúde', ACESSO_LEITURA);
 .kpi-card.medidor { --kpi-color: #06b6d4; }
 .kpi-card.hidraulico { --kpi-color: #f97316; }
 
+.kpi-card.clickable {
+    cursor: pointer;
+}
+
+.kpi-card.clickable:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.kpi-card.clickable:active {
+    transform: translateY(-1px);
+}
+
+/* Problema cards clicáveis */
+.problema-card {
+    cursor: pointer;
+}
+
+.problema-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
 .kpi-header {
     display: flex;
     align-items: center;
@@ -582,6 +605,52 @@ exigePermissaoTela('Dashboard Saúde', ACESSO_LEITURA);
 .badge-problema.medidor { background: #cffafe; color: #0891b2; }
 .badge-problema.hidraulico { background: #ffedd5; color: #ea580c; }
 .badge-problema.verificar { background: #fef3c7; color: #d97706; }
+.badge-problema.tratamento { background: #fce7f3; color: #be185d; }
+
+/* Tooltips */
+.tooltip-container {
+    position: relative;
+    display: inline-flex;
+}
+
+.tooltip-container .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 400;
+    white-space: nowrap;
+    z-index: 99999;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    max-width: 280px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.4;
+    pointer-events: none;
+}
+
+.tooltip-container .tooltip-text::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1e293b;
+}
+
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
 
 .badge-status {
     display: inline-flex;
@@ -720,7 +789,7 @@ exigePermissaoTela('Dashboard Saúde', ACESSO_LEITURA);
     <!-- KPI Cards -->
     <div class="kpi-grid">
         <!-- Total de Pontos -->
-        <div class="kpi-card">
+        <div class="kpi-card clickable" onclick="navegarMonitoramento('')" title="Ver todos os pontos">
             <div class="kpi-header">
                 <div class="kpi-icon">
                     <ion-icon name="location-outline"></ion-icon>
@@ -731,7 +800,7 @@ exigePermissaoTela('Dashboard Saúde', ACESSO_LEITURA);
         </div>
 
         <!-- Saudáveis -->
-        <div class="kpi-card saudavel">
+        <div class="kpi-card saudavel clickable" onclick="navegarMonitoramento('SAUDAVEL')" title="Ver pontos saudáveis">
             <div class="kpi-header">
                 <div class="kpi-icon">
                     <ion-icon name="checkmark-circle-outline"></ion-icon>
@@ -746,7 +815,7 @@ exigePermissaoTela('Dashboard Saúde', ACESSO_LEITURA);
         </div>
 
         <!-- Alerta -->
-        <div class="kpi-card alerta">
+        <div class="kpi-card alerta clickable" onclick="navegarMonitoramento('ALERTA')" title="Ver pontos em alerta">
             <div class="kpi-header">
                 <div class="kpi-icon">
                     <ion-icon name="warning-outline"></ion-icon>
@@ -757,7 +826,7 @@ exigePermissaoTela('Dashboard Saúde', ACESSO_LEITURA);
         </div>
 
         <!-- Críticos -->
-        <div class="kpi-card critico">
+        <div class="kpi-card critico clickable" onclick="navegarMonitoramento('CRITICO')" title="Ver pontos críticos">
             <div class="kpi-header">
                 <div class="kpi-icon">
                     <ion-icon name="alert-circle-outline"></ion-icon>
@@ -768,7 +837,7 @@ exigePermissaoTela('Dashboard Saúde', ACESSO_LEITURA);
         </div>
 
         <!-- Prob. Comunicação -->
-        <div class="kpi-card comunicacao">
+        <div class="kpi-card comunicacao clickable" onclick="filtrarPorProblema('COMUNICACAO')" title="Ver falhas de comunicação">
             <div class="kpi-header">
                 <div class="kpi-icon">
                     <ion-icon name="wifi-outline"></ion-icon>
@@ -779,7 +848,7 @@ exigePermissaoTela('Dashboard Saúde', ACESSO_LEITURA);
         </div>
 
         <!-- Prob. Medidor -->
-        <div class="kpi-card medidor">
+        <div class="kpi-card medidor clickable" onclick="filtrarPorProblema('MEDIDOR')" title="Ver problemas de medidor">
             <div class="kpi-header">
                 <div class="kpi-icon">
                     <ion-icon name="speedometer-outline"></ion-icon>
@@ -898,6 +967,16 @@ exigePermissaoTela('Dashboard Saúde', ACESSO_LEITURA);
                         <p>Zeros suspeitos, desvio histórico</p>
                     </div>
                     <div class="problema-count" id="countVerificar">-</div>
+                </div>
+                <div class="problema-card tratamento" onclick="filtrarPorProblema('TRATAMENTO')" style="background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); border-color: #f472b6;">
+                    <div class="problema-icon" style="background: rgba(190, 24, 93, 0.1); color: #be185d;">
+                        <ion-icon name="construct-outline"></ion-icon>
+                    </div>
+                    <div class="problema-info">
+                        <h4>Tratamento Recorrente</h4>
+                        <p>Pontos com descartes frequentes</p>
+                    </div>
+                    <div class="problema-count" id="countTratamento" style="color: #be185d;">-</div>
                 </div>
             </div>
         </div>
@@ -1030,6 +1109,7 @@ function atualizarKPIs(dados) {
     document.getElementById('countMedidor').textContent = dados.PROB_MEDIDOR || 0;
     document.getElementById('countHidraulico').textContent = dados.PROB_HIDRAULICO || 0;
     document.getElementById('countVerificar').textContent = dados.TOTAL_ANOMALIAS - (dados.PROB_COMUNICACAO + dados.PROB_MEDIDOR + dados.PROB_HIDRAULICO) || 0;
+    document.getElementById('countTratamento').textContent = dados.PONTOS_TRATAMENTO_RECORRENTE || 0;
     
     // Período
     if (dados.DATA_INICIO && dados.DATA_FIM) {
@@ -1361,9 +1441,17 @@ function filtrarAnomalias(filtro) {
 
 // Filtrar por tipo de problema
 function filtrarPorProblema(tipo) {
-    // TODO: Navegar para tela de monitoramento filtrada
-    console.log('Filtrar por problema:', tipo);
-    showToast(`Filtrando por: ${tipo}`, 'info');
+    // Navegar para tela de monitoramento com filtro aplicado
+    window.location.href = `monitoramento.php?problema=${tipo}`;
+}
+
+// Navegar para monitoramento com filtro de status
+function navegarMonitoramento(status) {
+    if (status) {
+        window.location.href = `monitoramento.php?status=${status}`;
+    } else {
+        window.location.href = 'monitoramento.php';
+    }
 }
 
 // Abrir análise de ponto

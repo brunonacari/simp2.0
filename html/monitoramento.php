@@ -29,6 +29,13 @@ $tiposMedidor = [
     ['ID' => 6, 'NOME' => 'Nível Reservatório', 'LETRA' => 'R'],
     ['ID' => 8, 'NOME' => 'Hidrômetro', 'LETRA' => 'H']
 ];
+
+// Parâmetros GET para navegação do Dashboard
+$filtroProblemaGet = isset($_GET['problema']) ? htmlspecialchars($_GET['problema']) : '';
+$filtroTipoGet = isset($_GET['tipo_medidor']) ? htmlspecialchars($_GET['tipo_medidor']) : '';
+$filtroUnidadeGet = isset($_GET['cd_unidade']) ? htmlspecialchars($_GET['cd_unidade']) : '';
+$filtroStatusGet = isset($_GET['status']) ? htmlspecialchars($_GET['status']) : '';
+$filtroBuscaGet = isset($_GET['busca']) ? htmlspecialchars($_GET['busca']) : '';
 ?>
 
 <style>
@@ -121,7 +128,7 @@ $tiposMedidor = [
 .filtros-card {
     background: white;
     border-radius: 12px;
-    padding: 20px;
+    padding: 20px 24px;
     margin-bottom: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     border: 1px solid #e2e8f0;
@@ -136,12 +143,18 @@ $tiposMedidor = [
 
 .filtro-group {
     flex: 1;
-    min-width: 180px;
+    min-width: 200px;
+    max-width: 280px;
+}
+
+.filtro-group.busca {
+    min-width: 280px;
+    max-width: 350px;
 }
 
 .filtro-group label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: #64748b;
     margin-bottom: 6px;
@@ -152,25 +165,43 @@ $tiposMedidor = [
 .filtro-group select,
 .filtro-group input {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #e2e8f0;
+    height: 42px;
+    padding: 0 14px;
+    border: 1px solid #d1d5db;
     border-radius: 8px;
     font-size: 14px;
-    color: #334155;
-    background: white;
+    color: #374151;
+    background: #f9fafb;
     transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.filtro-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 10px center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+    padding-right: 36px;
 }
 
 .filtro-group select:focus,
 .filtro-group input:focus {
     outline: none;
     border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.filtro-group input::placeholder {
+    color: #9ca3af;
 }
 
 .filtros-actions {
     display: flex;
-    gap: 8px;
+    gap: 10px;
+    padding-top: 2px;
 }
 
 .btn-filtrar {
@@ -279,15 +310,18 @@ $tiposMedidor = [
     background: white;
     border-radius: 12px;
     border: 1px solid #e2e8f0;
-    overflow: hidden;
+    overflow: visible;
     transition: all 0.2s;
     cursor: pointer;
+    position: relative;
+    z-index: 1;
 }
 
 .ponto-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0,0,0,0.1);
     border-color: #cbd5e1;
+    z-index: 100;
 }
 
 .ponto-card-header {
@@ -296,6 +330,8 @@ $tiposMedidor = [
     gap: 12px;
     padding: 16px;
     border-bottom: 1px solid #f1f5f9;
+    border-radius: 12px 12px 0 0;
+    background: white;
 }
 
 .ponto-status-indicator {
@@ -373,6 +409,7 @@ $tiposMedidor = [
 
 .ponto-card-body {
     padding: 16px;
+    background: white;
 }
 
 .ponto-stats {
@@ -419,6 +456,54 @@ $tiposMedidor = [
 .ponto-flag.hidraulico { background: #ffedd5; color: #ea580c; }
 .ponto-flag.verificar { background: #fef3c7; color: #d97706; }
 
+/* Tooltips */
+.tooltip-container {
+    position: relative;
+    display: inline-flex;
+}
+
+.tooltip-container .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 400;
+    white-space: nowrap;
+    z-index: 99999;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    max-width: 250px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.4;
+    pointer-events: none;
+}
+
+.tooltip-container .tooltip-text::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1e293b;
+}
+
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Flag de tratamento recorrente */
+.ponto-flag.tratamento { background: #fce7f3; color: #be185d; }
+
 .ponto-card-footer {
     display: flex;
     justify-content: space-between;
@@ -426,6 +511,7 @@ $tiposMedidor = [
     padding: 12px 16px;
     background: #f8fafc;
     border-top: 1px solid #f1f5f9;
+    border-radius: 0 0 12px 12px;
 }
 
 .ponto-tipo {
@@ -507,6 +593,58 @@ $tiposMedidor = [
 }
 
 .empty-state p {
+    font-size: 14px;
+    margin: 0;
+}
+
+.btn-limpar-empty {
+    margin-top: 16px;
+    padding: 10px 20px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.btn-limpar-empty:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.btn-limpar-empty ion-icon {
+    font-size: 16px;
+}
+
+/* Loading State */
+.loading-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 80px 20px;
+    color: #64748b;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-state p {
     font-size: 14px;
     margin: 0;
 }
@@ -688,6 +826,23 @@ $tiposMedidor = [
     color: #94a3b8;
 }
 
+/* Tooltip no modal */
+.modal-flags-list .tooltip-container {
+    display: inline-block;
+}
+
+.modal-flags-list .tooltip-text {
+    bottom: auto;
+    top: calc(100% + 8px);
+}
+
+.modal-flags-list .tooltip-text::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: #1e293b;
+}
+
 /* Chart container no modal */
 .modal-chart-container {
     height: 200px;
@@ -845,16 +1000,16 @@ $tiposMedidor = [
     <!-- Filtros -->
     <div class="filtros-card">
         <div class="filtros-row">
-            <div class="filtro-group">
+            <div class="filtro-group busca">
                 <label>Buscar</label>
-                <input type="text" id="filtroBusca" placeholder="Nome ou código do ponto...">
+                <input type="text" id="filtroBusca" placeholder="Nome ou código do ponto..." value="<?= $filtroBuscaGet ?>">
             </div>
             <div class="filtro-group">
                 <label>Tipo de Medidor</label>
                 <select id="filtroTipo">
                     <option value="">Todos</option>
                     <?php foreach ($tiposMedidor as $tipo): ?>
-                        <option value="<?= $tipo['ID'] ?>"><?= $tipo['LETRA'] ?> - <?= $tipo['NOME'] ?></option>
+                        <option value="<?= $tipo['ID'] ?>" <?= $filtroTipoGet == $tipo['ID'] ? 'selected' : '' ?>><?= $tipo['LETRA'] ?> - <?= $tipo['NOME'] ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -863,7 +1018,7 @@ $tiposMedidor = [
                 <select id="filtroUnidade">
                     <option value="">Todas</option>
                     <?php foreach ($unidades as $unidade): ?>
-                        <option value="<?= $unidade['CD_UNIDADE'] ?>"><?= htmlspecialchars($unidade['DS_NOME']) ?></option>
+                        <option value="<?= $unidade['CD_UNIDADE'] ?>" <?= $filtroUnidadeGet == $unidade['CD_UNIDADE'] ? 'selected' : '' ?>><?= htmlspecialchars($unidade['DS_NOME']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -871,14 +1026,15 @@ $tiposMedidor = [
                 <label>Tipo de Problema</label>
                 <select id="filtroProblema">
                     <option value="">Todos</option>
-                    <option value="COMUNICACAO">Comunicação</option>
-                    <option value="MEDIDOR">Medidor</option>
-                    <option value="HIDRAULICO">Hidráulico</option>
-                    <option value="VERIFICAR">A Verificar</option>
+                    <option value="COMUNICACAO" <?= $filtroProblemaGet == 'COMUNICACAO' ? 'selected' : '' ?>>Comunicação</option>
+                    <option value="MEDIDOR" <?= $filtroProblemaGet == 'MEDIDOR' ? 'selected' : '' ?>>Medidor</option>
+                    <option value="HIDRAULICO" <?= $filtroProblemaGet == 'HIDRAULICO' ? 'selected' : '' ?>>Hidráulico</option>
+                    <option value="VERIFICAR" <?= $filtroProblemaGet == 'VERIFICAR' ? 'selected' : '' ?>>A Verificar</option>
+                    <option value="TRATAMENTO" <?= $filtroProblemaGet == 'TRATAMENTO' ? 'selected' : '' ?>>Tratamento Recorrente</option>
                 </select>
             </div>
             <div class="filtros-actions">
-                <button class="btn-filtrar" onclick="aplicarFiltros()">
+                <button class="btn-filtrar" onclick="carregarPontosComFiltros()">
                     <ion-icon name="search-outline"></ion-icon>
                     Filtrar
                 </button>
@@ -1041,13 +1197,51 @@ let ultimaDataDisponivel = null; // Data mais recente com dados
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', function() {
-    carregarPontos();
+    // Verificar se há parâmetros GET para aplicar filtros iniciais
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasFilters = urlParams.has('problema') || urlParams.has('tipo_medidor') || 
+                       urlParams.has('cd_unidade') || urlParams.has('status') || urlParams.has('busca');
     
-    // Listener para busca em tempo real
+    if (hasFilters) {
+        // Carregar com filtros da URL
+        carregarPontosComFiltros();
+        
+        // Atualizar tab ativa se status estiver definido
+        const statusParam = urlParams.get('status');
+        if (statusParam) {
+            statusFiltro = statusParam.toUpperCase();
+            document.querySelectorAll('.status-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.status === statusFiltro) {
+                    tab.classList.add('active');
+                }
+            });
+        }
+    } else {
+        carregarPontos();
+    }
+    
+    // Listener para busca em tempo real (Enter)
     document.getElementById('filtroBusca').addEventListener('keyup', function(e) {
         if (e.key === 'Enter') {
-            aplicarFiltros();
+            carregarPontosComFiltros();
         }
+    });
+    
+    // Listeners para selects - busca automática ao mudar
+    document.getElementById('filtroTipo').addEventListener('change', carregarPontosComFiltros);
+    document.getElementById('filtroUnidade').addEventListener('change', carregarPontosComFiltros);
+    document.getElementById('filtroProblema').addEventListener('change', carregarPontosComFiltros);
+    
+    // Debounce para campo de busca (digitar)
+    let debounceTimer;
+    document.getElementById('filtroBusca').addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            if (this.value.length >= 3 || this.value.length === 0) {
+                carregarPontosComFiltros();
+            }
+        }, 500);
     });
     
     // Fechar modal com ESC
@@ -1065,11 +1259,20 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Carregar todos os pontos
+// Carregar todos os pontos (sem filtros)
 async function carregarPontos() {
+    mostrarLoading(true);
+    console.log('Carregando todos os pontos sem filtros...');
+    
     try {
         const response = await fetch('bd/dashboard/getPontosPorScore.php?limite=500');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const result = await response.json();
+        console.log('Resultado:', result);
         
         if (result.success && result.data) {
             todosPontos = result.data;
@@ -1095,6 +1298,88 @@ async function carregarPontos() {
                 <p>${error.message}</p>
             </div>
         `;
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+// Carregar pontos com filtros via AJAX
+async function carregarPontosComFiltros() {
+    mostrarLoading(true);
+    
+    const busca = document.getElementById('filtroBusca').value.trim();
+    const tipo = document.getElementById('filtroTipo').value;
+    const unidade = document.getElementById('filtroUnidade').value;
+    const problema = document.getElementById('filtroProblema').value;
+    
+    // Construir URL com parâmetros
+    const params = new URLSearchParams();
+    params.append('limite', '500');
+    if (busca) params.append('busca', busca);
+    if (tipo) params.append('tipo_medidor', tipo);
+    if (unidade) params.append('cd_unidade', unidade);
+    if (problema) params.append('problema', problema);
+    if (statusFiltro) params.append('status', statusFiltro);
+    
+    console.log('Carregando com filtros:', {busca, tipo, unidade, problema, statusFiltro});
+    console.log('URL:', `bd/dashboard/getPontosPorScore.php?${params.toString()}`);
+    
+    try {
+        const response = await fetch(`bd/dashboard/getPontosPorScore.php?${params.toString()}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        console.log('Resultado:', result);
+        
+        if (result.success && result.data) {
+            todosPontos = result.data;
+            pontosFiltrados = [...todosPontos];
+            
+            // Armazenar a última data disponível nos dados
+            if (result.ultima_data) {
+                ultimaDataDisponivel = result.ultima_data;
+            }
+            
+            atualizarContadores();
+            paginaAtual = 1;
+            renderizarPontos();
+            
+            // Atualizar URL sem recarregar página
+            const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+            
+            // Mostrar quantidade encontrada
+            console.log(`${todosPontos.length} pontos encontrados`);
+        } else {
+            throw new Error(result.message || 'Erro ao carregar dados');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar pontos:', error);
+        document.getElementById('pontosGrid').innerHTML = `
+            <div class="empty-state">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+                <h3>Erro ao carregar dados</h3>
+                <p>${error.message}</p>
+            </div>
+        `;
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+// Mostrar/ocultar loading
+function mostrarLoading(show) {
+    const grid = document.getElementById('pontosGrid');
+    if (show) {
+        grid.innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Carregando pontos de medição...</p>
+            </div>
+        `;
     }
 }
 
@@ -1117,7 +1402,7 @@ function atualizarContadores() {
     document.getElementById('countCriticos').textContent = criticos;
 }
 
-// Aplicar filtros
+// Aplicar filtros localmente (para filtro rápido após carregar dados)
 function aplicarFiltros() {
     const busca = document.getElementById('filtroBusca').value.toLowerCase();
     const tipo = document.getElementById('filtroTipo').value;
@@ -1136,6 +1421,11 @@ function aplicarFiltros() {
             return false;
         }
         
+        // Filtro de unidade
+        if (unidade && ponto.CD_UNIDADE != unidade) {
+            return false;
+        }
+        
         // Filtro de status
         if (statusFiltro && ponto.STATUS_SAUDE !== statusFiltro) {
             return false;
@@ -1144,9 +1434,10 @@ function aplicarFiltros() {
         // Filtro de problema (verificar flags)
         if (problema) {
             if (problema === 'COMUNICACAO' && ponto.DIAS_SEM_COMUNICACAO == 0) return false;
-            if (problema === 'MEDIDOR' && ponto.DIAS_VALOR_CONSTANTE == 0) return false;
+            if (problema === 'MEDIDOR' && (ponto.DIAS_PROBLEMA_MEDIDOR || ponto.DIAS_VALOR_CONSTANTE || 0) == 0) return false;
             if (problema === 'HIDRAULICO' && ponto.DIAS_VALOR_NEGATIVO == 0 && ponto.DIAS_FORA_FAIXA == 0 && ponto.DIAS_COM_SPIKE == 0) return false;
             if (problema === 'VERIFICAR' && ponto.DIAS_ZEROS_SUSPEITOS == 0) return false;
+            if (problema === 'TRATAMENTO' && (ponto.QTD_TRATAMENTOS || 0) <= 3) return false;
         }
         
         return true;
@@ -1168,9 +1459,11 @@ function limparFiltros() {
     document.querySelectorAll('.status-tab').forEach(tab => tab.classList.remove('active'));
     document.querySelector('.status-tab[data-status=""]').classList.add('active');
     
-    pontosFiltrados = [...todosPontos];
-    paginaAtual = 1;
-    renderizarPontos();
+    // Limpar URL
+    window.history.replaceState({}, '', window.location.pathname);
+    
+    // Recarregar sem filtros
+    carregarPontos();
 }
 
 // Filtrar por status (tabs)
@@ -1178,7 +1471,7 @@ function filtrarPorStatus(element, status) {
     document.querySelectorAll('.status-tab').forEach(tab => tab.classList.remove('active'));
     element.classList.add('active');
     statusFiltro = status;
-    aplicarFiltros();
+    carregarPontosComFiltros();
 }
 
 // Renderizar pontos
@@ -1189,11 +1482,19 @@ function renderizarPontos() {
     const pontosPagina = pontosFiltrados.slice(inicio, fim);
     
     if (pontosPagina.length === 0) {
+        // Verificar se há filtros aplicados
+        const busca = document.getElementById('filtroBusca').value;
+        const tipo = document.getElementById('filtroTipo').value;
+        const unidade = document.getElementById('filtroUnidade').value;
+        const problema = document.getElementById('filtroProblema').value;
+        const temFiltros = busca || tipo || unidade || problema || statusFiltro;
+        
         grid.innerHTML = `
             <div class="empty-state">
-                <ion-icon name="search-outline"></ion-icon>
+                <ion-icon name="${temFiltros ? 'filter-outline' : 'search-outline'}"></ion-icon>
                 <h3>Nenhum ponto encontrado</h3>
-                <p>Tente ajustar os filtros</p>
+                <p>${temFiltros ? 'Nenhum resultado para os filtros selecionados.' : 'Não há pontos de medição cadastrados.'}</p>
+                ${temFiltros ? '<button class="btn-limpar-empty" onclick="limparFiltros()"><ion-icon name="refresh-outline"></ion-icon> Limpar Filtros</button>' : ''}
             </div>
         `;
         document.getElementById('paginationContainer').style.display = 'none';
@@ -1209,12 +1510,40 @@ function renderizarPontos() {
         const tipoLetra = getTipoLetra(ponto.ID_TIPO_MEDIDOR);
         const tipoNome = getTipoNome(ponto.ID_TIPO_MEDIDOR);
         
-        // Flags
+        // Flags com tooltips explicativos
         let flags = [];
-        if (ponto.DIAS_SEM_COMUNICACAO > 0) flags.push({ classe: 'comunicacao', texto: 'Comunicação' });
-        if (ponto.DIAS_VALOR_CONSTANTE > 0) flags.push({ classe: 'medidor', texto: 'Sensor Travado' });
-        if (ponto.DIAS_VALOR_NEGATIVO > 0 || ponto.DIAS_FORA_FAIXA > 0) flags.push({ classe: 'hidraulico', texto: 'Hidráulico' });
-        if (ponto.DIAS_ZEROS_SUSPEITOS > 0) flags.push({ classe: 'verificar', texto: 'Verificar' });
+        if (ponto.DIAS_SEM_COMUNICACAO > 0) flags.push({ 
+            classe: 'comunicacao', 
+            texto: 'Comunicação', 
+            tooltip: `Falha de comunicação em ${ponto.DIAS_SEM_COMUNICACAO} dia(s). O equipamento não enviou dados suficientes (menos de 50% dos registros esperados).`
+        });
+        // Usa DIAS_PROBLEMA_MEDIDOR que combina valor constante + perfil anômalo
+        const diasMedidor = ponto.DIAS_PROBLEMA_MEDIDOR || ponto.DIAS_VALOR_CONSTANTE || 0;
+        if (diasMedidor > 0) flags.push({ 
+            classe: 'medidor', 
+            texto: 'Problema Medidor', 
+            tooltip: `Problema de medidor em ${diasMedidor} dia(s). Valor constante ou perfil anômalo detectado, indicando possível travamento ou defeito no sensor.`
+        });
+        if (ponto.DIAS_VALOR_NEGATIVO > 0 || ponto.DIAS_FORA_FAIXA > 0) flags.push({ 
+            classe: 'hidraulico', 
+            texto: 'Hidráulico', 
+            tooltip: `Problema hidráulico detectado. ${ponto.DIAS_VALOR_NEGATIVO > 0 ? `Valores negativos em ${ponto.DIAS_VALOR_NEGATIVO} dia(s). ` : ''}${ponto.DIAS_FORA_FAIXA > 0 ? `Valores fora da faixa em ${ponto.DIAS_FORA_FAIXA} dia(s).` : ''}`
+        });
+        if (ponto.DIAS_ZEROS_SUSPEITOS > 0) flags.push({ 
+            classe: 'verificar', 
+            texto: 'Verificar', 
+            tooltip: `Zeros suspeitos em ${ponto.DIAS_ZEROS_SUSPEITOS} dia(s). Quantidade anormal de leituras zeradas que podem indicar problema no sensor ou na rede.`
+        });
+        if (ponto.DIAS_COM_SPIKE > 0) flags.push({ 
+            classe: 'hidraulico', 
+            texto: 'Spikes', 
+            tooltip: `Picos de leitura em ${ponto.DIAS_COM_SPIKE} dia(s). Variações bruscas que podem indicar vazamento, manobra na rede ou problema no sensor.`
+        });
+        if (ponto.QTD_TRATAMENTOS > 3) flags.push({ 
+            classe: 'tratamento', 
+            texto: 'Tratamento Recorrente', 
+            tooltip: `Este ponto precisou de ${ponto.QTD_TRATAMENTOS} tratamentos manuais no período. Considere investigar a causa raiz do problema.`
+        });
         
         return `
             <div class="ponto-card" onclick="abrirDetalhes(${ponto.CD_PONTO_MEDICAO})">
@@ -1246,7 +1575,12 @@ function renderizarPontos() {
                     </div>
                     ${flags.length > 0 ? `
                         <div class="ponto-flags">
-                            ${flags.map(f => `<span class="ponto-flag ${f.classe}">${f.texto}</span>`).join('')}
+                            ${flags.map(f => `
+                                <span class="tooltip-container">
+                                    <span class="ponto-flag ${f.classe}">${f.texto}</span>
+                                    <span class="tooltip-text">${f.tooltip}</span>
+                                </span>
+                            `).join('')}
                         </div>
                     ` : ''}
                 </div>
@@ -1341,31 +1675,56 @@ async function abrirDetalhes(cdPonto) {
     document.getElementById('modalMedia').textContent = formatarValor(pontoAtual.MEDIA_PERIODO);
     document.getElementById('modalDiasAnomalia').textContent = pontoAtual.DIAS_COM_ANOMALIA || 0;
     
-    // Flags
+    // Flags com tooltips
     const flagsHtml = `
-        <div class="modal-flag ${pontoAtual.DIAS_SEM_COMUNICACAO > 0 ? 'active' : 'inactive'}">
-            <ion-icon name="wifi-outline"></ion-icon>
-            Comunicação (${pontoAtual.DIAS_SEM_COMUNICACAO || 0} dias)
+        <div class="tooltip-container">
+            <div class="modal-flag ${pontoAtual.DIAS_SEM_COMUNICACAO > 0 ? 'active' : 'inactive'}">
+                <ion-icon name="wifi-outline"></ion-icon>
+                Comunicação (${pontoAtual.DIAS_SEM_COMUNICACAO || 0} dias)
+            </div>
+            <span class="tooltip-text">Falha de comunicação: equipamento não enviou dados suficientes (menos de 50% dos registros esperados)</span>
         </div>
-        <div class="modal-flag ${pontoAtual.DIAS_VALOR_CONSTANTE > 0 ? 'active' : 'inactive'}">
-            <ion-icon name="pause-circle-outline"></ion-icon>
-            Valor Constante (${pontoAtual.DIAS_VALOR_CONSTANTE || 0} dias)
+        <div class="tooltip-container">
+            <div class="modal-flag ${pontoAtual.DIAS_VALOR_CONSTANTE > 0 ? 'active' : 'inactive'}">
+                <ion-icon name="pause-circle-outline"></ion-icon>
+                Valor Constante (${pontoAtual.DIAS_VALOR_CONSTANTE || 0} dias)
+            </div>
+            <span class="tooltip-text">Sensor travado: reportando sempre o mesmo valor, indicando possível defeito</span>
         </div>
-        <div class="modal-flag ${pontoAtual.DIAS_VALOR_NEGATIVO > 0 ? 'active' : 'inactive'}">
-            <ion-icon name="remove-circle-outline"></ion-icon>
-            Valor Negativo (${pontoAtual.DIAS_VALOR_NEGATIVO || 0} dias)
+        <div class="tooltip-container">
+            <div class="modal-flag ${pontoAtual.DIAS_VALOR_NEGATIVO > 0 ? 'active' : 'inactive'}">
+                <ion-icon name="remove-circle-outline"></ion-icon>
+                Valor Negativo (${pontoAtual.DIAS_VALOR_NEGATIVO || 0} dias)
+            </div>
+            <span class="tooltip-text">Valores negativos detectados: pode indicar fluxo reverso ou problema no sensor</span>
         </div>
-        <div class="modal-flag ${pontoAtual.DIAS_FORA_FAIXA > 0 ? 'active' : 'inactive'}">
-            <ion-icon name="trending-up-outline"></ion-icon>
-            Fora da Faixa (${pontoAtual.DIAS_FORA_FAIXA || 0} dias)
+        <div class="tooltip-container">
+            <div class="modal-flag ${pontoAtual.DIAS_FORA_FAIXA > 0 ? 'active' : 'inactive'}">
+                <ion-icon name="trending-up-outline"></ion-icon>
+                Fora da Faixa (${pontoAtual.DIAS_FORA_FAIXA || 0} dias)
+            </div>
+            <span class="tooltip-text">Valores fora dos limites operacionais configurados para este tipo de medidor</span>
         </div>
-        <div class="modal-flag ${pontoAtual.DIAS_COM_SPIKE > 0 ? 'active' : 'inactive'}">
-            <ion-icon name="flash-outline"></ion-icon>
-            Spikes (${pontoAtual.DIAS_COM_SPIKE || 0} dias)
+        <div class="tooltip-container">
+            <div class="modal-flag ${pontoAtual.DIAS_COM_SPIKE > 0 ? 'active' : 'inactive'}">
+                <ion-icon name="flash-outline"></ion-icon>
+                Spikes (${pontoAtual.DIAS_COM_SPIKE || 0} dias)
+            </div>
+            <span class="tooltip-text">Picos de leitura: variações bruscas que podem indicar vazamento, manobra na rede ou problema no sensor</span>
         </div>
-        <div class="modal-flag ${pontoAtual.DIAS_ZEROS_SUSPEITOS > 0 ? 'active' : 'inactive'}">
-            <ion-icon name="alert-outline"></ion-icon>
-            Zeros Suspeitos (${pontoAtual.DIAS_ZEROS_SUSPEITOS || 0} dias)
+        <div class="tooltip-container">
+            <div class="modal-flag ${pontoAtual.DIAS_ZEROS_SUSPEITOS > 0 ? 'active' : 'inactive'}">
+                <ion-icon name="alert-outline"></ion-icon>
+                Zeros Suspeitos (${pontoAtual.DIAS_ZEROS_SUSPEITOS || 0} dias)
+            </div>
+            <span class="tooltip-text">Quantidade anormal de leituras zeradas que podem indicar problema no sensor</span>
+        </div>
+        <div class="tooltip-container">
+            <div class="modal-flag ${(pontoAtual.QTD_TRATAMENTOS || 0) > 3 ? 'active' : 'inactive'}" style="${(pontoAtual.QTD_TRATAMENTOS || 0) > 3 ? 'background: #fce7f3; color: #be185d;' : ''}">
+                <ion-icon name="construct-outline"></ion-icon>
+                Tratamentos (${pontoAtual.QTD_TRATAMENTOS || 0})
+            </div>
+            <span class="tooltip-text">Quantidade de vezes que registros deste ponto foram descartados manualmente. Muitos tratamentos indicam problema persistente</span>
         </div>
     `;
     document.getElementById('modalFlags').innerHTML = flagsHtml;
