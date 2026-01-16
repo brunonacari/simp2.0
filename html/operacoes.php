@@ -3849,21 +3849,31 @@ $letrasTipoMedidor = [
     /**
      * Constrói contexto completo com dados do banco
      */
+    /**
+      * Constrói contexto completo com dados do banco para a IA
+      * 
+      * @param {Object} dados - Dados retornados pelo consultarDadosIA.php
+      * @returns {string} - Contexto formatado para enviar à IA
+      * 
+      * @version 2.1 - Adicionado suporte a registros descartados (ID_SITUACAO)
+      */
     function construirContextoCompletoChat(dados) {
-        let contexto = '=== DADOS DO SISTEMA DE ABASTECIMENTO DE àâGUA ===\n\n';
+        let contexto = '=== DADOS DO SISTEMA DE ABASTECIMENTO DE ÁGUA ===\n\n';
 
-        // Função auxiliar para formatar nàºmero
+        // Função auxiliar para formatar número
         const formatNum = (val, decimais = 2) => {
             if (val === null || val === undefined || val === '') return '-';
             const num = parseFloat(val);
             return isNaN(num) ? '-' : num.toFixed(decimais);
         };
 
-        // Informações completas do ponto de medição
+        // ==========================================
+        // INFORMAÇÕES DO PONTO DE MEDIÇÃO
+        // ==========================================
         if (dados.ponto && Object.keys(dados.ponto).length > 0) {
             const p = dados.ponto;
             contexto += `========================================\n`;
-            contexto += `INFORMAà‡à•ES DO PONTO DE MEDIà‡àƒO\n`;
+            contexto += `INFORMAÇÕES DO PONTO DE MEDIÇÃO\n`;
             contexto += `========================================\n`;
             contexto += `Código do Ponto: ${p.CD_PONTO_MEDICAO || 'N/A'}\n`;
             contexto += `Identificador: ${p.CD_IDENTIFICADOR || 'N/A'}\n`;
@@ -3872,7 +3882,7 @@ $letrasTipoMedidor = [
             contexto += `Unidade Operacional: ${p.UNIDADE_OPERACIONAL || 'N/A'}\n`;
             contexto += `Código Localidade: ${p.CD_LOCALIDADE || 'N/A'}\n`;
             contexto += `\n`;
-            contexto += `TIPO E CONFIGURAà‡àƒO:\n`;
+            contexto += `TIPO E CONFIGURAÇÃO:\n`;
             contexto += `- Tipo de Medidor: ${p.DS_TIPO_MEDIDOR || 'N/A'} (ID: ${p.ID_TIPO_MEDIDOR || 'N/A'})\n`;
             contexto += `- Tipo de Leitura: ${p.DS_TIPO_LEITURA || 'N/A'} (ID: ${p.ID_TIPO_LEITURA || 'N/A'})\n`;
             contexto += `- Periodicidade de Leitura: ${p.OP_PERIODICIDADE_LEITURA || 'N/A'}\n`;
@@ -3887,7 +3897,7 @@ $letrasTipoMedidor = [
                 contexto += `- Data de Desativação: ${p.DT_DESATIVACAO_FORMATADA}\n`;
             }
             contexto += `\n`;
-            contexto += `PARà‚METROS Tà‰CNICOS:\n`;
+            contexto += `PARÂMETROS TÉCNICOS:\n`;
             if (p.VL_LIMITE_INFERIOR_VAZAO !== null && p.VL_LIMITE_INFERIOR_VAZAO !== undefined) {
                 contexto += `- Limite Inferior de Vazão: ${formatNum(p.VL_LIMITE_INFERIOR_VAZAO)} L/s\n`;
             }
@@ -3903,10 +3913,10 @@ $letrasTipoMedidor = [
             if (p.DS_TAG_PRESSAO) contexto += `- Tag Pressão: ${p.DS_TAG_PRESSAO}\n`;
             if (p.DS_TAG_VOLUME) contexto += `- Tag Volume: ${p.DS_TAG_VOLUME}\n`;
             if (p.DS_TAG_RESERVATORIO) contexto += `- Tag Reservatório: ${p.DS_TAG_RESERVATORIO}\n`;
-            if (p.DS_TAG_TEMP_AGUA) contexto += `- Tag Temp. àâgua: ${p.DS_TAG_TEMP_AGUA}\n`;
+            if (p.DS_TAG_TEMP_AGUA) contexto += `- Tag Temp. Água: ${p.DS_TAG_TEMP_AGUA}\n`;
             if (p.DS_TAG_TEMP_AMBIENTE) contexto += `- Tag Temp. Ambiente: ${p.DS_TAG_TEMP_AMBIENTE}\n`;
             contexto += `\n`;
-            contexto += `INFORMAà‡à•ES COMPLEMENTARES:\n`;
+            contexto += `INFORMAÇÕES COMPLEMENTARES:\n`;
             if (p.VL_QUANTIDADE_LIGACOES) {
                 contexto += `- Quantidade de Ligações: ${p.VL_QUANTIDADE_LIGACOES}\n`;
             }
@@ -3933,75 +3943,122 @@ $letrasTipoMedidor = [
 
         // Data atual
         const dataFormatada = validacaoDataAtual ? validacaoDataAtual.split('-').reverse().join('/') : 'N/A';
-        contexto += `DATA EM ANàâLISE: ${dataFormatada}\n\n`;
+        contexto += `DATA EM ANÁLISE: ${dataFormatada}\n\n`;
 
-        // Dados do dia atual com cálculos
+        // ==========================================
+        // DADOS HORÁRIOS DO DIA (com descartados)
+        // ==========================================
         if (dados.dia_atual && dados.dia_atual.length > 0) {
             let totalRegistrosDia = 0;
+            let totalValidosDia = 0;
+            let totalDescartadosDia = 0;
             let somaVazaoDia = 0;
             let somaPressaoDia = 0;
             let horasComVazao = 0;
             let horasComPressao = 0;
+            let horasComDescarte = [];
 
-            contexto += `DADOS HORàâRIOS DO DIA:\n`;
-            contexto += `Hora  | Média Vazão(L/s) | Soma Hora(L/s) | Registros | Min     | Máx\n`;
-            contexto += `------|------------------|----------------|-----------|---------|--------\n`;
+            contexto += `DADOS HORÁRIOS DO DIA:\n`;
+            contexto += `Hora  | Válidos | Descart. | Média Vazão | Min     | Máx\n`;
+            contexto += `------|---------|----------|-------------|---------|--------\n`;
 
             dados.dia_atual.forEach(h => {
                 const hora = String(h.HORA).padStart(2, '0') + ':00';
                 const mediaVazao = parseFloat(h.MEDIA_VAZAO) || 0;
-                const registros = parseInt(h.QTD_REGISTROS) || 0;
-                const somaHora = mediaVazao * registros; // Soma = média × registros
+
+                // Suporte a novo formato com válidos/descartados
+                const qtdValidos = parseInt(h.QTD_VALIDOS) || parseInt(h.QTD_REGISTROS) || 0;
+                const qtdDescartados = parseInt(h.QTD_DESCARTADOS) || 0;
+                const qtdTotal = parseInt(h.QTD_REGISTROS_TOTAL) || (qtdValidos + qtdDescartados);
+
+                const somaHora = parseFloat(h.SOMA_VAZAO) || (mediaVazao * 60);
                 const minVazao = formatNum(h.MIN_VAZAO);
                 const maxVazao = formatNum(h.MAX_VAZAO);
 
-                totalRegistrosDia += registros;
+                totalRegistrosDia += qtdTotal;
+                totalValidosDia += qtdValidos;
+                totalDescartadosDia += qtdDescartados;
                 somaVazaoDia += somaHora;
 
                 if (mediaVazao > 0) horasComVazao++;
 
                 if (h.MEDIA_PRESSAO !== null) {
-                    somaPressaoDia += (parseFloat(h.MEDIA_PRESSAO) || 0) * registros;
+                    somaPressaoDia += (parseFloat(h.MEDIA_PRESSAO) || 0) * 60;
                     horasComPressao++;
                 }
 
-                contexto += `${hora} | ${formatNum(mediaVazao).padStart(16)} | ${formatNum(somaHora).padStart(14)} | ${String(registros).padStart(9)} | ${minVazao.padStart(7)} | ${maxVazao}\n`;
+                // Marcar horas com descarte
+                const marcaDescarte = qtdDescartados > 0 ? ' ⚠️' : '';
+                if (qtdDescartados > 0) {
+                    horasComDescarte.push({ hora: hora, qtd: qtdDescartados });
+                }
+
+                contexto += `${hora} | ${String(qtdValidos).padStart(7)} | ${String(qtdDescartados).padStart(8)} | ${formatNum(mediaVazao).padStart(11)} | ${minVazao.padStart(7)} | ${maxVazao}${marcaDescarte}\n`;
             });
 
-            // Usar cálculos do backend (já calculados corretamente com divisão por 1440)
+            // Usar cálculos do backend (já calculados corretamente)
             const calculos = dados.calculos || {};
-            const mediaDiariaVazao = calculos.media_diaria_vazao || 0;
+            const mediaDiariaVazao = calculos.media_diaria_vazao || (somaVazaoDia / 1440);
             const mediaDiariaPressao = calculos.media_diaria_pressao || 0;
-            const somaTotalVazao = calculos.soma_total_vazao || 0;
+            const somaTotalVazao = calculos.soma_total_vazao || somaVazaoDia;
+            const totalValidos = calculos.total_validos || totalValidosDia;
+            const totalDescartados = calculos.total_descartados || totalDescartadosDia;
+            const horasComDescarteBackend = calculos.horas_com_descarte || horasComDescarte;
 
             contexto += `\n========================================\n`;
             contexto += `RESUMO DO DIA (VALORES OFICIAIS):\n`;
             contexto += `========================================\n`;
-            contexto += `- Total de registros: ${calculos.total_registros || totalRegistrosDia} de 1440\n`;
-            contexto += `- Horas com dados: ${calculos.horas_com_dados || dados.dia_atual.length}/24\n`;
-            contexto += `- Soma total de todas as vazões: ${formatNum(somaTotalVazao)} L/s\n`;
+            contexto += `- Total de registros: ${calculos.total_registros || totalRegistrosDia}\n`;
+            contexto += `- Registros válidos (ID_SITUACAO=1): ${totalValidos}\n`;
+            contexto += `- Registros descartados/corrigidos (ID_SITUACAO=2): ${totalDescartados}\n`;
+
+            // Se houve descarte, informar as horas
+            if (totalDescartados > 0) {
+                contexto += `\n⚠️ HORAS COM REGISTROS DESCARTADOS:\n`;
+                if (horasComDescarteBackend && horasComDescarteBackend.length > 0) {
+                    horasComDescarteBackend.forEach(h => {
+                        const horaFmt = h.hora_formatada || h.hora;
+                        const qtd = h.qtd_descartados || h.qtd;
+                        contexto += `  - ${horaFmt}: ${qtd} registro(s) descartado(s)\n`;
+                    });
+                } else if (horasComDescarte.length > 0) {
+                    horasComDescarte.forEach(h => {
+                        contexto += `  - ${h.hora}: ${h.qtd} registro(s) descartado(s)\n`;
+                    });
+                }
+                contexto += `  NOTA: Descartados são registros revisados pelo operador e NÃO entram nos cálculos de média.\n`;
+            }
+
+            contexto += `\n- Horas com dados válidos: ${calculos.horas_com_dados || dados.dia_atual.length}/24\n`;
+            contexto += `- Soma total de vazões (válidos): ${formatNum(somaTotalVazao)} L/s\n`;
             contexto += `\n`;
-            contexto += `>>> MÉDIA DIàRIA DE VAZÃO: ${formatNum(mediaDiariaVazao)} L/s <<<\n`;
-            contexto += `    (Cálculo oficial: ${formatNum(somaTotalVazao)} à· 1440 = ${formatNum(mediaDiariaVazao)})\n`;
+            contexto += `>>> MÉDIA DIÁRIA DE VAZÃO: ${formatNum(mediaDiariaVazao)} L/s <<<\n`;
+            contexto += `    (Cálculo oficial: ${formatNum(somaTotalVazao)} ÷ 1440 = ${formatNum(mediaDiariaVazao)})\n`;
+            contexto += `    (Usa APENAS registros válidos - ID_SITUACAO=1)\n`;
             if (mediaDiariaPressao > 0) {
-                contexto += `>>> MÉDIA DIàRIA DE PRESSÃO: ${formatNum(mediaDiariaPressao)} mca <<<\n`;
+                contexto += `>>> MÉDIA DIÁRIA DE PRESSÃO: ${formatNum(mediaDiariaPressao)} mca <<<\n`;
             }
             contexto += `\n`;
             contexto += `IMPORTANTE: Use EXATAMENTE o valor ${formatNum(mediaDiariaVazao)} L/s como média diária.\n`;
-            contexto += `Este valor já foi calculado corretamente (soma à· 1440).\n`;
             contexto += `========================================\n`;
             contexto += '\n';
         }
 
-        // Estatà­sticas do mês
+        // ==========================================
+        // ESTATÍSTICAS DO MÊS
+        // ==========================================
         if (dados.estatisticas_mes) {
             const e = dados.estatisticas_mes;
-            contexto += `ESTATàâSTICAS DO MÊS (${e.MES_REFERENCIA || 'N/A'}):\n`;
+            contexto += `ESTATÍSTICAS DO MÊS (${e.MES_REFERENCIA || 'N/A'}):\n`;
             contexto += `- Dias com dados: ${e.DIAS_COM_DADOS || 0}\n`;
             contexto += `- Total de registros no mês: ${e.TOTAL_REGISTROS || 0}\n`;
+            if (e.TOTAL_VALIDOS !== undefined) {
+                contexto += `- Registros válidos: ${e.TOTAL_VALIDOS || 0}\n`;
+                contexto += `- Registros descartados: ${e.TOTAL_DESCARTADOS || 0}\n`;
+            }
             if (e.MEDIA_VAZAO_MES !== null && e.MEDIA_VAZAO_MES !== undefined) {
                 contexto += `- Vazão média mensal: ${formatNum(e.MEDIA_VAZAO_MES)} L/s\n`;
-                contexto += `- Vazão mà­nima: ${formatNum(e.MIN_VAZAO_MES)} L/s\n`;
+                contexto += `- Vazão mínima: ${formatNum(e.MIN_VAZAO_MES)} L/s\n`;
                 contexto += `- Vazão máxima: ${formatNum(e.MAX_VAZAO_MES)} L/s\n`;
             }
             if (e.MEDIA_PRESSAO_MES !== null && e.MEDIA_PRESSAO_MES !== undefined && parseFloat(e.MEDIA_PRESSAO_MES) > 0) {
@@ -4013,24 +4070,29 @@ $letrasTipoMedidor = [
             contexto += '\n';
         }
 
-        // Histórico dos àºltimos 7 dias
+        // ==========================================
+        // HISTÓRICO DOS ÚLTIMOS 7 DIAS
+        // ==========================================
         if (dados.historico_7dias && dados.historico_7dias.length > 0) {
-            contexto += `HISTàâ€œRICO DOS ÚLTIMOS 7 DIAS:\n`;
-            contexto += `Data       | Registros | Média Vazão | Vazão Mín | Vazão Máx\n`;
-            contexto += `-----------|-----------|-------------|-----------|----------\n`;
+            contexto += `HISTÓRICO DOS ÚLTIMOS 7 DIAS:\n`;
+            contexto += `Data       | Válidos | Descart. | Média Vazão | Vazão Mín | Vazão Máx\n`;
+            contexto += `-----------|---------|----------|-------------|-----------|----------\n`;
 
             dados.historico_7dias.forEach(d => {
                 const data = d.DATA || 'N/A';
-                const registros = d.QTD_REGISTROS || '0';
+                const validos = d.QTD_VALIDOS || d.QTD_REGISTROS || '0';
+                const descartados = d.QTD_DESCARTADOS || '0';
                 const vazaoMedia = formatNum(d.MEDIA_VAZAO);
                 const vazaoMin = formatNum(d.MIN_VAZAO);
                 const vazaoMax = formatNum(d.MAX_VAZAO);
-                contexto += `${data} | ${String(registros).padStart(9)} | ${vazaoMedia.padStart(11)} | ${vazaoMin.padStart(9)} | ${vazaoMax}\n`;
+                contexto += `${data} | ${String(validos).padStart(7)} | ${String(descartados).padStart(8)} | ${vazaoMedia.padStart(11)} | ${vazaoMin.padStart(9)} | ${vazaoMax}\n`;
             });
             contexto += '\n';
         }
 
-        // Média do mesmo dia da semana
+        // ==========================================
+        // MÉDIA DO MESMO DIA DA SEMANA
+        // ==========================================
         if (dados.media_mesmo_dia_semana && dados.media_mesmo_dia_semana.media_geral_vazao !== null) {
             const m = dados.media_mesmo_dia_semana;
             contexto += `COMPARATIVO - MÉDIA DO MESMO DIA DA SEMANA (últimas ${m.semanas_analisadas} semanas):\n`;
@@ -4043,52 +4105,26 @@ $letrasTipoMedidor = [
 
         // ==========================================
         // HISTÓRICO DO MESMO DIA DA SEMANA (para cálculos)
-        // CORREÇÃO: Agora mostra TODAS as semanas (com e sem dados)
         // ==========================================
         if (dados.historico_mesmo_dia && dados.historico_mesmo_dia.medias_por_dia) {
             const hist = dados.historico_mesmo_dia;
+            const diasComDados = hist.medias_por_dia.filter(d => d.tem_dados);
 
             contexto += `========================================\n`;
             contexto += `HISTÓRICO DO MESMO DIA DA SEMANA (${hist.dia_semana}):\n`;
             contexto += `========================================\n`;
-            contexto += `Data de consulta: ${hist.data_consulta_formatada || validacaoDataAtual.split('-').reverse().join('/')}\n`;
-            contexto += `Semanas analisadas: ${hist.medias_por_dia.length}\n`;
-            contexto += `Semanas com dados válidos: ${hist.semanas_disponiveis}\n\n`;
-
-            contexto += `DADOS POR SEMANA (TODAS as semanas são listadas):\n`;
-            contexto += `-------------------------------------------------\n`;
-
-            let semanasValidas = 0;
-            let somaMedias = 0;
+            contexto += `Semanas com dados disponíveis: ${hist.semanas_disponiveis}\n\n`;
+            contexto += `DADOS POR SEMANA (use para calcular médias):\n`;
 
             hist.medias_por_dia.forEach((dia, idx) => {
-                const numSemana = dia.semana_numero || (idx + 1);
-                const dataFmt = dia.data_formatada;
-                const diaSemanaAbrev = dia.dia_semana_abrev || dia.dia_semana?.substring(0, 3) || '???';
-
                 if (dia.tem_dados) {
-                    semanasValidas++;
-                    somaMedias += dia.media_vazao;
-                    contexto += `  Semana ${numSemana} (${dataFmt} - ${diaSemanaAbrev}): ${formatNum(dia.media_vazao)} L/s ✓ USADO (${semanasValidas}ª válida)\n`;
-                } else {
-                    const motivo = dia.motivo_sem_dados || 'Sem dados';
-                    contexto += `  Semana ${numSemana} (${dataFmt} - ${diaSemanaAbrev}): ✗ IGNORADO - ${motivo}\n`;
+                    const descInfo = dia.total_descartados > 0 ? ` [${dia.total_descartados} descartados]` : '';
+                    contexto += `  Semana ${idx + 1} (${dia.data_formatada}): ${formatNum(dia.media_vazao)} L/s${descInfo}\n`;
                 }
             });
 
-            contexto += `\n`;
-
-            if (semanasValidas > 0) {
-                const mediaGeral = somaMedias / semanasValidas;
-                contexto += `>>> RESUMO: ${semanasValidas} semanas válidas encontradas <<<\n`;
-                contexto += `>>> Média geral das semanas válidas: ${formatNum(mediaGeral)} L/s <<<\n`;
-            } else {
-                contexto += `>>> ATENÇÃO: Nenhuma semana com dados válidos encontrada! <<<\n`;
-            }
-
             contexto += `\nPARA CALCULAR MÉDIA DE X SEMANAS:\n`;
-            contexto += `- Use apenas as semanas marcadas com ✓ USADO\n`;
-            contexto += `- Some as médias das X primeiras semanas válidas\n`;
+            contexto += `- Some as médias das X primeiras semanas com dados\n`;
             contexto += `- Divida pela quantidade de semanas somadas\n`;
             contexto += `- Apresente o cálculo detalhado quando solicitado\n`;
             contexto += `========================================\n\n`;
@@ -4101,7 +4137,7 @@ $letrasTipoMedidor = [
             const histHora = dados.historico_por_hora;
 
             contexto += `========================================\n`;
-            contexto += `ANàLISE PARA SUGESTÃO DE VALORES:\n`;
+            contexto += `ANÁLISE PARA SUGESTÃO DE VALORES:\n`;
             contexto += `========================================\n`;
             contexto += `Dia da semana: ${histHora.dia_semana}\n`;
             contexto += `Semanas analisadas: ${histHora.semanas_analisadas}\n\n`;
@@ -4111,7 +4147,7 @@ $letrasTipoMedidor = [
             const tendenciaPct = histHora.tendencia_percentual || 0;
             const horasUsadas = histHora.horas_usadas_tendencia || 0;
 
-            contexto += `FATOR DE TENDàŠNCIA DO DIA ATUAL:\n`;
+            contexto += `FATOR DE TENDÊNCIA DO DIA ATUAL:\n`;
             if (horasUsadas >= 3) {
                 const direcao = tendenciaPct >= 0 ? 'acima' : 'abaixo';
                 contexto += `- Baseado em ${horasUsadas} horas com dados válidos\n`;
@@ -4122,7 +4158,7 @@ $letrasTipoMedidor = [
                 contexto += `- Usando fator = 1.0 (sem ajuste)\n\n`;
             }
 
-            contexto += `Fàâ€œRMULA: valor_sugerido = média_histórica × fator_tendência\n\n`;
+            contexto += `FÓRMULA: valor_sugerido = média_histórica × fator_tendência\n\n`;
 
             contexto += `DADOS POR HORA:\n`;
             contexto += `Hora  | Média Histórica | Fator | Valor Sugerido | Valor Atual\n`;
@@ -4159,7 +4195,9 @@ $letrasTipoMedidor = [
             contexto += `\n========================================\n\n`;
         }
 
-        // Alertas detectados
+        // ==========================================
+        // ALERTAS DETECTADOS
+        // ==========================================
         if (dados.alertas && dados.alertas.length > 0) {
             contexto += `ALERTAS DETECTADOS:\n`;
             dados.alertas.forEach(a => {

@@ -48,8 +48,8 @@ $tiposLeitura = [
                     <ion-icon name="pin-outline"></ion-icon>
                 </div>
                 <div>
-                    <h1>Ponto de Medicao</h1>
-                    <p class="page-header-subtitle">Gerencie os pontos de medicao do sistema</p>
+                    <h1>Ponto de Medição</h1>
+                    <p class="page-header-subtitle">Gerencie os pontos de medição do sistema</p>
                 </div>
             </div>
             <?php if ($podeEditar): ?>
@@ -106,7 +106,7 @@ $tiposLeitura = [
             <div class="form-group">
                 <label class="form-label">
                     <ion-icon name="speedometer-outline"></ion-icon>
-                    Ponto de Medicao
+                    Ponto de Medição
                 </label>
                 <div class="autocomplete-container">
                     <input type="text" id="filtroPontoMedicaoInput" class="form-control"
@@ -157,7 +157,7 @@ $tiposLeitura = [
                     <input type="text" 
                            id="inputBusca" 
                            class="form-control input-search" 
-                           placeholder="Buscar por nome, codigo...">
+                           placeholder="Buscar por nome, código...">
                     <button type="button" class="btn-search-clear" onclick="limparBusca()" style="display: none;">
                         <ion-icon name="close-circle"></ion-icon>
                     </button>
@@ -165,7 +165,7 @@ $tiposLeitura = [
             </div>
 
             <!-- Status -->
-            <div class="form-group form-group-span-2">
+            <div class="form-group form-group-full">
                 <label class="form-label">
                     <ion-icon name="toggle-outline"></ion-icon>
                     Status
@@ -194,25 +194,26 @@ $tiposLeitura = [
             <div class="loading-spinner"></div>
         </div>
 
-        <div class="table-header">
-            <div class="results-info">
-                <span>Exibindo <span class="results-count" id="resultsCount">0</span> registros</span>
+        <div class="table-info">
+            <div class="results-count">
+                <ion-icon name="list-outline"></ion-icon>
+                <span>Exibindo <strong id="resultsCount">0</strong> registros</span>
             </div>
         </div>
 
-        <div class="table-scroll">
+        <div class="table-wrapper">
             <table class="data-table">
                 <thead>
                     <tr>
                         <th>Unidade</th>
                         <th>Localidade</th>
                         <th class="sortable" data-column="CD_CODIGO">
-                            Codigo <ion-icon name="swap-vertical-outline"></ion-icon>
+                            Código <ion-icon name="swap-vertical-outline"></ion-icon>
                         </th>
                         <th class="sortable" data-column="DS_NOME">
                             Nome <ion-icon name="swap-vertical-outline"></ion-icon>
                         </th>
-                        <th>Codigo TAG</th>
+                        <th>Código TAG</th>
                         <th class="sortable" data-column="DS_TIPO_MEDIDOR">
                             Tipo Medidor <ion-icon name="swap-vertical-outline"></ion-icon>
                         </th>
@@ -220,7 +221,7 @@ $tiposLeitura = [
                         <th class="sortable" data-column="OP_SITUACAO">
                             Status <ion-icon name="swap-vertical-outline"></ion-icon>
                         </th>
-                        <th>Acoes</th>
+                        <th class="th-actions">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tabelaResultados">
@@ -238,12 +239,12 @@ $tiposLeitura = [
                 </tbody>
             </table>
         </div>
-    </div>
 
-    <!-- Pagination -->
-    <div class="pagination-container" id="paginationContainer" style="display: none;">
-        <div class="page-info" id="pageInfo"></div>
-        <div class="pagination" id="pagination"></div>
+        <!-- Pagination -->
+        <div class="pagination-container" id="paginationContainer" style="display: none;">
+            <div class="page-info" id="pageInfo"></div>
+            <div class="pagination" id="pagination"></div>
+        </div>
     </div>
 </div>
 
@@ -633,7 +634,7 @@ $tiposLeitura = [
                     <td><span class="badge ${tipoLeituraClass}">${item.DS_TIPO_LEITURA || '-'}</span></td>
                     <td><span class="badge ${statusClass}">${statusText}</span></td>
                     <td>
-                        <div class="actions-cell">
+                        <div class="table-actions">
                             <button type="button" class="btn-action" onclick="visualizar(${item.CD_PONTO_MEDICAO})" title="Visualizar">
                                 <ion-icon name="eye-outline"></ion-icon>
                             </button>
@@ -643,12 +644,12 @@ $tiposLeitura = [
                             </button>
                             ` : ''}
                             ${podeEditar && isAtivo ? `
-                            <button type="button" class="btn-action btn-action-delete" onclick="desativar(${item.CD_PONTO_MEDICAO})" title="Desativar">
+                            <button type="button" class="btn-action delete" onclick="desativar(${item.CD_PONTO_MEDICAO})" title="Desativar">
                                 <ion-icon name="trash-outline"></ion-icon>
                             </button>
                             ` : ''}
                             ${podeEditar && !isAtivo ? `
-                            <button type="button" class="btn-action btn-action-activate" onclick="ativar(${item.CD_PONTO_MEDICAO})" title="Ativar">
+                            <button type="button" class="btn-action activate" onclick="ativar(${item.CD_PONTO_MEDICAO})" title="Ativar">
                                 <ion-icon name="checkmark-circle-outline"></ion-icon>
                             </button>
                             ` : ''}
@@ -673,7 +674,7 @@ $tiposLeitura = [
     }
 
     function desativar(id) {
-        if (confirm('Tem certeza que deseja desativar este ponto de medicao?')) {
+        if (confirm('Tem certeza que deseja desativar este ponto de medição?')) {
             $.post('bd/pontoMedicao/excluirPontoMedicao.php', { cd_ponto_medicao: id }, function(response) {
                 if (response.success) {
                     showToast(response.message || 'Ponto desativado com sucesso', 'sucesso');
@@ -688,7 +689,7 @@ $tiposLeitura = [
     }
 
     function ativar(id) {
-        if (confirm('Deseja reativar este ponto de medicao?')) {
+        if (confirm('Deseja reativar este ponto de medição?')) {
             $.post('bd/pontoMedicao/ativarPontoMedicao.php', { cd_ponto_medicao: id }, function(response) {
                 if (response.success) {
                     showToast(response.message || 'Ponto ativado com sucesso', 'sucesso');
@@ -824,7 +825,7 @@ $tiposLeitura = [
     function createToastContainer() {
         const container = document.createElement('div');
         container.id = 'toast-container';
-        container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+        container.className = 'toast-container';
         document.body.appendChild(container);
         return container;
     }
