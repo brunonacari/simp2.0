@@ -936,6 +936,30 @@ if (isset($_SESSION['msg'])) {
 
     <div class="sidebar-divider"></div>
 
+    <div class="sidebar-section">
+        <div class="sidebar-section-title" onclick="toggleSection(this)" data-section="calculos">
+            <span class="section-icon">
+                <ion-icon name="calculator-outline"></ion-icon>
+                <span>Cálculos</span>
+            </span>
+            <ion-icon name="chevron-down-outline" class="toggle-icon"></ion-icon>
+        </div>
+        <div class="sidebar-section-content" id="section-calculos">
+            <ul class="sidebar-nav">
+                <li class="sidebar-item">
+                    <a href="calculoKPC.php"
+                        class="sidebar-link <?= in_array($paginaAtual, ['calculoKPC']) ? 'active' : '' ?>"
+                        data-title="Coeficiente KPC">
+                        <ion-icon name="analytics-outline"></ion-icon>
+                        <span class="sidebar-link-text">Coeficiente KPC</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
     <!-- Seção: Administração -->
     <div class="sidebar-section">
         <div class="sidebar-section-title" onclick="toggleSection(this)" data-section="monitoramento">
