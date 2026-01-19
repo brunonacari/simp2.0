@@ -3268,6 +3268,93 @@ $descartes = [
     </div>
 </div>
 
+<!-- ===============================================================
+     PARTE 1: MODAL DE CONFLITOS (adicionar antes de </body>)
+     =============================================================== -->
+<div id="modalConflitos" class="modal-conflitos" style="display: none;">
+    <div class="modal-conflitos-content">
+        <div class="modal-conflitos-header">
+            <h3><ion-icon name="warning-outline"></ion-icon> Conflitos Encontrados</h3>
+            <button type="button" class="modal-close-btn" onclick="fecharModalConflitos()">
+                <ion-icon name="close-outline"></ion-icon>
+            </button>
+        </div>
+
+        <div class="modal-conflitos-body">
+            <div class="conflito-alert">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+                <div class="conflito-alert-text">
+                    <strong>Atenção!</strong> Foram encontrados <span id="totalConflitosText">0</span> registro(s)
+                    que já existem no banco de dados com situação <strong>válida</strong>.
+                </div>
+            </div>
+
+            <div class="conflitos-resumo">
+                <h4><ion-icon name="list-outline"></ion-icon> Resumo por Ponto de Medição</h4>
+                <div id="listaConflitosResumo" class="lista-conflitos-resumo"></div>
+            </div>
+
+            <div class="conflitos-detalhes">
+                <button type="button" class="btn-toggle-detalhes" onclick="toggleDetalhesConflitos()">
+                    <ion-icon name="chevron-down-outline" id="iconToggleDetalhes"></ion-icon>
+                    <span id="textToggleDetalhes">Mostrar detalhes dos conflitos</span>
+                </button>
+                <div id="tabelaConflitosWrapper" class="tabela-conflitos-wrapper" style="display: none;">
+                    <table class="tabela-conflitos">
+                        <thead>
+                            <tr>
+                                <th>Ponto</th>
+                                <th>Data/Hora</th>
+                                <th>Valor Existente</th>
+                                <th>Valor Novo</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaConflitosBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="conflitos-opcoes">
+                <h4><ion-icon name="options-outline"></ion-icon> O que deseja fazer?</h4>
+                <div class="opcoes-radio">
+                    <label class="opcao-radio">
+                        <input type="radio" name="acaoConflito" value="ignorar" checked>
+                        <div class="opcao-content">
+                            <ion-icon name="close-circle-outline" class="icon-ignorar"></ion-icon>
+                            <div>
+                                <strong>Ignorar conflitos</strong>
+                                <p>Manter os dados existentes e importar apenas os novos registros sem conflito.</p>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="opcao-radio">
+                        <input type="radio" name="acaoConflito" value="sobrescrever">
+                        <div class="opcao-content">
+                            <ion-icon name="swap-horizontal-outline" class="icon-sobrescrever"></ion-icon>
+                            <div>
+                                <strong>Sobrescrever todos</strong>
+                                <p>Descartar os dados existentes (ID_SITUACAO = 2) e inserir os novos valores.</p>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-conflitos-footer">
+            <button type="button" class="btn-cancelar-conflito" onclick="fecharModalConflitos()">
+                <ion-icon name="close-outline"></ion-icon>
+                Cancelar
+            </button>
+            <button type="button" class="btn-confirmar-conflito" onclick="confirmarImportacaoComConflitos()">
+                <ion-icon name="checkmark-outline"></ion-icon>
+                Confirmar Importação
+            </button>
+        </div>
+    </div>
+</div>
+
 <style>
     /* Botão Importar */
     .btn-importar {
@@ -3742,12 +3829,402 @@ $descartes = [
             transform: rotate(360deg);
         }
     }
+
+    /* === MODAL DE CONFLITOS === */
+    .modal-conflitos {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10001;
+        padding: 20px;
+    }
+
+    .modal-conflitos-content {
+        background: #1e293b;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 800px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .modal-conflitos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border-radius: 16px 16px 0 0;
+        color: white;
+    }
+
+    .modal-conflitos-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .modal-conflitos-header h3 ion-icon {
+        font-size: 1.5rem;
+    }
+
+    .modal-conflitos-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .conflito-alert {
+        display: flex;
+        gap: 16px;
+        padding: 16px 20px;
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    .conflito-alert ion-icon {
+        font-size: 2rem;
+        color: #f59e0b;
+        flex-shrink: 0;
+    }
+
+    .conflito-alert-text {
+        color: #fef3c7;
+        line-height: 1.5;
+    }
+
+    .conflito-alert-text strong {
+        color: #fcd34d;
+    }
+
+    .conflitos-resumo {
+        margin-bottom: 24px;
+    }
+
+    .conflitos-resumo h4,
+    .conflitos-detalhes h4,
+    .conflitos-opcoes h4 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #e2e8f0;
+        margin-bottom: 12px;
+    }
+
+    .conflitos-resumo h4 ion-icon,
+    .conflitos-opcoes h4 ion-icon {
+        color: #94a3b8;
+    }
+
+    .lista-conflitos-resumo {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .conflito-ponto-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        min-width: 200px;
+        flex: 1;
+        max-width: calc(50% - 6px);
+    }
+
+    .conflito-ponto-card .ponto-info {
+        flex: 1;
+    }
+
+    .conflito-ponto-card .ponto-codigo {
+        font-weight: 600;
+        color: #f1f5f9;
+        font-size: 0.9rem;
+    }
+
+    .conflito-ponto-card .ponto-qtd {
+        font-size: 0.8rem;
+        color: #94a3b8;
+    }
+
+    .conflito-ponto-card .btn-visualizar-ponto {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .conflito-ponto-card .btn-visualizar-ponto:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .conflito-ponto-card .btn-visualizar-ponto ion-icon {
+        font-size: 1.2rem;
+    }
+
+    .btn-toggle-detalhes {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .btn-toggle-detalhes:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .tabela-conflitos-wrapper {
+        margin-top: 16px;
+        max-height: 250px;
+        overflow-y: auto;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+
+    .tabela-conflitos {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+    .tabela-conflitos th {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #e2e8f0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        position: sticky;
+        top: 0;
+    }
+
+    .tabela-conflitos td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: #cbd5e1;
+    }
+
+    .tabela-conflitos .valor-existente {
+        color: #f87171;
+        font-weight: 500;
+    }
+
+    .tabela-conflitos .valor-novo {
+        color: #4ade80;
+        font-weight: 500;
+    }
+
+    .tabela-conflitos .btn-ver-registro {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 6px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .tabela-conflitos .btn-ver-registro:hover {
+        background: rgba(59, 130, 246, 0.3);
+    }
+
+    .conflitos-opcoes {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .opcoes-radio {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .opcao-radio {
+        cursor: pointer;
+    }
+
+    .opcao-radio input[type="radio"] {
+        display: none;
+    }
+
+    .opcao-radio .opcao-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 16px 20px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+
+    .opcao-radio input[type="radio"]:checked+.opcao-content {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: #3b82f6;
+    }
+
+    .opcao-radio .opcao-content ion-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .opcao-radio .opcao-content .icon-ignorar {
+        color: #94a3b8;
+    }
+
+    .opcao-radio .opcao-content .icon-sobrescrever {
+        color: #f59e0b;
+    }
+
+    .opcao-radio input[type="radio"]:checked+.opcao-content .icon-ignorar,
+    .opcao-radio input[type="radio"]:checked+.opcao-content .icon-sobrescrever {
+        color: #3b82f6;
+    }
+
+    .opcao-radio .opcao-content strong {
+        display: block;
+        color: #f1f5f9;
+        margin-bottom: 4px;
+    }
+
+    .opcao-radio .opcao-content p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #94a3b8;
+        line-height: 1.4;
+    }
+
+    .modal-conflitos-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 20px 24px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 0 0 16px 16px;
+    }
+
+    .btn-cancelar-conflito {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        color: #cbd5e1;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-cancelar-conflito:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-confirmar-conflito {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-confirmar-conflito:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    }
+
+    /* Responsivo */
+    @media (max-width: 768px) {
+        .modal-conflitos-content {
+            max-height: 95vh;
+            border-radius: 12px;
+        }
+
+        .conflito-ponto-card {
+            max-width: 100%;
+        }
+
+        .modal-conflitos-footer {
+            flex-direction: column;
+        }
+
+        .btn-cancelar-conflito,
+        .btn-confirmar-conflito {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 </style>
 
 <script>
     // === Funções do Modal de Importação ===
 
     let dadosPlanilha = null; // Armazena dados lidos da planilha
+    let parametrosImportacao = null;
 
     function abrirModalImportacao() {
         document.getElementById('modalImportacao').style.display = 'flex';
@@ -4067,17 +4544,19 @@ $descartes = [
     }
 
     function executarImportacao() {
-        // Limpar resultado da importação anterior
+        // Limpar resultado anterior
         const resultadoDiv = document.getElementById('resultadoImportacao');
         resultadoDiv.style.display = 'none';
         resultadoDiv.innerHTML = '';
         resultadoDiv.className = 'resultado-importacao';
 
+        // Validar dados da planilha
         if (!dadosPlanilha || !dadosPlanilha.registros || dadosPlanilha.registros.length === 0) {
             showToast('Selecione um arquivo válido para importar', 'error');
             return;
         }
 
+        // Validar data do evento
         const dataEventoMedicao = document.getElementById('dataEventoMedicao').value;
         if (!dataEventoMedicao) {
             showToast('Informe a Data do Evento de Medição', 'error');
@@ -4085,7 +4564,8 @@ $descartes = [
             return;
         }
 
-        const payload = {
+        // Guardar parâmetros para uso posterior
+        parametrosImportacao = {
             registros: dadosPlanilha.registros,
             dataEventoMedicao: dataEventoMedicao,
             tipoVazao: document.querySelector('input[name="tipoVazao"]:checked').value,
@@ -4094,122 +4574,52 @@ $descartes = [
             observacao: document.getElementById('observacao').value
         };
 
+        // Mostrar loading no botão
         const btnImportar = document.getElementById('btnImportar');
-        const iconOriginal = btnImportar.innerHTML;
-        btnImportar.innerHTML = '<ion-icon name="sync-outline"></ion-icon> Importando...';
         btnImportar.classList.add('loading');
         btnImportar.disabled = true;
+        btnImportar.innerHTML = '<ion-icon name="sync-outline"></ion-icon> Verificando...';
 
-        console.log('Payload:', payload);
-
-        fetch('bd/registroVazaoPressao/importarPlanilha.php', {
+        // Verificar conflitos antes de importar
+        fetch('bd/registroVazaoPressao/verificarConflitosImportacao.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ registros: dadosPlanilha.registros })
         })
-            .then(response => {
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
+            .then(response => response.text())
+            .then(text => {
+                console.log('Resposta verificação:', text);
 
-                // Primeiro obter o texto da resposta
-                return response.text().then(text => {
-                    console.log('Response text (primeiros 500 chars):', text.substring(0, 500));
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Resposta inválida do servidor');
+                }
 
-                    // Tentar fazer parse do JSON
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        // Se não for JSON válido, mostrar o erro
-                        throw new Error('Resposta inválida do servidor: ' + text.substring(0, 200));
-                    }
-                });
-            })
-            .then(data => {
-                console.log('Data:', data);
-                const resultadoDiv = document.getElementById('resultadoImportacao');
-                resultadoDiv.style.display = 'block';
+                // Restaurar botão
+                btnImportar.classList.remove('loading');
+                btnImportar.disabled = false;
+                btnImportar.innerHTML = '<ion-icon name="cloud-upload-outline"></ion-icon> Importar';
 
                 if (data.success) {
-                    resultadoDiv.className = 'resultado-importacao sucesso';
-                    let html = `<h4><ion-icon name="checkmark-circle-outline"></ion-icon> Importação realizada com sucesso!</h4>`;
-
-                    if (data.resumo && data.resumo.length > 0) {
-                        html += '<ul>';
-                        data.resumo.forEach(item => {
-                            let texto = `<strong>${item.ponto}</strong>: ${item.registros} registro(s) importado(s)`;
-                            if (item.duplicados && item.duplicados > 0) {
-                                texto += ` <span style="color: #f59e0b;">(${item.duplicados} já existente(s))</span>`;
-                            }
-                            if (item.rejeitados && item.rejeitados > 0) {
-                                texto += ` <span style="color: #ef4444;">(${item.rejeitados} rejeitado(s) por erro de validação)</span>`;
-                            }
-                            html += `<li>${texto}</li>`;
-                        });
-                        html += '</ul>';
+                    if (data.temConflitos) {
+                        // Existem conflitos - abrir modal para decisão
+                        abrirModalConflitos(data, dadosPlanilha, parametrosImportacao);
+                    } else {
+                        // Sem conflitos - importar direto
+                        executarImportacaoFinal(false);
                     }
-
-                    if (data.totalRegistros) {
-                        html += `<p style="margin-top: 12px;"><strong>Total:</strong> ${data.totalRegistros} registro(s)</p>`;
-                    }
-
-                    if (data.avisos && data.avisos.length > 0) {
-                        html += '<p style="margin-top: 12px; color: #f59e0b;"><strong>Avisos:</strong></p><ul>';
-                        data.avisos.forEach(aviso => {
-                            html += `<li style="color: #f59e0b;">${aviso}</li>`;
-                        });
-                        html += '</ul>';
-                    }
-
-                    // Exibir erros de validação (registros que não puderam ser importados)
-                    if (data.erros && data.erros.length > 0) {
-                        html += '<div style="margin-top: 16px; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 3px solid #ef4444;">';
-                        html += '<p style="color: #dc2626; font-weight: 600; margin-bottom: 8px;"><ion-icon name="warning-outline" style="vertical-align: middle;"></ion-icon> Registros não importados:</p>';
-                        html += '<ul style="color: #dc2626; font-size: 13px;">';
-                        data.erros.forEach(erro => {
-                            html += `<li>${erro}</li>`;
-                        });
-                        html += '</ul></div>';
-                    }
-
-                    resultadoDiv.innerHTML = html;
-                    showToast('Importação concluída com sucesso!', 'success');
-
-                    // Limpar formulário
-                    removerArquivo();
-
                 } else {
-                    resultadoDiv.className = 'resultado-importacao erro';
-                    let html = `<h4><ion-icon name="alert-circle-outline"></ion-icon> Erro na importação</h4>`;
-
-                    if (data.erros && data.erros.length > 0) {
-                        html += '<ul>';
-                        data.erros.forEach(erro => {
-                            html += `<li>${erro}</li>`;
-                        });
-                        html += '</ul>';
-                    } else if (data.message) {
-                        html += `<p>${data.message}</p>`;
-                    }
-
-                    resultadoDiv.innerHTML = html;
-                    showToast('Erro na importação. Verifique os detalhes.', 'error');
+                    showToast(data.message || 'Erro ao verificar conflitos', 'error');
                 }
             })
             .catch(error => {
-                console.error('Erro completo:', error);
-                showToast('Erro ao processar importação', 'error');
-
-                const resultadoDiv = document.getElementById('resultadoImportacao');
-                resultadoDiv.style.display = 'block';
-                resultadoDiv.className = 'resultado-importacao erro';
-                resultadoDiv.innerHTML = `<h4><ion-icon name="alert-circle-outline"></ion-icon> Erro</h4><p>${error.message || 'Erro de comunicação com o servidor.'}</p>`;
-            })
-            .finally(() => {
-                btnImportar.innerHTML = iconOriginal;
+                console.error('Erro:', error);
                 btnImportar.classList.remove('loading');
                 btnImportar.disabled = false;
+                btnImportar.innerHTML = '<ion-icon name="cloud-upload-outline"></ion-icon> Importar';
+                showToast('Erro ao verificar: ' + error.message, 'error');
             });
     }
 
@@ -4217,6 +4627,302 @@ $descartes = [
     document.getElementById('modalImportacao')?.addEventListener('click', function (e) {
         if (e.target === this) {
             fecharModalImportacao();
+        }
+    });
+
+    function executarImportacaoFinal(sobrescrever) {
+        const resultadoDiv = document.getElementById('resultadoImportacao');
+        const btnImportar = document.getElementById('btnImportar');
+
+        // Mostrar loading
+        btnImportar.classList.add('loading');
+        btnImportar.disabled = true;
+        btnImportar.innerHTML = '<ion-icon name="sync-outline"></ion-icon> Importando...';
+
+        // Adicionar flag de sobrescrita
+        const payload = {
+            ...parametrosImportacao,
+            sobrescrever: sobrescrever
+        };
+
+        fetch('bd/registroVazaoPressao/importarPlanilha.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(response => response.json())
+            .then(data => {
+                // Restaurar botão
+                btnImportar.classList.remove('loading');
+                btnImportar.disabled = false;
+                btnImportar.innerHTML = '<ion-icon name="cloud-upload-outline"></ion-icon> Importar';
+
+                if (data.success) {
+                    // Montar mensagem de sucesso
+                    let html = '<div class="resultado-sucesso">';
+                    html += '<ion-icon name="checkmark-circle-outline"></ion-icon>';
+                    html += `<strong>Importação concluída!</strong> ${data.totalRegistros} registro(s) importado(s).`;
+
+                    if (data.totalSobrescritos && data.totalSobrescritos > 0) {
+                        html += `<br><small>${data.totalSobrescritos} registro(s) foram sobrescritos.</small>`;
+                    }
+                    html += '</div>';
+
+                    // Resumo por ponto
+                    if (data.resumo && data.resumo.length > 0) {
+                        html += '<div class="resultado-resumo"><strong>Resumo por ponto:</strong><ul>';
+                        data.resumo.forEach(r => {
+                            let detalhes = [];
+                            if (r.duplicados > 0) detalhes.push(`${r.duplicados} ignorado(s)`);
+                            if (r.sobrescritos > 0) detalhes.push(`${r.sobrescritos} sobrescrito(s)`);
+                            if (r.rejeitados > 0) detalhes.push(`${r.rejeitados} rejeitado(s)`);
+
+                            html += `<li><strong>${r.ponto}:</strong> ${r.registros} importado(s)`;
+                            if (detalhes.length > 0) {
+                                html += ` (${detalhes.join(', ')})`;
+                            }
+                            html += '</li>';
+                        });
+                        html += '</ul></div>';
+                    }
+
+                    // Avisos
+                    if (data.avisos && data.avisos.length > 0) {
+                        html += '<div class="resultado-avisos"><strong>Avisos:</strong><ul>';
+                        data.avisos.forEach(a => {
+                            html += `<li>${a}</li>`;
+                        });
+                        html += '</ul></div>';
+                    }
+
+                    resultadoDiv.innerHTML = html;
+                    resultadoDiv.className = 'resultado-importacao sucesso';
+                    resultadoDiv.style.display = 'block';
+
+                    showToast(`${data.totalRegistros} registro(s) importado(s) com sucesso!`, 'success');
+                } else {
+                    // Erro
+                    let html = '<div class="resultado-erro">';
+                    html += '<ion-icon name="alert-circle-outline"></ion-icon>';
+                    html += `<strong>Falha na importação:</strong> ${data.message || 'Erro desconhecido'}`;
+                    html += '</div>';
+
+                    if (data.erros && data.erros.length > 0) {
+                        html += '<div class="resultado-erros-lista"><strong>Erros encontrados:</strong><ul>';
+                        data.erros.slice(0, 10).forEach(e => {
+                            html += `<li>${e}</li>`;
+                        });
+                        if (data.erros.length > 10) {
+                            html += `<li>... e mais ${data.erros.length - 10} erro(s)</li>`;
+                        }
+                        html += '</ul></div>';
+                    }
+
+                    resultadoDiv.innerHTML = html;
+                    resultadoDiv.className = 'resultado-importacao erro';
+                    resultadoDiv.style.display = 'block';
+
+                    showToast(data.message || 'Erro na importação', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                btnImportar.classList.remove('loading');
+                btnImportar.disabled = false;
+                btnImportar.innerHTML = '<ion-icon name="cloud-upload-outline"></ion-icon> Importar';
+                showToast('Erro na importação: ' + error.message, 'error');
+            });
+    }
+
+    /**
+     * Abre o modal de conflitos
+     */
+    function abrirModalConflitos(conflitos, dados, params) {
+        // Atualizar total
+        document.getElementById('totalConflitosText').textContent = conflitos.totalConflitos;
+
+        // Renderizar resumo e tabela
+        renderizarResumoPontos(conflitos.pontosConflito);
+        renderizarTabelaConflitos(conflitos.conflitos);
+
+        // Resetar opção
+        document.querySelector('input[name="acaoConflito"][value="ignorar"]').checked = true;
+
+        // Esconder detalhes
+        document.getElementById('tabelaConflitosWrapper').style.display = 'none';
+        document.getElementById('textToggleDetalhes').textContent = 'Mostrar detalhes dos conflitos';
+
+        // Exibir modal
+        document.getElementById('modalConflitos').style.display = 'flex';
+    }
+
+    /**
+     * Fecha o modal de conflitos
+     */
+    function fecharModalConflitos() {
+        document.getElementById('modalConflitos').style.display = 'none';
+    }
+
+    /**
+     * Renderiza o resumo de pontos com conflito
+     */
+    function renderizarResumoPontos(pontosConflito) {
+        const container = document.getElementById('listaConflitosResumo');
+        let html = '';
+
+        pontosConflito.forEach(ponto => {
+            html += `
+            <div class="conflito-ponto-card">
+                <div class="ponto-info">
+                    <div class="ponto-codigo">${ponto.codigo}</div>
+                    <div class="ponto-qtd">${ponto.quantidade} conflito(s)</div>
+                </div>
+                <button type="button" class="btn-visualizar-ponto" 
+                        onclick="visualizarDadosPonto('${ponto.cdPonto}', '${ponto.primeiraData}')"
+                        title="Visualizar dados existentes">
+                    <ion-icon name="eye-outline"></ion-icon>
+                </button>
+            </div>
+        `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    /**
+     * Renderiza a tabela detalhada de conflitos
+     */
+    function renderizarTabelaConflitos(conflitos) {
+        const tbody = document.getElementById('tabelaConflitosBody');
+        const conflitosExibir = conflitos.slice(0, 50);
+        let html = '';
+
+        conflitosExibir.forEach(c => {
+            // Formatar valores existentes
+            let valorExistente = '-';
+            if (c.valorExistente.vazao !== null && c.valorExistente.vazao !== undefined) {
+                valorExistente = `Vazão: ${parseFloat(c.valorExistente.vazao).toFixed(2)} L/s`;
+            } else if (c.valorExistente.pressao !== null && c.valorExistente.pressao !== undefined) {
+                valorExistente = `Pressão: ${parseFloat(c.valorExistente.pressao).toFixed(2)} mca`;
+            }
+
+            // Formatar valores novos
+            let valorNovo = '-';
+            if (c.valorNovo.vazao !== null && c.valorNovo.vazao !== undefined) {
+                valorNovo = `Vazão: ${parseFloat(c.valorNovo.vazao).toFixed(2)} L/s`;
+            } else if (c.valorNovo.pressao !== null && c.valorNovo.pressao !== undefined) {
+                valorNovo = `Pressão: ${parseFloat(c.valorNovo.pressao).toFixed(2)} mca`;
+            }
+
+            html += `
+            <tr>
+                <td>${c.codigoPonto}</td>
+                <td>${c.dtLeitura}</td>
+                <td class="valor-existente">${valorExistente}</td>
+                <td class="valor-novo">${valorNovo}</td>
+                <td>
+                    <button type="button" class="btn-ver-registro" 
+                            onclick="visualizarDadosPonto('${c.cdPonto}', '${c.data}')">
+                        <ion-icon name="eye-outline"></ion-icon>
+                    </button>
+                </td>
+            </tr>
+        `;
+        });
+
+        if (conflitos.length > 50) {
+            html += `
+            <tr>
+                <td colspan="5" style="text-align: center; color: #94a3b8; font-style: italic;">
+                    ... e mais ${conflitos.length - 50} conflito(s) não exibidos
+                </td>
+            </tr>
+        `;
+        }
+
+        tbody.innerHTML = html;
+    }
+
+    /**
+     * Toggle para mostrar/esconder detalhes
+     */
+    function toggleDetalhesConflitos() {
+        const wrapper = document.getElementById('tabelaConflitosWrapper');
+        const texto = document.getElementById('textToggleDetalhes');
+
+        if (wrapper.style.display === 'none') {
+            wrapper.style.display = 'block';
+            texto.textContent = 'Ocultar detalhes dos conflitos';
+        } else {
+            wrapper.style.display = 'none';
+            texto.textContent = 'Mostrar detalhes dos conflitos';
+        }
+    }
+
+    /**
+     * Abre a tela de visualização em nova aba
+     */
+    function visualizarDadosPonto(cdPonto, data) {
+        const url = `registroVazaoPressao.php?cdPonto=${cdPonto}&data=${data}&autoLoad=1`;
+        window.open(url, '_blank');
+    }
+
+    /**
+     * Confirma a importação após decisão sobre conflitos
+     */
+    function confirmarImportacaoComConflitos() {
+        const acaoSelecionada = document.querySelector('input[name="acaoConflito"]:checked').value;
+        const sobrescrever = (acaoSelecionada === 'sobrescrever');
+
+        fecharModalConflitos();
+        executarImportacaoFinal(sobrescrever);
+    }
+
+    /**
+     * Verifica parâmetros da URL para carregamento automático
+     * Chamar no DOMContentLoaded
+     */
+    function verificarParametrosURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const cdPonto = urlParams.get('cdPonto');
+        const data = urlParams.get('data');
+        const autoLoad = urlParams.get('autoLoad');
+
+        if (cdPonto && data) {
+            // Selecionar modo ponto
+            const radioPonto = document.querySelector('input[name="modoExibicao"][value="ponto"]');
+            if (radioPonto) radioPonto.checked = true;
+
+            // Selecionar o ponto
+            const selectPonto = document.getElementById('pontoMedicao');
+            if (selectPonto) {
+                for (let option of selectPonto.options) {
+                    if (option.value == cdPonto) {
+                        selectPonto.value = cdPonto;
+                        break;
+                    }
+                }
+            }
+
+            // Preencher data
+            const inputData = document.getElementById('dataFiltro');
+            if (inputData) inputData.value = data;
+
+            // Auto buscar
+            if (autoLoad === '1') {
+                setTimeout(() => {
+                    if (typeof buscarRegistros === 'function') {
+                        buscarRegistros();
+                    }
+                }, 500);
+            }
+        }
+    }
+
+    // Fechar modal com ESC
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.getElementById('modalConflitos').style.display === 'flex') {
+            fecharModalConflitos();
         }
     });
 

@@ -86,6 +86,13 @@ $metodos = [
 
 // Código formatado
 $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_ANO'] : 'Novo';
+
+// Código formatado do ponto (para edição)
+$codigoPontoFormatado = '';
+if ($isEdicao) {
+    $codigoPontoFormatado = $calculoKPC['CD_LOCALIDADE'] . '-' . 
+                           str_pad($calculoKPC['CD_PONTO_MEDICAO'], 6, '0', STR_PAD_LEFT) . '-E';
+}
 ?>
 
 <!-- Select2 para busca nos selects -->
@@ -350,6 +357,102 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
     }
 
     /* ============================================
+       Autocomplete Ponto de Medição
+       ============================================ */
+    .autocomplete-container {
+        position: relative;
+    }
+
+    .autocomplete-container input.form-control {
+        padding-right: 40px;
+    }
+
+    .autocomplete-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        max-height: 250px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .autocomplete-dropdown.active {
+        display: block;
+    }
+
+    .autocomplete-item {
+        padding: 10px 14px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 13px;
+    }
+
+    .autocomplete-item:last-child {
+        border-bottom: none;
+    }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.highlighted {
+        background-color: #3b82f6;
+        color: white;
+    }
+
+    .autocomplete-item .item-code {
+        font-family: 'SF Mono', Monaco, monospace;
+        font-size: 12px;
+        color: #64748b;
+        display: block;
+    }
+
+    .autocomplete-item:hover .item-code,
+    .autocomplete-item.highlighted .item-code {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .autocomplete-item .item-name {
+        display: block;
+        margin-top: 2px;
+    }
+
+    .autocomplete-loading,
+    .autocomplete-empty {
+        padding: 12px;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 13px;
+    }
+
+    .btn-limpar-autocomplete {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 4px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-limpar-autocomplete:hover {
+        color: #ef4444;
+    }
+
+    .btn-limpar-autocomplete ion-icon {
+        font-size: 18px;
+    }
+
+    /* ============================================
        Tabela de Leituras
        ============================================ */
     .leituras-container {
@@ -511,6 +614,49 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
     }
 
     /* ============================================
+       Toast Styles
+       ============================================ */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .toast {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        min-width: 300px;
+        max-width: 400px;
+        transform: translateX(120%);
+        transition: transform 0.3s ease;
+    }
+
+    .toast.show { transform: translateX(0); }
+    .toast.sucesso { border-left: 4px solid #10b981; }
+    .toast.sucesso .toast-icon { color: #10b981; }
+    .toast.erro { border-left: 4px solid #ef4444; }
+    .toast.erro .toast-icon { color: #ef4444; }
+    .toast.alerta { border-left: 4px solid #f59e0b; }
+    .toast.alerta .toast-icon { color: #f59e0b; }
+    .toast.info { border-left: 4px solid #3b82f6; }
+    .toast.info .toast-icon { color: #3b82f6; }
+
+    .toast-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .toast-content { flex: 1; }
+    .toast-message { margin: 0; font-size: 14px; color: #1e293b; }
+    .toast-close { background: none; border: none; padding: 4px; cursor: pointer; color: #94a3b8; font-size: 18px; }
+    .toast-close:hover { color: #475569; }
+
+    /* ============================================
        Responsivo
        ============================================ */
     @media (max-width: 992px) {
@@ -554,10 +700,7 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
 
     <form id="formCalculoKPC" method="POST">
         <input type="hidden" name="cd_chave" value="<?= $isEdicao ? $calculoKPC['CD_CHAVE'] : 0 ?>">
-        <?php if ($isEdicao): ?>
-        <!-- Campos hidden para enviar valores que estão disabled -->
-        <input type="hidden" name="cd_ponto_medicao" value="<?= $calculoKPC['CD_PONTO_MEDICAO'] ?>">
-        <?php endif; ?>
+        <input type="hidden" name="cd_ponto_medicao" id="cdPontoMedicao" value="<?= $isEdicao ? $calculoKPC['CD_PONTO_MEDICAO'] : '' ?>">
 
         <!-- Dados do Ponto de Medição -->
         <div class="form-card">
@@ -572,7 +715,7 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
                             <ion-icon name="business-outline"></ion-icon>
                             Unidade <span class="required">*</span>
                         </label>
-                        <select id="selectUnidade" name="cd_unidade" class="form-control" required onchange="carregarLocalidades()" <?= $isEdicao ? 'disabled' : '' ?>>
+                        <select id="selectUnidade" class="form-control" <?= $isEdicao ? 'disabled' : '' ?>>
                             <option value="">Selecione...</option>
                             <?php foreach ($unidades as $u): ?>
                             <option value="<?= $u['CD_UNIDADE'] ?>" <?= ($isEdicao && $calculoKPC['CD_UNIDADE'] == $u['CD_UNIDADE']) ? 'selected' : '' ?>>
@@ -586,7 +729,7 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
                             <ion-icon name="map-outline"></ion-icon>
                             Localidade <span class="required">*</span>
                         </label>
-                        <select id="selectLocalidade" name="cd_localidade" class="form-control" required onchange="carregarPontos()" <?= $isEdicao ? 'disabled' : '' ?>>
+                        <select id="selectLocalidade" class="form-control" <?= $isEdicao ? 'disabled' : '' ?>>
                             <option value="">Selecione a unidade primeiro</option>
                             <?php if ($isEdicao): ?>
                             <option value="<?= $calculoKPC['CD_CHAVE_LOCALIDADE'] ?>" selected>
@@ -600,14 +743,19 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
                             <ion-icon name="speedometer-outline"></ion-icon>
                             Ponto de Medição <span class="required">*</span>
                         </label>
-                        <select id="selectPonto" name="cd_ponto_medicao" class="form-control" required <?= $isEdicao ? 'disabled' : '' ?>>
-                            <option value="">Selecione a localidade primeiro</option>
-                            <?php if ($isEdicao): ?>
-                            <option value="<?= $calculoKPC['CD_PONTO_MEDICAO'] ?>" selected>
-                                <?= htmlspecialchars($calculoKPC['DS_PONTO_MEDICAO']) ?>
-                            </option>
-                            <?php endif; ?>
-                        </select>
+                        <?php if ($isEdicao): ?>
+                            <input type="text" class="form-control" readonly 
+                                   value="<?= $codigoPontoFormatado ?> - <?= htmlspecialchars($calculoKPC['DS_PONTO_MEDICAO']) ?>">
+                        <?php else: ?>
+                            <div class="autocomplete-container">
+                                <input type="text" class="form-control" id="inputPontoMedicao" 
+                                       placeholder="Digite para buscar..." autocomplete="off">
+                                <button type="button" class="btn-limpar-autocomplete" id="btnLimparPonto">
+                                    <ion-icon name="close-circle"></ion-icon>
+                                </button>
+                                <div class="autocomplete-dropdown" id="pontoMedicaoDropdown"></div>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     <div class="form-group col-2">
                         <label class="form-label">
@@ -690,7 +838,6 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
                             Última Posição (mm) <span class="required">*</span>
                         </label>
                         <?php
-                        // Buscar última posição do banco (maior VL_POSICAO da leitura)
                         $ultimaPosicao = '';
                         if ($isEdicao && !empty($leituras)) {
                             foreach ($leituras as $l) {
@@ -776,7 +923,6 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
                             <tr class="row-posicao">
                                 <th>Posição(mm):</th>
                                 <?php 
-                                // Calcular posições iniciais baseadas no Diâmetro Real
                                 $diametroReal = $isEdicao ? $calculoKPC['VL_DIAMETRO_REAL'] : 0;
                                 $ultimaPosicaoValor = $ultimaPosicao ?: 0;
                                 
@@ -795,15 +941,11 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
                         </thead>
                         <tbody>
                             <?php
-                            // Organiza as leituras em array bidimensional [leitura][ponto]
                             $leiturasOrganizadas = [];
                             foreach ($leituras as $l) {
-                                // CD_ORDEM_LEITURA = número da leitura (1-20)
-                                // CD_POSICAO_LEITURA = número do ponto (1-11)
                                 $leiturasOrganizadas[$l['CD_ORDEM_LEITURA']][$l['CD_POSICAO_LEITURA']] = $l['VL_DEFLEXAO_MEDIDA'];
                             }
                             
-                            // 20 linhas de leituras
                             for ($leitura = 1; $leitura <= 20; $leitura++):
                             ?>
                             <tr>
@@ -821,7 +963,6 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
                                 <?php endfor; ?>
                             </tr>
                             <?php endfor; ?>
-                            <!-- Linha de Médias -->
                             <tr class="media-row">
                                 <td class="media-label">Média das Deflexões:</td>
                                 <?php for ($ponto = 1; $ponto <= 11; $ponto++): ?>
@@ -856,50 +997,32 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
             <div class="form-card-body">
                 <div class="form-row">
                     <div class="form-group col-2">
-                        <label class="form-label">
-                            <ion-icon name="pulse-outline"></ion-icon>
-                            Fator de Velocidade
-                        </label>
+                        <label class="form-label">Fator de Velocidade</label>
                         <input type="text" name="vl_fator_velocidade" id="vlFatorVelocidade" class="form-control resultado" readonly
                                value="<?= $isEdicao ? number_format($calculoKPC['VL_FATOR_VELOCIDADE'], 10, '.', '') : '' ?>">
                     </div>
                     <div class="form-group col-2">
-                        <label class="form-label">
-                            <ion-icon name="expand-outline"></ion-icon>
-                            Correção Diâmetro
-                        </label>
+                        <label class="form-label">Correção Diâmetro</label>
                         <input type="text" name="vl_correcao_diametro" id="vlCorrecaoDiametro" class="form-control resultado" readonly
                                value="<?= $isEdicao ? number_format($calculoKPC['VL_CORRECAO_DIAMETRO'], 6, '.', '') : '' ?>">
                     </div>
                     <div class="form-group col-2">
-                        <label class="form-label">
-                            <ion-icon name="git-merge-outline"></ion-icon>
-                            Correção Projeção TAP
-                        </label>
+                        <label class="form-label">Correção Projeção TAP</label>
                         <input type="text" name="vl_correcao_projecao_tap" id="vlCorrecaoProjecaoTap" class="form-control resultado" readonly
                                value="<?= $isEdicao ? number_format($calculoKPC['VL_CORRECAO_PROJECAO_TAP'], 2, '.', '') : '' ?>">
                     </div>
                     <div class="form-group col-2">
-                        <label class="form-label">
-                            <ion-icon name="scan-outline"></ion-icon>
-                            Área Efetiva (m²)
-                        </label>
+                        <label class="form-label">Área Efetiva (m²)</label>
                         <input type="text" name="vl_area_efetiva" id="vlAreaEfetiva" class="form-control resultado" readonly
                                value="<?= $isEdicao ? number_format($calculoKPC['VL_AREA_EFETIVA'], 6, '.', '') : '' ?>">
                     </div>
                     <div class="form-group col-2">
-                        <label class="form-label">
-                            <ion-icon name="star-outline"></ion-icon>
-                            KPC
-                        </label>
+                        <label class="form-label">KPC</label>
                         <input type="text" name="vl_kpc" id="vlKPC" class="form-control resultado" readonly
                                value="<?= $isEdicao ? number_format($calculoKPC['VL_KPC'], 10, '.', '') : '' ?>">
                     </div>
                     <div class="form-group col-2">
-                        <label class="form-label">
-                            <ion-icon name="water-outline"></ion-icon>
-                            Vazão (L/s)
-                        </label>
+                        <label class="form-label">Vazão (L/s)</label>
                         <input type="text" name="vl_vazao" id="vlVazao" class="form-control resultado" readonly
                                value="<?= $isEdicao && $calculoKPC['VL_VAZAO'] ? number_format($calculoKPC['VL_VAZAO'], 2, '.', '') : '' ?>">
                     </div>
@@ -907,7 +1030,7 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
             </div>
         </div>
 
-        <!-- Ações do Formulário -->
+        <!-- Ações -->
         <div class="form-card">
             <div class="form-actions">
                 <a href="calculoKPC.php" class="btn btn-secondary">
@@ -923,447 +1046,263 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
     </form>
 </div>
 
+<div id="toastContainer" class="toast-container"></div>
+
 <script>
-// ============================================
-// Constantes para Cálculo
-// ============================================
-// Constante Pi
+const isEdicao = <?= $isEdicao ? 'true' : 'false' ?>;
 const PI = 3.14159265358979;
+let buscaPontoTimeout;
 
-// ============================================
-// Função para calcular posições baseadas no Diâmetro Real
-// Posição 1 = 0
-// Posições 2-10 = (Diâmetro Real / 10) * (posição - 1)
-// Posição 11 = Última Posição (campo)
-// ============================================
-function calcularPosicoesPontos() {
-    const diametroReal = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
-    const ultimaPosicao = parseFloat(document.getElementById('vlUltimaPosicao').value) || 0;
-    
-    const posicoes = {};
-    for (let p = 1; p <= 11; p++) {
-        if (p === 1) {
-            posicoes[p] = 0;
-        } else if (p === 11) {
-            posicoes[p] = ultimaPosicao;
-        } else {
-            posicoes[p] = (diametroReal / 10) * (p - 1);
-        }
-    }
-    return posicoes;
-}
+const letrasTipoMedidor = { 1: 'M', 2: 'E', 4: 'P', 6: 'R', 8: 'H' };
 
-// ============================================
-// Atualizar posições na tabela
-// ============================================
-function atualizarPosicoes() {
-    const posicoes = calcularPosicoesPontos();
-    
-    for (let p = 1; p <= 11; p++) {
-        const th = document.getElementById(`posicao_${p}`);
-        if (th) {
-            th.textContent = posicoes[p].toFixed(2).replace('.', ',');
-        }
-    }
-}
-
-// ============================================
-// Inicialização
-// ============================================
 document.addEventListener('DOMContentLoaded', function() {
     toggleCampoConvencional();
     atualizarPosicoes();
     
-    // Inicializar Select2 para busca
     if (typeof $ !== 'undefined' && $.fn.select2) {
         $('.select2-tecnico, .select2-usuario').select2({
             placeholder: 'Digite para buscar...',
             allowClear: true,
-            width: '100%',
-            language: {
-                noResults: function() { return "Nenhum resultado encontrado"; },
-                searching: function() { return "Buscando..."; }
-            }
+            width: '100%'
         });
     }
     
-    // Calcular todas as médias ao carregar
-    for (let ponto = 1; ponto <= 11; ponto++) {
-        calcularMediaPonto(ponto);
-    }
+    $('#selectUnidade').on('change', carregarLocalidades);
+    $('#selectLocalidade').on('change', limparPontoMedicao);
+    
+    if (!isEdicao) initAutocompletePontoMedicao();
+    
+    for (let p = 1; p <= 11; p++) calcularMediaPonto(p);
 });
 
-// ============================================
-// Carregamento de Dependências
-// ============================================
 function carregarLocalidades() {
     const unidade = document.getElementById('selectUnidade').value;
     const select = document.getElementById('selectLocalidade');
-    select.innerHTML = '<option value="">Selecione...</option>';
-    document.getElementById('selectPonto').innerHTML = '<option value="">Selecione a localidade primeiro</option>';
     
-    if (!unidade) return;
+    select.innerHTML = '<option value="">Carregando...</option>';
+    limparPontoMedicao();
     
-    fetch(`bd/operacoes/getLocalidades.php?unidade=${unidade}`)
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                data.data.forEach(loc => {
-                    select.innerHTML += `<option value="${loc.CD_CHAVE}">${loc.CD_LOCALIDADE} - ${loc.DS_NOME}</option>`;
-                });
-            }
-        });
-}
-
-function carregarPontos() {
-    const localidade = document.getElementById('selectLocalidade').value;
-    const select = document.getElementById('selectPonto');
-    select.innerHTML = '<option value="">Selecione...</option>';
-    
-    if (!localidade) return;
-    
-    // Buscar apenas Estações Pitométricas (ID_TIPO_MEDIDOR = 2)
-    fetch(`bd/operacoes/getPontosMedicao.php?localidade=${localidade}&tipo=2`)
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                data.data.forEach(p => {
-                    select.innerHTML += `<option value="${p.CD_PONTO_MEDICAO}">${p.DS_NOME}</option>`;
-                });
-            }
-        });
-}
-
-// ============================================
-// Campo Convencional
-// ============================================
-function toggleCampoConvencional() {
-    const metodo = document.getElementById('selectMetodo').value;
-    const campo = document.getElementById('campoUltimaPosicao');
-    
-    if (metodo == '2') {
-        campo.classList.add('visivel');
-    } else {
-        campo.classList.remove('visivel');
-    }
-}
-
-// ============================================
-// Cálculo de Médias por Ponto (Coluna)
-// ============================================
-function calcularMediaPonto(ponto) {
-    let soma = 0;
-    let count = 0;
-    
-    // Percorrer todas as 20 leituras para este ponto
-    for (let leitura = 1; leitura <= 20; leitura++) {
-        const input = document.querySelector(`input[data-leitura="${leitura}"][data-ponto="${ponto}"]`);
-        if (input && input.value !== '' && !isNaN(parseFloat(input.value))) {
-            soma += parseFloat(input.value);
-            count++;
-        }
-    }
-    
-    // Calcular média
-    const mediaInput = document.getElementById(`media_${ponto}`);
-    if (count > 0) {
-        mediaInput.value = (soma / count).toFixed(2);
-    } else {
-        mediaInput.value = '';
-    }
-}
-
-// ============================================
-// Cálculo Principal do KPC
-// ============================================
-function calcular() {
-    // Calcular todas as médias primeiro
-    for (let ponto = 1; ponto <= 11; ponto++) {
-        calcularMediaPonto(ponto);
-    }
-    
-    // Obter valores dos parâmetros
-    const diametroNominal = parseFloat(document.getElementById('vlDiametroNominal').value) || 0;
-    const diametroReal = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
-    const projecaoTap = parseFloat(document.getElementById('vlProjecaoTap').value) || 0;
-    const raioTip = parseFloat(document.getElementById('vlRaioTip').value) || 0;
-    
-    // Validar dados mínimos
-    if (diametroNominal <= 0 || diametroReal <= 0) {
-        alert('Preencha os parâmetros do cálculo (Diâmetro Nominal e Real)');
+    if (!unidade) {
+        select.innerHTML = '<option value="">Selecione a unidade primeiro</option>';
         return;
     }
     
-    // Obter posições calculadas
-    const POSICOES_PONTOS = calcularPosicoesPontos();
-    
-    // Obter médias calculadas
-    let medias = [];
-    let somaMedias = 0;
-    let countMedias = 0;
-    
-    for (let ponto = 1; ponto <= 11; ponto++) {
-        const mediaVal = parseFloat(document.getElementById(`media_${ponto}`).value) || 0;
-        medias.push({
-            ponto: ponto,
-            posicao: POSICOES_PONTOS[ponto],
-            media: mediaVal
-        });
-        
-        if (mediaVal > 0) {
-            somaMedias += mediaVal;
-            countMedias++;
-        }
-    }
-    
-    // Calcular fator de velocidade (média das médias)
-    let fatorVelocidade = countMedias > 0 ? (somaMedias / countMedias) : 0;
-    
-    // Correção de diâmetro = Diâmetro Real / Diâmetro Nominal
-    let correcaoDiametro = diametroNominal > 0 ? (diametroReal / diametroNominal) : 0;
-    
-    // Correção de projeção TAP
-    let correcaoProjecaoTap = projecaoTap;
-    
-    // Área efetiva = PI * (Diâmetro Real / 2000)² (convertendo mm para m)
-    let raioMetros = diametroReal / 2000;
-    let areaEfetiva = PI * raioMetros * raioMetros;
-    
-    // KPC = Fator de velocidade * Área efetiva * correção
-    let kpc = fatorVelocidade > 0 ? (fatorVelocidade * areaEfetiva * correcaoDiametro) : 0;
-    
-    // Vazão em L/s (placeholder)
-    let vazao = 0;
-    
-    // Preencher campos de resultado
-    document.getElementById('vlFatorVelocidade').value = fatorVelocidade.toFixed(10);
-    document.getElementById('vlCorrecaoDiametro').value = correcaoDiametro.toFixed(6);
-    document.getElementById('vlCorrecaoProjecaoTap').value = correcaoProjecaoTap.toFixed(2);
-    document.getElementById('vlAreaEfetiva').value = areaEfetiva.toFixed(6);
-    document.getElementById('vlKPC').value = kpc.toFixed(10);
-    document.getElementById('vlVazao').value = vazao.toFixed(2);
+    fetch('bd/pontoMedicao/getLocalidades.php?cd_unidade=' + unidade)
+        .then(r => r.json())
+        .then(data => {
+            select.innerHTML = '<option value="">Selecione...</option>';
+            if (data.success && data.data) {
+                data.data.forEach(loc => {
+                    select.innerHTML += '<option value="' + loc.CD_CHAVE + '">' + 
+                                       loc.CD_LOCALIDADE + ' - ' + loc.DS_NOME + '</option>';
+                });
+            }
+        })
+        .catch(() => { select.innerHTML = '<option value="">Erro ao carregar</option>'; });
 }
 
-// ============================================
-// Submissão do Formulário
-// ============================================
+function initAutocompletePontoMedicao() {
+    const input = document.getElementById('inputPontoMedicao');
+    const dropdown = document.getElementById('pontoMedicaoDropdown');
+    const btnLimpar = document.getElementById('btnLimparPonto');
+    if (!input) return;
+    
+    let idx = -1;
+
+    input.addEventListener('input', function() {
+        clearTimeout(buscaPontoTimeout);
+        const termo = this.value.trim();
+        if (termo.length < 2) { dropdown.classList.remove('active'); return; }
+        buscaPontoTimeout = setTimeout(() => buscarPontosMedicao(termo), 300);
+    });
+
+    input.addEventListener('keydown', function(e) {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); highlight(items); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(idx - 1, 0); highlight(items); }
+        else if (e.key === 'Enter' && idx >= 0 && items[idx]) { e.preventDefault(); items[idx].click(); }
+        else if (e.key === 'Escape') dropdown.classList.remove('active');
+    });
+
+    function highlight(items) { items.forEach((it, i) => it.classList.toggle('highlighted', i === idx)); }
+
+    document.addEventListener('click', e => { if (!input.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('active'); });
+    btnLimpar.addEventListener('click', limparPontoMedicao);
+}
+
+function buscarPontosMedicao(termo) {
+    const dropdown = document.getElementById('pontoMedicaoDropdown');
+    const cdLocalidade = document.getElementById('selectLocalidade').value || '';
+    const cdUnidade = document.getElementById('selectUnidade').value || '';
+    
+    dropdown.innerHTML = '<div class="autocomplete-loading">Buscando...</div>';
+    dropdown.classList.add('active');
+
+    const params = new URLSearchParams({ busca: termo });
+    if (cdUnidade) params.append('cd_unidade', cdUnidade);
+    if (cdLocalidade) params.append('cd_localidade', cdLocalidade);
+
+    fetch('bd/pontoMedicao/buscarPontosMedicao.php?' + params)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.data && data.data.length > 0) {
+                let html = '';
+                data.data.forEach(item => {
+                    if (item.ID_TIPO_MEDIDOR != 2) return; // Apenas Estações Pitométricas
+                    const codigo = item.CD_LOCALIDADE + '-' + String(item.CD_PONTO_MEDICAO).padStart(6, '0') + '-E-' + (item.CD_UNIDADE_CODIGO || item.CD_UNIDADE);
+                    html += '<div class="autocomplete-item" data-value="' + item.CD_PONTO_MEDICAO + '" data-label="' + codigo + ' - ' + item.DS_NOME + '">' +
+                            '<span class="item-code">' + codigo + '</span><span class="item-name">' + item.DS_NOME + '</span></div>';
+                });
+                dropdown.innerHTML = html || '<div class="autocomplete-empty">Nenhuma estação pitométrica encontrada</div>';
+                dropdown.querySelectorAll('.autocomplete-item').forEach(it => it.addEventListener('click', function() { selecionarPontoMedicao(this.dataset.value, this.dataset.label); }));
+            } else {
+                dropdown.innerHTML = '<div class="autocomplete-empty">Nenhum ponto encontrado</div>';
+            }
+        })
+        .catch(() => { dropdown.innerHTML = '<div class="autocomplete-empty">Erro ao buscar</div>'; });
+}
+
+function selecionarPontoMedicao(value, label) {
+    document.getElementById('inputPontoMedicao').value = label;
+    document.getElementById('cdPontoMedicao').value = value;
+    document.getElementById('pontoMedicaoDropdown').classList.remove('active');
+    document.getElementById('btnLimparPonto').style.display = 'flex';
+}
+
+function limparPontoMedicao() {
+    const input = document.getElementById('inputPontoMedicao');
+    if (input) input.value = '';
+    document.getElementById('cdPontoMedicao').value = '';
+    const btn = document.getElementById('btnLimparPonto');
+    if (btn) btn.style.display = 'none';
+}
+
+function calcularPosicoesPontos() {
+    const dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
+    const up = parseFloat(document.getElementById('vlUltimaPosicao').value) || 0;
+    const pos = {};
+    for (let p = 1; p <= 11; p++) pos[p] = (p === 1) ? 0 : (p === 11) ? up : (dr / 10) * (p - 1);
+    return pos;
+}
+
+function atualizarPosicoes() {
+    const pos = calcularPosicoesPontos();
+    for (let p = 1; p <= 11; p++) {
+        const th = document.getElementById('posicao_' + p);
+        if (th) th.textContent = pos[p].toFixed(2).replace('.', ',');
+    }
+}
+
+function toggleCampoConvencional() {
+    const campo = document.getElementById('campoUltimaPosicao');
+    campo.classList.toggle('visivel', document.getElementById('selectMetodo').value == '2');
+}
+
+function calcularMediaPonto(ponto) {
+    let soma = 0, count = 0;
+    for (let l = 1; l <= 20; l++) {
+        const input = document.querySelector('input[data-leitura="' + l + '"][data-ponto="' + ponto + '"]');
+        if (input && input.value !== '' && !isNaN(parseFloat(input.value))) { soma += parseFloat(input.value); count++; }
+    }
+    document.getElementById('media_' + ponto).value = count > 0 ? (soma / count).toFixed(2) : '';
+}
+
+function calcular() {
+    for (let p = 1; p <= 11; p++) calcularMediaPonto(p);
+    
+    const dn = parseFloat(document.getElementById('vlDiametroNominal').value) || 0;
+    const dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
+    const pt = parseFloat(document.getElementById('vlProjecaoTap').value) || 0;
+    
+    if (dn <= 0 || dr <= 0) { alert('Preencha os parâmetros do cálculo'); return; }
+    
+    let soma = 0, cnt = 0;
+    for (let p = 1; p <= 11; p++) {
+        const v = parseFloat(document.getElementById('media_' + p).value) || 0;
+        if (v > 0) { soma += v; cnt++; }
+    }
+    
+    const fv = cnt > 0 ? soma / cnt : 0;
+    const cd = dn > 0 ? dr / dn : 0;
+    const r = dr / 2000;
+    const ae = PI * r * r;
+    const kpc = fv > 0 ? fv * ae * cd : 0;
+    
+    document.getElementById('vlFatorVelocidade').value = fv.toFixed(10);
+    document.getElementById('vlCorrecaoDiametro').value = cd.toFixed(6);
+    document.getElementById('vlCorrecaoProjecaoTap').value = pt.toFixed(2);
+    document.getElementById('vlAreaEfetiva').value = ae.toFixed(6);
+    document.getElementById('vlKPC').value = kpc.toFixed(10);
+    document.getElementById('vlVazao').value = '0.00';
+}
+
 document.getElementById('formCalculoKPC').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    // Verificar se há valores calculados
+    const cdPonto = document.getElementById('cdPontoMedicao').value;
+    if (!cdPonto) { showToast('Selecione um Ponto de Medição', 'alerta'); return; }
+    
     const kpc = document.getElementById('vlKPC').value;
     if (!kpc || parseFloat(kpc) === 0) {
-        if (!confirm('O KPC não foi calculado ou é zero. Deseja continuar assim mesmo?')) {
-            return;
-        }
+        if (!confirm('O KPC não foi calculado. Continuar?')) return;
     }
     
-    // Validar técnico e usuário responsável antes de coletar dados
-    const tecnico = document.getElementById('selectTecnico').value;
-    const usuario = document.getElementById('selectUsuario').value;
+    const tec = document.getElementById('selectTecnico').value;
+    const usr = document.getElementById('selectUsuario').value;
+    if (!tec) { showToast('Selecione o Técnico Responsável', 'alerta'); return; }
+    if (!usr) { showToast('Selecione o Usuário Responsável', 'alerta'); return; }
     
-    if (!tecnico) {
-        showToast('Selecione o Técnico Responsável', 'alerta');
-        return;
-    }
-    if (!usuario) {
-        showToast('Selecione o Usuário Responsável', 'alerta');
-        return;
-    }
-    
-    // Coletar dados do formulário
     const formData = new FormData(this);
-    
-    // Converter para objeto
     const data = {};
-    formData.forEach((value, key) => {
-        if (!key.startsWith('leitura[') && !key.startsWith('media[')) {
-            data[key] = value;
-        }
-    });
+    formData.forEach((v, k) => { if (!k.startsWith('leitura[') && !k.startsWith('media[')) data[k] = v; });
     
-    // Coletar leituras (estrutura: leitura[linha][ponto])
-    const POSICOES_PONTOS = calcularPosicoesPontos();
+    const pos = calcularPosicoesPontos();
     data.leituras = [];
-    for (let leitura = 1; leitura <= 20; leitura++) {
-        for (let ponto = 1; ponto <= 11; ponto++) {
-            const input = document.querySelector(`input[data-leitura="${leitura}"][data-ponto="${ponto}"]`);
+    for (let l = 1; l <= 20; l++) {
+        for (let p = 1; p <= 11; p++) {
+            const input = document.querySelector('input[data-leitura="' + l + '"][data-ponto="' + p + '"]');
             if (input && input.value !== '' && !isNaN(parseFloat(input.value))) {
-                data.leituras.push({
-                    leitura: leitura,    // CD_ORDEM_LEITURA
-                    ponto: ponto,        // CD_POSICAO_LEITURA
-                    deflexao: parseFloat(input.value),
-                    posicao: POSICOES_PONTOS[ponto]
-                });
+                data.leituras.push({ leitura: l, ponto: p, deflexao: parseFloat(input.value), posicao: pos[p] });
             }
         }
     }
-    
-    // Coletar médias (posição 21 na lógica do banco)
-    for (let ponto = 1; ponto <= 11; ponto++) {
-        const mediaInput = document.getElementById(`media_${ponto}`);
-        if (mediaInput && mediaInput.value !== '' && !isNaN(parseFloat(mediaInput.value))) {
-            data.leituras.push({
-                leitura: 21,         // Linha especial para média
-                ponto: ponto,
-                deflexao: parseFloat(mediaInput.value),
-                posicao: POSICOES_PONTOS[ponto]
-            });
+    for (let p = 1; p <= 11; p++) {
+        const mi = document.getElementById('media_' + p);
+        if (mi && mi.value !== '' && !isNaN(parseFloat(mi.value))) {
+            data.leituras.push({ leitura: 21, ponto: p, deflexao: parseFloat(mi.value), posicao: pos[p] });
         }
     }
     
-    data.cd_tecnico_responsavel = tecnico;
-    data.cd_usuario_responsavel = usuario;
-    
-    // Enviar para o servidor
     fetch('bd/calculoKPC/salvarCalculoKPC.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
     .then(r => r.json())
-    .then(response => {
-        if (response.success) {
-            showToast('Cálculo de KPC salvo com sucesso!', 'sucesso');
-            setTimeout(() => {
-                window.location.href = 'calculoKPC.php';
-            }, 1500);
+    .then(res => {
+        if (res.success) {
+            showToast('Salvo com sucesso!', 'sucesso');
+            setTimeout(() => window.location.href = 'calculoKPC.php', 1500);
         } else {
-            showToast('Erro: ' + response.message, 'erro');
+            showToast('Erro: ' + res.message, 'erro');
         }
     })
-    .catch(err => {
-        console.error('Erro:', err);
-        showToast('Erro ao salvar o cálculo. Verifique o console.', 'erro');
-    });
+    .catch(err => { console.error(err); showToast('Erro ao salvar', 'erro'); });
 });
-</script>
 
-<!-- Toast Container -->
-<div id="toastContainer" class="toast-container"></div>
-
-<script>
-// ============================================
-// Toast System (fallback se não existir)
-// ============================================
-if (typeof showToast !== 'function') {
-    function showToast(message, type = 'info', duration = 5000) {
-        let container = document.getElementById('toastContainer');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'toastContainer';
-            container.className = 'toast-container';
-            document.body.appendChild(container);
-        }
-        
-        const icons = {
-            sucesso: 'checkmark-circle',
-            erro: 'close-circle',
-            alerta: 'alert-circle',
-            info: 'information-circle'
-        };
-
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.innerHTML = `
-            <div class="toast-icon">
-                <ion-icon name="${icons[type] || icons.info}"></ion-icon>
-            </div>
-            <div class="toast-content">
-                <p class="toast-message">${message}</p>
-            </div>
-            <button class="toast-close" onclick="this.parentElement.remove()">
-                <ion-icon name="close"></ion-icon>
-            </button>
-        `;
-        
-        container.appendChild(toast);
-        
-        // Animação de entrada
-        setTimeout(() => toast.classList.add('show'), 10);
-        
-        // Auto-remover
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
-        }, duration);
-    }
+function showToast(msg, type, dur) {
+    type = type || 'info'; dur = dur || 5000;
+    let c = document.getElementById('toastContainer');
+    const icons = { sucesso: 'checkmark-circle', erro: 'close-circle', alerta: 'alert-circle', info: 'information-circle' };
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.innerHTML = '<div class="toast-icon"><ion-icon name="' + (icons[type] || icons.info) + '"></ion-icon></div>' +
+                  '<div class="toast-content"><p class="toast-message">' + msg + '</p></div>' +
+                  '<button class="toast-close" onclick="this.parentElement.remove()"><ion-icon name="close"></ion-icon></button>';
+    c.appendChild(t);
+    setTimeout(() => t.classList.add('show'), 10);
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, dur);
 }
 </script>
-
-<style>
-/* Toast Styles */
-.toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.toast {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    min-width: 300px;
-    max-width: 400px;
-    transform: translateX(120%);
-    transition: transform 0.3s ease;
-}
-
-.toast.show {
-    transform: translateX(0);
-}
-
-.toast-icon {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-}
-
-.toast.sucesso { border-left: 4px solid #10b981; }
-.toast.sucesso .toast-icon { color: #10b981; }
-
-.toast.erro { border-left: 4px solid #ef4444; }
-.toast.erro .toast-icon { color: #ef4444; }
-
-.toast.alerta { border-left: 4px solid #f59e0b; }
-.toast.alerta .toast-icon { color: #f59e0b; }
-
-.toast.info { border-left: 4px solid #3b82f6; }
-.toast.info .toast-icon { color: #3b82f6; }
-
-.toast-content {
-    flex: 1;
-}
-
-.toast-message {
-    margin: 0;
-    font-size: 14px;
-    color: #1e293b;
-}
-
-.toast-close {
-    background: none;
-    border: none;
-    padding: 4px;
-    cursor: pointer;
-    color: #94a3b8;
-    font-size: 18px;
-}
-
-.toast-close:hover {
-    color: #475569;
-}
-</style>
 
 <?php include_once 'includes/footer.inc.php'; ?>

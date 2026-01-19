@@ -6,11 +6,5 @@ tome cuidado com a acentuação e caracteres especiais.
 Todas as telas devem ser responsivas. 
 Considere os arquivos e premissas.md e relacional.md.
 sempre documente/comente muito bem o código gerado.
+se não for passar o código fonte completo, informe antes/depois de que trecho devo incluir/substituir os novos códigos.
 
-TO DO:
-* Guia Cálculos
-    Coeficiente KPC;
-    Constante K;
-    Coeficiente de Perda de Carga;
-    Vazão;
-    Curva de Bomba;

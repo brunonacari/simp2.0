@@ -3,7 +3,10 @@
  * SIMP - Dashboard de Saúde
  * Endpoint: Evolução Diária do Score
  * 
- * Usa a view VW_EVOLUCAO_DIARIA
+ * PRIORIDADE:
+ * 1. TB_EVOLUCAO_DIARIA_CACHE (mais rápido ~10ms)
+ * 2. VW_EVOLUCAO_DIARIA (view/fallback)
+ * 3. MEDICAO_RESUMO_DIARIO (cálculo direto - LENTO)
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -16,17 +19,40 @@ try {
     $dias = isset($_GET['dias']) ? (int)$_GET['dias'] : 7;
     $dias = max(1, min(90, $dias));
     
-    $dataInicio = date('Y-m-d', strtotime("-{$dias} days"));
-    $dataFim = date('Y-m-d');
+    // Buscar última data disponível no cache
+    $sqlMaxData = "SELECT MAX(DT_MEDICAO) AS DATA_MAX FROM TB_EVOLUCAO_DIARIA_CACHE";
+    $stmtMax = $pdoSIMP->query($sqlMaxData);
+    $resultMax = $stmtMax->fetch(PDO::FETCH_ASSOC);
     
-    // Verificar se a view existe
-    $checkView = $pdoSIMP->query("SELECT OBJECT_ID('VW_EVOLUCAO_DIARIA', 'V') AS ViewExists");
-    $viewExists = $checkView->fetch(PDO::FETCH_ASSOC)['ViewExists'];
+    if ($resultMax && $resultMax['DATA_MAX']) {
+        // Usar última data com dados como referência
+        $dataFim = $resultMax['DATA_MAX'];
+        $dataInicio = date('Y-m-d', strtotime("-{$dias} days", strtotime($dataFim)));
+    } else {
+        // Fallback para data atual
+        $dataInicio = date('Y-m-d', strtotime("-{$dias} days"));
+        $dataFim = date('Y-m-d');
+    }
     
-    if ($viewExists) {
-        // Usar a view existente
+    $dados = [];
+    $fonte = '';
+    
+    // PRIORIDADE 1: Tabela de Cache (mais rápido)
+    $checkCache = $pdoSIMP->query("SELECT OBJECT_ID('TB_EVOLUCAO_DIARIA_CACHE', 'U') AS CacheExists");
+    $cacheExists = $checkCache->fetch(PDO::FETCH_ASSOC)['CacheExists'];
+    
+    if ($cacheExists) {
         $sql = "
-            SELECT * FROM VW_EVOLUCAO_DIARIA 
+            SELECT 
+                DT_MEDICAO,
+                TOTAL_PONTOS,
+                SCORE_MEDIO,
+                QTD_SAUDAVEIS,
+                QTD_ALERTA,
+                QTD_CRITICOS,
+                TOTAL_ANOMALIAS,
+                TOTAL_TRATAMENTOS
+            FROM TB_EVOLUCAO_DIARIA_CACHE 
             WHERE DT_MEDICAO >= :dataInicio 
               AND DT_MEDICAO <= :dataFim 
             ORDER BY DT_MEDICAO
@@ -35,14 +61,35 @@ try {
         $stmt = $pdoSIMP->prepare($sql);
         $stmt->execute([':dataInicio' => $dataInicio, ':dataFim' => $dataFim]);
         $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $fonte = 'TB_EVOLUCAO_DIARIA_CACHE';
+    }
+    
+    // PRIORIDADE 2: View (se cache vazio ou não existe)
+    if (empty($dados)) {
+        $checkView = $pdoSIMP->query("SELECT OBJECT_ID('VW_EVOLUCAO_DIARIA', 'V') AS ViewExists");
+        $viewExists = $checkView->fetch(PDO::FETCH_ASSOC)['ViewExists'];
         
-    } else {
-        // Verificar se tabela MEDICAO_RESUMO_DIARIO existe
+        if ($viewExists) {
+            $sql = "
+                SELECT * FROM VW_EVOLUCAO_DIARIA 
+                WHERE DT_MEDICAO >= :dataInicio 
+                  AND DT_MEDICAO <= :dataFim 
+                ORDER BY DT_MEDICAO
+            ";
+            
+            $stmt = $pdoSIMP->prepare($sql);
+            $stmt->execute([':dataInicio' => $dataInicio, ':dataFim' => $dataFim]);
+            $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $fonte = 'VW_EVOLUCAO_DIARIA';
+        }
+    }
+    
+    // PRIORIDADE 3: Cálculo direto (mais lento - evitar!)
+    if (empty($dados)) {
         $checkTable = $pdoSIMP->query("SELECT OBJECT_ID('MEDICAO_RESUMO_DIARIO', 'U') AS TableExists");
         $tableExists = $checkTable->fetch(PDO::FETCH_ASSOC)['TableExists'];
         
         if ($tableExists) {
-            // Fallback: calcular da tabela de resumo diário
             $sql = "
                 SELECT 
                     DT_MEDICAO,
@@ -53,7 +100,7 @@ try {
                     SUM(CASE WHEN VL_SCORE_SAUDE < 5 THEN 1 ELSE 0 END) AS QTD_CRITICOS,
                     SUM(CASE WHEN FL_ANOMALIA = 1 THEN 1 ELSE 0 END) AS TOTAL_ANOMALIAS,
                     SUM(CASE WHEN ID_SITUACAO = 2 THEN 1 ELSE 0 END) AS TOTAL_TRATAMENTOS
-                FROM SIMP.dbo.MEDICAO_RESUMO_DIARIO
+                FROM MEDICAO_RESUMO_DIARIO
                 WHERE DT_MEDICAO >= :dataInicio
                   AND DT_MEDICAO <= :dataFim
                 GROUP BY DT_MEDICAO
@@ -63,37 +110,14 @@ try {
             $stmt = $pdoSIMP->prepare($sql);
             $stmt->execute([':dataInicio' => $dataInicio, ':dataFim' => $dataFim]);
             $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } else {
-            // Fallback final: gerar dados simulados baseados em REGISTRO_VAZAO_PRESSAO
-            $sql = "
-                SELECT 
-                    CAST(DT_LEITURA AS DATE) AS DT_MEDICAO,
-                    COUNT(DISTINCT CD_PONTO_MEDICAO) AS TOTAL_PONTOS,
-                    7.5 AS SCORE_MEDIO,
-                    COUNT(DISTINCT CD_PONTO_MEDICAO) * 0.7 AS QTD_SAUDAVEIS,
-                    COUNT(DISTINCT CD_PONTO_MEDICAO) * 0.2 AS QTD_ALERTA,
-                    COUNT(DISTINCT CD_PONTO_MEDICAO) * 0.1 AS QTD_CRITICOS,
-                    0 AS TOTAL_ANOMALIAS,
-                    0 AS TOTAL_TRATAMENTOS
-                FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
-                WHERE CAST(DT_LEITURA AS DATE) >= :dataInicio
-                  AND CAST(DT_LEITURA AS DATE) <= :dataFim
-                GROUP BY CAST(DT_LEITURA AS DATE)
-                ORDER BY CAST(DT_LEITURA AS DATE)
-            ";
-            
-            $stmt = $pdoSIMP->prepare($sql);
-            $stmt->execute([':dataInicio' => $dataInicio, ':dataFim' => $dataFim]);
-            $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $fonte = 'MEDICAO_RESUMO_DIARIO (direto)';
         }
     }
     
-    // Se não houver dados, gerar array vazio mas com estrutura correta
+    // Se não houver dados, gerar array vazio com estrutura
     if (empty($dados)) {
-        // Gerar dias sem dados
         $dataAtual = new DateTime($dataInicio);
         $dataFinal = new DateTime($dataFim);
-        $dados = [];
         
         while ($dataAtual <= $dataFinal) {
             $dados[] = [
@@ -108,6 +132,7 @@ try {
             ];
             $dataAtual->modify('+1 day');
         }
+        $fonte = 'dados_vazios';
     }
     
     echo json_encode([
@@ -117,7 +142,8 @@ try {
             'inicio' => $dataInicio,
             'fim' => $dataFim,
             'dias' => $dias
-        ]
+        ],
+        'fonte' => $fonte
     ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {

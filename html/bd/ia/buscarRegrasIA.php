@@ -1,54 +1,32 @@
 <?php
 /**
- * SIMP - API para Buscar Regras da IA como Texto
- * Retorna todas as regras ativas concatenadas para uso no prompt da IA
+ * SIMP - Buscar Regras da IA
+ * Retorna as instruções do banco de dados para uso no prompt da IA
  * 
  * @author Bruno
- * @version 1.0
+ * @version 2.0
  */
 
 /**
- * Busca regras do banco e retorna como string formatada
+ * Busca instruções do banco de dados
  * @param PDO $pdo Conexão com o banco
- * @return string Regras concatenadas
+ * @return string Instruções ou string vazia
  */
 function buscarRegrasIA($pdo) {
     try {
-        // Buscar regras ativas ordenadas
-        $sql = "SELECT 
-                    DS_TITULO,
-                    DS_CATEGORIA,
-                    DS_CONTEUDO
-                FROM SIMP.dbo.IA_REGRAS
-                WHERE OP_ATIVO = 1
-                ORDER BY NR_ORDEM ASC, CD_CHAVE ASC";
-        
+        $sql = "SELECT TOP 1 CAST(DS_CONTEUDO AS VARCHAR(MAX)) AS DS_CONTEUDO 
+                FROM SIMP.dbo.IA_REGRAS 
+                ORDER BY CD_CHAVE DESC";
         $stmt = $pdo->query($sql);
-        $regras = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        if (empty($regras)) {
-            return '';
-        }
-
-        // Montar texto formatado
-        $texto = "=== INSTRUÇÕES DO ASSISTENTE ===\n\n";
-
-        foreach ($regras as $index => $regra) {
-            $numero = $index + 1;
-            $categoria = $regra['DS_CATEGORIA'] ? " [{$regra['DS_CATEGORIA']}]" : '';
-            
-            $texto .= "--- {$numero}. {$regra['DS_TITULO']}{$categoria} ---\n";
-            $texto .= $regra['DS_CONTEUDO'] . "\n\n";
-        }
-
-        return $texto;
-
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $row ? $row['DS_CONTEUDO'] : '';
+        
     } catch (PDOException $e) {
         // Se tabela não existir, retornar vazio
         if (strpos($e->getMessage(), 'Invalid object name') !== false) {
             return '';
         }
-        // Log do erro mas não interrompe
         error_log('Erro ao buscar regras IA: ' . $e->getMessage());
         return '';
     } catch (Exception $e) {
@@ -58,16 +36,16 @@ function buscarRegrasIA($pdo) {
 }
 
 /**
- * Busca regras do banco ou do arquivo de fallback
+ * Busca instruções do banco ou do arquivo de fallback
  * @param PDO|null $pdo Conexão com o banco (opcional)
- * @return string Regras concatenadas
+ * @return string Instruções
  */
 function obterRegrasIA($pdo = null) {
     // Se tiver conexão, tentar buscar do banco primeiro
     if ($pdo) {
-        $regrasBanco = buscarRegrasIA($pdo);
-        if (!empty($regrasBanco)) {
-            return $regrasBanco;
+        $regras = buscarRegrasIA($pdo);
+        if (!empty($regras)) {
+            return $regras;
         }
     }
 
@@ -99,7 +77,8 @@ if (basename(__FILE__) == basename($_SERVER['SCRIPT_FILENAME'])) {
         echo json_encode([
             'success' => true,
             'regras' => $regras,
-            'caracteres' => strlen($regras)
+            'caracteres' => strlen($regras),
+            'fonte' => !empty($regras) ? 'banco' : 'vazio'
         ], JSON_UNESCAPED_UNICODE);
 
     } catch (Exception $e) {

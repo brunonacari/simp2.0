@@ -1,10 +1,10 @@
 <?php
 /**
  * SIMP - API para Listar Regras da IA
- * Retorna todas as regras com estatísticas
+ * Retorna o conteúdo único de instruções
  * 
  * @author Bruno
- * @version 1.0
+ * @version 2.0
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -16,63 +16,78 @@ try {
         throw new Exception('Conexão com banco de dados não estabelecida');
     }
 
-    // Verificar se tabela existe
-    $checkTable = $pdoSIMP->query("SELECT TOP 1 1 FROM SIMP.dbo.IA_REGRAS");
-    
-    // Buscar todas as regras ordenadas
-    $sql = "SELECT 
+    // Buscar registro único
+    $sql = "SELECT TOP 1 
                 CD_CHAVE,
-                DS_TITULO,
-                DS_CATEGORIA,
-                DS_CONTEUDO,
-                NR_ORDEM,
-                OP_ATIVO,
+                CAST(DS_CONTEUDO AS VARCHAR(MAX)) AS DS_CONTEUDO,
                 CD_USUARIO_CRIACAO,
                 DT_CRIACAO,
                 CD_USUARIO_ATUALIZACAO,
                 DT_ATUALIZACAO
-            FROM SIMP.dbo.IA_REGRAS
-            ORDER BY NR_ORDEM ASC, CD_CHAVE ASC";
+            FROM SIMP.dbo.IA_REGRAS 
+            ORDER BY CD_CHAVE DESC";
     
     $stmt = $pdoSIMP->query($sql);
-    $regras = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $regra = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Calcular estatísticas
-    $totalRegras = count($regras);
-    $regrasAtivas = 0;
-    $categorias = [];
-    $totalCaracteres = 0;
+    if ($regra) {
+        echo json_encode([
+            'success' => true,
+            'regra' => [
+                'cdChave' => $regra['CD_CHAVE'],
+                'conteudo' => $regra['DS_CONTEUDO'],
+                'dtCriacao' => $regra['DT_CRIACAO'],
+                'dtAtualizacao' => $regra['DT_ATUALIZACAO'],
+                'caracteres' => strlen($regra['DS_CONTEUDO']),
+                'linhas' => substr_count($regra['DS_CONTEUDO'], "\n") + 1
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+    } else {
+        // Nenhum registro - tentar carregar do arquivo
+        $regrasFile = __DIR__ . '/../config/ia_regras.php';
+        $conteudo = '';
+        
+        if (file_exists($regrasFile)) {
+            $conteudo = require $regrasFile;
+        }
 
-    foreach ($regras as $regra) {
-        if ($regra['OP_ATIVO'] == 1) {
-            $regrasAtivas++;
-        }
-        if (!empty($regra['DS_CATEGORIA']) && !in_array($regra['DS_CATEGORIA'], $categorias)) {
-            $categorias[] = $regra['DS_CATEGORIA'];
-        }
-        $totalCaracteres += strlen($regra['DS_CONTEUDO'] ?? '');
+        echo json_encode([
+            'success' => true,
+            'regra' => [
+                'cdChave' => null,
+                'conteudo' => $conteudo,
+                'dtCriacao' => null,
+                'dtAtualizacao' => null,
+                'caracteres' => strlen($conteudo),
+                'linhas' => substr_count($conteudo, "\n") + 1
+            ],
+            'fonte' => 'arquivo'
+        ], JSON_UNESCAPED_UNICODE);
     }
-
-    echo json_encode([
-        'success' => true,
-        'regras' => $regras,
-        'estatisticas' => [
-            'total' => $totalRegras,
-            'ativas' => $regrasAtivas,
-            'categorias' => count($categorias),
-            'caracteres' => $totalCaracteres
-        ]
-    ], JSON_UNESCAPED_UNICODE);
 
 } catch (PDOException $e) {
     // Verificar se é erro de tabela inexistente
-    if (strpos($e->getMessage(), 'Invalid object name') !== false || 
-        strpos($e->getMessage(), 'IA_REGRAS') !== false) {
+    if (strpos($e->getMessage(), 'Invalid object name') !== false) {
+        // Tentar carregar do arquivo
+        $regrasFile = __DIR__ . '/../config/ia_regras.php';
+        $conteudo = '';
+        
+        if (file_exists($regrasFile)) {
+            $conteudo = require $regrasFile;
+        }
+
         echo json_encode([
-            'success' => false,
-            'message' => 'Tabela IA_REGRAS não encontrada. Execute o script SQL para criar a tabela.',
-            'regras' => [],
-            'estatisticas' => ['total' => 0, 'ativas' => 0, 'categorias' => 0, 'caracteres' => 0]
+            'success' => true,
+            'regra' => [
+                'cdChave' => null,
+                'conteudo' => $conteudo,
+                'dtCriacao' => null,
+                'dtAtualizacao' => null,
+                'caracteres' => strlen($conteudo),
+                'linhas' => substr_count($conteudo, "\n") + 1
+            ],
+            'fonte' => 'arquivo',
+            'aviso' => 'Tabela IA_REGRAS não encontrada. Usando arquivo de configuração.'
         ], JSON_UNESCAPED_UNICODE);
     } else {
         echo json_encode([

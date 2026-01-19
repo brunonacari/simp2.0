@@ -1008,6 +1008,23 @@ $filtroBuscaGet = isset($_GET['busca']) ? htmlspecialchars($_GET['busca']) : '';
     box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
 }
 
+.btn-modal-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border: none;
+    color: white;
+}
+
+.btn-modal-warning:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.btn-modal-warning:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* Pagination */
 .pagination-container {
     display: flex;
@@ -1270,8 +1287,8 @@ $filtroBuscaGet = isset($_GET['busca']) ? htmlspecialchars($_GET['busca']) : '';
             <!-- Gráfico de Evolução -->
             <div class="modal-section">
                 <h3 class="modal-section-title">
-                    <ion-icon name="analytics-outline"></ion-icon>
-                    Média Diária (Últimos 7 dias)
+                    <ion-icon name="trending-up-outline"></ion-icon>
+                    Evolução do Score de Saúde
                 </h3>
                 <div class="modal-chart-container">
                     <canvas id="modalChart"></canvas>
@@ -1294,6 +1311,10 @@ $filtroBuscaGet = isset($_GET['busca']) ? htmlspecialchars($_GET['busca']) : '';
                 Última atualização: -
             </div>
             <div class="modal-footer-actions">
+                <button class="btn-modal btn-modal-warning" onclick="reprocessarPonto()" id="btnReprocessar" title="Recalcular score após tratamento de dados">
+                    <ion-icon name="refresh-outline"></ion-icon>
+                    Reprocessar
+                </button>
                 <button class="btn-modal btn-modal-secondary" onclick="abrirHistorico()">
                     <ion-icon name="time-outline"></ion-icon>
                     Ver Histórico
@@ -1918,41 +1939,38 @@ async function carregarGraficoModal(cdPonto) {
         
         if (result.success && result.data && result.data.length > 0) {
             labels = result.data.map(d => formatarData(d.DT_MEDICAO, true));
-            valores = result.data.map(d => parseFloat(d.VL_MEDIA_DIARIA || 0));
+            valores = result.data.map(d => parseFloat(d.VL_SCORE_SAUDE || 0));
         } else {
             // Dados simulados se não houver dados
             labels = ['D-6', 'D-5', 'D-4', 'D-3', 'D-2', 'D-1', 'Hoje'];
-            const mediaPeriodo = parseFloat(pontoAtual.MEDIA_PERIODO || 0);
-            valores = labels.map(() => Math.max(0, mediaPeriodo + (Math.random() - 0.5) * mediaPeriodo * 0.2));
+            const scoreMedio = parseFloat(pontoAtual.SCORE_MEDIO || 8);
+            valores = labels.map(() => Math.max(0, Math.min(10, scoreMedio + (Math.random() - 0.5) * 2)));
         }
         
-        // Calcular min/max para escala dinâmica
-        const minVal = Math.min(...valores);
-        const maxVal = Math.max(...valores);
-        const range = maxVal - minVal;
-        const yMin = Math.max(0, minVal - range * 0.1);
-        const yMax = maxVal + range * 0.1;
+        // Função para cor baseada no score
+        const getScoreColor = (score) => {
+            if (score >= 8) return '#22c55e'; // Verde
+            if (score >= 5) return '#f59e0b'; // Amarelo
+            return '#ef4444'; // Vermelho
+        };
         
-        // Determinar unidade baseada no tipo de medidor
-        const tipoMedidor = pontoAtual.ID_TIPO_MEDIDOR;
-        let unidade = 'L/s'; // Padrão para vazão
-        if (tipoMedidor == 4) unidade = 'mca'; // Pressão
-        else if (tipoMedidor == 6) unidade = 'm'; // Nível reservatório
+        // Cores por ponto baseadas no valor
+        const pointColors = valores.map(v => getScoreColor(v));
         
         modalChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: `Média Diária (${unidade})`,
+                    label: 'Score de Saúde',
                     data: valores,
-                    borderColor: '#0d9488',
-                    backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#0d9488',
+                    pointRadius: 6,
+                    pointBackgroundColor: pointColors,
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2
                 }]
@@ -1965,19 +1983,24 @@ async function carregarGraficoModal(cdPonto) {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return `${context.parsed.y.toFixed(2)} ${unidade}`;
+                                const score = context.parsed.y;
+                                let status = 'Crítico';
+                                if (score >= 8) status = 'Saudável';
+                                else if (score >= 5) status = 'Alerta';
+                                return `Score: ${score.toFixed(1)} - ${status}`;
                             }
                         }
                     }
                 },
                 scales: {
                     y: {
-                        min: yMin,
-                        max: yMax,
+                        min: 0,
+                        max: 10,
                         grid: { color: 'rgba(0,0,0,0.05)' },
                         ticks: {
+                            stepSize: 2,
                             callback: function(value) {
-                                return value.toFixed(1);
+                                return value.toFixed(0);
                             }
                         }
                     },
@@ -1989,6 +2012,81 @@ async function carregarGraficoModal(cdPonto) {
         });
     } catch (error) {
         console.error('Erro ao carregar gráfico:', error);
+    }
+}
+
+// Reprocessar ponto - atualiza score após tratamento de dados
+async function reprocessarPonto() {
+    if (!pontoAtual) return;
+    
+    const cdPonto = pontoAtual.CD_PONTO_MEDICAO;
+    const btn = document.getElementById('btnReprocessar');
+    const btnOriginalHTML = btn.innerHTML;
+    
+    // Confirmar ação
+    if (!confirm(`Reprocessar ponto ${cdPonto}?\n\nIsso irá recalcular o score de saúde com base nos dados atuais (incluindo tratamentos realizados).`)) {
+        return;
+    }
+    
+    try {
+        // Mostrar loading
+        btn.disabled = true;
+        btn.innerHTML = '<ion-icon name="hourglass-outline"></ion-icon> Processando...';
+        
+        const response = await fetch(`bd/dashboard/reprocessarPonto.php?cd_ponto=${cdPonto}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            // Atualizar dados na tela
+            if (result.dados) {
+                const novoScore = parseFloat(result.dados.VL_SCORE_SAUDE || 0);
+                const novoStatus = result.dados.STATUS;
+                
+                // Atualizar modal
+                document.getElementById('modalScore').textContent = novoScore.toFixed(1);
+                
+                // Atualizar cor do score
+                const scoreElement = document.getElementById('modalScore').parentElement;
+                scoreElement.className = 'score-display';
+                if (novoScore >= 8) scoreElement.classList.add('score-good');
+                else if (novoScore >= 5) scoreElement.classList.add('score-warning');
+                else scoreElement.classList.add('score-critical');
+                
+                // Recarregar gráfico
+                await carregarGraficoModal(cdPonto);
+            }
+            
+            // Mostrar sucesso
+            btn.innerHTML = '<ion-icon name="checkmark-circle-outline"></ion-icon> Atualizado!';
+            btn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+            
+            // Recarregar lista de pontos em background
+            carregarPontos();
+            
+            // Restaurar botão após 2s
+            setTimeout(() => {
+                btn.innerHTML = btnOriginalHTML;
+                btn.style.background = '';
+                btn.disabled = false;
+            }, 2000);
+            
+        } else {
+            throw new Error(result.message || 'Erro ao reprocessar');
+        }
+        
+    } catch (error) {
+        console.error('Erro ao reprocessar:', error);
+        btn.innerHTML = '<ion-icon name="alert-circle-outline"></ion-icon> Erro!';
+        btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+        
+        alert('Erro ao reprocessar: ' + error.message);
+        
+        // Restaurar botão após 2s
+        setTimeout(() => {
+            btn.innerHTML = btnOriginalHTML;
+            btn.style.background = '';
+            btn.disabled = false;
+        }, 2000);
     }
 }
 
