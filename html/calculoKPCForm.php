@@ -21,7 +21,7 @@ if (!$temPermissao) {
 }
 
 // Verifica se é edição
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $isEdicao = $id > 0;
 $calculoKPC = null;
 $leituras = [];
@@ -51,14 +51,14 @@ if ($isEdicao) {
     $stmt = $pdoSIMP->prepare($sql);
     $stmt->execute([':id' => $id]);
     $calculoKPC = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if (!$calculoKPC) {
         $_SESSION['msg'] = 'Cálculo de KPC não encontrado.';
         $_SESSION['msg_tipo'] = 'erro';
         header('Location: calculoKPC.php');
         exit;
     }
-    
+
     // Buscar leituras
     $sqlLeituras = "SELECT * FROM SIMP.dbo.CALCULO_KPC_LEITURA WHERE CD_CALCULO_KPC = :id ORDER BY CD_POSICAO_LEITURA, CD_ORDEM_LEITURA";
     $stmtLeituras = $pdoSIMP->prepare($sqlLeituras);
@@ -90,14 +90,17 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
 // Código formatado do ponto (para edição)
 $codigoPontoFormatado = '';
 if ($isEdicao) {
-    $codigoPontoFormatado = $calculoKPC['CD_LOCALIDADE'] . '-' . 
-                           str_pad($calculoKPC['CD_PONTO_MEDICAO'], 6, '0', STR_PAD_LEFT) . '-E';
+    $codigoPontoFormatado = $calculoKPC['CD_LOCALIDADE'] . '-' .
+        str_pad($calculoKPC['CD_PONTO_MEDICAO'], 6, '0', STR_PAD_LEFT) . '-E';
 }
 ?>
 
 <!-- Select2 para busca nos selects -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <style>
     /* ============================================
@@ -106,40 +109,40 @@ if ($isEdicao) {
     .select2-container {
         width: 100% !important;
     }
-    
+
     .select2-container--default .select2-selection--single {
         height: 42px;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         padding: 6px 12px;
     }
-    
+
     .select2-container--default .select2-selection--single .select2-selection__rendered {
         line-height: 28px;
         color: #1e293b;
     }
-    
+
     .select2-container--default .select2-selection--single .select2-selection__arrow {
         height: 40px;
     }
-    
+
     .select2-container--default.select2-container--focus .select2-selection--single {
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
-    
+
     .select2-dropdown {
         border-color: #e2e8f0;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    
+
     .select2-search--dropdown .select2-search__field {
         border: 1px solid #e2e8f0;
         border-radius: 6px;
         padding: 8px 12px;
     }
-    
+
     .select2-results__option--highlighted[aria-selected] {
         background-color: #3b82f6;
     }
@@ -290,12 +293,29 @@ if ($isEdicao) {
         box-sizing: border-box;
     }
 
-    .col-12 { width: 100%; }
-    .col-8 { width: 66.666667%; }
-    .col-6 { width: 50%; }
-    .col-4 { width: 33.333333%; }
-    .col-3 { width: 25%; }
-    .col-2 { width: 16.666667%; }
+    .col-12 {
+        width: 100%;
+    }
+
+    .col-8 {
+        width: 66.666667%;
+    }
+
+    .col-6 {
+        width: 50%;
+    }
+
+    .col-4 {
+        width: 33.333333%;
+    }
+
+    .col-3 {
+        width: 25%;
+    }
+
+    .col-2 {
+        width: 16.666667%;
+    }
 
     .form-label {
         display: flex;
@@ -640,35 +660,240 @@ if ($isEdicao) {
         transition: transform 0.3s ease;
     }
 
-    .toast.show { transform: translateX(0); }
-    .toast.sucesso { border-left: 4px solid #10b981; }
-    .toast.sucesso .toast-icon { color: #10b981; }
-    .toast.erro { border-left: 4px solid #ef4444; }
-    .toast.erro .toast-icon { color: #ef4444; }
-    .toast.alerta { border-left: 4px solid #f59e0b; }
-    .toast.alerta .toast-icon { color: #f59e0b; }
-    .toast.info { border-left: 4px solid #3b82f6; }
-    .toast.info .toast-icon { color: #3b82f6; }
+    .toast.show {
+        transform: translateX(0);
+    }
 
-    .toast-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-    .toast-content { flex: 1; }
-    .toast-message { margin: 0; font-size: 14px; color: #1e293b; }
-    .toast-close { background: none; border: none; padding: 4px; cursor: pointer; color: #94a3b8; font-size: 18px; }
-    .toast-close:hover { color: #475569; }
+    .toast.sucesso {
+        border-left: 4px solid #10b981;
+    }
+
+    .toast.sucesso .toast-icon {
+        color: #10b981;
+    }
+
+    .toast.erro {
+        border-left: 4px solid #ef4444;
+    }
+
+    .toast.erro .toast-icon {
+        color: #ef4444;
+    }
+
+    .toast.alerta {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .toast.alerta .toast-icon {
+        color: #f59e0b;
+    }
+
+    .toast.info {
+        border-left: 4px solid #3b82f6;
+    }
+
+    .toast.info .toast-icon {
+        color: #3b82f6;
+    }
+
+    .toast-icon {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    .toast-content {
+        flex: 1;
+    }
+
+    .toast-message {
+        margin: 0;
+        font-size: 14px;
+        color: #1e293b;
+    }
+
+    .toast-close {
+        background: none;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        color: #94a3b8;
+        font-size: 18px;
+    }
+
+    .toast-close:hover {
+        color: #475569;
+    }
 
     /* ============================================
        Responsivo
        ============================================ */
     @media (max-width: 992px) {
-        .col-2, .col-3 { width: 33.333333%; }
-        .col-4 { width: 50%; }
+
+        .col-2,
+        .col-3 {
+            width: 33.333333%;
+        }
+
+        .col-4 {
+            width: 50%;
+        }
     }
 
     @media (max-width: 768px) {
-        .page-container { padding: 12px; }
-        .col-2, .col-3, .col-4, .col-6 { width: 100%; }
-        .form-actions { flex-direction: column; }
-        .form-actions .btn { width: 100%; justify-content: center; }
+        .page-container {
+            padding: 12px;
+        }
+
+        .col-2,
+        .col-3,
+        .col-4,
+        .col-6 {
+            width: 100%;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .form-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Botão Ver Gráfico */
+    .btn-grafico {
+        background: #c9a227;
+        color: white;
+    }
+
+    .btn-grafico:hover {
+        background: #b8931f;
+    }
+
+    /* Modal do Gráfico */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-overlay.ativo {
+        display: flex;
+    }
+
+    .modal-grafico {
+        background: white;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: modalEntrada 0.3s ease;
+    }
+
+    @keyframes modalEntrada {
+        from {
+            opacity: 0;
+            transform: scale(0.9) translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .modal-grafico-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #c9a227 0%, #b8931f 100%);
+        color: white;
+    }
+
+    .modal-grafico-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .modal-grafico-header h3 ion-icon {
+        font-size: 22px;
+    }
+
+    .modal-grafico-fechar {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    }
+
+    .modal-grafico-fechar:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .modal-grafico-fechar ion-icon {
+        font-size: 20px;
+    }
+
+    .modal-grafico-body {
+        padding: 20px;
+    }
+
+    .modal-grafico-body .grafico-container {
+        height: 400px;
+        position: relative;
+    }
+
+    .modal-grafico-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .grafico-legenda {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    .legenda-ponto {
+        width: 12px;
+        height: 12px;
+        background: #c9a227;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 0 1px #c9a227;
     }
 </style>
 
@@ -684,9 +909,9 @@ if ($isEdicao) {
                     <h1><?= $isEdicao ? 'Editar Cálculo de KPC' : 'Novo Cálculo de KPC' ?></h1>
                     <p class="page-header-subtitle">
                         <?php if ($isEdicao): ?>
-                        Código: <span class="codigo"><?= $codigoFormatado ?></span>
+                            Código: <span class="codigo"><?= $codigoFormatado ?></span>
                         <?php else: ?>
-                        Preencha os dados para realizar o cálculo
+                            Preencha os dados para realizar o cálculo
                         <?php endif; ?>
                     </p>
                 </div>
@@ -700,7 +925,8 @@ if ($isEdicao) {
 
     <form id="formCalculoKPC" method="POST">
         <input type="hidden" name="cd_chave" value="<?= $isEdicao ? $calculoKPC['CD_CHAVE'] : 0 ?>">
-        <input type="hidden" name="cd_ponto_medicao" id="cdPontoMedicao" value="<?= $isEdicao ? $calculoKPC['CD_PONTO_MEDICAO'] : '' ?>">
+        <input type="hidden" name="cd_ponto_medicao" id="cdPontoMedicao"
+            value="<?= $isEdicao ? $calculoKPC['CD_PONTO_MEDICAO'] : '' ?>">
 
         <!-- Dados do Ponto de Medição -->
         <div class="form-card">
@@ -718,9 +944,9 @@ if ($isEdicao) {
                         <select id="selectUnidade" class="form-control" <?= $isEdicao ? 'disabled' : '' ?>>
                             <option value="">Selecione...</option>
                             <?php foreach ($unidades as $u): ?>
-                            <option value="<?= $u['CD_UNIDADE'] ?>" <?= ($isEdicao && $calculoKPC['CD_UNIDADE'] == $u['CD_UNIDADE']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($u['DS_NOME']) ?>
-                            </option>
+                                <option value="<?= $u['CD_UNIDADE'] ?>" <?= ($isEdicao && $calculoKPC['CD_UNIDADE'] == $u['CD_UNIDADE']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($u['DS_NOME']) ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -732,9 +958,10 @@ if ($isEdicao) {
                         <select id="selectLocalidade" class="form-control" <?= $isEdicao ? 'disabled' : '' ?>>
                             <option value="">Selecione a unidade primeiro</option>
                             <?php if ($isEdicao): ?>
-                            <option value="<?= $calculoKPC['CD_CHAVE_LOCALIDADE'] ?>" selected>
-                                <?= $calculoKPC['CD_LOCALIDADE'] ?> - <?= htmlspecialchars($calculoKPC['DS_LOCALIDADE']) ?>
-                            </option>
+                                <option value="<?= $calculoKPC['CD_CHAVE_LOCALIDADE'] ?>" selected>
+                                    <?= $calculoKPC['CD_LOCALIDADE'] ?> -
+                                    <?= htmlspecialchars($calculoKPC['DS_LOCALIDADE']) ?>
+                                </option>
                             <?php endif; ?>
                         </select>
                     </div>
@@ -744,12 +971,12 @@ if ($isEdicao) {
                             Ponto de Medição <span class="required">*</span>
                         </label>
                         <?php if ($isEdicao): ?>
-                            <input type="text" class="form-control" readonly 
-                                   value="<?= $codigoPontoFormatado ?> - <?= htmlspecialchars($calculoKPC['DS_PONTO_MEDICAO']) ?>">
+                            <input type="text" class="form-control" readonly
+                                value="<?= $codigoPontoFormatado ?> - <?= htmlspecialchars($calculoKPC['DS_PONTO_MEDICAO']) ?>">
                         <?php else: ?>
                             <div class="autocomplete-container">
-                                <input type="text" class="form-control" id="inputPontoMedicao" 
-                                       placeholder="Digite para buscar..." autocomplete="off">
+                                <input type="text" class="form-control" id="inputPontoMedicao"
+                                    placeholder="Digite para buscar..." autocomplete="off">
                                 <button type="button" class="btn-limpar-autocomplete" id="btnLimparPonto">
                                     <ion-icon name="close-circle"></ion-icon>
                                 </button>
@@ -763,7 +990,7 @@ if ($isEdicao) {
                             Data da Leitura <span class="required">*</span>
                         </label>
                         <input type="date" name="dt_leitura" class="form-control" required
-                               value="<?= $isEdicao ? date('Y-m-d', strtotime($calculoKPC['DT_LEITURA'])) : date('Y-m-d') ?>">
+                            value="<?= $isEdicao ? date('Y-m-d', strtotime($calculoKPC['DT_LEITURA'])) : date('Y-m-d') ?>">
                     </div>
                 </div>
             </div>
@@ -782,11 +1009,12 @@ if ($isEdicao) {
                             <ion-icon name="git-branch-outline"></ion-icon>
                             Método <span class="required">*</span>
                         </label>
-                        <select id="selectMetodo" name="id_metodo" class="form-control" required onchange="toggleCampoConvencional()">
+                        <select id="selectMetodo" name="id_metodo" class="form-control" required
+                            onchange="toggleCampoConvencional()">
                             <?php foreach ($metodos as $id => $nome): ?>
-                            <option value="<?= $id ?>" <?= ($isEdicao && $calculoKPC['ID_METODO'] == $id) ? 'selected' : '' ?>>
-                                <?= $nome ?>
-                            </option>
+                                <option value="<?= $id ?>" <?= ($isEdicao && $calculoKPC['ID_METODO'] == $id) ? 'selected' : '' ?>>
+                                    <?= $nome ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -795,24 +1023,28 @@ if ($isEdicao) {
                             <ion-icon name="resize-outline"></ion-icon>
                             Diâmetro Nominal (mm) <span class="required">*</span>
                         </label>
-                        <input type="number" step="0.01" name="vl_diametro_nominal" id="vlDiametroNominal" class="form-control" required
-                               value="<?= $isEdicao ? $calculoKPC['VL_DIAMETRO_NOMINAL'] : '' ?>" onchange="calcular()">
+                        <input type="number" step="0.01" name="vl_diametro_nominal" id="vlDiametroNominal"
+                            class="form-control" required
+                            value="<?= $isEdicao ? $calculoKPC['VL_DIAMETRO_NOMINAL'] : '' ?>" onchange="calcular()">
                     </div>
                     <div class="form-group col-2">
                         <label class="form-label">
                             <ion-icon name="resize-outline"></ion-icon>
                             Diâmetro Real (mm) <span class="required">*</span>
                         </label>
-                        <input type="number" step="0.01" name="vl_diametro_real" id="vlDiametroReal" class="form-control" required
-                               value="<?= $isEdicao ? $calculoKPC['VL_DIAMETRO_REAL'] : '' ?>" onchange="atualizarPosicoes(); calcular()">
+                        <input type="number" step="0.01" name="vl_diametro_real" id="vlDiametroReal"
+                            class="form-control" required
+                            value="<?= $isEdicao ? $calculoKPC['VL_DIAMETRO_REAL'] : '' ?>"
+                            onchange="atualizarPosicoes(); calcular()">
                     </div>
                     <div class="form-group col-2">
                         <label class="form-label">
                             <ion-icon name="analytics-outline"></ion-icon>
                             Projeção da TAP (mm) <span class="required">*</span>
                         </label>
-                        <input type="number" step="0.01" name="vl_projecao_tap" id="vlProjecaoTap" class="form-control" required
-                               value="<?= $isEdicao ? $calculoKPC['VL_PROJECAO_TAP'] : '' ?>" onchange="calcular()">
+                        <input type="number" step="0.01" name="vl_projecao_tap" id="vlProjecaoTap" class="form-control"
+                            required value="<?= $isEdicao ? $calculoKPC['VL_PROJECAO_TAP'] : '' ?>"
+                            onchange="calcular()">
                     </div>
                     <div class="form-group col-2">
                         <label class="form-label">
@@ -820,15 +1052,15 @@ if ($isEdicao) {
                             Raio do TIP (mm) <span class="required">*</span>
                         </label>
                         <input type="number" step="0.01" name="vl_raio_tip" id="vlRaioTip" class="form-control" required
-                               value="<?= $isEdicao ? $calculoKPC['VL_RAIO_TIP'] : '' ?>" onchange="calcular()">
+                            value="<?= $isEdicao ? $calculoKPC['VL_RAIO_TIP'] : '' ?>" onchange="calcular()">
                     </div>
                     <div class="form-group col-2">
                         <label class="form-label">
                             <ion-icon name="thermometer-outline"></ion-icon>
                             Temperatura (°C) <span class="required">*</span>
                         </label>
-                        <input type="number" step="0.1" name="vl_temperatura" id="vlTemperatura" class="form-control" required
-                               value="<?= $isEdicao ? $calculoKPC['VL_TEMPERATURA'] : '25' ?>">
+                        <input type="number" step="0.1" name="vl_temperatura" id="vlTemperatura" class="form-control"
+                            required value="<?= $isEdicao ? $calculoKPC['VL_TEMPERATURA'] : '25' ?>">
                     </div>
                 </div>
                 <div class="form-row">
@@ -848,8 +1080,8 @@ if ($isEdicao) {
                             }
                         }
                         ?>
-                        <input type="number" step="0.01" name="vl_ultima_posicao" id="vlUltimaPosicao" class="form-control" required
-                               value="<?= $ultimaPosicao ?>" onchange="atualizarPosicoes()">
+                        <input type="number" step="0.01" name="vl_ultima_posicao" id="vlUltimaPosicao"
+                            class="form-control" required value="<?= $ultimaPosicao ?>" onchange="atualizarPosicoes()">
                     </div>
                 </div>
             </div>
@@ -868,12 +1100,14 @@ if ($isEdicao) {
                             <ion-icon name="construct-outline"></ion-icon>
                             Técnico Responsável <span class="required">*</span>
                         </label>
-                        <select name="cd_tecnico_responsavel" id="selectTecnico" class="form-control select2-tecnico" required>
+                        <select name="cd_tecnico_responsavel" id="selectTecnico" class="form-control select2-tecnico"
+                            required>
                             <option value="">Selecione...</option>
                             <?php foreach ($tecnicos as $t): ?>
-                            <option value="<?= $t['CD_USUARIO'] ?>" <?= ($isEdicao && $calculoKPC['CD_TECNICO_RESPONSAVEL'] == $t['CD_USUARIO']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($t['DS_NOME']) ?> <?= $t['DS_MATRICULA'] ? '(' . $t['DS_MATRICULA'] . ')' : '' ?>
-                            </option>
+                                <option value="<?= $t['CD_USUARIO'] ?>" <?= ($isEdicao && $calculoKPC['CD_TECNICO_RESPONSAVEL'] == $t['CD_USUARIO']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($t['DS_NOME']) ?>
+                                    <?= $t['DS_MATRICULA'] ? '(' . $t['DS_MATRICULA'] . ')' : '' ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -882,12 +1116,14 @@ if ($isEdicao) {
                             <ion-icon name="person-outline"></ion-icon>
                             Usuário Responsável <span class="required">*</span>
                         </label>
-                        <select name="cd_usuario_responsavel" id="selectUsuario" class="form-control select2-usuario" required>
+                        <select name="cd_usuario_responsavel" id="selectUsuario" class="form-control select2-usuario"
+                            required>
                             <option value="">Selecione...</option>
                             <?php foreach ($usuarios as $u): ?>
-                            <option value="<?= $u['CD_USUARIO'] ?>" <?= ($isEdicao && $calculoKPC['CD_USUARIO_RESPONSAVEL'] == $u['CD_USUARIO']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($u['DS_NOME']) ?> <?= $u['DS_MATRICULA'] ? '(' . $u['DS_MATRICULA'] . ')' : '' ?>
-                            </option>
+                                <option value="<?= $u['CD_USUARIO'] ?>" <?= ($isEdicao && $calculoKPC['CD_USUARIO_RESPONSAVEL'] == $u['CD_USUARIO']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($u['DS_NOME']) ?>
+                                    <?= $u['DS_MATRICULA'] ? '(' . $u['DS_MATRICULA'] . ')' : '' ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -897,8 +1133,8 @@ if ($isEdicao) {
                             Observação
                         </label>
                         <input type="text" name="ds_observacao" class="form-control" maxlength="200"
-                               value="<?= $isEdicao ? htmlspecialchars($calculoKPC['DS_OBSERVACAO']) : '' ?>"
-                               placeholder="Observações adicionais...">
+                            value="<?= $isEdicao ? htmlspecialchars($calculoKPC['DS_OBSERVACAO']) : '' ?>"
+                            placeholder="Observações adicionais...">
                     </div>
                 </div>
             </div>
@@ -917,16 +1153,16 @@ if ($isEdicao) {
                             <tr>
                                 <th class="col-pontos">Pontos:</th>
                                 <?php for ($p = 1; $p <= 11; $p++): ?>
-                                <th class="col-ponto"><?= $p ?></th>
+                                    <th class="col-ponto"><?= $p ?></th>
                                 <?php endfor; ?>
                             </tr>
                             <tr class="row-posicao">
                                 <th>Posição(mm):</th>
-                                <?php 
+                                <?php
                                 $diametroReal = $isEdicao ? $calculoKPC['VL_DIAMETRO_REAL'] : 0;
                                 $ultimaPosicaoValor = $ultimaPosicao ?: 0;
-                                
-                                for ($p = 1; $p <= 11; $p++): 
+
+                                for ($p = 1; $p <= 11; $p++):
                                     if ($p == 1) {
                                         $posCalc = 0;
                                     } elseif ($p == 11) {
@@ -934,8 +1170,8 @@ if ($isEdicao) {
                                     } else {
                                         $posCalc = ($diametroReal / 10) * ($p - 1);
                                     }
-                                ?>
-                                <th id="posicao_<?= $p ?>"><?= number_format($posCalc, 2, ',', '.') ?></th>
+                                    ?>
+                                    <th id="posicao_<?= $p ?>"><?= number_format($posCalc, 2, ',', '.') ?></th>
                                 <?php endfor; ?>
                             </tr>
                         </thead>
@@ -945,41 +1181,39 @@ if ($isEdicao) {
                             foreach ($leituras as $l) {
                                 $leiturasOrganizadas[$l['CD_ORDEM_LEITURA']][$l['CD_POSICAO_LEITURA']] = $l['VL_DEFLEXAO_MEDIDA'];
                             }
-                            
+
                             for ($leitura = 1; $leitura <= 20; $leitura++):
-                            ?>
-                            <tr>
-                                <td class="leitura-label">Leitura <?= $leitura ?>:</td>
-                                <?php for ($ponto = 1; $ponto <= 11; $ponto++): ?>
-                                <td>
-                                    <input type="number" step="0.01" 
-                                           name="leitura[<?= $leitura ?>][<?= $ponto ?>]"
-                                           class="leitura-input"
-                                           data-leitura="<?= $leitura ?>"
-                                           data-ponto="<?= $ponto ?>"
-                                           value="<?= isset($leiturasOrganizadas[$leitura][$ponto]) ? number_format($leiturasOrganizadas[$leitura][$ponto], 2, '.', '') : '' ?>"
-                                           onchange="calcularMediaPonto(<?= $ponto ?>)">
-                                </td>
-                                <?php endfor; ?>
-                            </tr>
+                                ?>
+                                <tr>
+                                    <td class="leitura-label">Leitura <?= $leitura ?>:</td>
+                                    <?php for ($ponto = 1; $ponto <= 11; $ponto++): ?>
+                                        <td>
+                                            <input type="number" step="0.01" name="leitura[<?= $leitura ?>][<?= $ponto ?>]"
+                                                class="leitura-input" data-leitura="<?= $leitura ?>" data-ponto="<?= $ponto ?>"
+                                                value="<?= isset($leiturasOrganizadas[$leitura][$ponto]) ? number_format($leiturasOrganizadas[$leitura][$ponto], 2, '.', '') : '' ?>"
+                                                onchange="calcularMediaPonto(<?= $ponto ?>)">
+                                        </td>
+                                    <?php endfor; ?>
+                                </tr>
                             <?php endfor; ?>
                             <tr class="media-row">
                                 <td class="media-label">Média das Deflexões:</td>
                                 <?php for ($ponto = 1; $ponto <= 11; $ponto++): ?>
-                                <td>
-                                    <input type="text" 
-                                           name="media[<?= $ponto ?>]"
-                                           id="media_<?= $ponto ?>"
-                                           class="media-input"
-                                           readonly
-                                           value="<?= isset($leiturasOrganizadas[21][$ponto]) ? number_format($leiturasOrganizadas[21][$ponto], 2, '.', '') : '' ?>">
-                                </td>
+                                    <td>
+                                        <input type="text" name="media[<?= $ponto ?>]" id="media_<?= $ponto ?>"
+                                            class="media-input" readonly
+                                            value="<?= isset($leiturasOrganizadas[21][$ponto]) ? number_format($leiturasOrganizadas[21][$ponto], 2, '.', '') : '' ?>">
+                                    </td>
                                 <?php endfor; ?>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div style="margin-top: 16px; text-align: right;">
+                <div style="margin-top: 16px; text-align: right; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-grafico" onclick="abrirGraficoCurvaVelocidade()">
+                        <ion-icon name="stats-chart-outline"></ion-icon>
+                        Ver Gráfico
+                    </button>
                     <button type="button" class="btn btn-calcular" onclick="calcular()">
                         <ion-icon name="calculator-outline"></ion-icon>
                         Calcular KPC
@@ -998,33 +1232,37 @@ if ($isEdicao) {
                 <div class="form-row">
                     <div class="form-group col-2">
                         <label class="form-label">Fator de Velocidade</label>
-                        <input type="text" name="vl_fator_velocidade" id="vlFatorVelocidade" class="form-control resultado" readonly
-                               value="<?= $isEdicao ? number_format($calculoKPC['VL_FATOR_VELOCIDADE'], 10, '.', '') : '' ?>">
+                        <input type="text" name="vl_fator_velocidade" id="vlFatorVelocidade"
+                            class="form-control resultado" readonly
+                            value="<?= $isEdicao ? number_format($calculoKPC['VL_FATOR_VELOCIDADE'], 10, '.', '') : '' ?>">
                     </div>
                     <div class="form-group col-2">
                         <label class="form-label">Correção Diâmetro</label>
-                        <input type="text" name="vl_correcao_diametro" id="vlCorrecaoDiametro" class="form-control resultado" readonly
-                               value="<?= $isEdicao ? number_format($calculoKPC['VL_CORRECAO_DIAMETRO'], 6, '.', '') : '' ?>">
+                        <input type="text" name="vl_correcao_diametro" id="vlCorrecaoDiametro"
+                            class="form-control resultado" readonly
+                            value="<?= $isEdicao ? number_format($calculoKPC['VL_CORRECAO_DIAMETRO'], 6, '.', '') : '' ?>">
                     </div>
                     <div class="form-group col-2">
                         <label class="form-label">Correção Projeção TAP</label>
-                        <input type="text" name="vl_correcao_projecao_tap" id="vlCorrecaoProjecaoTap" class="form-control resultado" readonly
-                               value="<?= $isEdicao ? number_format($calculoKPC['VL_CORRECAO_PROJECAO_TAP'], 2, '.', '') : '' ?>">
+                        <input type="text" name="vl_correcao_projecao_tap" id="vlCorrecaoProjecaoTap"
+                            class="form-control resultado" readonly
+                            value="<?= $isEdicao ? number_format($calculoKPC['VL_CORRECAO_PROJECAO_TAP'], 2, '.', '') : '' ?>">
                     </div>
                     <div class="form-group col-2">
                         <label class="form-label">Área Efetiva (m²)</label>
-                        <input type="text" name="vl_area_efetiva" id="vlAreaEfetiva" class="form-control resultado" readonly
-                               value="<?= $isEdicao ? number_format($calculoKPC['VL_AREA_EFETIVA'], 6, '.', '') : '' ?>">
+                        <input type="text" name="vl_area_efetiva" id="vlAreaEfetiva" class="form-control resultado"
+                            readonly
+                            value="<?= $isEdicao ? number_format($calculoKPC['VL_AREA_EFETIVA'], 6, '.', '') : '' ?>">
                     </div>
                     <div class="form-group col-2">
                         <label class="form-label">KPC</label>
                         <input type="text" name="vl_kpc" id="vlKPC" class="form-control resultado" readonly
-                               value="<?= $isEdicao ? number_format($calculoKPC['VL_KPC'], 10, '.', '') : '' ?>">
+                            value="<?= $isEdicao ? number_format($calculoKPC['VL_KPC'], 10, '.', '') : '' ?>">
                     </div>
                     <div class="form-group col-2">
                         <label class="form-label">Vazão (L/s)</label>
                         <input type="text" name="vl_vazao" id="vlVazao" class="form-control resultado" readonly
-                               value="<?= $isEdicao && $calculoKPC['VL_VAZAO'] ? number_format($calculoKPC['VL_VAZAO'], 2, '.', '') : '' ?>">
+                            value="<?= $isEdicao && $calculoKPC['VL_VAZAO'] ? number_format($calculoKPC['VL_VAZAO'], 2, '.', '') : '' ?>">
                     </div>
                 </div>
             </div>
@@ -1048,75 +1286,76 @@ if ($isEdicao) {
 
 <div id="toastContainer" class="toast-container"></div>
 
+<!-- Modal do Gráfico Curva de Velocidade -->
+<div class="modal-overlay" id="modalGraficoOverlay" onclick="fecharModalGrafico(event)">
+    <div class="modal-grafico" onclick="event.stopPropagation()">
+        <div class="modal-grafico-header">
+            <h3>
+                <ion-icon name="stats-chart-outline"></ion-icon>
+                Curva de Velocidade
+            </h3>
+            <button type="button" class="modal-grafico-fechar" onclick="fecharModalGrafico()">
+                <ion-icon name="close-outline"></ion-icon>
+            </button>
+        </div>
+        <div class="modal-grafico-body">
+            <div class="grafico-container">
+                <canvas id="graficoVelocidade"></canvas>
+            </div>
+        </div>
+        <div class="modal-grafico-footer">
+            <span class="grafico-legenda">
+                <span class="legenda-ponto"></span>
+                Deflexão Média × Posição
+            </span>
+            <button type="button" class="btn btn-secondary" onclick="fecharModalGrafico()">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
+ /**
+ * ============================================================
+ * calculoKPCForm.php - JAVASCRIPT COMPLETO
+ * ============================================================
+ * 
+ * Substitua TODO o conteúdo da tag <script> pelo código abaixo.
+ * 
+ * Inclui:
+ * - Funções de cálculo KPC (fórmula corrigida do sistema legado)
+ * - Funções do gráfico Curva de Velocidade
+ * - Funções auxiliares (autocomplete, posições, etc.)
+ * 
+ * ============================================================
+ */
+
+const PI = Math.PI;
 const isEdicao = <?= $isEdicao ? 'true' : 'false' ?>;
-const PI = 3.14159265358979;
-let buscaPontoTimeout;
+let graficoVelocidade = null;
 
-const letrasTipoMedidor = { 1: 'M', 2: 'E', 4: 'P', 6: 'R', 8: 'H' };
+// ============================================================
+// AUTOCOMPLETE - PONTO DE MEDIÇÃO
+// ============================================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    toggleCampoConvencional();
-    atualizarPosicoes();
-    
-    if (typeof $ !== 'undefined' && $.fn.select2) {
-        $('.select2-tecnico, .select2-usuario').select2({
-            placeholder: 'Digite para buscar...',
-            allowClear: true,
-            width: '100%'
-        });
-    }
-    
-    $('#selectUnidade').on('change', carregarLocalidades);
-    $('#selectLocalidade').on('change', limparPontoMedicao);
-    
-    if (!isEdicao) initAutocompletePontoMedicao();
-    
-    for (let p = 1; p <= 11; p++) calcularMediaPonto(p);
-});
-
-function carregarLocalidades() {
-    const unidade = document.getElementById('selectUnidade').value;
-    const select = document.getElementById('selectLocalidade');
-    
-    select.innerHTML = '<option value="">Carregando...</option>';
-    limparPontoMedicao();
-    
-    if (!unidade) {
-        select.innerHTML = '<option value="">Selecione a unidade primeiro</option>';
-        return;
-    }
-    
-    fetch('bd/pontoMedicao/getLocalidades.php?cd_unidade=' + unidade)
-        .then(r => r.json())
-        .then(data => {
-            select.innerHTML = '<option value="">Selecione...</option>';
-            if (data.success && data.data) {
-                data.data.forEach(loc => {
-                    select.innerHTML += '<option value="' + loc.CD_CHAVE + '">' + 
-                                       loc.CD_LOCALIDADE + ' - ' + loc.DS_NOME + '</option>';
-                });
-            }
-        })
-        .catch(() => { select.innerHTML = '<option value="">Erro ao carregar</option>'; });
-}
-
-function initAutocompletePontoMedicao() {
+function initAutocomplete() {
     const input = document.getElementById('inputPontoMedicao');
     const dropdown = document.getElementById('pontoMedicaoDropdown');
     const btnLimpar = document.getElementById('btnLimparPonto');
-    if (!input) return;
-    
+    let debounce = null;
     let idx = -1;
 
-    input.addEventListener('input', function() {
-        clearTimeout(buscaPontoTimeout);
-        const termo = this.value.trim();
-        if (termo.length < 2) { dropdown.classList.remove('active'); return; }
-        buscaPontoTimeout = setTimeout(() => buscarPontosMedicao(termo), 300);
+    input.addEventListener('input', e => {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => {
+            const termo = e.target.value.trim();
+            if (termo.length >= 2) buscarPontosMedicao(termo);
+            else dropdown.classList.remove('active');
+        }, 300);
     });
 
-    input.addEventListener('keydown', function(e) {
+    input.addEventListener('keydown', e => {
         const items = dropdown.querySelectorAll('.autocomplete-item');
         if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); highlight(items); }
         else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(idx - 1, 0); highlight(items); }
@@ -1145,43 +1384,75 @@ function buscarPontosMedicao(termo) {
     fetch('bd/pontoMedicao/buscarPontosMedicao.php?' + params)
         .then(r => r.json())
         .then(data => {
-            if (data.success && data.data && data.data.length > 0) {
-                let html = '';
-                data.data.forEach(item => {
-                    if (item.ID_TIPO_MEDIDOR != 2) return; // Apenas Estações Pitométricas
-                    const codigo = item.CD_LOCALIDADE + '-' + String(item.CD_PONTO_MEDICAO).padStart(6, '0') + '-E-' + (item.CD_UNIDADE_CODIGO || item.CD_UNIDADE);
-                    html += '<div class="autocomplete-item" data-value="' + item.CD_PONTO_MEDICAO + '" data-label="' + codigo + ' - ' + item.DS_NOME + '">' +
-                            '<span class="item-code">' + codigo + '</span><span class="item-name">' + item.DS_NOME + '</span></div>';
+            if (data.success && data.data.length > 0) {
+                dropdown.innerHTML = data.data.map(p => `
+                    <div class="autocomplete-item" data-id="${p.CD_PONTO_MEDICAO}" data-nome="${p.DS_NOME}"
+                         data-localidade="${p.CD_LOCALIDADE}" data-unidade="${p.CD_UNIDADE}">
+                        <strong>${p.DS_NOME}</strong>
+                        <small>${p.DS_LOCALIDADE} - ${p.DS_UNIDADE}</small>
+                    </div>
+                `).join('');
+                dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+                    item.addEventListener('click', () => selecionarPontoMedicao(item));
                 });
-                dropdown.innerHTML = html || '<div class="autocomplete-empty">Nenhuma estação pitométrica encontrada</div>';
-                dropdown.querySelectorAll('.autocomplete-item').forEach(it => it.addEventListener('click', function() { selecionarPontoMedicao(this.dataset.value, this.dataset.label); }));
             } else {
                 dropdown.innerHTML = '<div class="autocomplete-empty">Nenhum ponto encontrado</div>';
             }
         })
-        .catch(() => { dropdown.innerHTML = '<div class="autocomplete-empty">Erro ao buscar</div>'; });
+        .catch(() => {
+            dropdown.innerHTML = '<div class="autocomplete-empty">Erro ao buscar</div>';
+        });
 }
 
-function selecionarPontoMedicao(value, label) {
-    document.getElementById('inputPontoMedicao').value = label;
-    document.getElementById('cdPontoMedicao').value = value;
+function selecionarPontoMedicao(item) {
+    document.getElementById('cdPontoMedicao').value = item.dataset.id;
+    document.getElementById('inputPontoMedicao').value = item.dataset.nome;
     document.getElementById('pontoMedicaoDropdown').classList.remove('active');
-    document.getElementById('btnLimparPonto').style.display = 'flex';
+    
+    // Atualiza selects
+    const unidade = item.dataset.unidade;
+    const localidade = item.dataset.localidade;
+    if (unidade) {
+        document.getElementById('selectUnidade').value = unidade;
+        carregarLocalidades(unidade, localidade);
+    }
 }
 
 function limparPontoMedicao() {
-    const input = document.getElementById('inputPontoMedicao');
-    if (input) input.value = '';
     document.getElementById('cdPontoMedicao').value = '';
-    const btn = document.getElementById('btnLimparPonto');
-    if (btn) btn.style.display = 'none';
+    document.getElementById('inputPontoMedicao').value = '';
 }
 
+function carregarLocalidades(cdUnidade, cdLocalidadeSelecionada = '') {
+    const select = document.getElementById('selectLocalidade');
+    select.innerHTML = '<option value="">Carregando...</option>';
+    
+    fetch('bd/localidade/listarLocalidades.php?cd_unidade=' + cdUnidade)
+        .then(r => r.json())
+        .then(data => {
+            select.innerHTML = '<option value="">Todas</option>';
+            if (data.success) {
+                data.data.forEach(l => {
+                    const selected = l.CD_CHAVE == cdLocalidadeSelecionada ? 'selected' : '';
+                    select.innerHTML += `<option value="${l.CD_CHAVE}" ${selected}>${l.CD_LOCALIDADE} - ${l.DS_NOME}</option>`;
+                });
+            }
+        });
+}
+
+// ============================================================
+// POSIÇÕES E MÉTODO
+// ============================================================
+
 function calcularPosicoesPontos() {
+    const metodo = parseInt(document.getElementById('selectMetodo').value) || 1;
     const dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
-    const up = parseFloat(document.getElementById('vlUltimaPosicao').value) || 0;
+    const up = parseFloat(document.getElementById('vlUltimaPosicao')?.value) || dr;
+    
     const pos = {};
-    for (let p = 1; p <= 11; p++) pos[p] = (p === 1) ? 0 : (p === 11) ? up : (dr / 10) * (p - 1);
+    for (let p = 1; p <= 11; p++) {
+        pos[p] = (p === 1) ? 0 : (p === 11) ? (metodo === 2 ? up : dr) : (dr / 10) * (p - 1);
+    }
     return pos;
 }
 
@@ -1195,46 +1466,408 @@ function atualizarPosicoes() {
 
 function toggleCampoConvencional() {
     const campo = document.getElementById('campoUltimaPosicao');
-    campo.classList.toggle('visivel', document.getElementById('selectMetodo').value == '2');
+    if (campo) {
+        campo.classList.toggle('visivel', document.getElementById('selectMetodo').value == '2');
+    }
 }
+
+// ============================================================
+// CÁLCULO DAS MÉDIAS
+// ============================================================
 
 function calcularMediaPonto(ponto) {
     let soma = 0, count = 0;
     for (let l = 1; l <= 20; l++) {
         const input = document.querySelector('input[data-leitura="' + l + '"][data-ponto="' + ponto + '"]');
-        if (input && input.value !== '' && !isNaN(parseFloat(input.value))) { soma += parseFloat(input.value); count++; }
+        if (input && input.value !== '' && !isNaN(parseFloat(input.value))) {
+            soma += parseFloat(input.value);
+            count++;
+        }
     }
-    document.getElementById('media_' + ponto).value = count > 0 ? (soma / count).toFixed(2) : '';
+    const mediaInput = document.getElementById('media_' + ponto);
+    if (mediaInput) {
+        mediaInput.value = count > 0 ? (soma / count).toFixed(2) : '';
+    }
 }
 
+function obterMediasDeflexoes() {
+    const medias = [];
+    for (let p = 1; p <= 11; p++) {
+        const mediaInput = document.getElementById('media_' + p);
+        const valor = mediaInput ? parseFloat(mediaInput.value) || 0 : 0;
+        medias.push(valor);
+    }
+    return medias;
+}
+
+// ============================================================
+// FUNÇÕES DE CÁLCULO KPC - FÓRMULA CORRIGIDA (SISTEMA LEGADO)
+// ============================================================
+
+/**
+ * Fator de Velocidade - MÉTODO PADRÃO (Digital)
+ * FV = (Σ √médias exceto central) / (10 × √média_central)
+ */
+function calcularFatorVelocidadePadrao(medias) {
+    const indiceCentral = 5; // Ponto 6
+    const mediaCentral = medias[indiceCentral];
+    
+    if (mediaCentral <= 0) return 0;
+    
+    let somaRaizes = 0;
+    for (let i = 0; i < medias.length; i++) {
+        if (i !== indiceCentral && medias[i] > 0) {
+            somaRaizes += Math.sqrt(medias[i]);
+        }
+    }
+    
+    return somaRaizes / (10 * Math.sqrt(mediaCentral));
+}
+
+/**
+ * Fator de Velocidade - MÉTODO CONVENCIONAL
+ * Usa interpolação com coeficientes específicos
+ */
+function calcularFatorVelocidadeConvencional(medias) {
+    const deflexao = new Array(11);
+    
+    deflexao[0] = (medias[1] - medias[0]) * 0.2565835 + medias[0];
+    deflexao[1] = (medias[1] - deflexao[0]) * 0.8166999 + medias[0];
+    deflexao[2] = (medias[2] - medias[1]) * 0.4644661 + medias[1];
+    deflexao[3] = (medias[3] - medias[2]) * 0.2613872 + medias[2];
+    deflexao[4] = (medias[4] - medias[3]) * 0.4188612 + medias[3];
+    deflexao[5] = medias[5];
+    deflexao[6] = (medias[6] - medias[7]) * 0.4188612 + medias[7];
+    deflexao[7] = (medias[7] - medias[8]) * 0.2613872 + medias[8];
+    deflexao[8] = (medias[8] - medias[9]) * 0.4644661 + medias[9];
+    deflexao[9] = (medias[9] - medias[10]) * 0.8166999 + medias[10];
+    deflexao[10] = (medias[9] - medias[10]) * 0.2565835 + medias[10];
+    
+    let fv = 0;
+    for (let i = 0; i < deflexao.length; i++) {
+        if (deflexao[i] > 0) fv += Math.sqrt(deflexao[i]);
+    }
+    
+    if (deflexao[5] > 0) {
+        fv -= Math.sqrt(deflexao[5]);
+        fv = fv / (10 * Math.sqrt(deflexao[5]));
+    } else {
+        fv = 0;
+    }
+    
+    return fv;
+}
+
+/**
+ * Área Efetiva = π × (DR / 2000)²
+ * Usa Diâmetro REAL
+ */
+function obterAreaEfetiva(dr) {
+    return PI * Math.pow(dr / 2000, 2);
+}
+
+/**
+ * Correção de Projeção TAP (Kp)
+ * Se DN >= 301, retorna 1
+ */
+function obterCorrecaoProjecaoTap(pt, dn) {
+    if (dn >= 301) return 1.0;
+    
+    const tabelaKp = {
+        25: { 50: 0.98, 75: 0.99, 100: 0.995, 150: 0.998, 200: 0.999, 250: 1.0, 300: 1.0 },
+        30: { 50: 0.97, 75: 0.98, 100: 0.99, 150: 0.995, 200: 0.998, 250: 0.999, 300: 1.0 },
+        35: { 50: 0.96, 75: 0.97, 100: 0.98, 150: 0.99, 200: 0.995, 250: 0.998, 300: 1.0 },
+        40: { 50: 0.95, 75: 0.96, 100: 0.97, 150: 0.98, 200: 0.99, 250: 0.995, 300: 1.0 },
+        45: { 50: 0.94, 75: 0.95, 100: 0.96, 150: 0.97, 200: 0.98, 250: 0.99, 300: 1.0 },
+        50: { 50: 0.93, 75: 0.94, 100: 0.95, 150: 0.96, 200: 0.97, 250: 0.98, 300: 1.0 }
+    };
+    
+    let ptProxima = 25, menorDif = Math.abs(pt - 25);
+    for (const p of Object.keys(tabelaKp)) {
+        const dif = Math.abs(pt - parseInt(p));
+        if (dif < menorDif) { menorDif = dif; ptProxima = parseInt(p); }
+    }
+    
+    if (tabelaKp[ptProxima]) {
+        let dnProximo = 50;
+        menorDif = Math.abs(dn - 50);
+        for (const d of Object.keys(tabelaKp[ptProxima])) {
+            const dif = Math.abs(dn - parseInt(d));
+            if (dif < menorDif) { menorDif = dif; dnProximo = parseInt(d); }
+        }
+        return tabelaKp[ptProxima][dnProximo];
+    }
+    
+    return 1.0;
+}
+
+/**
+ * Densidade da água por temperatura
+ */
+function obterDensidade(temp) {
+    const tabelaDensidade = {
+        0: 999.84, 5: 999.96, 10: 999.70, 15: 999.10, 20: 998.20,
+        25: 997.05, 30: 995.65, 35: 994.03, 40: 992.22, 45: 990.21, 50: 988.03
+    };
+    
+    if (tabelaDensidade[temp]) return tabelaDensidade[temp];
+    
+    const temps = Object.keys(tabelaDensidade).map(Number).sort((a, b) => a - b);
+    let tempInf = temps[0], tempSup = temps[temps.length - 1];
+    
+    for (const t of temps) {
+        if (t <= temp) tempInf = t;
+        if (t >= temp) { tempSup = t; break; }
+    }
+    
+    if (tempInf !== tempSup) {
+        const fator = (temp - tempInf) / (tempSup - tempInf);
+        return tabelaDensidade[tempInf] + fator * (tabelaDensidade[tempSup] - tabelaDensidade[tempInf]);
+    }
+    
+    return 997.05;
+}
+
+/**
+ * FUNÇÃO PRINCIPAL DE CÁLCULO DO KPC
+ * Fórmula: KPC = FV × CD × CP × AE
+ */
 function calcular() {
+    // 1. Calcula as médias de cada ponto
     for (let p = 1; p <= 11; p++) calcularMediaPonto(p);
     
+    // 2. Obtém os parâmetros
     const dn = parseFloat(document.getElementById('vlDiametroNominal').value) || 0;
     const dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
     const pt = parseFloat(document.getElementById('vlProjecaoTap').value) || 0;
+    const temperatura = parseFloat(document.getElementById('vlTemperatura').value) || 25;
+    const metodo = parseInt(document.getElementById('selectMetodo').value) || 1;
     
-    if (dn <= 0 || dr <= 0) { alert('Preencha os parâmetros do cálculo'); return; }
-    
-    let soma = 0, cnt = 0;
-    for (let p = 1; p <= 11; p++) {
-        const v = parseFloat(document.getElementById('media_' + p).value) || 0;
-        if (v > 0) { soma += v; cnt++; }
+    if (dn <= 0 || dr <= 0) {
+        alert('Preencha os parâmetros do cálculo (Diâmetro Nominal e Real)');
+        return;
     }
     
-    const fv = cnt > 0 ? soma / cnt : 0;
-    const cd = dn > 0 ? dr / dn : 0;
-    const r = dr / 2000;
-    const ae = PI * r * r;
-    const kpc = fv > 0 ? fv * ae * cd : 0;
+    // 3. Obtém as médias das deflexões
+    const medias = obterMediasDeflexoes();
     
+    if (!medias.some(m => m > 0)) {
+        alert('Preencha ao menos uma leitura de deflexão');
+        return;
+    }
+    
+    // 4. Fator de Velocidade
+    let fv = (metodo === 2) ? calcularFatorVelocidadeConvencional(medias) : calcularFatorVelocidadePadrao(medias);
+    
+    // 5. Correção de Diâmetro = (DR / DN)² (AO QUADRADO!)
+    const cd = Math.pow(dr / dn, 2);
+    
+    // 6. Área Efetiva = π × (DR / 2000)² (USA DIÂMETRO REAL!)
+    const ae = obterAreaEfetiva(dr);
+    
+    // 7. Correção Projeção TAP
+    let cp = obterCorrecaoProjecaoTap(pt, dn);
+    if (cp === 0) cp = 1;
+    
+    // 8. Densidade
+    const densidade = obterDensidade(temperatura);
+    
+    // 9. KPC = FV × CD × CP × AE
+    const kpc = fv * cd * cp * ae;
+    
+    // 10. Velocidade e Vazão
+    const mediaCentral = medias[5];
+    let velocidade = 0;
+    if (mediaCentral > 0 && densidade > 0) {
+        velocidade = Math.pow(mediaCentral / 1000, 0.4931) * 3.8078 * (densidade / 1000);
+    }
+    const vazao = kpc * velocidade * 1000;
+    
+    // 11. Atualiza campos
     document.getElementById('vlFatorVelocidade').value = fv.toFixed(10);
     document.getElementById('vlCorrecaoDiametro').value = cd.toFixed(6);
-    document.getElementById('vlCorrecaoProjecaoTap').value = pt.toFixed(2);
+    document.getElementById('vlCorrecaoProjecaoTap').value = cp.toFixed(2);
     document.getElementById('vlAreaEfetiva').value = ae.toFixed(6);
     document.getElementById('vlKPC').value = kpc.toFixed(10);
-    document.getElementById('vlVazao').value = '0.00';
+    document.getElementById('vlVazao').value = vazao.toFixed(2);
+    
+    console.log('Cálculo KPC:', { metodo: metodo === 1 ? 'Padrão' : 'Convencional', dn, dr, pt, fv, cd, cp, ae, kpc, vazao });
 }
+
+// ============================================================
+// GRÁFICO - CURVA DE VELOCIDADE
+// ============================================================
+
+/**
+ * Abre o modal do gráfico da Curva de Velocidade
+ */
+function abrirGraficoCurvaVelocidade() {
+    // Primeiro calcula as médias
+    for (let p = 1; p <= 11; p++) calcularMediaPonto(p);
+    
+    // Obtém posições e médias
+    const posicoes = calcularPosicoesPontos();
+    const dadosGrafico = [];
+    
+    for (let p = 1; p <= 11; p++) {
+        const mediaInput = document.getElementById('media_' + p);
+        const deflexao = mediaInput ? parseFloat(mediaInput.value) || 0 : 0;
+        const posicao = posicoes[p] || 0;
+        
+        if (deflexao > 0) {
+            dadosGrafico.push({ posicao: posicao, deflexao: deflexao, ponto: p });
+        }
+    }
+    
+    // Verifica se há dados
+    if (dadosGrafico.length === 0) {
+        alert('Preencha ao menos uma leitura de deflexão para visualizar o gráfico.');
+        return;
+    }
+    
+    // Ordena por posição
+    dadosGrafico.sort((a, b) => a.posicao - b.posicao);
+    
+    // Abre o modal
+    document.getElementById('modalGraficoOverlay').classList.add('ativo');
+    document.body.style.overflow = 'hidden';
+    
+    // Cria o gráfico após o modal renderizar
+    setTimeout(() => criarGraficoVelocidade(dadosGrafico), 100);
+}
+
+/**
+ * Fecha o modal do gráfico
+ */
+function fecharModalGrafico(event) {
+    if (event && event.target !== event.currentTarget) return;
+    
+    document.getElementById('modalGraficoOverlay').classList.remove('ativo');
+    document.body.style.overflow = '';
+    
+    // Destroi o gráfico
+    if (graficoVelocidade) {
+        graficoVelocidade.destroy();
+        graficoVelocidade = null;
+    }
+}
+
+/**
+ * Cria o gráfico da Curva de Velocidade
+ */
+function criarGraficoVelocidade(dadosGrafico) {
+    if (graficoVelocidade) {
+        graficoVelocidade.destroy();
+        graficoVelocidade = null;
+    }
+    
+    const canvas = document.getElementById('graficoVelocidade');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Calcula limites dos eixos
+    const maxPosicao = Math.max(...dadosGrafico.map(d => d.posicao));
+    const maxDeflexao = Math.max(...dadosGrafico.map(d => d.deflexao));
+    const limiteY = Math.ceil(maxPosicao / 10) * 10 + 10;
+    const limiteX = Math.ceil(maxDeflexao / 10) * 10 + 10;
+    
+    // Registra plugin de datalabels
+    if (typeof ChartDataLabels !== 'undefined') {
+        Chart.register(ChartDataLabels);
+    }
+    
+    graficoVelocidade = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Curva de Velocidade',
+                data: dadosGrafico.map(d => ({ x: d.deflexao, y: d.posicao, ponto: d.ponto })),
+                borderColor: '#c9a227',
+                backgroundColor: '#c9a227',
+                showLine: true,
+                tension: 0.4,
+                pointRadius: 6,
+                pointBackgroundColor: '#c9a227',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointHoverRadius: 9,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: { top: 20, right: 80, bottom: 20, left: 20 }
+            },
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: 'Curva de Velocidade',
+                    font: { size: 16, weight: 'bold' },
+                    color: '#1e293b'
+                },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    callbacks: {
+                        label: function(context) {
+                            return [
+                                `Ponto: ${context.raw.ponto}`,
+                                `Posição: ${context.raw.y.toFixed(2)} mm`,
+                                `Deflexão: ${context.raw.x.toFixed(4)} mm`
+                            ];
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    align: 'right',
+                    anchor: 'end',
+                    offset: 6,
+                    color: '#475569',
+                    font: { size: 10, weight: 'bold' },
+                    formatter: function(value) {
+                        return value.y.toFixed(0) + ': ' + value.x.toFixed(2);
+                    },
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: 3,
+                    padding: { top: 2, bottom: 2, left: 4, right: 4 }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Deflexão Média (mm)', font: { size: 12, weight: 'bold' }, color: '#475569' },
+                    min: 0, max: limiteX,
+                    grid: { color: '#e5e7eb' },
+                    ticks: { color: '#64748b' }
+                },
+                y: {
+                    title: { display: true, text: 'Posição (mm)', font: { size: 12, weight: 'bold' }, color: '#475569' },
+                    min: 0, max: limiteY,
+                    grid: { color: '#e5e7eb' },
+                    ticks: { color: '#64748b' }
+                }
+            }
+        }
+    });
+}
+
+// Fecha modal com ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('modalGraficoOverlay');
+        if (modal && modal.classList.contains('ativo')) {
+            fecharModalGrafico();
+        }
+    }
+});
+
+// ============================================================
+// SUBMIT DO FORMULÁRIO
+// ============================================================
 
 document.getElementById('formCalculoKPC').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -1244,65 +1877,125 @@ document.getElementById('formCalculoKPC').addEventListener('submit', function(e)
     
     const kpc = document.getElementById('vlKPC').value;
     if (!kpc || parseFloat(kpc) === 0) {
-        if (!confirm('O KPC não foi calculado. Continuar?')) return;
+        if (!confirm('O KPC não foi calculado. Deseja continuar mesmo assim?')) return;
     }
     
-    const tec = document.getElementById('selectTecnico').value;
-    const usr = document.getElementById('selectUsuario').value;
-    if (!tec) { showToast('Selecione o Técnico Responsável', 'alerta'); return; }
-    if (!usr) { showToast('Selecione o Usuário Responsável', 'alerta'); return; }
+    // Monta os dados - IMPORTANTE: usar mesmos nomes que o PHP espera
+    const leituras = [];
+    const posicoes = calcularPosicoesPontos();
     
-    const formData = new FormData(this);
-    const data = {};
-    formData.forEach((v, k) => { if (!k.startsWith('leitura[') && !k.startsWith('media[')) data[k] = v; });
-    
-    const pos = calcularPosicoesPontos();
-    data.leituras = [];
     for (let l = 1; l <= 20; l++) {
         for (let p = 1; p <= 11; p++) {
-            const input = document.querySelector('input[data-leitura="' + l + '"][data-ponto="' + p + '"]');
+            const input = document.querySelector(`input[data-leitura="${l}"][data-ponto="${p}"]`);
             if (input && input.value !== '' && !isNaN(parseFloat(input.value))) {
-                data.leituras.push({ leitura: l, ponto: p, deflexao: parseFloat(input.value), posicao: pos[p] });
+                leituras.push({
+                    leitura: l,           // PHP espera 'leitura'
+                    ponto: p,             // PHP espera 'ponto'
+                    deflexao: parseFloat(input.value),  // PHP espera 'deflexao'
+                    posicao: posicoes[p]  // PHP espera 'posicao'
+                });
             }
         }
     }
+    
+    // Adiciona as médias (ordem 21)
     for (let p = 1; p <= 11; p++) {
-        const mi = document.getElementById('media_' + p);
-        if (mi && mi.value !== '' && !isNaN(parseFloat(mi.value))) {
-            data.leituras.push({ leitura: 21, ponto: p, deflexao: parseFloat(mi.value), posicao: pos[p] });
+        const media = parseFloat(document.getElementById('media_' + p).value) || 0;
+        if (media > 0) {
+            leituras.push({
+                leitura: 21,          // PHP espera 'leitura'
+                ponto: p,             // PHP espera 'ponto'
+                deflexao: media,      // PHP espera 'deflexao'
+                posicao: posicoes[p]  // PHP espera 'posicao'
+            });
         }
     }
     
+    const dados = {
+        cd_chave: parseInt(document.querySelector('input[name="cd_chave"]').value) || 0,
+        cd_ponto_medicao: parseInt(cdPonto),
+        dt_leitura: document.querySelector('input[name="dt_leitura"]').value,
+        id_metodo: parseInt(document.getElementById('selectMetodo').value) || 1,
+        vl_diametro_nominal: parseFloat(document.getElementById('vlDiametroNominal').value) || 0,
+        vl_diametro_real: parseFloat(document.getElementById('vlDiametroReal').value) || 0,
+        vl_projecao_tap: parseFloat(document.getElementById('vlProjecaoTap').value) || 0,
+        vl_raio_tip: parseFloat(document.getElementById('vlRaioTip').value) || 0,
+        vl_temperatura: parseFloat(document.getElementById('vlTemperatura').value) || 25,
+        vl_fator_velocidade: parseFloat(document.getElementById('vlFatorVelocidade').value) || 0,
+        vl_correcao_diametro: parseFloat(document.getElementById('vlCorrecaoDiametro').value) || 0,
+        vl_correcao_projecao_tap: parseFloat(document.getElementById('vlCorrecaoProjecaoTap').value) || 0,
+        vl_area_efetiva: parseFloat(document.getElementById('vlAreaEfetiva').value) || 0,
+        vl_kpc: parseFloat(document.getElementById('vlKPC').value) || 0,
+        vl_vazao: parseFloat(document.getElementById('vlVazao').value) || null,
+        cd_tecnico_responsavel: parseInt(document.getElementById('selectTecnico').value) || 0,
+        cd_usuario_responsavel: parseInt(document.getElementById('selectUsuario').value) || 0,
+        ds_observacao: document.querySelector('input[name="ds_observacao"]')?.value || '',
+        leituras: leituras
+    };
+    
+    // Envia para o servidor
     fetch('bd/calculoKPC/salvarCalculoKPC.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(dados)
     })
     .then(r => r.json())
-    .then(res => {
-        if (res.success) {
-            showToast('Salvo com sucesso!', 'sucesso');
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'sucesso');
             setTimeout(() => window.location.href = 'calculoKPC.php', 1500);
         } else {
-            showToast('Erro: ' + res.message, 'erro');
+            showToast(data.message || 'Erro ao salvar', 'erro');
         }
     })
-    .catch(err => { console.error(err); showToast('Erro ao salvar', 'erro'); });
+    .catch(err => {
+        console.error(err);
+        showToast('Erro ao salvar', 'erro');
+    });
 });
 
-function showToast(msg, type, dur) {
-    type = type || 'info'; dur = dur || 5000;
-    let c = document.getElementById('toastContainer');
-    const icons = { sucesso: 'checkmark-circle', erro: 'close-circle', alerta: 'alert-circle', info: 'information-circle' };
-    const t = document.createElement('div');
-    t.className = 'toast ' + type;
-    t.innerHTML = '<div class="toast-icon"><ion-icon name="' + (icons[type] || icons.info) + '"></ion-icon></div>' +
-                  '<div class="toast-content"><p class="toast-message">' + msg + '</p></div>' +
-                  '<button class="toast-close" onclick="this.parentElement.remove()"><ion-icon name="close"></ion-icon></button>';
-    c.appendChild(t);
-    setTimeout(() => t.classList.add('show'), 10);
-    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, dur);
+// ============================================================
+// TOAST
+// ============================================================
+
+function showToast(msg, tipo = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + tipo;
+    toast.innerHTML = `<span>${msg}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    initAutocomplete();
+    toggleCampoConvencional();
+    
+    // Select2
+    if (typeof $ !== 'undefined' && $.fn.select2) {
+        $('.select2-tecnico, .select2-usuario').select2({
+            placeholder: 'Selecione...',
+            allowClear: true,
+            width: '100%'
+        });
+    }
+    
+    // Eventos de alteração
+    document.getElementById('selectUnidade').addEventListener('change', function() {
+        carregarLocalidades(this.value);
+        limparPontoMedicao();
+    });
+    
+    document.getElementById('selectLocalidade').addEventListener('change', limparPontoMedicao);
+});
 </script>
 
 <?php include_once 'includes/footer.inc.php'; ?>
