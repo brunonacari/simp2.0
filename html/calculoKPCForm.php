@@ -32,6 +32,7 @@ if ($isEdicao) {
     $sql = "SELECT 
                 CK.*,
                 PM.DS_NOME AS DS_PONTO_MEDICAO,
+                PM.ID_TIPO_MEDIDOR, 
                 L.CD_CHAVE AS CD_CHAVE_LOCALIDADE,
                 L.CD_LOCALIDADE,
                 L.DS_NOME AS DS_LOCALIDADE,
@@ -90,8 +91,23 @@ $codigoFormatado = $isEdicao ? $calculoKPC['CD_CODIGO'] . '-' . $calculoKPC['CD_
 // Código formatado do ponto (para edição)
 $codigoPontoFormatado = '';
 if ($isEdicao) {
+    // Mapeamento de tipos para letras
+    $letrasTipoMedidor = [
+        1 => 'M', // Macromedidor
+        2 => 'E', // Estação Pitométrica
+        4 => 'P', // Medidor Pressão
+        6 => 'R', // Nível Reservatório
+        8 => 'H'  // Hidrômetro
+    ];
+
+    // Obtém a letra do tipo de medidor (necessário buscar PM.ID_TIPO_MEDIDOR na query de edição)
+    // Se não tiver ID_TIPO_MEDIDOR, consulte a tabela PONTO_MEDICAO
+    $letraTipo = $letrasTipoMedidor[$calculoKPC['ID_TIPO_MEDIDOR']] ?? 'X';
+
     $codigoPontoFormatado = $calculoKPC['CD_LOCALIDADE'] . '-' .
-        str_pad($calculoKPC['CD_PONTO_MEDICAO'], 6, '0', STR_PAD_LEFT) . '-E';
+        str_pad($calculoKPC['CD_PONTO_MEDICAO'], 6, '0', STR_PAD_LEFT) . '-' .
+        $letraTipo . '-' .
+        $calculoKPC['CD_UNIDADE'];
 }
 ?>
 
@@ -1316,686 +1332,686 @@ if ($isEdicao) {
 </div>
 
 <script>
- /**
- * ============================================================
- * calculoKPCForm.php - JAVASCRIPT COMPLETO
- * ============================================================
- * 
- * Substitua TODO o conteúdo da tag <script> pelo código abaixo.
- * 
- * Inclui:
- * - Funções de cálculo KPC (fórmula corrigida do sistema legado)
- * - Funções do gráfico Curva de Velocidade
- * - Funções auxiliares (autocomplete, posições, etc.)
- * 
- * ============================================================
- */
+    /**
+    * ============================================================
+    * calculoKPCForm.php - JAVASCRIPT COMPLETO
+    * ============================================================
+    * 
+    * Substitua TODO o conteúdo da tag <script> pelo código abaixo.
+    * 
+    * Inclui:
+    * - Funções de cálculo KPC (fórmula corrigida do sistema legado)
+    * - Funções do gráfico Curva de Velocidade
+    * - Funções auxiliares (autocomplete, posições, etc.)
+    * 
+    * ============================================================
+    */
 
-const PI = Math.PI;
-const isEdicao = <?= $isEdicao ? 'true' : 'false' ?>;
-let graficoVelocidade = null;
+    const PI = Math.PI;
+    const isEdicao = <?= $isEdicao ? 'true' : 'false' ?>;
+    let graficoVelocidade = null;
 
-// ============================================================
-// AUTOCOMPLETE - PONTO DE MEDIÇÃO
-// ============================================================
+    // ============================================================
+    // AUTOCOMPLETE - PONTO DE MEDIÇÃO
+    // ============================================================
 
-function initAutocomplete() {
-    const input = document.getElementById('inputPontoMedicao');
-    const dropdown = document.getElementById('pontoMedicaoDropdown');
-    const btnLimpar = document.getElementById('btnLimparPonto');
-    let debounce = null;
-    let idx = -1;
+    function initAutocomplete() {
+        const input = document.getElementById('inputPontoMedicao');
+        const dropdown = document.getElementById('pontoMedicaoDropdown');
+        const btnLimpar = document.getElementById('btnLimparPonto');
+        let debounce = null;
+        let idx = -1;
 
-    input.addEventListener('input', e => {
-        clearTimeout(debounce);
-        debounce = setTimeout(() => {
-            const termo = e.target.value.trim();
-            if (termo.length >= 2) buscarPontosMedicao(termo);
-            else dropdown.classList.remove('active');
-        }, 300);
-    });
+        input.addEventListener('input', e => {
+            clearTimeout(debounce);
+            debounce = setTimeout(() => {
+                const termo = e.target.value.trim();
+                if (termo.length >= 2) buscarPontosMedicao(termo);
+                else dropdown.classList.remove('active');
+            }, 300);
+        });
 
-    input.addEventListener('keydown', e => {
-        const items = dropdown.querySelectorAll('.autocomplete-item');
-        if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); highlight(items); }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(idx - 1, 0); highlight(items); }
-        else if (e.key === 'Enter' && idx >= 0 && items[idx]) { e.preventDefault(); items[idx].click(); }
-        else if (e.key === 'Escape') dropdown.classList.remove('active');
-    });
+        input.addEventListener('keydown', e => {
+            const items = dropdown.querySelectorAll('.autocomplete-item');
+            if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); highlight(items); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(idx - 1, 0); highlight(items); }
+            else if (e.key === 'Enter' && idx >= 0 && items[idx]) { e.preventDefault(); items[idx].click(); }
+            else if (e.key === 'Escape') dropdown.classList.remove('active');
+        });
 
-    function highlight(items) { items.forEach((it, i) => it.classList.toggle('highlighted', i === idx)); }
+        function highlight(items) { items.forEach((it, i) => it.classList.toggle('highlighted', i === idx)); }
 
-    document.addEventListener('click', e => { if (!input.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('active'); });
-    btnLimpar.addEventListener('click', limparPontoMedicao);
-}
+        document.addEventListener('click', e => { if (!input.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('active'); });
+        btnLimpar.addEventListener('click', limparPontoMedicao);
+    }
 
-function buscarPontosMedicao(termo) {
-    const dropdown = document.getElementById('pontoMedicaoDropdown');
-    const cdLocalidade = document.getElementById('selectLocalidade').value || '';
-    const cdUnidade = document.getElementById('selectUnidade').value || '';
-    
-    dropdown.innerHTML = '<div class="autocomplete-loading">Buscando...</div>';
-    dropdown.classList.add('active');
+    function buscarPontosMedicao(termo) {
+        const dropdown = document.getElementById('pontoMedicaoDropdown');
+        const cdLocalidade = document.getElementById('selectLocalidade').value || '';
+        const cdUnidade = document.getElementById('selectUnidade').value || '';
 
-    const params = new URLSearchParams({ busca: termo });
-    if (cdUnidade) params.append('cd_unidade', cdUnidade);
-    if (cdLocalidade) params.append('cd_localidade', cdLocalidade);
+        dropdown.innerHTML = '<div class="autocomplete-loading">Buscando...</div>';
+        dropdown.classList.add('active');
 
-    fetch('bd/pontoMedicao/buscarPontosMedicao.php?' + params)
-        .then(r => r.json())
-        .then(data => {
-            if (data.success && data.data.length > 0) {
-                dropdown.innerHTML = data.data.map(p => `
+        const params = new URLSearchParams({ busca: termo });
+        if (cdUnidade) params.append('cd_unidade', cdUnidade);
+        if (cdLocalidade) params.append('cd_localidade', cdLocalidade);
+
+        fetch('bd/pontoMedicao/buscarPontosMedicao.php?' + params)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.data.length > 0) {
+                    dropdown.innerHTML = data.data.map(p => `
                     <div class="autocomplete-item" data-id="${p.CD_PONTO_MEDICAO}" data-nome="${p.DS_NOME}"
                          data-localidade="${p.CD_LOCALIDADE}" data-unidade="${p.CD_UNIDADE}">
                         <strong>${p.DS_NOME}</strong>
                         <small>${p.DS_LOCALIDADE} - ${p.DS_UNIDADE}</small>
                     </div>
                 `).join('');
-                dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
-                    item.addEventListener('click', () => selecionarPontoMedicao(item));
-                });
-            } else {
-                dropdown.innerHTML = '<div class="autocomplete-empty">Nenhum ponto encontrado</div>';
+                    dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+                        item.addEventListener('click', () => selecionarPontoMedicao(item));
+                    });
+                } else {
+                    dropdown.innerHTML = '<div class="autocomplete-empty">Nenhum ponto encontrado</div>';
+                }
+            })
+            .catch(() => {
+                dropdown.innerHTML = '<div class="autocomplete-empty">Erro ao buscar</div>';
+            });
+    }
+
+    function selecionarPontoMedicao(item) {
+        document.getElementById('cdPontoMedicao').value = item.dataset.id;
+        document.getElementById('inputPontoMedicao').value = item.dataset.nome;
+        document.getElementById('pontoMedicaoDropdown').classList.remove('active');
+
+        // Atualiza selects
+        const unidade = item.dataset.unidade;
+        const localidade = item.dataset.localidade;
+        if (unidade) {
+            document.getElementById('selectUnidade').value = unidade;
+            carregarLocalidades(unidade, localidade);
+        }
+    }
+
+    function limparPontoMedicao() {
+        document.getElementById('cdPontoMedicao').value = '';
+        document.getElementById('inputPontoMedicao').value = '';
+    }
+
+    function carregarLocalidades(cdUnidade, cdLocalidadeSelecionada = '') {
+        const select = document.getElementById('selectLocalidade');
+        select.innerHTML = '<option value="">Carregando...</option>';
+
+        fetch('bd/localidade/listarLocalidades.php?cd_unidade=' + cdUnidade)
+            .then(r => r.json())
+            .then(data => {
+                select.innerHTML = '<option value="">Todas</option>';
+                if (data.success) {
+                    data.data.forEach(l => {
+                        const selected = l.CD_CHAVE == cdLocalidadeSelecionada ? 'selected' : '';
+                        select.innerHTML += `<option value="${l.CD_CHAVE}" ${selected}>${l.CD_LOCALIDADE} - ${l.DS_NOME}</option>`;
+                    });
+                }
+            });
+    }
+
+    // ============================================================
+    // POSIÇÕES E MÉTODO
+    // ============================================================
+
+    function calcularPosicoesPontos() {
+        const metodo = parseInt(document.getElementById('selectMetodo').value) || 1;
+        const dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
+        const up = parseFloat(document.getElementById('vlUltimaPosicao')?.value) || dr;
+
+        const pos = {};
+        for (let p = 1; p <= 11; p++) {
+            pos[p] = (p === 1) ? 0 : (p === 11) ? (metodo === 2 ? up : dr) : (dr / 10) * (p - 1);
+        }
+        return pos;
+    }
+
+    function atualizarPosicoes() {
+        const pos = calcularPosicoesPontos();
+        for (let p = 1; p <= 11; p++) {
+            const th = document.getElementById('posicao_' + p);
+            if (th) th.textContent = pos[p].toFixed(2).replace('.', ',');
+        }
+    }
+
+    function toggleCampoConvencional() {
+        const campo = document.getElementById('campoUltimaPosicao');
+        if (campo) {
+            campo.classList.toggle('visivel', document.getElementById('selectMetodo').value == '2');
+        }
+    }
+
+    // ============================================================
+    // CÁLCULO DAS MÉDIAS
+    // ============================================================
+
+    function calcularMediaPonto(ponto) {
+        let soma = 0, count = 0;
+        for (let l = 1; l <= 20; l++) {
+            const input = document.querySelector('input[data-leitura="' + l + '"][data-ponto="' + ponto + '"]');
+            if (input && input.value !== '' && !isNaN(parseFloat(input.value))) {
+                soma += parseFloat(input.value);
+                count++;
             }
-        })
-        .catch(() => {
-            dropdown.innerHTML = '<div class="autocomplete-empty">Erro ao buscar</div>';
-        });
-}
-
-function selecionarPontoMedicao(item) {
-    document.getElementById('cdPontoMedicao').value = item.dataset.id;
-    document.getElementById('inputPontoMedicao').value = item.dataset.nome;
-    document.getElementById('pontoMedicaoDropdown').classList.remove('active');
-    
-    // Atualiza selects
-    const unidade = item.dataset.unidade;
-    const localidade = item.dataset.localidade;
-    if (unidade) {
-        document.getElementById('selectUnidade').value = unidade;
-        carregarLocalidades(unidade, localidade);
+        }
+        const mediaInput = document.getElementById('media_' + ponto);
+        if (mediaInput) {
+            mediaInput.value = count > 0 ? (soma / count).toFixed(2) : '';
+        }
     }
-}
 
-function limparPontoMedicao() {
-    document.getElementById('cdPontoMedicao').value = '';
-    document.getElementById('inputPontoMedicao').value = '';
-}
+    function obterMediasDeflexoes() {
+        const medias = [];
+        for (let p = 1; p <= 11; p++) {
+            const mediaInput = document.getElementById('media_' + p);
+            const valor = mediaInput ? parseFloat(mediaInput.value) || 0 : 0;
+            medias.push(valor);
+        }
+        return medias;
+    }
 
-function carregarLocalidades(cdUnidade, cdLocalidadeSelecionada = '') {
-    const select = document.getElementById('selectLocalidade');
-    select.innerHTML = '<option value="">Carregando...</option>';
-    
-    fetch('bd/localidade/listarLocalidades.php?cd_unidade=' + cdUnidade)
-        .then(r => r.json())
-        .then(data => {
-            select.innerHTML = '<option value="">Todas</option>';
-            if (data.success) {
-                data.data.forEach(l => {
-                    const selected = l.CD_CHAVE == cdLocalidadeSelecionada ? 'selected' : '';
-                    select.innerHTML += `<option value="${l.CD_CHAVE}" ${selected}>${l.CD_LOCALIDADE} - ${l.DS_NOME}</option>`;
-                });
+    // ============================================================
+    // FUNÇÕES DE CÁLCULO KPC - FÓRMULA CORRIGIDA (SISTEMA LEGADO)
+    // ============================================================
+
+    /**
+     * Fator de Velocidade - MÉTODO PADRÃO (Digital)
+     * FV = (Σ √médias exceto central) / (10 × √média_central)
+     */
+    function calcularFatorVelocidadePadrao(medias) {
+        const indiceCentral = 5; // Ponto 6
+        const mediaCentral = medias[indiceCentral];
+
+        if (mediaCentral <= 0) return 0;
+
+        let somaRaizes = 0;
+        for (let i = 0; i < medias.length; i++) {
+            if (i !== indiceCentral && medias[i] > 0) {
+                somaRaizes += Math.sqrt(medias[i]);
             }
-        });
-}
+        }
 
-// ============================================================
-// POSIÇÕES E MÉTODO
-// ============================================================
-
-function calcularPosicoesPontos() {
-    const metodo = parseInt(document.getElementById('selectMetodo').value) || 1;
-    const dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
-    const up = parseFloat(document.getElementById('vlUltimaPosicao')?.value) || dr;
-    
-    const pos = {};
-    for (let p = 1; p <= 11; p++) {
-        pos[p] = (p === 1) ? 0 : (p === 11) ? (metodo === 2 ? up : dr) : (dr / 10) * (p - 1);
+        return somaRaizes / (10 * Math.sqrt(mediaCentral));
     }
-    return pos;
-}
 
-function atualizarPosicoes() {
-    const pos = calcularPosicoesPontos();
-    for (let p = 1; p <= 11; p++) {
-        const th = document.getElementById('posicao_' + p);
-        if (th) th.textContent = pos[p].toFixed(2).replace('.', ',');
+    /**
+     * Fator de Velocidade - MÉTODO CONVENCIONAL
+     * Usa interpolação com coeficientes específicos
+     */
+    function calcularFatorVelocidadeConvencional(medias) {
+        const deflexao = new Array(11);
+
+        deflexao[0] = (medias[1] - medias[0]) * 0.2565835 + medias[0];
+        deflexao[1] = (medias[1] - deflexao[0]) * 0.8166999 + medias[0];
+        deflexao[2] = (medias[2] - medias[1]) * 0.4644661 + medias[1];
+        deflexao[3] = (medias[3] - medias[2]) * 0.2613872 + medias[2];
+        deflexao[4] = (medias[4] - medias[3]) * 0.4188612 + medias[3];
+        deflexao[5] = medias[5];
+        deflexao[6] = (medias[6] - medias[7]) * 0.4188612 + medias[7];
+        deflexao[7] = (medias[7] - medias[8]) * 0.2613872 + medias[8];
+        deflexao[8] = (medias[8] - medias[9]) * 0.4644661 + medias[9];
+        deflexao[9] = (medias[9] - medias[10]) * 0.8166999 + medias[10];
+        deflexao[10] = (medias[9] - medias[10]) * 0.2565835 + medias[10];
+
+        let fv = 0;
+        for (let i = 0; i < deflexao.length; i++) {
+            if (deflexao[i] > 0) fv += Math.sqrt(deflexao[i]);
+        }
+
+        if (deflexao[5] > 0) {
+            fv -= Math.sqrt(deflexao[5]);
+            fv = fv / (10 * Math.sqrt(deflexao[5]));
+        } else {
+            fv = 0;
+        }
+
+        return fv;
     }
-}
 
-function toggleCampoConvencional() {
-    const campo = document.getElementById('campoUltimaPosicao');
-    if (campo) {
-        campo.classList.toggle('visivel', document.getElementById('selectMetodo').value == '2');
+    /**
+     * Área Efetiva = π × (DR / 2000)²
+     * Usa Diâmetro REAL
+     */
+    function obterAreaEfetiva(dr) {
+        return PI * Math.pow(dr / 2000, 2);
     }
-}
 
-// ============================================================
-// CÁLCULO DAS MÉDIAS
-// ============================================================
+    /**
+     * Correção de Projeção TAP (Kp)
+     * Se DN >= 301, retorna 1
+     */
+    function obterCorrecaoProjecaoTap(pt, dn) {
+        if (dn >= 301) return 1.0;
 
-function calcularMediaPonto(ponto) {
-    let soma = 0, count = 0;
-    for (let l = 1; l <= 20; l++) {
-        const input = document.querySelector('input[data-leitura="' + l + '"][data-ponto="' + ponto + '"]');
-        if (input && input.value !== '' && !isNaN(parseFloat(input.value))) {
-            soma += parseFloat(input.value);
-            count++;
+        const tabelaKp = {
+            25: { 50: 0.98, 75: 0.99, 100: 0.995, 150: 0.998, 200: 0.999, 250: 1.0, 300: 1.0 },
+            30: { 50: 0.97, 75: 0.98, 100: 0.99, 150: 0.995, 200: 0.998, 250: 0.999, 300: 1.0 },
+            35: { 50: 0.96, 75: 0.97, 100: 0.98, 150: 0.99, 200: 0.995, 250: 0.998, 300: 1.0 },
+            40: { 50: 0.95, 75: 0.96, 100: 0.97, 150: 0.98, 200: 0.99, 250: 0.995, 300: 1.0 },
+            45: { 50: 0.94, 75: 0.95, 100: 0.96, 150: 0.97, 200: 0.98, 250: 0.99, 300: 1.0 },
+            50: { 50: 0.93, 75: 0.94, 100: 0.95, 150: 0.96, 200: 0.97, 250: 0.98, 300: 1.0 }
+        };
+
+        let ptProxima = 25, menorDif = Math.abs(pt - 25);
+        for (const p of Object.keys(tabelaKp)) {
+            const dif = Math.abs(pt - parseInt(p));
+            if (dif < menorDif) { menorDif = dif; ptProxima = parseInt(p); }
+        }
+
+        if (tabelaKp[ptProxima]) {
+            let dnProximo = 50;
+            menorDif = Math.abs(dn - 50);
+            for (const d of Object.keys(tabelaKp[ptProxima])) {
+                const dif = Math.abs(dn - parseInt(d));
+                if (dif < menorDif) { menorDif = dif; dnProximo = parseInt(d); }
+            }
+            return tabelaKp[ptProxima][dnProximo];
+        }
+
+        return 1.0;
+    }
+
+    /**
+     * Densidade da água por temperatura
+     */
+    function obterDensidade(temp) {
+        const tabelaDensidade = {
+            0: 999.84, 5: 999.96, 10: 999.70, 15: 999.10, 20: 998.20,
+            25: 997.05, 30: 995.65, 35: 994.03, 40: 992.22, 45: 990.21, 50: 988.03
+        };
+
+        if (tabelaDensidade[temp]) return tabelaDensidade[temp];
+
+        const temps = Object.keys(tabelaDensidade).map(Number).sort((a, b) => a - b);
+        let tempInf = temps[0], tempSup = temps[temps.length - 1];
+
+        for (const t of temps) {
+            if (t <= temp) tempInf = t;
+            if (t >= temp) { tempSup = t; break; }
+        }
+
+        if (tempInf !== tempSup) {
+            const fator = (temp - tempInf) / (tempSup - tempInf);
+            return tabelaDensidade[tempInf] + fator * (tabelaDensidade[tempSup] - tabelaDensidade[tempInf]);
+        }
+
+        return 997.05;
+    }
+
+    /**
+     * FUNÇÃO PRINCIPAL DE CÁLCULO DO KPC
+     * Fórmula: KPC = FV × CD × CP × AE
+     */
+    function calcular() {
+        // 1. Calcula as médias de cada ponto
+        for (let p = 1; p <= 11; p++) calcularMediaPonto(p);
+
+        // 2. Obtém os parâmetros
+        const dn = parseFloat(document.getElementById('vlDiametroNominal').value) || 0;
+        const dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
+        const pt = parseFloat(document.getElementById('vlProjecaoTap').value) || 0;
+        const temperatura = parseFloat(document.getElementById('vlTemperatura').value) || 25;
+        const metodo = parseInt(document.getElementById('selectMetodo').value) || 1;
+
+        if (dn <= 0 || dr <= 0) {
+            alert('Preencha os parâmetros do cálculo (Diâmetro Nominal e Real)');
+            return;
+        }
+
+        // 3. Obtém as médias das deflexões
+        const medias = obterMediasDeflexoes();
+
+        if (!medias.some(m => m > 0)) {
+            alert('Preencha ao menos uma leitura de deflexão');
+            return;
+        }
+
+        // 4. Fator de Velocidade
+        let fv = (metodo === 2) ? calcularFatorVelocidadeConvencional(medias) : calcularFatorVelocidadePadrao(medias);
+
+        // 5. Correção de Diâmetro = (DR / DN)² (AO QUADRADO!)
+        const cd = Math.pow(dr / dn, 2);
+
+        // 6. Área Efetiva = π × (DR / 2000)² (USA DIÂMETRO REAL!)
+        const ae = obterAreaEfetiva(dr);
+
+        // 7. Correção Projeção TAP
+        let cp = obterCorrecaoProjecaoTap(pt, dn);
+        if (cp === 0) cp = 1;
+
+        // 8. Densidade
+        const densidade = obterDensidade(temperatura);
+
+        // 9. KPC = FV × CD × CP × AE
+        const kpc = fv * cd * cp * ae;
+
+        // 10. Velocidade e Vazão
+        const mediaCentral = medias[5];
+        let velocidade = 0;
+        if (mediaCentral > 0 && densidade > 0) {
+            velocidade = Math.pow(mediaCentral / 1000, 0.4931) * 3.8078 * (densidade / 1000);
+        }
+        const vazao = kpc * velocidade * 1000;
+
+        // 11. Atualiza campos
+        document.getElementById('vlFatorVelocidade').value = fv.toFixed(10);
+        document.getElementById('vlCorrecaoDiametro').value = cd.toFixed(6);
+        document.getElementById('vlCorrecaoProjecaoTap').value = cp.toFixed(2);
+        document.getElementById('vlAreaEfetiva').value = ae.toFixed(6);
+        document.getElementById('vlKPC').value = kpc.toFixed(10);
+        document.getElementById('vlVazao').value = vazao.toFixed(2);
+
+        console.log('Cálculo KPC:', { metodo: metodo === 1 ? 'Padrão' : 'Convencional', dn, dr, pt, fv, cd, cp, ae, kpc, vazao });
+    }
+
+    // ============================================================
+    // GRÁFICO - CURVA DE VELOCIDADE
+    // ============================================================
+
+    /**
+     * Abre o modal do gráfico da Curva de Velocidade
+     */
+    function abrirGraficoCurvaVelocidade() {
+        // Primeiro calcula as médias
+        for (let p = 1; p <= 11; p++) calcularMediaPonto(p);
+
+        // Obtém posições e médias
+        const posicoes = calcularPosicoesPontos();
+        const dadosGrafico = [];
+
+        for (let p = 1; p <= 11; p++) {
+            const mediaInput = document.getElementById('media_' + p);
+            const deflexao = mediaInput ? parseFloat(mediaInput.value) || 0 : 0;
+            const posicao = posicoes[p] || 0;
+
+            if (deflexao > 0) {
+                dadosGrafico.push({ posicao: posicao, deflexao: deflexao, ponto: p });
+            }
+        }
+
+        // Verifica se há dados
+        if (dadosGrafico.length === 0) {
+            alert('Preencha ao menos uma leitura de deflexão para visualizar o gráfico.');
+            return;
+        }
+
+        // Ordena por posição
+        dadosGrafico.sort((a, b) => a.posicao - b.posicao);
+
+        // Abre o modal
+        document.getElementById('modalGraficoOverlay').classList.add('ativo');
+        document.body.style.overflow = 'hidden';
+
+        // Cria o gráfico após o modal renderizar
+        setTimeout(() => criarGraficoVelocidade(dadosGrafico), 100);
+    }
+
+    /**
+     * Fecha o modal do gráfico
+     */
+    function fecharModalGrafico(event) {
+        if (event && event.target !== event.currentTarget) return;
+
+        document.getElementById('modalGraficoOverlay').classList.remove('ativo');
+        document.body.style.overflow = '';
+
+        // Destroi o gráfico
+        if (graficoVelocidade) {
+            graficoVelocidade.destroy();
+            graficoVelocidade = null;
         }
     }
-    const mediaInput = document.getElementById('media_' + ponto);
-    if (mediaInput) {
-        mediaInput.value = count > 0 ? (soma / count).toFixed(2) : '';
-    }
-}
 
-function obterMediasDeflexoes() {
-    const medias = [];
-    for (let p = 1; p <= 11; p++) {
-        const mediaInput = document.getElementById('media_' + p);
-        const valor = mediaInput ? parseFloat(mediaInput.value) || 0 : 0;
-        medias.push(valor);
-    }
-    return medias;
-}
-
-// ============================================================
-// FUNÇÕES DE CÁLCULO KPC - FÓRMULA CORRIGIDA (SISTEMA LEGADO)
-// ============================================================
-
-/**
- * Fator de Velocidade - MÉTODO PADRÃO (Digital)
- * FV = (Σ √médias exceto central) / (10 × √média_central)
- */
-function calcularFatorVelocidadePadrao(medias) {
-    const indiceCentral = 5; // Ponto 6
-    const mediaCentral = medias[indiceCentral];
-    
-    if (mediaCentral <= 0) return 0;
-    
-    let somaRaizes = 0;
-    for (let i = 0; i < medias.length; i++) {
-        if (i !== indiceCentral && medias[i] > 0) {
-            somaRaizes += Math.sqrt(medias[i]);
+    /**
+     * Cria o gráfico da Curva de Velocidade
+     */
+    function criarGraficoVelocidade(dadosGrafico) {
+        if (graficoVelocidade) {
+            graficoVelocidade.destroy();
+            graficoVelocidade = null;
         }
-    }
-    
-    return somaRaizes / (10 * Math.sqrt(mediaCentral));
-}
 
-/**
- * Fator de Velocidade - MÉTODO CONVENCIONAL
- * Usa interpolação com coeficientes específicos
- */
-function calcularFatorVelocidadeConvencional(medias) {
-    const deflexao = new Array(11);
-    
-    deflexao[0] = (medias[1] - medias[0]) * 0.2565835 + medias[0];
-    deflexao[1] = (medias[1] - deflexao[0]) * 0.8166999 + medias[0];
-    deflexao[2] = (medias[2] - medias[1]) * 0.4644661 + medias[1];
-    deflexao[3] = (medias[3] - medias[2]) * 0.2613872 + medias[2];
-    deflexao[4] = (medias[4] - medias[3]) * 0.4188612 + medias[3];
-    deflexao[5] = medias[5];
-    deflexao[6] = (medias[6] - medias[7]) * 0.4188612 + medias[7];
-    deflexao[7] = (medias[7] - medias[8]) * 0.2613872 + medias[8];
-    deflexao[8] = (medias[8] - medias[9]) * 0.4644661 + medias[9];
-    deflexao[9] = (medias[9] - medias[10]) * 0.8166999 + medias[10];
-    deflexao[10] = (medias[9] - medias[10]) * 0.2565835 + medias[10];
-    
-    let fv = 0;
-    for (let i = 0; i < deflexao.length; i++) {
-        if (deflexao[i] > 0) fv += Math.sqrt(deflexao[i]);
-    }
-    
-    if (deflexao[5] > 0) {
-        fv -= Math.sqrt(deflexao[5]);
-        fv = fv / (10 * Math.sqrt(deflexao[5]));
-    } else {
-        fv = 0;
-    }
-    
-    return fv;
-}
+        const canvas = document.getElementById('graficoVelocidade');
+        if (!canvas) return;
 
-/**
- * Área Efetiva = π × (DR / 2000)²
- * Usa Diâmetro REAL
- */
-function obterAreaEfetiva(dr) {
-    return PI * Math.pow(dr / 2000, 2);
-}
+        const ctx = canvas.getContext('2d');
 
-/**
- * Correção de Projeção TAP (Kp)
- * Se DN >= 301, retorna 1
- */
-function obterCorrecaoProjecaoTap(pt, dn) {
-    if (dn >= 301) return 1.0;
-    
-    const tabelaKp = {
-        25: { 50: 0.98, 75: 0.99, 100: 0.995, 150: 0.998, 200: 0.999, 250: 1.0, 300: 1.0 },
-        30: { 50: 0.97, 75: 0.98, 100: 0.99, 150: 0.995, 200: 0.998, 250: 0.999, 300: 1.0 },
-        35: { 50: 0.96, 75: 0.97, 100: 0.98, 150: 0.99, 200: 0.995, 250: 0.998, 300: 1.0 },
-        40: { 50: 0.95, 75: 0.96, 100: 0.97, 150: 0.98, 200: 0.99, 250: 0.995, 300: 1.0 },
-        45: { 50: 0.94, 75: 0.95, 100: 0.96, 150: 0.97, 200: 0.98, 250: 0.99, 300: 1.0 },
-        50: { 50: 0.93, 75: 0.94, 100: 0.95, 150: 0.96, 200: 0.97, 250: 0.98, 300: 1.0 }
-    };
-    
-    let ptProxima = 25, menorDif = Math.abs(pt - 25);
-    for (const p of Object.keys(tabelaKp)) {
-        const dif = Math.abs(pt - parseInt(p));
-        if (dif < menorDif) { menorDif = dif; ptProxima = parseInt(p); }
-    }
-    
-    if (tabelaKp[ptProxima]) {
-        let dnProximo = 50;
-        menorDif = Math.abs(dn - 50);
-        for (const d of Object.keys(tabelaKp[ptProxima])) {
-            const dif = Math.abs(dn - parseInt(d));
-            if (dif < menorDif) { menorDif = dif; dnProximo = parseInt(d); }
+        // Calcula limites dos eixos
+        const maxPosicao = Math.max(...dadosGrafico.map(d => d.posicao));
+        const maxDeflexao = Math.max(...dadosGrafico.map(d => d.deflexao));
+        const limiteY = Math.ceil(maxPosicao / 10) * 10 + 10;
+        const limiteX = Math.ceil(maxDeflexao / 10) * 10 + 10;
+
+        // Registra plugin de datalabels
+        if (typeof ChartDataLabels !== 'undefined') {
+            Chart.register(ChartDataLabels);
         }
-        return tabelaKp[ptProxima][dnProximo];
-    }
-    
-    return 1.0;
-}
 
-/**
- * Densidade da água por temperatura
- */
-function obterDensidade(temp) {
-    const tabelaDensidade = {
-        0: 999.84, 5: 999.96, 10: 999.70, 15: 999.10, 20: 998.20,
-        25: 997.05, 30: 995.65, 35: 994.03, 40: 992.22, 45: 990.21, 50: 988.03
-    };
-    
-    if (tabelaDensidade[temp]) return tabelaDensidade[temp];
-    
-    const temps = Object.keys(tabelaDensidade).map(Number).sort((a, b) => a - b);
-    let tempInf = temps[0], tempSup = temps[temps.length - 1];
-    
-    for (const t of temps) {
-        if (t <= temp) tempInf = t;
-        if (t >= temp) { tempSup = t; break; }
-    }
-    
-    if (tempInf !== tempSup) {
-        const fator = (temp - tempInf) / (tempSup - tempInf);
-        return tabelaDensidade[tempInf] + fator * (tabelaDensidade[tempSup] - tabelaDensidade[tempInf]);
-    }
-    
-    return 997.05;
-}
-
-/**
- * FUNÇÃO PRINCIPAL DE CÁLCULO DO KPC
- * Fórmula: KPC = FV × CD × CP × AE
- */
-function calcular() {
-    // 1. Calcula as médias de cada ponto
-    for (let p = 1; p <= 11; p++) calcularMediaPonto(p);
-    
-    // 2. Obtém os parâmetros
-    const dn = parseFloat(document.getElementById('vlDiametroNominal').value) || 0;
-    const dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
-    const pt = parseFloat(document.getElementById('vlProjecaoTap').value) || 0;
-    const temperatura = parseFloat(document.getElementById('vlTemperatura').value) || 25;
-    const metodo = parseInt(document.getElementById('selectMetodo').value) || 1;
-    
-    if (dn <= 0 || dr <= 0) {
-        alert('Preencha os parâmetros do cálculo (Diâmetro Nominal e Real)');
-        return;
-    }
-    
-    // 3. Obtém as médias das deflexões
-    const medias = obterMediasDeflexoes();
-    
-    if (!medias.some(m => m > 0)) {
-        alert('Preencha ao menos uma leitura de deflexão');
-        return;
-    }
-    
-    // 4. Fator de Velocidade
-    let fv = (metodo === 2) ? calcularFatorVelocidadeConvencional(medias) : calcularFatorVelocidadePadrao(medias);
-    
-    // 5. Correção de Diâmetro = (DR / DN)² (AO QUADRADO!)
-    const cd = Math.pow(dr / dn, 2);
-    
-    // 6. Área Efetiva = π × (DR / 2000)² (USA DIÂMETRO REAL!)
-    const ae = obterAreaEfetiva(dr);
-    
-    // 7. Correção Projeção TAP
-    let cp = obterCorrecaoProjecaoTap(pt, dn);
-    if (cp === 0) cp = 1;
-    
-    // 8. Densidade
-    const densidade = obterDensidade(temperatura);
-    
-    // 9. KPC = FV × CD × CP × AE
-    const kpc = fv * cd * cp * ae;
-    
-    // 10. Velocidade e Vazão
-    const mediaCentral = medias[5];
-    let velocidade = 0;
-    if (mediaCentral > 0 && densidade > 0) {
-        velocidade = Math.pow(mediaCentral / 1000, 0.4931) * 3.8078 * (densidade / 1000);
-    }
-    const vazao = kpc * velocidade * 1000;
-    
-    // 11. Atualiza campos
-    document.getElementById('vlFatorVelocidade').value = fv.toFixed(10);
-    document.getElementById('vlCorrecaoDiametro').value = cd.toFixed(6);
-    document.getElementById('vlCorrecaoProjecaoTap').value = cp.toFixed(2);
-    document.getElementById('vlAreaEfetiva').value = ae.toFixed(6);
-    document.getElementById('vlKPC').value = kpc.toFixed(10);
-    document.getElementById('vlVazao').value = vazao.toFixed(2);
-    
-    console.log('Cálculo KPC:', { metodo: metodo === 1 ? 'Padrão' : 'Convencional', dn, dr, pt, fv, cd, cp, ae, kpc, vazao });
-}
-
-// ============================================================
-// GRÁFICO - CURVA DE VELOCIDADE
-// ============================================================
-
-/**
- * Abre o modal do gráfico da Curva de Velocidade
- */
-function abrirGraficoCurvaVelocidade() {
-    // Primeiro calcula as médias
-    for (let p = 1; p <= 11; p++) calcularMediaPonto(p);
-    
-    // Obtém posições e médias
-    const posicoes = calcularPosicoesPontos();
-    const dadosGrafico = [];
-    
-    for (let p = 1; p <= 11; p++) {
-        const mediaInput = document.getElementById('media_' + p);
-        const deflexao = mediaInput ? parseFloat(mediaInput.value) || 0 : 0;
-        const posicao = posicoes[p] || 0;
-        
-        if (deflexao > 0) {
-            dadosGrafico.push({ posicao: posicao, deflexao: deflexao, ponto: p });
-        }
-    }
-    
-    // Verifica se há dados
-    if (dadosGrafico.length === 0) {
-        alert('Preencha ao menos uma leitura de deflexão para visualizar o gráfico.');
-        return;
-    }
-    
-    // Ordena por posição
-    dadosGrafico.sort((a, b) => a.posicao - b.posicao);
-    
-    // Abre o modal
-    document.getElementById('modalGraficoOverlay').classList.add('ativo');
-    document.body.style.overflow = 'hidden';
-    
-    // Cria o gráfico após o modal renderizar
-    setTimeout(() => criarGraficoVelocidade(dadosGrafico), 100);
-}
-
-/**
- * Fecha o modal do gráfico
- */
-function fecharModalGrafico(event) {
-    if (event && event.target !== event.currentTarget) return;
-    
-    document.getElementById('modalGraficoOverlay').classList.remove('ativo');
-    document.body.style.overflow = '';
-    
-    // Destroi o gráfico
-    if (graficoVelocidade) {
-        graficoVelocidade.destroy();
-        graficoVelocidade = null;
-    }
-}
-
-/**
- * Cria o gráfico da Curva de Velocidade
- */
-function criarGraficoVelocidade(dadosGrafico) {
-    if (graficoVelocidade) {
-        graficoVelocidade.destroy();
-        graficoVelocidade = null;
-    }
-    
-    const canvas = document.getElementById('graficoVelocidade');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Calcula limites dos eixos
-    const maxPosicao = Math.max(...dadosGrafico.map(d => d.posicao));
-    const maxDeflexao = Math.max(...dadosGrafico.map(d => d.deflexao));
-    const limiteY = Math.ceil(maxPosicao / 10) * 10 + 10;
-    const limiteX = Math.ceil(maxDeflexao / 10) * 10 + 10;
-    
-    // Registra plugin de datalabels
-    if (typeof ChartDataLabels !== 'undefined') {
-        Chart.register(ChartDataLabels);
-    }
-    
-    graficoVelocidade = new Chart(ctx, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: 'Curva de Velocidade',
-                data: dadosGrafico.map(d => ({ x: d.deflexao, y: d.posicao, ponto: d.ponto })),
-                borderColor: '#c9a227',
-                backgroundColor: '#c9a227',
-                showLine: true,
-                tension: 0.4,
-                pointRadius: 6,
-                pointBackgroundColor: '#c9a227',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointHoverRadius: 9,
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: {
-                padding: { top: 20, right: 80, bottom: 20, left: 20 }
+        graficoVelocidade = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Curva de Velocidade',
+                    data: dadosGrafico.map(d => ({ x: d.deflexao, y: d.posicao, ponto: d.ponto })),
+                    borderColor: '#c9a227',
+                    backgroundColor: '#c9a227',
+                    showLine: true,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointBackgroundColor: '#c9a227',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 9,
+                    borderWidth: 2
+                }]
             },
-            plugins: {
-                legend: { display: false },
-                title: {
-                    display: true,
-                    text: 'Curva de Velocidade',
-                    font: { size: 16, weight: 'bold' },
-                    color: '#1e293b'
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: { top: 20, right: 80, bottom: 20, left: 20 }
                 },
-                tooltip: {
-                    enabled: true,
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    callbacks: {
-                        label: function(context) {
-                            return [
-                                `Ponto: ${context.raw.ponto}`,
-                                `Posição: ${context.raw.y.toFixed(2)} mm`,
-                                `Deflexão: ${context.raw.x.toFixed(4)} mm`
-                            ];
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Curva de Velocidade',
+                        font: { size: 16, weight: 'bold' },
+                        color: '#1e293b'
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        callbacks: {
+                            label: function (context) {
+                                return [
+                                    `Ponto: ${context.raw.ponto}`,
+                                    `Posição: ${context.raw.y.toFixed(2)} mm`,
+                                    `Deflexão: ${context.raw.x.toFixed(4)} mm`
+                                ];
+                            }
                         }
+                    },
+                    datalabels: {
+                        display: true,
+                        align: 'right',
+                        anchor: 'end',
+                        offset: 6,
+                        color: '#475569',
+                        font: { size: 10, weight: 'bold' },
+                        formatter: function (value) {
+                            return value.y.toFixed(0) + ': ' + value.x.toFixed(2);
+                        },
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        borderRadius: 3,
+                        padding: { top: 2, bottom: 2, left: 4, right: 4 }
                     }
                 },
-                datalabels: {
-                    display: true,
-                    align: 'right',
-                    anchor: 'end',
-                    offset: 6,
-                    color: '#475569',
-                    font: { size: 10, weight: 'bold' },
-                    formatter: function(value) {
-                        return value.y.toFixed(0) + ': ' + value.x.toFixed(2);
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Deflexão Média (mm)', font: { size: 12, weight: 'bold' }, color: '#475569' },
+                        min: 0, max: limiteX,
+                        grid: { color: '#e5e7eb' },
+                        ticks: { color: '#64748b' }
                     },
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    borderRadius: 3,
-                    padding: { top: 2, bottom: 2, left: 4, right: 4 }
+                    y: {
+                        title: { display: true, text: 'Posição (mm)', font: { size: 12, weight: 'bold' }, color: '#475569' },
+                        min: 0, max: limiteY,
+                        grid: { color: '#e5e7eb' },
+                        ticks: { color: '#64748b' }
+                    }
                 }
-            },
-            scales: {
-                x: {
-                    title: { display: true, text: 'Deflexão Média (mm)', font: { size: 12, weight: 'bold' }, color: '#475569' },
-                    min: 0, max: limiteX,
-                    grid: { color: '#e5e7eb' },
-                    ticks: { color: '#64748b' }
-                },
-                y: {
-                    title: { display: true, text: 'Posição (mm)', font: { size: 12, weight: 'bold' }, color: '#475569' },
-                    min: 0, max: limiteY,
-                    grid: { color: '#e5e7eb' },
-                    ticks: { color: '#64748b' }
-                }
+            }
+        });
+    }
+
+    // Fecha modal com ESC
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('modalGraficoOverlay');
+            if (modal && modal.classList.contains('ativo')) {
+                fecharModalGrafico();
             }
         }
     });
-}
 
-// Fecha modal com ESC
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        const modal = document.getElementById('modalGraficoOverlay');
-        if (modal && modal.classList.contains('ativo')) {
-            fecharModalGrafico();
+    // ============================================================
+    // SUBMIT DO FORMULÁRIO
+    // ============================================================
+
+    document.getElementById('formCalculoKPC').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const cdPonto = document.getElementById('cdPontoMedicao').value;
+        if (!cdPonto) { showToast('Selecione um Ponto de Medição', 'alerta'); return; }
+
+        const kpc = document.getElementById('vlKPC').value;
+        if (!kpc || parseFloat(kpc) === 0) {
+            if (!confirm('O KPC não foi calculado. Deseja continuar mesmo assim?')) return;
         }
-    }
-});
 
-// ============================================================
-// SUBMIT DO FORMULÁRIO
-// ============================================================
+        // Monta os dados - IMPORTANTE: usar mesmos nomes que o PHP espera
+        const leituras = [];
+        const posicoes = calcularPosicoesPontos();
 
-document.getElementById('formCalculoKPC').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const cdPonto = document.getElementById('cdPontoMedicao').value;
-    if (!cdPonto) { showToast('Selecione um Ponto de Medição', 'alerta'); return; }
-    
-    const kpc = document.getElementById('vlKPC').value;
-    if (!kpc || parseFloat(kpc) === 0) {
-        if (!confirm('O KPC não foi calculado. Deseja continuar mesmo assim?')) return;
-    }
-    
-    // Monta os dados - IMPORTANTE: usar mesmos nomes que o PHP espera
-    const leituras = [];
-    const posicoes = calcularPosicoesPontos();
-    
-    for (let l = 1; l <= 20; l++) {
+        for (let l = 1; l <= 20; l++) {
+            for (let p = 1; p <= 11; p++) {
+                const input = document.querySelector(`input[data-leitura="${l}"][data-ponto="${p}"]`);
+                if (input && input.value !== '' && !isNaN(parseFloat(input.value))) {
+                    leituras.push({
+                        leitura: l,           // PHP espera 'leitura'
+                        ponto: p,             // PHP espera 'ponto'
+                        deflexao: parseFloat(input.value),  // PHP espera 'deflexao'
+                        posicao: posicoes[p]  // PHP espera 'posicao'
+                    });
+                }
+            }
+        }
+
+        // Adiciona as médias (ordem 21)
         for (let p = 1; p <= 11; p++) {
-            const input = document.querySelector(`input[data-leitura="${l}"][data-ponto="${p}"]`);
-            if (input && input.value !== '' && !isNaN(parseFloat(input.value))) {
+            const media = parseFloat(document.getElementById('media_' + p).value) || 0;
+            if (media > 0) {
                 leituras.push({
-                    leitura: l,           // PHP espera 'leitura'
+                    leitura: 21,          // PHP espera 'leitura'
                     ponto: p,             // PHP espera 'ponto'
-                    deflexao: parseFloat(input.value),  // PHP espera 'deflexao'
+                    deflexao: media,      // PHP espera 'deflexao'
                     posicao: posicoes[p]  // PHP espera 'posicao'
                 });
             }
         }
+
+        const dados = {
+            cd_chave: parseInt(document.querySelector('input[name="cd_chave"]').value) || 0,
+            cd_ponto_medicao: parseInt(cdPonto),
+            dt_leitura: document.querySelector('input[name="dt_leitura"]').value,
+            id_metodo: parseInt(document.getElementById('selectMetodo').value) || 1,
+            vl_diametro_nominal: parseFloat(document.getElementById('vlDiametroNominal').value) || 0,
+            vl_diametro_real: parseFloat(document.getElementById('vlDiametroReal').value) || 0,
+            vl_projecao_tap: parseFloat(document.getElementById('vlProjecaoTap').value) || 0,
+            vl_raio_tip: parseFloat(document.getElementById('vlRaioTip').value) || 0,
+            vl_temperatura: parseFloat(document.getElementById('vlTemperatura').value) || 25,
+            vl_fator_velocidade: parseFloat(document.getElementById('vlFatorVelocidade').value) || 0,
+            vl_correcao_diametro: parseFloat(document.getElementById('vlCorrecaoDiametro').value) || 0,
+            vl_correcao_projecao_tap: parseFloat(document.getElementById('vlCorrecaoProjecaoTap').value) || 0,
+            vl_area_efetiva: parseFloat(document.getElementById('vlAreaEfetiva').value) || 0,
+            vl_kpc: parseFloat(document.getElementById('vlKPC').value) || 0,
+            vl_vazao: parseFloat(document.getElementById('vlVazao').value) || null,
+            cd_tecnico_responsavel: parseInt(document.getElementById('selectTecnico').value) || 0,
+            cd_usuario_responsavel: parseInt(document.getElementById('selectUsuario').value) || 0,
+            ds_observacao: document.querySelector('input[name="ds_observacao"]')?.value || '',
+            leituras: leituras
+        };
+
+        // Envia para o servidor
+        fetch('bd/calculoKPC/salvarCalculoKPC.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'sucesso');
+                    setTimeout(() => window.location.href = 'calculoKPC.php', 1500);
+                } else {
+                    showToast(data.message || 'Erro ao salvar', 'erro');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast('Erro ao salvar', 'erro');
+            });
+    });
+
+    // ============================================================
+    // TOAST
+    // ============================================================
+
+    function showToast(msg, tipo = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast toast-' + tipo;
+        toast.innerHTML = `<span>${msg}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
-    
-    // Adiciona as médias (ordem 21)
-    for (let p = 1; p <= 11; p++) {
-        const media = parseFloat(document.getElementById('media_' + p).value) || 0;
-        if (media > 0) {
-            leituras.push({
-                leitura: 21,          // PHP espera 'leitura'
-                ponto: p,             // PHP espera 'ponto'
-                deflexao: media,      // PHP espera 'deflexao'
-                posicao: posicoes[p]  // PHP espera 'posicao'
+
+    // ============================================================
+    // INICIALIZAÇÃO
+    // ============================================================
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initAutocomplete();
+        toggleCampoConvencional();
+
+        // Select2
+        if (typeof $ !== 'undefined' && $.fn.select2) {
+            $('.select2-tecnico, .select2-usuario').select2({
+                placeholder: 'Selecione...',
+                allowClear: true,
+                width: '100%'
             });
         }
-    }
-    
-    const dados = {
-        cd_chave: parseInt(document.querySelector('input[name="cd_chave"]').value) || 0,
-        cd_ponto_medicao: parseInt(cdPonto),
-        dt_leitura: document.querySelector('input[name="dt_leitura"]').value,
-        id_metodo: parseInt(document.getElementById('selectMetodo').value) || 1,
-        vl_diametro_nominal: parseFloat(document.getElementById('vlDiametroNominal').value) || 0,
-        vl_diametro_real: parseFloat(document.getElementById('vlDiametroReal').value) || 0,
-        vl_projecao_tap: parseFloat(document.getElementById('vlProjecaoTap').value) || 0,
-        vl_raio_tip: parseFloat(document.getElementById('vlRaioTip').value) || 0,
-        vl_temperatura: parseFloat(document.getElementById('vlTemperatura').value) || 25,
-        vl_fator_velocidade: parseFloat(document.getElementById('vlFatorVelocidade').value) || 0,
-        vl_correcao_diametro: parseFloat(document.getElementById('vlCorrecaoDiametro').value) || 0,
-        vl_correcao_projecao_tap: parseFloat(document.getElementById('vlCorrecaoProjecaoTap').value) || 0,
-        vl_area_efetiva: parseFloat(document.getElementById('vlAreaEfetiva').value) || 0,
-        vl_kpc: parseFloat(document.getElementById('vlKPC').value) || 0,
-        vl_vazao: parseFloat(document.getElementById('vlVazao').value) || null,
-        cd_tecnico_responsavel: parseInt(document.getElementById('selectTecnico').value) || 0,
-        cd_usuario_responsavel: parseInt(document.getElementById('selectUsuario').value) || 0,
-        ds_observacao: document.querySelector('input[name="ds_observacao"]')?.value || '',
-        leituras: leituras
-    };
-    
-    // Envia para o servidor
-    fetch('bd/calculoKPC/salvarCalculoKPC.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dados)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.message, 'sucesso');
-            setTimeout(() => window.location.href = 'calculoKPC.php', 1500);
-        } else {
-            showToast(data.message || 'Erro ao salvar', 'erro');
-        }
-    })
-    .catch(err => {
-        console.error(err);
-        showToast('Erro ao salvar', 'erro');
-    });
-});
 
-// ============================================================
-// TOAST
-// ============================================================
-
-function showToast(msg, tipo = 'info') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = 'toast toast-' + tipo;
-    toast.innerHTML = `<span>${msg}</span>`;
-    container.appendChild(toast);
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-// ============================================================
-// INICIALIZAÇÃO
-// ============================================================
-
-document.addEventListener('DOMContentLoaded', function() {
-    initAutocomplete();
-    toggleCampoConvencional();
-    
-    // Select2
-    if (typeof $ !== 'undefined' && $.fn.select2) {
-        $('.select2-tecnico, .select2-usuario').select2({
-            placeholder: 'Selecione...',
-            allowClear: true,
-            width: '100%'
+        // Eventos de alteração
+        document.getElementById('selectUnidade').addEventListener('change', function () {
+            carregarLocalidades(this.value);
+            limparPontoMedicao();
         });
-    }
-    
-    // Eventos de alteração
-    document.getElementById('selectUnidade').addEventListener('change', function() {
-        carregarLocalidades(this.value);
-        limparPontoMedicao();
+
+        document.getElementById('selectLocalidade').addEventListener('change', limparPontoMedicao);
     });
-    
-    document.getElementById('selectLocalidade').addEventListener('change', limparPontoMedicao);
-});
 </script>
 
 <?php include_once 'includes/footer.inc.php'; ?>

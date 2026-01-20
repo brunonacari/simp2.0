@@ -699,7 +699,9 @@ $metodos = [
     }
 
     @keyframes spin {
-        to { transform: rotate(360deg); }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .empty-state {
@@ -771,7 +773,8 @@ $metodos = [
             flex-direction: column;
         }
 
-        .btn-buscar, .btn-limpar {
+        .btn-buscar,
+        .btn-limpar {
             width: 100%;
             justify-content: center;
         }
@@ -829,20 +832,48 @@ $metodos = [
         font-size: 20px;
     }
 
-    .toast.sucesso { border-left: 4px solid #10b981; }
-    .toast.sucesso .toast-icon { color: #10b981; }
+    .toast.sucesso {
+        border-left: 4px solid #10b981;
+    }
 
-    .toast.erro { border-left: 4px solid #ef4444; }
-    .toast.erro .toast-icon { color: #ef4444; }
+    .toast.sucesso .toast-icon {
+        color: #10b981;
+    }
 
-    .toast.alerta { border-left: 4px solid #f59e0b; }
-    .toast.alerta .toast-icon { color: #f59e0b; }
+    .toast.erro {
+        border-left: 4px solid #ef4444;
+    }
 
-    .toast.info { border-left: 4px solid #3b82f6; }
-    .toast.info .toast-icon { color: #3b82f6; }
+    .toast.erro .toast-icon {
+        color: #ef4444;
+    }
 
-    .toast-content { flex: 1; }
-    .toast-message { margin: 0; font-size: 14px; color: #1e293b; }
+    .toast.alerta {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .toast.alerta .toast-icon {
+        color: #f59e0b;
+    }
+
+    .toast.info {
+        border-left: 4px solid #3b82f6;
+    }
+
+    .toast.info .toast-icon {
+        color: #3b82f6;
+    }
+
+    .toast-content {
+        flex: 1;
+    }
+
+    .toast-message {
+        margin: 0;
+        font-size: 14px;
+        color: #1e293b;
+    }
+
     .toast-close {
         background: none;
         border: none;
@@ -851,7 +882,10 @@ $metodos = [
         color: #94a3b8;
         font-size: 18px;
     }
-    .toast-close:hover { color: #475569; }
+
+    .toast-close:hover {
+        color: #475569;
+    }
 </style>
 
 <div class="page-container">
@@ -868,10 +902,10 @@ $metodos = [
                 </div>
             </div>
             <?php if ($podeEditar): ?>
-            <a href="calculoKPCForm.php" class="btn-novo">
-                <ion-icon name="add-outline"></ion-icon>
-                Novo Cálculo
-            </a>
+                <a href="calculoKPCForm.php" class="btn-novo">
+                    <ion-icon name="add-outline"></ion-icon>
+                    Novo Cálculo
+                </a>
             <?php endif; ?>
         </div>
     </div>
@@ -899,9 +933,9 @@ $metodos = [
                 <select id="selectUnidade" class="form-control select2-unidade">
                     <option value="">Todas as Unidades</option>
                     <?php foreach ($unidades as $u): ?>
-                    <option value="<?= $u['CD_UNIDADE'] ?>">
-                        <?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?>
-                    </option>
+                        <option value="<?= $u['CD_UNIDADE'] ?>">
+                            <?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?>
+                        </option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -924,13 +958,11 @@ $metodos = [
                     Ponto de Medição
                 </label>
                 <div class="autocomplete-container">
-                    <input type="text" 
-                           class="form-control" 
-                           id="filtroPontoMedicaoInput" 
-                           placeholder="Digite para buscar..."
-                           autocomplete="off">
+                    <input type="text" class="form-control" id="filtroPontoMedicaoInput"
+                        placeholder="Digite para buscar..." autocomplete="off">
                     <input type="hidden" id="filtroPontoMedicao">
-                    <button type="button" class="btn-limpar-autocomplete" id="btnLimparPonto" onclick="limparPontoMedicao()">
+                    <button type="button" class="btn-limpar-autocomplete" id="btnLimparPonto"
+                        onclick="limparPontoMedicao()">
                         <ion-icon name="close-circle"></ion-icon>
                     </button>
                     <div class="autocomplete-dropdown" id="filtroPontoMedicaoDropdown"></div>
@@ -946,7 +978,7 @@ $metodos = [
                 <select id="filtroSituacao" class="form-control select2-default">
                     <option value="">Todas</option>
                     <?php foreach ($situacoes as $id => $nome): ?>
-                    <option value="<?= $id ?>"><?= $nome ?></option>
+                        <option value="<?= $id ?>"><?= $nome ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -960,7 +992,7 @@ $metodos = [
                 <select id="filtroMetodo" class="form-control select2-default">
                     <option value="">Todos</option>
                     <?php foreach ($metodos as $id => $nome): ?>
-                    <option value="<?= $id ?>"><?= $nome ?></option>
+                        <option value="<?= $id ?>"><?= $nome ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -1040,10 +1072,11 @@ $metodos = [
             </div>
             <div class="table-actions">
                 <?php if ($podeEditar): ?>
-                <button type="button" class="btn-cancelar-selecionados" id="btnCancelarSelecionados" disabled onclick="cancelarSelecionados()">
-                    <ion-icon name="close-circle-outline"></ion-icon>
-                    Cancelar Selecionados
-                </button>
+                    <button type="button" class="btn-cancelar-selecionados" id="btnCancelarSelecionados" disabled
+                        onclick="cancelarSelecionados()">
+                        <ion-icon name="close-circle-outline"></ion-icon>
+                        Cancelar Selecionados
+                    </button>
                 <?php endif; ?>
             </div>
         </div>
@@ -1071,7 +1104,8 @@ $metodos = [
         </div>
         <div class="pagination-container">
             <div class="pagination-info">
-                Mostrando <span id="paginacaoInicio">0</span> a <span id="paginacaoFim">0</span> de <span id="paginacaoTotal">0</span>
+                Mostrando <span id="paginacaoInicio">0</span> a <span id="paginacaoFim">0</span> de <span
+                    id="paginacaoTotal">0</span>
             </div>
             <div class="pagination" id="paginacao"></div>
         </div>
@@ -1090,317 +1124,317 @@ $metodos = [
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-// ============================================
-// Variáveis Globais
-// ============================================
-let paginaAtualKPC = 1;
-const registrosPorPagina = 20;
-let totalRegistros = 0;
-const podeEditar = <?= $podeEditar ? 'true' : 'false' ?>;
-let buscaPontoTimeout;
+    // ============================================
+    // Variáveis Globais
+    // ============================================
+    let paginaAtualKPC = 1;
+    const registrosPorPagina = 20;
+    let totalRegistros = 0;
+    const podeEditar = <?= $podeEditar ? 'true' : 'false' ?>;
+    let buscaPontoTimeout;
 
-// ============================================
-// Inicialização Select2 (igual pontoMedicao.php)
-// ============================================
-$(document).ready(function() {
-    // Select2 para Unidade
-    $('.select2-unidade').select2({
-        placeholder: 'Digite para buscar...',
-        allowClear: true,
-        language: {
-            noResults: function() { return "Nenhuma unidade encontrada"; },
-            searching: function() { return "Buscando..."; }
-        }
-    });
-
-    // Select2 para Localidade
-    $('.select2-localidade').select2({
-        placeholder: 'Selecione uma Unidade primeiro',
-        allowClear: true,
-        language: {
-            noResults: function() { return "Nenhuma localidade encontrada"; }
-        }
-    });
-
-    // Select2 para dropdowns simples
-    $('.select2-default').select2({
-        minimumResultsForSearch: Infinity
-    });
-
-    // Events
-    $('#selectUnidade').on('change', function() {
-        carregarLocalidades($(this).val());
-        limparPontoMedicao();
-    });
-
-    $('#selectLocalidade').on('change', function() {
-        limparPontoMedicao();
-    });
-
-    // Inicializa autocomplete de Ponto de Medição
-    initAutocompletePontoMedicao();
-
-    // Carrega dados iniciais
-    filtrar();
-});
-
-// ============================================
-// Carregar Localidades via AJAX (igual pontoMedicao.php)
-// ============================================
-function carregarLocalidades(cdUnidade) {
-    const select = $('#selectLocalidade');
-    
-    if (!cdUnidade) {
-        select.prop('disabled', true);
-        select.html('<option value="">Selecione uma Unidade primeiro</option>');
-        select.trigger('change');
-        return;
-    }
-
-    select.prop('disabled', true);
-    select.html('<option value="">Carregando...</option>');
-
-    $.ajax({
-        url: 'bd/pontoMedicao/getLocalidades.php',
-        type: 'GET',
-        data: { cd_unidade: cdUnidade },
-        dataType: 'json',
-        success: function(response) {
-            let options = '<option value="">Todas as Localidades</option>';
-            
-            if (response.success && response.data.length > 0) {
-                response.data.forEach(function(item) {
-                    options += `<option value="${item.CD_CHAVE}">${item.CD_LOCALIDADE} - ${item.DS_NOME}</option>`;
-                });
+    // ============================================
+    // Inicialização Select2 (igual pontoMedicao.php)
+    // ============================================
+    $(document).ready(function () {
+        // Select2 para Unidade
+        $('.select2-unidade').select2({
+            placeholder: 'Digite para buscar...',
+            allowClear: true,
+            language: {
+                noResults: function () { return "Nenhuma unidade encontrada"; },
+                searching: function () { return "Buscando..."; }
             }
-            
-            select.html(options);
-            select.prop('disabled', false);
-            select.trigger('change.select2');
-        },
-        error: function() {
-            select.html('<option value="">Erro ao carregar</option>');
-            showToast('Erro ao carregar localidades', 'erro');
-        }
+        });
+
+        // Select2 para Localidade
+        $('.select2-localidade').select2({
+            placeholder: 'Selecione uma Unidade primeiro',
+            allowClear: true,
+            language: {
+                noResults: function () { return "Nenhuma localidade encontrada"; }
+            }
+        });
+
+        // Select2 para dropdowns simples
+        $('.select2-default').select2({
+            minimumResultsForSearch: Infinity
+        });
+
+        // Events
+        $('#selectUnidade').on('change', function () {
+            carregarLocalidades($(this).val());
+            limparPontoMedicao();
+        });
+
+        $('#selectLocalidade').on('change', function () {
+            limparPontoMedicao();
+        });
+
+        // Inicializa autocomplete de Ponto de Medição
+        initAutocompletePontoMedicao();
+
+        // Carrega dados iniciais
+        filtrar();
     });
-}
 
-// ============================================
-// Autocomplete Ponto de Medição
-// ============================================
-function initAutocompletePontoMedicao() {
-    const input = document.getElementById('filtroPontoMedicaoInput');
-    const dropdown = document.getElementById('filtroPontoMedicaoDropdown');
-    let highlightedIndex = -1;
+    // ============================================
+    // Carregar Localidades via AJAX (igual pontoMedicao.php)
+    // ============================================
+    function carregarLocalidades(cdUnidade) {
+        const select = $('#selectLocalidade');
 
-    input.addEventListener('input', function() {
-        clearTimeout(buscaPontoTimeout);
-        const termo = this.value.trim();
-        
-        if (termo.length < 2) {
-            dropdown.classList.remove('active');
+        if (!cdUnidade) {
+            select.prop('disabled', true);
+            select.html('<option value="">Selecione uma Unidade primeiro</option>');
+            select.trigger('change');
             return;
         }
 
-        buscaPontoTimeout = setTimeout(() => {
-            buscarPontosMedicaoAutocomplete(termo);
-        }, 300);
-    });
+        select.prop('disabled', true);
+        select.html('<option value="">Carregando...</option>');
 
-    input.addEventListener('focus', function() {
-        if (this.value.trim().length >= 2) {
-            dropdown.classList.add('active');
-        }
-    });
+        $.ajax({
+            url: 'bd/pontoMedicao/getLocalidades.php',
+            type: 'GET',
+            data: { cd_unidade: cdUnidade },
+            dataType: 'json',
+            success: function (response) {
+                let options = '<option value="">Todas as Localidades</option>';
 
-    input.addEventListener('keydown', function(e) {
-        const items = dropdown.querySelectorAll('.autocomplete-item');
-        
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
-            updateHighlight(items);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            highlightedIndex = Math.max(highlightedIndex - 1, 0);
-            updateHighlight(items);
-        } else if (e.key === 'Enter' && highlightedIndex >= 0) {
-            e.preventDefault();
-            if (items[highlightedIndex]) {
-                selecionarPontoMedicao(
-                    items[highlightedIndex].dataset.value,
-                    items[highlightedIndex].dataset.label
-                );
+                if (response.success && response.data.length > 0) {
+                    response.data.forEach(function (item) {
+                        options += `<option value="${item.CD_CHAVE}">${item.CD_LOCALIDADE} - ${item.DS_NOME}</option>`;
+                    });
+                }
+
+                select.html(options);
+                select.prop('disabled', false);
+                select.trigger('change.select2');
+            },
+            error: function () {
+                select.html('<option value="">Erro ao carregar</option>');
+                showToast('Erro ao carregar localidades', 'erro');
             }
-        } else if (e.key === 'Escape') {
-            dropdown.classList.remove('active');
-        }
-    });
-
-    function updateHighlight(items) {
-        items.forEach((item, index) => {
-            item.classList.toggle('highlighted', index === highlightedIndex);
         });
     }
 
-    // Fecha dropdown ao clicar fora
-    document.addEventListener('click', function(e) {
-        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.classList.remove('active');
+    // ============================================
+    // Autocomplete Ponto de Medição
+    // ============================================
+    function initAutocompletePontoMedicao() {
+        const input = document.getElementById('filtroPontoMedicaoInput');
+        const dropdown = document.getElementById('filtroPontoMedicaoDropdown');
+        let highlightedIndex = -1;
+
+        input.addEventListener('input', function () {
+            clearTimeout(buscaPontoTimeout);
+            const termo = this.value.trim();
+
+            if (termo.length < 2) {
+                dropdown.classList.remove('active');
+                return;
+            }
+
+            buscaPontoTimeout = setTimeout(() => {
+                buscarPontosMedicaoAutocomplete(termo);
+            }, 300);
+        });
+
+        input.addEventListener('focus', function () {
+            if (this.value.trim().length >= 2) {
+                dropdown.classList.add('active');
+            }
+        });
+
+        input.addEventListener('keydown', function (e) {
+            const items = dropdown.querySelectorAll('.autocomplete-item');
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+                updateHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                highlightedIndex = Math.max(highlightedIndex - 1, 0);
+                updateHighlight(items);
+            } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+                e.preventDefault();
+                if (items[highlightedIndex]) {
+                    selecionarPontoMedicao(
+                        items[highlightedIndex].dataset.value,
+                        items[highlightedIndex].dataset.label
+                    );
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        function updateHighlight(items) {
+            items.forEach((item, index) => {
+                item.classList.toggle('highlighted', index === highlightedIndex);
+            });
         }
-    });
-}
 
-function buscarPontosMedicaoAutocomplete(termo) {
-    const dropdown = document.getElementById('filtroPontoMedicaoDropdown');
-    const cdLocalidade = $('#selectLocalidade').val() || '';
-    const cdUnidade = $('#selectUnidade').val() || '';
-    
-    dropdown.innerHTML = '<div class="autocomplete-loading">Buscando...</div>';
-    dropdown.classList.add('active');
+        // Fecha dropdown ao clicar fora
+        document.addEventListener('click', function (e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+    }
 
-    // Mapeamento de letras por tipo de medidor
-    const letrasTipoMedidor = {
-        1: 'M', // Macromedidor
-        2: 'E', // Estação Pitométrica
-        4: 'P', // Medidor Pressão
-        6: 'R', // Nível Reservatório
-        8: 'H'  // Hidrômetro
-    };
+    function buscarPontosMedicaoAutocomplete(termo) {
+        const dropdown = document.getElementById('filtroPontoMedicaoDropdown');
+        const cdLocalidade = $('#selectLocalidade').val() || '';
+        const cdUnidade = $('#selectUnidade').val() || '';
 
-    // Usa o endpoint buscarPontosMedicao.php (mesmo das outras telas)
-    const params = new URLSearchParams({ busca: termo });
-    if (cdUnidade) params.append('cd_unidade', cdUnidade);
-    if (cdLocalidade) params.append('cd_localidade', cdLocalidade);
+        dropdown.innerHTML = '<div class="autocomplete-loading">Buscando...</div>';
+        dropdown.classList.add('active');
 
-    fetch('bd/pontoMedicao/buscarPontosMedicao.php?' + params)
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-            if (data.success && data.data && data.data.length > 0) {
-                let html = '';
-                data.data.forEach(function(item) {
-                    const letraTipo = letrasTipoMedidor[item.ID_TIPO_MEDIDOR] || 'X';
-                    const codigoPonto = item.CD_LOCALIDADE + '-' + 
-                                       String(item.CD_PONTO_MEDICAO).padStart(6, '0') + '-' + 
-                                       letraTipo + '-' + 
-                                       (item.CD_UNIDADE_CODIGO || item.CD_UNIDADE);
-                    html += '<div class="autocomplete-item" ' +
-                             'data-value="' + item.CD_PONTO_MEDICAO + '" ' +
-                             'data-label="' + codigoPonto + ' - ' + item.DS_NOME + '">' +
+        // Mapeamento de letras por tipo de medidor
+        const letrasTipoMedidor = {
+            1: 'M', // Macromedidor
+            2: 'E', // Estação Pitométrica
+            4: 'P', // Medidor Pressão
+            6: 'R', // Nível Reservatório
+            8: 'H'  // Hidrômetro
+        };
+
+        // Usa o endpoint buscarPontosMedicao.php (mesmo das outras telas)
+        const params = new URLSearchParams({ busca: termo });
+        if (cdUnidade) params.append('cd_unidade', cdUnidade);
+        if (cdLocalidade) params.append('cd_localidade', cdLocalidade);
+
+        fetch('bd/pontoMedicao/buscarPontosMedicao.php?' + params)
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.success && data.data && data.data.length > 0) {
+                    let html = '';
+                    data.data.forEach(function (item) {
+                        const letraTipo = letrasTipoMedidor[item.ID_TIPO_MEDIDOR] || 'X';
+                        const codigoPonto = item.CD_LOCALIDADE + '-' +
+                            String(item.CD_PONTO_MEDICAO).padStart(6, '0') + '-' +
+                            letraTipo + '-' +
+                            (item.CD_UNIDADE_CODIGO || item.CD_UNIDADE);
+                        html += '<div class="autocomplete-item" ' +
+                            'data-value="' + item.CD_PONTO_MEDICAO + '" ' +
+                            'data-label="' + codigoPonto + ' - ' + item.DS_NOME + '">' +
                             '<span class="item-code">' + codigoPonto + '</span>' +
                             '<span class="item-name">' + item.DS_NOME + '</span>' +
-                        '</div>';
-                });
-                dropdown.innerHTML = html;
-
-                // Adiciona eventos de clique
-                dropdown.querySelectorAll('.autocomplete-item').forEach(function(item) {
-                    item.addEventListener('click', function() {
-                        selecionarPontoMedicao(this.dataset.value, this.dataset.label);
+                            '</div>';
                     });
-                });
-            } else {
-                dropdown.innerHTML = '<div class="autocomplete-empty">Nenhum ponto encontrado</div>';
-            }
-        })
-        .catch(function(error) {
-            console.error('Erro ao buscar pontos:', error);
-            dropdown.innerHTML = '<div class="autocomplete-empty">Erro ao buscar</div>';
+                    dropdown.innerHTML = html;
+
+                    // Adiciona eventos de clique
+                    dropdown.querySelectorAll('.autocomplete-item').forEach(function (item) {
+                        item.addEventListener('click', function () {
+                            selecionarPontoMedicao(this.dataset.value, this.dataset.label);
+                        });
+                    });
+                } else {
+                    dropdown.innerHTML = '<div class="autocomplete-empty">Nenhum ponto encontrado</div>';
+                }
+            })
+            .catch(function (error) {
+                console.error('Erro ao buscar pontos:', error);
+                dropdown.innerHTML = '<div class="autocomplete-empty">Erro ao buscar</div>';
+            });
+    }
+
+    function selecionarPontoMedicao(value, label) {
+        const input = document.getElementById('filtroPontoMedicaoInput');
+        const hidden = document.getElementById('filtroPontoMedicao');
+        const dropdown = document.getElementById('filtroPontoMedicaoDropdown');
+        const btnLimpar = document.getElementById('btnLimparPonto');
+
+        input.value = label;
+        hidden.value = value;
+        dropdown.classList.remove('active');
+        btnLimpar.style.display = 'flex';
+    }
+
+    function limparPontoMedicao() {
+        document.getElementById('filtroPontoMedicaoInput').value = '';
+        document.getElementById('filtroPontoMedicao').value = '';
+        document.getElementById('btnLimparPonto').style.display = 'none';
+    }
+
+    // ============================================
+    // Funções de Filtro
+    // ============================================
+    function limparFiltros() {
+        $('#selectUnidade').val('').trigger('change');
+        $('#selectLocalidade').prop('disabled', true).html('<option value="">Selecione uma Unidade primeiro</option>').trigger('change');
+        limparPontoMedicao();
+        $('#filtroSituacao').val('').trigger('change');
+        $('#filtroMetodo').val('').trigger('change');
+
+        document.getElementById('filtroCodigoInicial').value = '';
+        document.getElementById('filtroAnoInicial').value = '';
+        document.getElementById('filtroCodigoFinal').value = '';
+        document.getElementById('filtroAnoFinal').value = '';
+        document.getElementById('filtroDataInicial').value = '';
+        document.getElementById('filtroDataFinal').value = '';
+
+        paginaAtualKPC = 1;
+        filtrar();
+    }
+
+    // ============================================
+    // Função Principal de Filtrar
+    // ============================================
+    function filtrar() {
+        mostrarLoading(true);
+
+        const params = new URLSearchParams({
+            pagina: paginaAtualKPC,
+            limite: registrosPorPagina,
+            unidade: $('#selectUnidade').val() || '',
+            localidade: $('#selectLocalidade').val() || '',
+            ponto: document.getElementById('filtroPontoMedicao').value || '',
+            situacao: $('#filtroSituacao').val() || '',
+            metodo: $('#filtroMetodo').val() || '',
+            codigoInicial: document.getElementById('filtroCodigoInicial').value,
+            anoInicial: document.getElementById('filtroAnoInicial').value,
+            codigoFinal: document.getElementById('filtroCodigoFinal').value,
+            anoFinal: document.getElementById('filtroAnoFinal').value,
+            dataInicial: document.getElementById('filtroDataInicial').value,
+            dataFinal: document.getElementById('filtroDataFinal').value
         });
-}
 
-function selecionarPontoMedicao(value, label) {
-    const input = document.getElementById('filtroPontoMedicaoInput');
-    const hidden = document.getElementById('filtroPontoMedicao');
-    const dropdown = document.getElementById('filtroPontoMedicaoDropdown');
-    const btnLimpar = document.getElementById('btnLimparPonto');
-
-    input.value = label;
-    hidden.value = value;
-    dropdown.classList.remove('active');
-    btnLimpar.style.display = 'flex';
-}
-
-function limparPontoMedicao() {
-    document.getElementById('filtroPontoMedicaoInput').value = '';
-    document.getElementById('filtroPontoMedicao').value = '';
-    document.getElementById('btnLimparPonto').style.display = 'none';
-}
-
-// ============================================
-// Funções de Filtro
-// ============================================
-function limparFiltros() {
-    $('#selectUnidade').val('').trigger('change');
-    $('#selectLocalidade').prop('disabled', true).html('<option value="">Selecione uma Unidade primeiro</option>').trigger('change');
-    limparPontoMedicao();
-    $('#filtroSituacao').val('').trigger('change');
-    $('#filtroMetodo').val('').trigger('change');
-    
-    document.getElementById('filtroCodigoInicial').value = '';
-    document.getElementById('filtroAnoInicial').value = '';
-    document.getElementById('filtroCodigoFinal').value = '';
-    document.getElementById('filtroAnoFinal').value = '';
-    document.getElementById('filtroDataInicial').value = '';
-    document.getElementById('filtroDataFinal').value = '';
-    
-    paginaAtualKPC = 1;
-    filtrar();
-}
-
-// ============================================
-// Função Principal de Filtrar
-// ============================================
-function filtrar() {
-    mostrarLoading(true);
-    
-    const params = new URLSearchParams({
-        pagina: paginaAtualKPC,
-        limite: registrosPorPagina,
-        unidade: $('#selectUnidade').val() || '',
-        localidade: $('#selectLocalidade').val() || '',
-        ponto: document.getElementById('filtroPontoMedicao').value || '',
-        situacao: $('#filtroSituacao').val() || '',
-        metodo: $('#filtroMetodo').val() || '',
-        codigoInicial: document.getElementById('filtroCodigoInicial').value,
-        anoInicial: document.getElementById('filtroAnoInicial').value,
-        codigoFinal: document.getElementById('filtroCodigoFinal').value,
-        anoFinal: document.getElementById('filtroAnoFinal').value,
-        dataInicial: document.getElementById('filtroDataInicial').value,
-        dataFinal: document.getElementById('filtroDataFinal').value
-    });
-    
-    $.ajax({
-        url: `bd/calculoKPC/listarCalculoKPC.php?${params}`,
-        type: 'GET',
-        dataType: 'json',
-        success: function(data) {
-            mostrarLoading(false);
-            if (data.success) {
-                totalRegistros = data.total;
-                renderizarTabela(data.data);
-                atualizarPaginacao();
-            } else {
-                showToast('Erro ao carregar dados: ' + data.message, 'erro');
+        $.ajax({
+            url: `bd/calculoKPC/listarCalculoKPC.php?${params}`,
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                mostrarLoading(false);
+                if (data.success) {
+                    totalRegistros = data.total;
+                    renderizarTabela(data.data);
+                    atualizarPaginacao();
+                } else {
+                    showToast('Erro ao carregar dados: ' + data.message, 'erro');
+                }
+            },
+            error: function (xhr, status, error) {
+                mostrarLoading(false);
+                console.error('Erro:', error);
+                showToast('Erro ao carregar dados', 'erro');
             }
-        },
-        error: function(xhr, status, error) {
-            mostrarLoading(false);
-            console.error('Erro:', error);
-            showToast('Erro ao carregar dados', 'erro');
-        }
-    });
-}
+        });
+    }
 
-// ============================================
-// Renderização da Tabela
-// ============================================
-function renderizarTabela(dados) {
-    const tbody = document.getElementById('tabelaBody');
-    document.getElementById('totalRegistros').textContent = totalRegistros;
-    
-    if (!dados || dados.length === 0) {
-        tbody.innerHTML = `
+    // ============================================
+    // Renderização da Tabela (ATUALIZADA)
+    // ============================================
+    function renderizarTabela(dados) {
+        const tbody = document.getElementById('tabelaBody');
+        document.getElementById('totalRegistros').textContent = totalRegistros;
+
+        if (!dados || dados.length === 0) {
+            tbody.innerHTML = `
             <tr>
                 <td colspan="11">
                     <div class="empty-state">
@@ -1411,19 +1445,27 @@ function renderizarTabela(dados) {
                 </td>
             </tr>
         `;
-        return;
-    }
-    
-    let html = '';
-    dados.forEach(function(item) {
-        const isCancelado = item.ID_SITUACAO == 2;
-        const metodo = item.ID_METODO == 1 ? 'Digital' : (item.ID_METODO == 2 ? 'Convencional' : '-');
-        const codigo = item.CD_CODIGO + '-' + item.CD_ANO;
-        const dataLeitura = item.DT_LEITURA ? formatarData(item.DT_LEITURA) : '-';
-        const kpc = item.VL_KPC ? parseFloat(item.VL_KPC).toFixed(10) : '-';
-        const vazao = item.VL_VAZAO ? parseFloat(item.VL_VAZAO).toFixed(2) : '-';
-        
-        html += `
+            return;
+        }
+
+        let html = '';
+        dados.forEach(function (item) {
+            const isCancelado = item.ID_SITUACAO == 2;
+            const metodo = item.ID_METODO == 1 ? 'Digital' : (item.ID_METODO == 2 ? 'Convencional' : '-');
+            const codigo = item.CD_CODIGO + '-' + item.CD_ANO;
+            const dataLeitura = item.DT_LEITURA ? formatarData(item.DT_LEITURA) : '-';
+            const kpc = item.VL_KPC ? parseFloat(item.VL_KPC).toFixed(10) : '-';
+            const vazao = item.VL_VAZAO ? parseFloat(item.VL_VAZAO).toFixed(2) : '-';
+
+            // MUDANÇA: Construir código composto do ponto (LOCALIDADE-CD_PONTO-LETRA-CD_UNIDADE)
+            const letrasTipo = { 1: 'M', 2: 'E', 4: 'P', 6: 'R', 8: 'H' };
+            const letraTipo = letrasTipo[item.ID_TIPO_MEDIDOR] || 'X';
+            const codigoPonto = item.CD_LOCALIDADE + '-' +
+                String(item.CD_PONTO_MEDICAO).padStart(6, '0') + '-' +
+                letraTipo + '-' +
+                item.CD_UNIDADE;
+
+            html += `
             <tr class="${isCancelado ? 'cancelado' : ''}">
                 <td>
                     <input type="checkbox" class="checkItem" value="${item.CD_CHAVE}" 
@@ -1431,7 +1473,7 @@ function renderizarTabela(dados) {
                 </td>
                 <td>${item.DS_UNIDADE || '-'}</td>
                 <td>${item.DS_LOCALIDADE || '-'}</td>
-                <td>${item.DS_PONTO_MEDICAO || '-'}</td>
+                <td>${codigoPonto}</td>
                 <td><strong>${codigo}</strong></td>
                 <td>
                     <span class="badge ${isCancelado ? 'badge-cancelado' : 'badge-ativo'}">
@@ -1439,7 +1481,7 @@ function renderizarTabela(dados) {
                     </span>
                 </td>
                 <td>${dataLeitura}</td>
-                <td><span class="badge badge-metodo">${metodo}</span></td>
+                <td>${metodo}</td>
                 <td>${kpc}</td>
                 <td>${vazao}</td>
                 <td>
@@ -1456,180 +1498,180 @@ function renderizarTabela(dados) {
                 </td>
             </tr>
         `;
-    });
-    
-    tbody.innerHTML = html;
-}
+        });
 
-// ============================================
-// Paginação
-// ============================================
-function atualizarPaginacao() {
-    const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina);
-    const inicio = (paginaAtualKPC - 1) * registrosPorPagina + 1;
-    const fim = Math.min(paginaAtualKPC * registrosPorPagina, totalRegistros);
-    
-    document.getElementById('paginacaoInicio').textContent = totalRegistros > 0 ? inicio : 0;
-    document.getElementById('paginacaoFim').textContent = fim;
-    document.getElementById('paginacaoTotal').textContent = totalRegistros;
-    
-    const paginacao = document.getElementById('paginacao');
-    let html = '';
-    
-    html += `<button onclick="irParaPagina(${paginaAtualKPC - 1})" ${paginaAtualKPC === 1 ? 'disabled' : ''}>
+        tbody.innerHTML = html;
+    }
+
+    // ============================================
+    // Paginação
+    // ============================================
+    function atualizarPaginacao() {
+        const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina);
+        const inicio = (paginaAtualKPC - 1) * registrosPorPagina + 1;
+        const fim = Math.min(paginaAtualKPC * registrosPorPagina, totalRegistros);
+
+        document.getElementById('paginacaoInicio').textContent = totalRegistros > 0 ? inicio : 0;
+        document.getElementById('paginacaoFim').textContent = fim;
+        document.getElementById('paginacaoTotal').textContent = totalRegistros;
+
+        const paginacao = document.getElementById('paginacao');
+        let html = '';
+
+        html += `<button onclick="irParaPagina(${paginaAtualKPC - 1})" ${paginaAtualKPC === 1 ? 'disabled' : ''}>
         <ion-icon name="chevron-back-outline"></ion-icon>
     </button>`;
-    
-    const maxPaginas = 5;
-    let startPage = Math.max(1, paginaAtualKPC - Math.floor(maxPaginas / 2));
-    let endPage = Math.min(totalPaginas, startPage + maxPaginas - 1);
-    
-    if (endPage - startPage < maxPaginas - 1) {
-        startPage = Math.max(1, endPage - maxPaginas + 1);
-    }
-    
-    if (startPage > 1) {
-        html += `<button onclick="irParaPagina(1)">1</button>`;
-        if (startPage > 2) html += `<button disabled>...</button>`;
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-        html += `<button onclick="irParaPagina(${i})" class="${i === paginaAtualKPC ? 'active' : ''}">${i}</button>`;
-    }
-    
-    if (endPage < totalPaginas) {
-        if (endPage < totalPaginas - 1) html += `<button disabled>...</button>`;
-        html += `<button onclick="irParaPagina(${totalPaginas})">${totalPaginas}</button>`;
-    }
-    
-    html += `<button onclick="irParaPagina(${paginaAtualKPC + 1})" ${paginaAtualKPC === totalPaginas || totalPaginas === 0 ? 'disabled' : ''}>
+
+        const maxPaginas = 5;
+        let startPage = Math.max(1, paginaAtualKPC - Math.floor(maxPaginas / 2));
+        let endPage = Math.min(totalPaginas, startPage + maxPaginas - 1);
+
+        if (endPage - startPage < maxPaginas - 1) {
+            startPage = Math.max(1, endPage - maxPaginas + 1);
+        }
+
+        if (startPage > 1) {
+            html += `<button onclick="irParaPagina(1)">1</button>`;
+            if (startPage > 2) html += `<button disabled>...</button>`;
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            html += `<button onclick="irParaPagina(${i})" class="${i === paginaAtualKPC ? 'active' : ''}">${i}</button>`;
+        }
+
+        if (endPage < totalPaginas) {
+            if (endPage < totalPaginas - 1) html += `<button disabled>...</button>`;
+            html += `<button onclick="irParaPagina(${totalPaginas})">${totalPaginas}</button>`;
+        }
+
+        html += `<button onclick="irParaPagina(${paginaAtualKPC + 1})" ${paginaAtualKPC === totalPaginas || totalPaginas === 0 ? 'disabled' : ''}>
         <ion-icon name="chevron-forward-outline"></ion-icon>
     </button>`;
-    
-    paginacao.innerHTML = html;
-}
 
-function irParaPagina(pagina) {
-    const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina);
-    if (pagina >= 1 && pagina <= totalPaginas) {
-        paginaAtualKPC = pagina;
-        filtrar();
+        paginacao.innerHTML = html;
     }
-}
 
-// ============================================
-// Seleção e Cancelamento
-// ============================================
-function toggleCheckAll() {
-    const checkAll = document.getElementById('checkAll');
-    document.querySelectorAll('.checkItem:not(:disabled)').forEach(function(cb) {
-        cb.checked = checkAll.checked;
-    });
-    atualizarBotaoCancelar();
-}
-
-function atualizarBotaoCancelar() {
-    const selecionados = document.querySelectorAll('.checkItem:checked').length;
-    const btn = document.getElementById('btnCancelarSelecionados');
-    if (btn) {
-        btn.disabled = selecionados === 0;
-    }
-}
-
-function cancelarSelecionados() {
-    const selecionados = [];
-    document.querySelectorAll('.checkItem:checked').forEach(function(cb) {
-        selecionados.push(cb.value);
-    });
-    
-    if (selecionados.length === 0) {
-        showToast('Selecione ao menos um registro', 'alerta');
-        return;
-    }
-    
-    if (!confirm('Deseja realmente cancelar ' + selecionados.length + ' registro(s)?')) {
-        return;
-    }
-    
-    mostrarLoading(true);
-    
-    $.ajax({
-        url: 'bd/calculoKPC/cancelarCalculoKPC.php',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ ids: selecionados }),
-        dataType: 'json',
-        success: function(data) {
-            mostrarLoading(false);
-            if (data.success) {
-                showToast('Registros cancelados com sucesso!', 'sucesso');
-                filtrar();
-            } else {
-                showToast('Erro: ' + data.message, 'erro');
-            }
-        },
-        error: function() {
-            mostrarLoading(false);
-            showToast('Erro ao cancelar registros', 'erro');
+    function irParaPagina(pagina) {
+        const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina);
+        if (pagina >= 1 && pagina <= totalPaginas) {
+            paginaAtualKPC = pagina;
+            filtrar();
         }
-    });
-}
-
-// ============================================
-// Utilitários
-// ============================================
-function mostrarLoading(show) {
-    document.getElementById('loadingOverlay').classList.toggle('active', show);
-}
-
-function formatarData(dataStr) {
-    if (!dataStr) return '-';
-    const data = new Date(dataStr);
-    return data.toLocaleDateString('pt-BR');
-}
-
-// ============================================
-// Toast System
-// ============================================
-function showToast(message, type, duration) {
-    type = type || 'info';
-    duration = duration || 5000;
-    
-    let container = document.getElementById('toastContainer');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toastContainer';
-        container.className = 'toast-container';
-        document.body.appendChild(container);
     }
-    
-    const icons = {
-        sucesso: 'checkmark-circle',
-        erro: 'close-circle',
-        alerta: 'alert-circle',
-        info: 'information-circle'
-    };
 
-    const toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.innerHTML = 
-        '<div class="toast-icon">' +
+    // ============================================
+    // Seleção e Cancelamento
+    // ============================================
+    function toggleCheckAll() {
+        const checkAll = document.getElementById('checkAll');
+        document.querySelectorAll('.checkItem:not(:disabled)').forEach(function (cb) {
+            cb.checked = checkAll.checked;
+        });
+        atualizarBotaoCancelar();
+    }
+
+    function atualizarBotaoCancelar() {
+        const selecionados = document.querySelectorAll('.checkItem:checked').length;
+        const btn = document.getElementById('btnCancelarSelecionados');
+        if (btn) {
+            btn.disabled = selecionados === 0;
+        }
+    }
+
+    function cancelarSelecionados() {
+        const selecionados = [];
+        document.querySelectorAll('.checkItem:checked').forEach(function (cb) {
+            selecionados.push(cb.value);
+        });
+
+        if (selecionados.length === 0) {
+            showToast('Selecione ao menos um registro', 'alerta');
+            return;
+        }
+
+        if (!confirm('Deseja realmente cancelar ' + selecionados.length + ' registro(s)?')) {
+            return;
+        }
+
+        mostrarLoading(true);
+
+        $.ajax({
+            url: 'bd/calculoKPC/cancelarCalculoKPC.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ ids: selecionados }),
+            dataType: 'json',
+            success: function (data) {
+                mostrarLoading(false);
+                if (data.success) {
+                    showToast('Registros cancelados com sucesso!', 'sucesso');
+                    filtrar();
+                } else {
+                    showToast('Erro: ' + data.message, 'erro');
+                }
+            },
+            error: function () {
+                mostrarLoading(false);
+                showToast('Erro ao cancelar registros', 'erro');
+            }
+        });
+    }
+
+    // ============================================
+    // Utilitários
+    // ============================================
+    function mostrarLoading(show) {
+        document.getElementById('loadingOverlay').classList.toggle('active', show);
+    }
+
+    function formatarData(dataStr) {
+        if (!dataStr) return '-';
+        const data = new Date(dataStr);
+        return data.toLocaleDateString('pt-BR');
+    }
+
+    // ============================================
+    // Toast System
+    // ============================================
+    function showToast(message, type, duration) {
+        type = type || 'info';
+        duration = duration || 5000;
+
+        let container = document.getElementById('toastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const icons = {
+            sucesso: 'checkmark-circle',
+            erro: 'close-circle',
+            alerta: 'alert-circle',
+            info: 'information-circle'
+        };
+
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + type;
+        toast.innerHTML =
+            '<div class="toast-icon">' +
             '<ion-icon name="' + (icons[type] || icons.info) + '"></ion-icon>' +
-        '</div>' +
-        '<div class="toast-content">' +
+            '</div>' +
+            '<div class="toast-content">' +
             '<p class="toast-message">' + message + '</p>' +
-        '</div>' +
-        '<button class="toast-close" onclick="this.parentElement.remove()">' +
+            '</div>' +
+            '<button class="toast-close" onclick="this.parentElement.remove()">' +
             '<ion-icon name="close"></ion-icon>' +
-        '</button>';
-    
-    container.appendChild(toast);
-    setTimeout(function() { toast.classList.add('show'); }, 10);
-    setTimeout(function() {
-        toast.classList.remove('show');
-        setTimeout(function() { toast.remove(); }, 300);
-    }, duration);
-}
+            '</button>';
+
+        container.appendChild(toast);
+        setTimeout(function () { toast.classList.add('show'); }, 10);
+        setTimeout(function () {
+            toast.classList.remove('show');
+            setTimeout(function () { toast.remove(); }, 300);
+        }, duration);
+    }
 </script>
 
 <?php include_once 'includes/footer.inc.php'; ?>

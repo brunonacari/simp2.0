@@ -2102,3 +2102,1213 @@
     .btn-modal-confirmar .spin {
         animation: spin 1s linear infinite;
     }
+
+    /* ============================================
+   MODAL DE IMPORTAÇÃO - CSS ATUALIZADO
+   Substitua apenas o bloco de CSS do modal de importação
+   A estrutura HTML permanece IDÊNTICA
+   ============================================ */
+
+    /* Botão Importar (na página) */
+    .btn-importar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-importar:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-obter-planilha {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-obter-planilha:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    /* ============================================
+   MODAL DE IMPORTAÇÃO - OVERLAY
+   ============================================ */
+    .modal-importacao {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+    }
+
+    /* ============================================
+   MODAL DE IMPORTAÇÃO - CONTAINER
+   ============================================ */
+    .modal-importacao-content {
+        background: #ffffff;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 650px;
+        max-height: 90vh;
+        overflow: hidden;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        display: flex;
+        flex-direction: column;
+        animation: modalFadeIn 0.3s ease;
+    }
+
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.98);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* ============================================
+   MODAL DE IMPORTAÇÃO - HEADER
+   ============================================ */
+    .modal-importacao-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        flex-shrink: 0;
+    }
+
+    .modal-importacao-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        color: #ffffff;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .modal-importacao-header h3 ion-icon {
+        font-size: 22px;
+    }
+
+    .modal-close-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        border-radius: 8px;
+        padding: 0;
+        cursor: pointer;
+        color: #ffffff;
+        transition: all 0.2s ease;
+    }
+
+    .modal-close-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .modal-close-btn ion-icon {
+        font-size: 22px;
+    }
+
+    /* ============================================
+   MODAL DE IMPORTAÇÃO - BODY
+   ============================================ */
+    .modal-importacao-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+        background: #ffffff;
+    }
+
+    /* ============================================
+   AVISO INFORMATIVO
+   ============================================ */
+    .import-warning {
+        display: flex;
+        gap: 14px;
+        padding: 16px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    .import-warning ion-icon {
+        font-size: 24px;
+        color: #3b82f6;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .import-warning p {
+        margin: 0;
+        color: #1e40af;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .import-warning strong {
+        color: #1e3a8a;
+    }
+
+    .import-warning code {
+        background: #dbeafe;
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: #1d4ed8;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 12px;
+    }
+
+    /* ============================================
+   FORM GROUPS
+   ============================================ */
+    .form-group-import {
+        margin-bottom: 20px;
+    }
+
+    .form-label-import {
+        display: block;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .form-label-import .required {
+        color: #ef4444;
+        margin-left: 2px;
+    }
+
+    /* ============================================
+   INPUTS E TEXTAREA
+   ============================================ */
+    .form-input-import,
+    .form-textarea-import {
+        width: 100%;
+        padding: 12px 14px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        color: #1e293b;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .form-input-import:focus,
+    .form-textarea-import:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .form-input-import::placeholder,
+    .form-textarea-import::placeholder {
+        color: #94a3b8;
+    }
+
+    .form-textarea-import {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    /* ============================================
+   RADIO GROUP
+   ============================================ */
+    .radio-group-import {
+        display: flex;
+        gap: 24px;
+    }
+
+    .radio-item-import {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .radio-item-import input[type="radio"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #3b82f6;
+        cursor: pointer;
+    }
+
+    .radio-label-import {
+        color: #475569;
+        font-size: 14px;
+    }
+
+    /* ============================================
+   CHECKBOX
+   ============================================ */
+    .checkbox-item-import {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .checkbox-item-import input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #3b82f6;
+        cursor: pointer;
+    }
+
+    .checkbox-label-import {
+        color: #475569;
+        font-size: 14px;
+    }
+
+    /* ============================================
+   FILE UPLOAD AREA
+   ============================================ */
+    .file-upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        background: #f8fafc;
+    }
+
+    .file-upload-area.drag-over {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+
+    .file-upload-placeholder {
+        padding: 32px 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .file-upload-placeholder:hover {
+        background: #f1f5f9;
+    }
+
+    .file-upload-placeholder ion-icon {
+        font-size: 48px;
+        color: #3b82f6;
+        margin-bottom: 12px;
+    }
+
+    .file-upload-placeholder p {
+        margin: 0 0 8px 0;
+        color: #475569;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .file-upload-placeholder .file-types {
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    /* ============================================
+   FILE SELECTED
+   ============================================ */
+    .file-selected {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 20px;
+        background: #f0fdf4;
+        border-radius: 10px;
+        border: 1px solid #bbf7d0;
+    }
+
+    .file-selected ion-icon {
+        font-size: 28px;
+        color: #16a34a;
+        flex-shrink: 0;
+    }
+
+    .file-selected span {
+        flex: 1;
+        color: #1e293b;
+        font-size: 14px;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .btn-remove-file {
+        background: none;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        color: #dc2626;
+        font-size: 24px;
+        display: flex;
+        transition: all 0.2s ease;
+    }
+
+    .btn-remove-file:hover {
+        color: #b91c1c;
+        transform: scale(1.1);
+    }
+
+    /* ============================================
+   PREVIEW DOS DADOS
+   ============================================ */
+    .preview-dados {
+        margin-top: 20px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .preview-dados h4 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        padding: 12px 16px;
+        background: #f1f5f9;
+        border-bottom: 1px solid #e2e8f0;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .preview-dados h4 ion-icon {
+        font-size: 18px;
+        color: #3b82f6;
+    }
+
+    #previewContent {
+        padding: 16px;
+        max-height: 220px;
+        overflow-y: auto;
+    }
+
+    .preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .preview-table th,
+    .preview-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .preview-table th {
+        background: #f1f5f9;
+        color: #475569;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .preview-table td {
+        color: #1e293b;
+    }
+
+    .preview-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .preview-table tr:hover td {
+        background: #f8fafc;
+    }
+
+    .preview-info {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #e2e8f0;
+        color: #64748b;
+        font-size: 12px;
+    }
+
+    .preview-info strong {
+        color: #475569;
+    }
+
+    /* ============================================
+   RESULTADO DA IMPORTAÇÃO
+   ============================================ */
+    .resultado-importacao {
+        margin-top: 20px;
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .resultado-importacao.sucesso {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+    }
+
+    .resultado-importacao.erro {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+    }
+
+    .resultado-importacao h4 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 12px 0;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .resultado-importacao.sucesso h4 {
+        color: #16a34a;
+    }
+
+    .resultado-importacao.erro h4 {
+        color: #dc2626;
+    }
+
+    .resultado-importacao ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #475569;
+        font-size: 13px;
+    }
+
+    .resultado-importacao li {
+        margin-bottom: 4px;
+    }
+
+    .resultado-importacao p {
+        margin: 0;
+        color: #475569;
+        font-size: 13px;
+    }
+
+    /* ============================================
+   FOOTER DO MODAL
+   ============================================ */
+    .modal-importacao-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 16px 24px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+
+    .btn-cancelar-import,
+    .btn-importar-submit {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-cancelar-import {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+    }
+
+    .btn-cancelar-import:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #475569;
+    }
+
+    .btn-cancelar-import ion-icon {
+        font-size: 18px;
+    }
+
+    .btn-importar-submit {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border: none;
+        color: #ffffff;
+    }
+
+    .btn-importar-submit:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-importar-submit ion-icon {
+        font-size: 18px;
+    }
+
+    .btn-importar-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Loading no botão */
+    .btn-importar-submit.loading {
+        pointer-events: none;
+    }
+
+    .btn-importar-submit.loading ion-icon {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* ============================================
+   MODAL DE CONFLITOS - OVERLAY
+   ============================================ */
+    .modal-conflitos {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10001;
+        padding: 20px;
+    }
+
+    /* ============================================
+   MODAL DE CONFLITOS - CONTAINER
+   ============================================ */
+    .modal-conflitos-content {
+        background: #ffffff;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 800px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* ============================================
+   MODAL DE CONFLITOS - HEADER
+   ============================================ */
+    .modal-conflitos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border-radius: 16px 16px 0 0;
+        flex-shrink: 0;
+    }
+
+    .modal-conflitos-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #ffffff;
+    }
+
+    .modal-conflitos-header h3 ion-icon {
+        font-size: 24px;
+    }
+
+    /* ============================================
+   MODAL DE CONFLITOS - BODY
+   ============================================ */
+    .modal-conflitos-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+        background: #ffffff;
+    }
+
+    /* ============================================
+   ALERTA DE CONFLITO
+   ============================================ */
+    .conflito-alert {
+        display: flex;
+        gap: 16px;
+        padding: 16px 20px;
+        background: #fffbeb;
+        border: 1px solid #fcd34d;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    .conflito-alert ion-icon {
+        font-size: 28px;
+        color: #f59e0b;
+        flex-shrink: 0;
+    }
+
+    .conflito-alert-text {
+        color: #92400e;
+        line-height: 1.5;
+        font-size: 14px;
+    }
+
+    .conflito-alert-text strong {
+        color: #78350f;
+    }
+
+    /* ============================================
+   RESUMO DE CONFLITOS
+   ============================================ */
+    .conflitos-resumo {
+        margin-bottom: 24px;
+    }
+
+    .conflitos-resumo h4,
+    .conflitos-detalhes h4,
+    .conflitos-opcoes h4 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 12px;
+    }
+
+    .conflitos-resumo h4 ion-icon,
+    .conflitos-detalhes h4 ion-icon,
+    .conflitos-opcoes h4 ion-icon {
+        color: #64748b;
+        font-size: 18px;
+    }
+
+    .lista-conflitos-resumo {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    /* ============================================
+   CARD DE PONTO COM CONFLITO
+   ============================================ */
+    .conflito-ponto-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        min-width: 200px;
+        flex: 1;
+        max-width: calc(50% - 6px);
+        transition: all 0.2s ease;
+    }
+
+    .conflito-ponto-card:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+
+    .conflito-ponto-card .ponto-info {
+        flex: 1;
+    }
+
+    .conflito-ponto-card .ponto-codigo {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 14px;
+    }
+
+    .conflito-ponto-card .ponto-qtd {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 2px;
+    }
+
+    .conflito-ponto-card .btn-visualizar-ponto {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .conflito-ponto-card .btn-visualizar-ponto:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .conflito-ponto-card .btn-visualizar-ponto ion-icon {
+        font-size: 18px;
+    }
+
+    /* ============================================
+   DETALHES DOS CONFLITOS
+   ============================================ */
+    .btn-toggle-detalhes {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .btn-toggle-detalhes:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+
+    .btn-toggle-detalhes ion-icon {
+        font-size: 18px;
+        transition: transform 0.2s ease;
+    }
+
+    /* ============================================
+   TABELA DE CONFLITOS
+   ============================================ */
+    .tabela-conflitos-wrapper {
+        margin-top: 16px;
+        max-height: 250px;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
+
+    .tabela-conflitos {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .tabela-conflitos th {
+        background: #f1f5f9;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #475569;
+        border-bottom: 1px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        font-size: 12px;
+    }
+
+    .tabela-conflitos td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #1e293b;
+    }
+
+    .tabela-conflitos tr:last-child td {
+        border-bottom: none;
+    }
+
+    .tabela-conflitos tr:hover td {
+        background: #f8fafc;
+    }
+
+    .tabela-conflitos .valor-existente {
+        color: #dc2626;
+        font-weight: 600;
+    }
+
+    .tabela-conflitos .valor-novo {
+        color: #16a34a;
+        font-weight: 600;
+    }
+
+    .tabela-conflitos .btn-ver-registro {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        background: #eff6ff;
+        color: #2563eb;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .tabela-conflitos .btn-ver-registro:hover {
+        background: #dbeafe;
+        border-color: #93c5fd;
+    }
+
+    /* ============================================
+   OPÇÕES DE CONFLITO
+   ============================================ */
+    .conflitos-opcoes {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .opcoes-radio {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .opcao-radio {
+        cursor: pointer;
+    }
+
+    .opcao-radio input[type="radio"] {
+        display: none;
+    }
+
+    .opcao-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+    }
+
+    .opcao-radio input[type="radio"]:checked+.opcao-content {
+        background: #eff6ff;
+        border-color: #3b82f6;
+    }
+
+    .opcao-content ion-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .opcao-content .icon-ignorar {
+        color: #64748b;
+    }
+
+    .opcao-content .icon-sobrescrever {
+        color: #f59e0b;
+    }
+
+    .opcao-radio input[type="radio"]:checked+.opcao-content .icon-ignorar {
+        color: #3b82f6;
+    }
+
+    .opcao-radio input[type="radio"]:checked+.opcao-content .icon-sobrescrever {
+        color: #f59e0b;
+    }
+
+    .opcao-content strong {
+        display: block;
+        color: #1e293b;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    .opcao-content p {
+        margin: 0;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    /* ============================================
+   MODAL DE CONFLITOS - FOOTER
+   ============================================ */
+    .modal-conflitos-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 16px 24px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        border-radius: 0 0 16px 16px;
+        flex-shrink: 0;
+    }
+
+    .btn-cancelar-conflito,
+    .btn-confirmar-conflito {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-cancelar-conflito {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+    }
+
+    .btn-cancelar-conflito:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #475569;
+    }
+
+    .btn-cancelar-conflito ion-icon {
+        font-size: 18px;
+    }
+
+    .btn-confirmar-conflito {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border: none;
+        color: #ffffff;
+    }
+
+    .btn-confirmar-conflito:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-confirmar-conflito ion-icon {
+        font-size: 18px;
+    }
+
+    /* ============================================
+   RESPONSIVO
+   ============================================ */
+    @media (max-width: 768px) {
+
+        /* Modal Importação */
+        .modal-importacao {
+            padding: 16px;
+            align-items: flex-start;
+            padding-top: 40px;
+        }
+
+        .modal-importacao-content {
+            max-height: calc(100vh - 80px);
+            border-radius: 12px;
+        }
+
+        .modal-importacao-header {
+            padding: 16px 20px;
+        }
+
+        .modal-importacao-header h3 {
+            font-size: 16px;
+        }
+
+        .modal-importacao-body {
+            padding: 20px;
+        }
+
+        .import-warning {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-group-import {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .file-upload-placeholder {
+            padding: 24px 16px;
+        }
+
+        .file-upload-placeholder ion-icon {
+            font-size: 40px;
+        }
+
+        .file-selected {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .file-selected span {
+            flex: 1 1 60%;
+            min-width: 150px;
+        }
+
+        .modal-importacao-footer {
+            flex-direction: column-reverse;
+            gap: 10px;
+            padding: 16px 20px;
+        }
+
+        .btn-cancelar-import,
+        .btn-importar-submit {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Modal Conflitos */
+        .modal-conflitos {
+            padding: 16px;
+            align-items: flex-start;
+            padding-top: 40px;
+        }
+
+        .modal-conflitos-content {
+            max-height: calc(100vh - 80px);
+            border-radius: 12px;
+        }
+
+        .modal-conflitos-header {
+            padding: 16px 20px;
+        }
+
+        .modal-conflitos-header h3 {
+            font-size: 16px;
+        }
+
+        .modal-conflitos-body {
+            padding: 20px;
+        }
+
+        .conflito-ponto-card {
+            max-width: 100%;
+            min-width: 100%;
+        }
+
+        .opcao-content {
+            padding: 14px;
+        }
+
+        .opcao-content ion-icon {
+            font-size: 22px;
+        }
+
+        .modal-conflitos-footer {
+            flex-direction: column-reverse;
+            gap: 10px;
+            padding: 16px 20px;
+        }
+
+        .btn-cancelar-conflito,
+        .btn-confirmar-conflito {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+
+        /* Preview */
+        .preview-table {
+            font-size: 11px;
+        }
+
+        .preview-table th,
+        .preview-table td {
+            padding: 8px 10px;
+        }
+
+        #previewContent {
+            padding: 12px;
+        }
+
+        /* Conflitos */
+        .conflito-alert {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tabela-conflitos {
+            font-size: 11px;
+        }
+
+        .tabela-conflitos th,
+        .tabela-conflitos td {
+            padding: 8px 10px;
+        }
+
+        .tabela-conflitos .btn-ver-registro {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .lista-conflitos-resumo {
+            flex-direction: column;
+        }
+    }

@@ -3,6 +3,7 @@
  * SIMP - Listar Cálculos de KPC
  * 
  * Retorna lista paginada de cálculos de KPC com filtros.
+ * Adicionado ID_TIPO_MEDIDOR para construção do código formatado do ponto
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -103,6 +104,7 @@ try {
     $total = (int)$stmtCount->fetch(PDO::FETCH_ASSOC)['total'];
 
     // Buscar registros com paginação
+    // MUDANÇA: Adicionado PM.ID_TIPO_MEDIDOR para construir código formatado
     $sql = "
         SELECT 
             CK.CD_CHAVE,
@@ -126,6 +128,7 @@ try {
             CK.ID_METODO,
             CK.DS_OBSERVACAO,
             PM.DS_NOME AS DS_PONTO_MEDICAO,
+            PM.ID_TIPO_MEDIDOR,
             L.CD_LOCALIDADE,
             L.DS_NOME AS DS_LOCALIDADE,
             U.CD_UNIDADE,
@@ -163,3 +166,4 @@ try {
         'message' => $e->getMessage()
     ]);
 }
+?>
