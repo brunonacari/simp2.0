@@ -5,7 +5,7 @@
  * Fornece dados do banco de dados para análise inteligente.
  * INCLUI informação de registros válidos vs descartados (ID_SITUACAO).
  * 
- * @version 2.1 - Corrigido para incluir contagem de descartados
+ * @version 2.2 - Alterado para usar AVG em vez de SUM/60 e SUM/1440
  */
 
 ob_start();
@@ -164,7 +164,7 @@ function obterInfoPonto($pdo, $cdPonto) {
 
 /**
  * Obtém dados detalhados de um dia específico (agrupado por hora)
- * MÉDIA HORÁRIA = SUM / 60 (sempre dividir por 60)
+ * MÉDIA HORÁRIA = AVG dos registros válidos
  * 
  * IMPORTANTE: Busca TODOS os registros e separa válidos de descartados
  */
@@ -172,17 +172,18 @@ function obterDadosDia($pdo, $cdPonto, $data) {
     try {
         // REMOVIDO o filtro AND ID_SITUACAO = 1 do WHERE
         // Agora usa CASE WHEN para separar válidos e descartados
+        // ALTERADO: Usando AVG em vez de SUM/60
         $sql = "SELECT 
                     DATEPART(HOUR, DT_LEITURA) as HORA,
                     COUNT(*) as QTD_REGISTROS_TOTAL,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN 1 ELSE 0 END) as QTD_VALIDOS,
                     SUM(CASE WHEN ID_SITUACAO = 2 THEN 1 ELSE 0 END) as QTD_DESCARTADOS,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) as SOMA_VAZAO,
-                    SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) / 60.0 as MEDIA_VAZAO,
+                    AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MEDIA_VAZAO,
                     MIN(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MIN_VAZAO,
                     MAX(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MAX_VAZAO,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE 0 END) as SOMA_PRESSAO,
-                    SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE 0 END) / 60.0 as MEDIA_PRESSAO,
+                    AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE NULL END) as MEDIA_PRESSAO,
                     MIN(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE NULL END) as MIN_PRESSAO,
                     MAX(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE NULL END) as MAX_PRESSAO,
                     MAX(CASE WHEN ID_SITUACAO = 1 THEN VL_RESERVATORIO ELSE NULL END) as MAX_NIVEL,
@@ -206,7 +207,7 @@ function obterDadosDia($pdo, $cdPonto, $data) {
 
 /**
  * Calcula média diária DIRETO DO BANCO
- * REGRA: SEMPRE dividir por 1440 (total de minutos do dia)
+ * REGRA: Usando AVG dos registros válidos
  * 
  * IMPORTANTE: Inclui contagem de válidos e descartados
  */
@@ -221,21 +222,22 @@ function calcularMediasDia($pdo, $cdPonto, $data) {
         'media_diaria_vazao' => 0,
         'media_diaria_pressao' => 0,
         'horas_com_dados' => 0,
-        'formula_usada' => 'SUM(valores) / 1440',
-        'divisor_fixo' => 1440
+        'formula_usada' => 'AVG(valores válidos)',
+        'divisor_fixo' => null
     ];
     
     try {
         // Query sem filtro de ID_SITUACAO para pegar TODOS
+        // ALTERADO: Usando AVG em vez de SUM/1440
         $sql = "SELECT 
                     COUNT(*) as TOTAL_REGISTROS,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN 1 ELSE 0 END) as TOTAL_VALIDOS,
                     SUM(CASE WHEN ID_SITUACAO = 2 THEN 1 ELSE 0 END) as TOTAL_DESCARTADOS,
                     COUNT(DISTINCT CASE WHEN ID_SITUACAO = 1 THEN DATEPART(HOUR, DT_LEITURA) ELSE NULL END) as HORAS_COM_DADOS,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) as SOMA_VAZAO,
-                    SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) / 1440.0 as MEDIA_VAZAO,
+                    AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MEDIA_VAZAO,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE 0 END) as SOMA_PRESSAO,
-                    SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE 0 END) / 1440.0 as MEDIA_PRESSAO
+                    AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE NULL END) as MEDIA_PRESSAO
                 FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
                 WHERE CD_PONTO_MEDICAO = :cdPonto
                   AND CAST(DT_LEITURA AS DATE) = :data";
@@ -255,28 +257,26 @@ function calcularMediasDia($pdo, $cdPonto, $data) {
             $resultado['horas_com_dados'] = intval($row['HORAS_COM_DADOS'] ?? 0);
         }
         
-        // Buscar QUAIS horas tiveram descarte
-        if ($resultado['total_descartados'] > 0) {
-            $sqlHoras = "SELECT 
-                            DATEPART(HOUR, DT_LEITURA) as HORA,
-                            COUNT(*) as QTD_DESCARTADOS
-                        FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
-                        WHERE CD_PONTO_MEDICAO = :cdPonto
-                          AND CAST(DT_LEITURA AS DATE) = :data
-                          AND ID_SITUACAO = 2
-                        GROUP BY DATEPART(HOUR, DT_LEITURA)
-                        ORDER BY HORA";
-            
-            $stmtHoras = $pdo->prepare($sqlHoras);
-            $stmtHoras->execute([':cdPonto' => $cdPonto, ':data' => $data]);
-            
-            while ($rowHora = $stmtHoras->fetch(PDO::FETCH_ASSOC)) {
-                $resultado['horas_com_descarte'][] = [
-                    'hora' => intval($rowHora['HORA']),
-                    'hora_formatada' => str_pad($rowHora['HORA'], 2, '0', STR_PAD_LEFT) . ':00',
-                    'qtd_descartados' => intval($rowHora['QTD_DESCARTADOS'])
-                ];
-            }
+        // Buscar horas que têm registros descartados
+        $sqlHorasDescarte = "SELECT 
+                                DATEPART(HOUR, DT_LEITURA) as HORA,
+                                COUNT(*) as QTD_DESCARTADOS
+                            FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
+                            WHERE CD_PONTO_MEDICAO = :cdPonto
+                              AND CAST(DT_LEITURA AS DATE) = :data
+                              AND ID_SITUACAO = 2
+                            GROUP BY DATEPART(HOUR, DT_LEITURA)
+                            ORDER BY HORA";
+        
+        $stmtHoras = $pdo->prepare($sqlHorasDescarte);
+        $stmtHoras->execute([':cdPonto' => $cdPonto, ':data' => $data]);
+        
+        while ($rowHora = $stmtHoras->fetch(PDO::FETCH_ASSOC)) {
+            $resultado['horas_com_descarte'][] = [
+                'hora' => intval($rowHora['HORA']),
+                'hora_formatada' => str_pad($rowHora['HORA'], 2, '0', STR_PAD_LEFT) . ':00',
+                'qtd_descartados' => intval($rowHora['QTD_DESCARTADOS'])
+            ];
         }
         
     } catch (Exception $e) {
@@ -293,17 +293,18 @@ function obterHistorico($pdo, $cdPonto, $dataBase, $dias) {
     try {
         $dataInicio = date('Y-m-d', strtotime("-{$dias} days", strtotime($dataBase)));
         
+        // ALTERADO: Usando AVG em vez de SUM/1440
         $sql = "SELECT 
                     CAST(DT_LEITURA AS DATE) as DATA,
                     COUNT(*) as QTD_REGISTROS,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN 1 ELSE 0 END) as QTD_VALIDOS,
                     SUM(CASE WHEN ID_SITUACAO = 2 THEN 1 ELSE 0 END) as QTD_DESCARTADOS,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) as SOMA_VAZAO,
-                    SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) / 1440.0 as MEDIA_VAZAO,
+                    AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MEDIA_VAZAO,
                     MIN(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MIN_VAZAO,
                     MAX(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MAX_VAZAO,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE 0 END) as SOMA_PRESSAO,
-                    SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE 0 END) / 1440.0 as MEDIA_PRESSAO,
+                    AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE NULL END) as MEDIA_PRESSAO,
                     MAX(CASE WHEN ID_SITUACAO = 1 THEN VL_RESERVATORIO ELSE NULL END) as MAX_NIVEL,
                     SUM(CASE WHEN ID_SITUACAO = 1 AND NR_EXTRAVASOU = 1 THEN 1 ELSE 0 END) as TOTAL_EXTRAVASOU
                 FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
@@ -342,45 +343,52 @@ function obterMediaMesmoDiaSemana($pdo, $cdPonto, $dataBase, $semanas) {
         $dataOntem = date('Y-m-d', strtotime("-1 day", strtotime($dataBase)));
         $diaSemana = date('w', strtotime($dataBase)) + 1;
         
+        // ALTERADO: Usando AVG em vez de SUM/60
         $sql = "SELECT 
                     DATEPART(HOUR, DT_LEITURA) as HORA,
-                    SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) / 60.0 as MEDIA_VAZAO,
-                    SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE 0 END) / 60.0 as MEDIA_PRESSAO,
-                    COUNT(DISTINCT CAST(DT_LEITURA AS DATE)) as QTD_DIAS
+                    SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) as SOMA_VAZAO,
+                    AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MEDIA_VAZAO,
+                    SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE 0 END) as SOMA_PRESSAO,
+                    AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE NULL END) as MEDIA_PRESSAO
                 FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
                 WHERE CD_PONTO_MEDICAO = :cdPonto
-                  AND DATEPART(WEEKDAY, DT_LEITURA) = :diaSemana
                   AND CAST(DT_LEITURA AS DATE) BETWEEN :dataInicio AND :dataOntem
+                  AND DATEPART(WEEKDAY, DT_LEITURA) = :diaSemana
                   AND ID_SITUACAO = 1
                 GROUP BY DATEPART(HOUR, DT_LEITURA)
                 ORDER BY HORA";
         
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
-            ':cdPonto' => $cdPonto,
-            ':diaSemana' => $diaSemana,
+            ':cdPonto' => $cdPonto, 
             ':dataInicio' => $dataInicio,
-            ':dataOntem' => $dataOntem
+            ':dataOntem' => $dataOntem,
+            ':diaSemana' => $diaSemana
         ]);
         
-        $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+        $porHora = [];
         $mediaGeralVazao = 0;
         $mediaGeralPressao = 0;
         $count = 0;
         
-        foreach ($dados as $d) {
-            if (isset($d['MEDIA_VAZAO']) && $d['MEDIA_VAZAO'] !== null) {
-                $mediaGeralVazao += $d['MEDIA_VAZAO'];
-                $count++;
-            }
-            if (isset($d['MEDIA_PRESSAO']) && $d['MEDIA_PRESSAO'] !== null) {
-                $mediaGeralPressao += $d['MEDIA_PRESSAO'];
-            }
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $hora = (int)$row['HORA'];
+            $mediaVazao = round(floatval($row['MEDIA_VAZAO'] ?? 0), 2);
+            $mediaPressao = round(floatval($row['MEDIA_PRESSAO'] ?? 0), 2);
+            
+            $porHora[$hora] = [
+                'HORA' => $hora,
+                'MEDIA_VAZAO' => $mediaVazao,
+                'MEDIA_PRESSAO' => $mediaPressao
+            ];
+            
+            $mediaGeralVazao += $mediaVazao;
+            $mediaGeralPressao += $mediaPressao;
+            $count++;
         }
         
         return [
-            'por_hora' => $dados,
+            'por_hora' => $porHora,
             'media_geral_vazao' => $count > 0 ? $mediaGeralVazao / $count : null,
             'media_geral_pressao' => $count > 0 ? $mediaGeralPressao / $count : null,
             'semanas_analisadas' => $semanas
@@ -402,7 +410,6 @@ function obterEstatisticasMes($pdo, $cdPonto, $dataBase) {
     $primeiroDia = date('Y-m-01', strtotime($dataBase));
     $ultimoDia = date('Y-m-t', strtotime($dataBase));
     $diasNoMes = date('t', strtotime($dataBase));
-    $divisorMes = $diasNoMes * 1440;
     
     $resultado = [
         'MES_REFERENCIA' => date('Y-m', strtotime($dataBase)),
@@ -416,15 +423,18 @@ function obterEstatisticasMes($pdo, $cdPonto, $dataBase) {
     ];
     
     try {
+        // ALTERADO: Usando AVG para as médias
         $sql = "SELECT 
                     COUNT(DISTINCT CAST(DT_LEITURA AS DATE)) as DIAS_COM_DADOS,
                     COUNT(*) as TOTAL_REGISTROS,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN 1 ELSE 0 END) as TOTAL_VALIDOS,
                     SUM(CASE WHEN ID_SITUACAO = 2 THEN 1 ELSE 0 END) as TOTAL_DESCARTADOS,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) as SOMA_VAZAO_MES,
+                    AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MEDIA_VAZAO_MES,
                     MIN(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MIN_VAZAO_MES,
                     MAX(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MAX_VAZAO_MES,
                     SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE 0 END) as SOMA_PRESSAO_MES,
+                    AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_PRESSAO ELSE NULL END) as MEDIA_PRESSAO_MES,
                     SUM(CASE WHEN ID_SITUACAO = 1 AND NR_EXTRAVASOU = 1 THEN 1 ELSE 0 END) as TOTAL_EXTRAVASOU_MES
                 FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
                 WHERE CD_PONTO_MEDICAO = :cdPonto
@@ -441,8 +451,9 @@ function obterEstatisticasMes($pdo, $cdPonto, $dataBase) {
         
         if ($row) {
             $resultado = array_merge($resultado, $row);
-            $resultado['MEDIA_VAZAO_MES'] = floatval($row['SOMA_VAZAO_MES'] ?? 0) / $divisorMes;
-            $resultado['MEDIA_PRESSAO_MES'] = floatval($row['SOMA_PRESSAO_MES'] ?? 0) / $divisorMes;
+            // AVG já calcula a média, não precisa mais dividir
+            $resultado['MEDIA_VAZAO_MES'] = round(floatval($row['MEDIA_VAZAO_MES'] ?? 0), 2);
+            $resultado['MEDIA_PRESSAO_MES'] = round(floatval($row['MEDIA_PRESSAO_MES'] ?? 0), 2);
         }
     } catch (Exception $e) {
         // Retorna valores padrão
@@ -545,13 +556,14 @@ function calcularMediaSemanas($pdo, $cdPonto, $dataBase, $numSemanas = 12) {
         $resultado['datas_analisadas'] = $datas;
         
         foreach ($datas as $data) {
+            // ALTERADO: Usando AVG em vez de SUM/1440
             $sql = "SELECT 
                         CAST(DT_LEITURA AS DATE) as DATA,
                         COUNT(*) as TOTAL_REGISTROS,
                         SUM(CASE WHEN ID_SITUACAO = 1 THEN 1 ELSE 0 END) as TOTAL_VALIDOS,
                         SUM(CASE WHEN ID_SITUACAO = 2 THEN 1 ELSE 0 END) as TOTAL_DESCARTADOS,
                         SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) as SOMA_VAZAO,
-                        SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) / 1440.0 as MEDIA_VAZAO
+                        AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MEDIA_VAZAO
                     FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
                     WHERE CD_PONTO_MEDICAO = :cdPonto
                       AND CAST(DT_LEITURA AS DATE) = :data
@@ -616,11 +628,12 @@ function calcularMediaPorHoraSemanas($pdo, $cdPonto, $dataBase, $numSemanas = 12
         }
         
         // Buscar dados do dia atual para calcular tendência
+        // ALTERADO: Usando AVG em vez de SUM/60
         $dadosDiaAtual = [];
         $sqlDiaAtual = "SELECT 
                             DATEPART(HOUR, DT_LEITURA) as HORA,
                             SUM(CASE WHEN ID_SITUACAO = 1 THEN 1 ELSE 0 END) as QTD_REGISTROS,
-                            SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) / 60.0 as MEDIA_VAZAO
+                            AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MEDIA_VAZAO
                         FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
                         WHERE CD_PONTO_MEDICAO = :cdPonto
                           AND CAST(DT_LEITURA AS DATE) = :data
@@ -653,10 +666,11 @@ function calcularMediaPorHoraSemanas($pdo, $cdPonto, $dataBase, $numSemanas = 12
             $semanasComDados = 0;
             
             foreach ($datasHistorico as $idx => $data) {
+                // ALTERADO: Usando AVG em vez de SUM/60
                 $sql = "SELECT 
                             COUNT(*) as QTD_REGISTROS,
                             SUM(CASE WHEN ID_SITUACAO = 1 THEN 1 ELSE 0 END) as QTD_VALIDOS,
-                            SUM(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE 0 END) / 60.0 as MEDIA_VAZAO
+                            AVG(CASE WHEN ID_SITUACAO = 1 THEN VL_VAZAO_EFETIVA ELSE NULL END) as MEDIA_VAZAO
                         FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
                         WHERE CD_PONTO_MEDICAO = :cdPonto
                           AND CAST(DT_LEITURA AS DATE) = :data
@@ -703,29 +717,24 @@ function calcularMediaPorHoraSemanas($pdo, $cdPonto, $dataBase, $numSemanas = 12
         
         foreach ($dadosDiaAtual as $hora => $valorAtual) {
             $mediaHistorica = $historicosPorHora[$hora]['media_historica'] ?? 0;
-            
-            if ($valorAtual > 0 && $mediaHistorica > 0) {
+            if ($mediaHistorica > 0) {
                 $somaAtual += $valorAtual;
                 $somaHistorica += $mediaHistorica;
                 $horasUsadas++;
             }
         }
         
-        $fatorTendencia = 1.0;
-        if ($somaHistorica > 0 && $horasUsadas >= 3) {
-            $fatorTendencia = $somaAtual / $somaHistorica;
-            $fatorTendencia = max(0.5, min(2.0, $fatorTendencia));
-        }
-        
-        $resultado['fator_tendencia'] = round($fatorTendencia, 4);
-        $resultado['tendencia_percentual'] = round(($fatorTendencia - 1) * 100, 2);
         $resultado['horas_usadas_tendencia'] = $horasUsadas;
         
-        // Calcular valor sugerido
-        for ($hora = 0; $hora < 24; $hora++) {
-            $mediaHistorica = $resultado['horas'][$hora]['media_historica'];
-            if ($mediaHistorica > 0) {
-                $resultado['horas'][$hora]['valor_sugerido'] = round($mediaHistorica * $fatorTendencia, 2);
+        if ($horasUsadas >= 3 && $somaHistorica > 0) {
+            $resultado['fator_tendencia'] = round($somaAtual / $somaHistorica, 4);
+            $resultado['tendencia_percentual'] = round(($resultado['fator_tendencia'] - 1) * 100, 1);
+        }
+        
+        // Calcular valor sugerido para cada hora
+        foreach ($resultado['horas'] as $hora => &$dadosHora) {
+            if ($dadosHora['media_historica'] > 0) {
+                $dadosHora['valor_sugerido'] = round($dadosHora['media_historica'] * $resultado['fator_tendencia'], 2);
             }
         }
         

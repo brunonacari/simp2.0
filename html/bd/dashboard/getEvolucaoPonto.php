@@ -2,6 +2,8 @@
 /**
  * SIMP - Dashboard de Saúde
  * Endpoint: Evolução de Score de um Ponto Específico
+ * 
+ * @version 2.2 - Alterado para usar AVG em vez de SUM/1440
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -77,12 +79,12 @@ try {
         
     } else {
         // Fallback: calcular da tabela REGISTRO_VAZAO_PRESSAO
-        // IMPORTANTE: Média diária = SUM(valores válidos) / 1440 (minutos no dia)
+        // ALTERADO: Usando AVG em vez de SUM/1440 para média diária
         $sql = "
             SELECT 
                 CAST(DT_LEITURA AS DATE) AS DT_MEDICAO,
                 COUNT(*) AS QTD_REGISTROS,
-                CAST(SUM(VL_VAZAO_EFETIVA) AS DECIMAL(18,4)) / 1440.0 AS VL_MEDIA_DIARIA,
+                AVG(VL_VAZAO_EFETIVA) AS VL_MEDIA_DIARIA,
                 CASE 
                     WHEN COUNT(*) < 720 THEN 3
                     WHEN COUNT(DISTINCT VL_VAZAO_EFETIVA) <= 5 THEN 5
@@ -101,6 +103,7 @@ try {
                 0 AS FL_SPIKE
             FROM REGISTRO_VAZAO_PRESSAO
             WHERE CD_PONTO_MEDICAO = :cdPonto
+              AND ID_SITUACAO = 1
               AND DT_LEITURA >= DATEADD(DAY, -:dias, GETDATE())
             GROUP BY CAST(DT_LEITURA AS DATE)
             ORDER BY CAST(DT_LEITURA AS DATE)
@@ -115,7 +118,8 @@ try {
         'success' => true,
         'data' => $dados,
         'cd_ponto' => $cdPonto,
-        'dias' => $dias
+        'dias' => $dias,
+        'formula_media' => 'AVG'
     ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {

@@ -2,6 +2,8 @@
 /**
  * SIMP - Registro de Vazão e Pressão
  * Endpoint: Buscar Dias de um Ponto de Medição
+ * 
+ * @version 2.2 - Usando AVG para médias
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -60,6 +62,7 @@ try {
     }
 
     // Buscar estatísticas por dia deste ponto
+    // USANDO AVG para médias
     $sqlEstatisticas = "SELECT 
                 CONVERT(DATE, RVP.DT_LEITURA) AS DATA_DIA,
                 COUNT(*) AS TOTAL_GERAL,
@@ -98,6 +101,7 @@ try {
     }
 
     // Buscar estatísticas por hora para gráfico
+    // USANDO AVG para médias horárias
     $sqlEstatHora = "SELECT 
                 CONVERT(DATE, RVP.DT_LEITURA) AS DATA_DIA,
                 DATEPART(HOUR, RVP.DT_LEITURA) AS HORA,
@@ -173,7 +177,8 @@ try {
         'diasPonto' => $estatisticas,
         'totalDias' => count($estatisticas),
         'cdPontoMedicao' => $cdPontoMedicao,
-        'filtro_descarte' => $descarte
+        'filtro_descarte' => $descarte,
+        'formula_media' => 'AVG'
     ]);
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);

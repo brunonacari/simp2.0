@@ -49,15 +49,6 @@ function obterRegrasIA($pdo = null) {
         }
     }
 
-    // Fallback: buscar do arquivo ia_regras.php
-    $regrasFile = __DIR__ . '/../config/ia_regras.php';
-    if (file_exists($regrasFile)) {
-        $regras = require $regrasFile;
-        if (!empty($regras)) {
-            return $regras;
-        }
-    }
-
     return '';
 }
 

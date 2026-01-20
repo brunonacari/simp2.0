@@ -2,6 +2,8 @@
 /**
  * SIMP - Detectar Anomalias por Hora
  * Analisa dados hora a hora e detecta anomalias baseadas em regras de negócio
+ * 
+ * @version 2.2 - Alterado para usar AVG em vez de SUM/60
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -56,13 +58,14 @@ try {
     $tipoMedidor = intval($infoPonto['ID_TIPO_MEDIDOR']);
     
     // Buscar dados horários do dia
+    // ALTERADO: Usando AVG em vez de SUM/60 para médias horárias
     $sqlDados = "SELECT 
                     DATEPART(HOUR, DT_LEITURA) as HORA,
                     COUNT(*) as QTD_REGISTROS,
-                    SUM(VL_VAZAO_EFETIVA) / 60.0 as MEDIA_VAZAO,
+                    AVG(VL_VAZAO_EFETIVA) as MEDIA_VAZAO,
                     MIN(VL_VAZAO_EFETIVA) as MIN_VAZAO,
                     MAX(VL_VAZAO_EFETIVA) as MAX_VAZAO,
-                    SUM(VL_PRESSAO) / 60.0 as MEDIA_PRESSAO,
+                    AVG(VL_PRESSAO) as MEDIA_PRESSAO,
                     MIN(VL_PRESSAO) as MIN_PRESSAO,
                     MAX(VL_PRESSAO) as MAX_PRESSAO,
                     AVG(VL_RESERVATORIO) as MEDIA_NIVEL,
@@ -127,12 +130,6 @@ try {
     $totalAnomalias = 0;
     $horasAnalisadas = 24; // Sempre 24 horas
     
-    // Variáveis para detectar sequências
-    $horasVazaoZeroConsecutivas = 0;
-    $horasPressaoZeroConsecutivas = 0;
-    $horasNivel100Consecutivas = 0;
-    $horasNivelZeroConsecutivas = 0;
-    
     for ($hora = 0; $hora < 24; $hora++) {
         $row = $dadosPorHora[$hora];
         $horaFormatada = str_pad($hora, 2, '0', STR_PAD_LEFT) . ':00';
@@ -140,7 +137,6 @@ try {
         
         // ===== HORA VAZIA (sem nenhum dado) =====
         if ($row === null) {
-            // Hora vazia é CRÍTICO - diferente de valor zero!
             $anomalias[] = [
                 'tipo' => 'critico',
                 'icone' => 'remove-circle',
@@ -148,7 +144,6 @@ try {
                 'sugestao' => 'Verificar comunicação do equipamento'
             ];
             
-            // Adicionar ao resultado
             if (!empty($anomalias)) {
                 $anomaliasPorHora[] = [
                     'hora' => $hora,
@@ -165,7 +160,7 @@ try {
                 ];
                 $totalAnomalias += count($anomalias);
             }
-            continue; // Pular para próxima hora
+            continue;
         }
         
         // Hora com dados - processar normalmente
@@ -192,41 +187,31 @@ try {
         // ===== REGRAS PARA VAZÃO (tipos 1, 2, 8) =====
         if (in_array($tipoMedidor, [1, 2, 8])) {
             
-            // Vazão zerada por mais de 30 minutos em horário comercial (6h-22h)
-            if ($minutosVazaoZero >= 30 && $hora >= 6 && $hora <= 22) {
+            // Vazão zerada por mais de 30 minutos
+            if ($minutosVazaoZero >= 30) {
                 $anomalias[] = [
                     'tipo' => 'critico',
                     'icone' => 'alert-circle',
-                    'mensagem' => "Vazão zerada por {$minutosVazaoZero} minutos em horário comercial",
-                    'sugestao' => 'Verificar falha no sensor ou falta de água'
+                    'mensagem' => "Vazão zerada por {$minutosVazaoZero} minutos",
+                    'sugestao' => 'Verificar se há problema no medidor ou falta de água'
                 ];
             }
             
-            // Vazão negativa
-            if ($minVazao < 0) {
-                $anomalias[] = [
-                    'tipo' => 'erro',
-                    'icone' => 'close-circle',
-                    'mensagem' => "Vazão negativa detectada: {$minVazao} L/s",
-                    'sugestao' => 'Erro de medição - verificar sensor'
-                ];
-            }
-            
-            // Variação muito alta (máx > 2x média)
-            if ($mediaVazao > 0 && $maxVazao > $mediaVazao * 2) {
-                $variacao = round((($maxVazao - $mediaVazao) / $mediaVazao) * 100, 1);
+            // Variação alta (max > 2x min, quando min > 0)
+            if ($minVazao > 0 && $maxVazao > ($minVazao * 3)) {
+                $variacao = round(($maxVazao / $minVazao - 1) * 100, 1);
                 $anomalias[] = [
                     'tipo' => 'alerta',
-                    'icone' => 'warning',
-                    'mensagem' => "Pico de vazão {$variacao}% acima da média ({$maxVazao} L/s)",
-                    'sugestao' => 'Possível erro de leitura ou vazamento'
+                    'icone' => 'trending-up',
+                    'mensagem' => "Alta variação de vazão: {$variacao}% (min: {$minVazao}, max: {$maxVazao})",
+                    'sugestao' => 'Verificar possível vazamento ou manobra'
                 ];
             }
             
-            // Comparação com histórico (variação > 50%)
-            if ($histVazao && $histVazao > 0) {
+            // Comparação com histórico (variação > 30%)
+            if ($histVazao && $histVazao > 0 && $mediaVazao > 0) {
                 $variacaoHist = (($mediaVazao - $histVazao) / $histVazao) * 100;
-                if (abs($variacaoHist) > 50) {
+                if (abs($variacaoHist) > 30) {
                     $direcao = $variacaoHist > 0 ? 'acima' : 'abaixo';
                     $anomalias[] = [
                         'tipo' => 'info',
@@ -267,17 +252,7 @@ try {
                     'tipo' => 'alerta',
                     'icone' => 'arrow-up-circle',
                     'mensagem' => "Pressão alta: {$maxPressao} mca",
-                    'sugestao' => 'Verificar se há problema ou erro de leitura'
-                ];
-            }
-            
-            // Variação brusca de pressão (máx - mín > 20 mca)
-            if (($maxPressao - $minPressao) > 20) {
-                $anomalias[] = [
-                    'tipo' => 'info',
-                    'icone' => 'swap-vertical',
-                    'mensagem' => sprintf("Variação de pressão: %.1f mca (mín: %.1f, máx: %.1f)", $maxPressao - $minPressao, $minPressao, $maxPressao),
-                    'sugestao' => 'Possível manobra na rede ou vazamento'
+                    'sugestao' => 'Pode causar danos na rede'
                 ];
             }
         }
@@ -285,60 +260,40 @@ try {
         // ===== REGRAS PARA NÍVEL RESERVATÓRIO (tipo 6) =====
         if ($tipoMedidor == 6) {
             
-            // Nível >= 100% por mais de 30 minutos
-            if ($minutosNivel100 >= 30) {
+            // Extravasamento
+            if ($minutosExtravasou > 0) {
                 $anomalias[] = [
                     'tipo' => 'critico',
                     'icone' => 'water',
-                    'mensagem' => "Nível ≥100% por {$minutosNivel100} minutos",
-                    'sugestao' => 'Registrar extravasamento com motivo "Extravasou"'
+                    'mensagem' => "Extravasamento por {$minutosExtravasou} minutos",
+                    'sugestao' => 'Verificar boia ou automação'
                 ];
             }
             
-            // Extravasamento detectado
-            if ($minutosExtravasou > 0) {
+            // Nível em 100% por muito tempo
+            if ($minutosNivel100 >= 30) {
                 $anomalias[] = [
-                    'tipo' => 'erro',
-                    'icone' => 'alert-circle',
-                    'mensagem' => "Extravasamento: {$minutosExtravasou} minutos",
-                    'sugestao' => 'Verificar registro e causa do extravasamento'
+                    'tipo' => 'alerta',
+                    'icone' => 'arrow-up-circle',
+                    'mensagem' => "Nível em 100% por {$minutosNivel100} minutos",
+                    'sugestao' => 'Verificar boia ou risco de extravasamento'
                 ];
             }
             
-            // Nível zerado ou sem leitura por mais de 30 minutos
+            // Nível zerado
             if ($minutosNivelZero >= 30) {
                 $anomalias[] = [
                     'tipo' => 'critico',
-                    'icone' => 'alert-circle',
-                    'mensagem' => "Nível zerado/sem leitura por {$minutosNivelZero} minutos",
-                    'sugestao' => 'Verificar falha no sensor - motivo "Falha"'
-                ];
-            }
-            
-            // Variação brusca de nível (> 30% na hora)
-            if ($maxNivel > 0 && ($maxNivel - $minNivel) > 30) {
-                $anomalias[] = [
-                    'tipo' => 'alerta',
-                    'icone' => 'trending-up',
-                    'mensagem' => sprintf("Variação de nível: %.1f%% (mín: %.1f%%, máx: %.1f%%)", $maxNivel - $minNivel, $minNivel, $maxNivel),
-                    'sugestao' => 'Pode indicar erro de leitura'
-                ];
-            }
-            
-            // Nível entre 95% e 99% (risco de extravasamento)
-            if ($mediaNivel >= 95 && $mediaNivel < 100) {
-                $anomalias[] = [
-                    'tipo' => 'alerta',
-                    'icone' => 'warning',
-                    'mensagem' => sprintf("Nível alto: %.1f%% - risco de extravasamento", $mediaNivel),
-                    'sugestao' => 'Monitorar - próximo do limite'
+                    'icone' => 'arrow-down-circle',
+                    'mensagem' => "Nível zerado por {$minutosNivelZero} minutos",
+                    'sugestao' => 'Verificar abastecimento ou sensor'
                 ];
             }
         }
         
         // ===== REGRAS GERAIS =====
         
-        // Hora incompleta (< 50 registros)
+        // Hora incompleta (menos de 50 registros)
         if ($qtdRegistros < 50) {
             $percentual = round(($qtdRegistros / 60) * 100, 1);
             $anomalias[] = [
@@ -391,7 +346,8 @@ try {
             'horasComAnomalias' => count($anomaliasPorHora),
             'totalAnomalias' => $totalAnomalias
         ],
-        'anomaliasPorHora' => $anomaliasPorHora
+        'anomaliasPorHora' => $anomaliasPorHora,
+        'formula_media' => 'AVG'
     ]);
     
 } catch (Exception $e) {

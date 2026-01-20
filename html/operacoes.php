@@ -287,11 +287,6 @@ $letrasTipoMedidor = [
                     </div>
                 </div>
                 <div class="legenda-info">
-                    <strong>Cálculo da média diária:</strong> A média é calculada dividindo a soma dos valores por
-                    <strong>1440</strong> (quantidade de minutos em um dia),
-                    independentemente da quantidade real de registros. Isso garante que dias com menos registros
-                    apresentem valores proporcionalmente menores.
-                    <br><br>
                     <strong>Medidores de nível:</strong> Para medidores de nível, é exibido o <strong>valor
                         máximo</strong> registrado no dia. Passe o mouse sobre a célula para ver o horário em que o
                     valor foi registrado.

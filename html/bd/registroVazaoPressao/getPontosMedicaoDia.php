@@ -3,7 +3,7 @@
  * SIMP - Registro de Vazão e Pressão
  * Endpoint: Buscar Pontos de Medição de um Dia
  * 
- * CORREÇÃO: Média diária = SUM / 1440 (não AVG)
+ * @version 2.2 - Alterado para usar AVG em vez de SUM/1440
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -38,27 +38,27 @@ try {
         throw new Exception('Data não informada');
     }
 
-    // WHERE base (sem filtro de descarte)
-    $whereBase = "WHERE CONVERT(DATE, RVP.DT_LEITURA) = :data";
+    // Construir WHERE base (sem filtro de descarte)
+    $whereBase = "WHERE CAST(RVP.DT_LEITURA AS DATE) = :data";
     $paramsBase = [':data' => $data];
-    
-    // WHERE com descarte
+
+    // Clonar para versão com descarte
     $whereComDescarte = $whereBase;
     $paramsComDescarte = $paramsBase;
 
     // Filtro por Unidade
     if (!empty($cdUnidade)) {
-        $whereBase .= " AND UNI.CD_UNIDADE = :cd_unidade";
+        $whereBase .= " AND LOC.CD_UNIDADE = :cd_unidade";
         $paramsBase[':cd_unidade'] = $cdUnidade;
-        $whereComDescarte .= " AND UNI.CD_UNIDADE = :cd_unidade";
+        $whereComDescarte .= " AND LOC.CD_UNIDADE = :cd_unidade";
         $paramsComDescarte[':cd_unidade'] = $cdUnidade;
     }
 
     // Filtro por Localidade
     if (!empty($cdLocalidade)) {
-        $whereBase .= " AND LOC.CD_CHAVE = :cd_localidade";
+        $whereBase .= " AND PM.CD_LOCALIDADE = :cd_localidade";
         $paramsBase[':cd_localidade'] = $cdLocalidade;
-        $whereComDescarte .= " AND LOC.CD_CHAVE = :cd_localidade";
+        $whereComDescarte .= " AND PM.CD_LOCALIDADE = :cd_localidade";
         $paramsComDescarte[':cd_localidade'] = $cdLocalidade;
     }
 
@@ -102,7 +102,7 @@ try {
     }
 
     // Buscar estatísticas por ponto de medição
-    // CORREÇÃO: Usando SUM / 1440.0 para média diária em vez de AVG
+    // ALTERADO: Usando AVG em vez de SUM/1440 para média diária
     $sql = "SELECT 
                 RVP.CD_PONTO_MEDICAO,
                 PM.DS_NOME AS DS_PONTO_MEDICAO,
@@ -113,9 +113,9 @@ try {
                 COUNT(*) AS TOTAL_GERAL,
                 SUM(CASE WHEN RVP.ID_SITUACAO = 1 THEN 1 ELSE 0 END) AS TOTAL_NAO_DESCARTE,
                 SUM(CASE WHEN RVP.ID_SITUACAO = 2 THEN 1 ELSE 0 END) AS TOTAL_DESCARTE,
-                SUM(CASE WHEN $condicaoCalculo THEN RVP.VL_VAZAO_EFETIVA ELSE 0 END) / 1440.0 AS MEDIA_VAZAO,
-                SUM(CASE WHEN $condicaoCalculo THEN RVP.VL_PRESSAO ELSE 0 END) / 1440.0 AS MEDIA_PRESSAO,
-                SUM(CASE WHEN $condicaoCalculo THEN RVP.VL_RESERVATORIO ELSE 0 END) / 1440.0 AS MEDIA_NIVEL,
+                AVG(CASE WHEN $condicaoCalculo THEN RVP.VL_VAZAO_EFETIVA ELSE NULL END) AS MEDIA_VAZAO,
+                AVG(CASE WHEN $condicaoCalculo THEN RVP.VL_PRESSAO ELSE NULL END) AS MEDIA_PRESSAO,
+                AVG(CASE WHEN $condicaoCalculo THEN RVP.VL_RESERVATORIO ELSE NULL END) AS MEDIA_NIVEL,
                 MAX(CASE WHEN $condicaoCalculo THEN RVP.VL_RESERVATORIO ELSE NULL END) AS MAX_NIVEL
             FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO RVP
             LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = RVP.CD_PONTO_MEDICAO
@@ -206,7 +206,8 @@ try {
         'total' => $totalGeral,
         'totalPontos' => count($pontos),
         'data' => $data,
-        'filtro_descarte' => $descarte
+        'filtro_descarte' => $descarte,
+        'formula_media' => 'AVG'
     ]);
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);

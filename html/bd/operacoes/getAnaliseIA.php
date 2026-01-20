@@ -3,7 +3,7 @@
  * SIMP - Análise IA de um dia específico
  * Busca dados do dia e gera análise usando IA
  * 
- * @version 2.1 - Agora busca regras do banco de dados (IA_REGRAS)
+ * @version 2.2 - Alterado para usar AVG em vez de SUM/1440
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -86,6 +86,7 @@ try {
                   ($infoPonto['CD_UNIDADE'] ?? '0');
     
     // Buscar dados do dia agrupados por hora
+    // ALTERADO: Usando AVG em vez de SUM/60 para a média horária
     $sqlDados = "SELECT 
                     DATEPART(HOUR, DT_LEITURA) as HORA,
                     COUNT(*) as QTD_REGISTROS,
@@ -147,18 +148,32 @@ try {
         }
     }
     
-    // Calcular média diária (SOMA / 1440, não AVG!)
-    $mediaDiaria = $totalRegistros > 0 ? round($somaVazao / 1440, 2) : 0;
+    // ALTERADO: Calcular média diária usando AVG do banco
+    // Busca a média diária diretamente com AVG
+    $sqlMediaDiaria = "SELECT 
+                          COUNT(*) as TOTAL_REGISTROS,
+                          AVG(ISNULL(VL_VAZAO_EFETIVA, VL_VAZAO)) as MEDIA_DIARIA
+                      FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
+                      WHERE CD_PONTO_MEDICAO = :cdPonto
+                        AND CAST(DT_LEITURA AS DATE) = :data
+                        AND ID_SITUACAO = 1";
+    
+    $stmtMedia = $pdoSIMP->prepare($sqlMediaDiaria);
+    $stmtMedia->execute([':cdPonto' => $cdPonto, ':data' => $data]);
+    $rowMedia = $stmtMedia->fetch(PDO::FETCH_ASSOC);
+    
+    $mediaDiaria = $rowMedia ? round(floatval($rowMedia['MEDIA_DIARIA'] ?? 0), 2) : 0;
     $percentualCompleto = round(($totalRegistros / 1440) * 100, 1);
     
     // Buscar histórico para comparação (últimas 4 semanas mesmo dia da semana)
+    // ALTERADO: Usando AVG em vez de SUM/1440 na subquery
     $diaSemana = date('w', strtotime($data));
     $sqlHistorico = "SELECT 
                         AVG(subq.MEDIA_DIA) as MEDIA_HISTORICA
                     FROM (
                         SELECT 
                             CAST(DT_LEITURA AS DATE) as DIA,
-                            SUM(ISNULL(VL_VAZAO_EFETIVA, VL_VAZAO)) / 1440.0 as MEDIA_DIA
+                            AVG(ISNULL(VL_VAZAO_EFETIVA, VL_VAZAO)) as MEDIA_DIA
                         FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
                         WHERE CD_PONTO_MEDICAO = :cdPonto
                           AND ID_SITUACAO = 1
@@ -216,7 +231,7 @@ try {
     
     $contexto .= "RESUMO DO DIA:\n";
     $contexto .= "- Total de registros: {$totalRegistros} de 1440 ({$percentualCompleto}%)\n";
-    $contexto .= "- Média diária de vazão: {$mediaDiaria} L/s\n";
+    $contexto .= "- Média diária de vazão: {$mediaDiaria} L/s (calculada com AVG)\n";
     $contexto .= "- Vazão mínima: " . ($minVazaoGlobal !== null ? round($minVazaoGlobal, 2) : '-') . " L/s\n";
     $contexto .= "- Vazão máxima: " . ($maxVazaoGlobal !== null ? round($maxVazaoGlobal, 2) : '-') . " L/s\n";
     
@@ -276,7 +291,8 @@ try {
         ],
         'dadosHorarios' => $dadosHorarios,
         'analiseIA' => $analiseIA,
-        'regras_fonte' => !empty($regrasIA) ? 'banco' : 'nenhuma'
+        'regras_fonte' => !empty($regrasIA) ? 'banco' : 'nenhuma',
+        'formula_media' => 'AVG'
     ]);
     
 } catch (Exception $e) {
@@ -305,144 +321,115 @@ function chamarIA($contexto, $config) {
     }
 }
 
-function chamarGemini($contexto, $config) {
-    $baseUrl = rtrim($config['api_url'], '/');
-    $model = $config['model'] ?? 'gemini-2.0-flash-lite';
-    $url = $baseUrl . '/' . $model . ':generateContent?key=' . $config['api_key'];
-    
-    $payload = [
-        'contents' => [
-            ['parts' => [['text' => $contexto]]]
-        ],
-        'generationConfig' => [
-            'temperature' => 0.3,
-            'maxOutputTokens' => 500
-        ]
-    ];
-    
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    $curlErrno = curl_errno($ch);
-    curl_close($ch);
-    
-    if ($curlErrno !== 0) {
-        throw new Exception("Erro cURL $curlErrno: $curlError");
-    }
-    
-    if ($httpCode !== 200) {
-        $errorMsg = "Erro HTTP $httpCode";
-        if ($response) {
-            $errorData = json_decode($response, true);
-            if (isset($errorData['error']['message'])) {
-                $errorMsg .= ": " . $errorData['error']['message'];
-            }
-        }
-        throw new Exception($errorMsg);
-    }
-    
-    $data = json_decode($response, true);
-    return $data['candidates'][0]['content']['parts'][0]['text'] ?? 'Sem resposta';
-}
-
+/**
+ * Chama API Groq
+ */
 function chamarGroq($contexto, $config) {
-    $url = $config['api_url'];
+    $ch = curl_init();
     
-    $payload = [
-        'model' => $config['model'],
-        'messages' => [
-            ['role' => 'user', 'content' => $contexto]
+    curl_setopt_array($ch, [
+        CURLOPT_URL => 'https://api.groq.com/openai/v1/chat/completions',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $config['api_key']
         ],
-        'temperature' => 0.3,
-        'max_tokens' => 500
-    ];
-    
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . $config['api_key']
+        CURLOPT_POSTFIELDS => json_encode([
+            'model' => $config['model'],
+            'messages' => [
+                ['role' => 'system', 'content' => 'Você é um assistente técnico especializado em análise de dados de sistemas de abastecimento de água.'],
+                ['role' => 'user', 'content' => $contexto]
+            ],
+            'temperature' => 0.3,
+            'max_tokens' => 500
+        ]),
+        CURLOPT_TIMEOUT => 30
     ]);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
     
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    $curlErrno = curl_errno($ch);
     curl_close($ch);
     
-    if ($curlErrno !== 0) {
-        throw new Exception("Erro cURL $curlErrno: $curlError");
-    }
-    
     if ($httpCode !== 200) {
-        $errorData = json_decode($response, true);
-        $errorMsg = $errorData['error']['message'] ?? "Erro HTTP $httpCode";
-        throw new Exception($errorMsg);
+        throw new Exception("Erro na API Groq: HTTP {$httpCode}");
     }
     
     $data = json_decode($response, true);
-    return $data['choices'][0]['message']['content'] ?? 'Sem resposta';
+    return $data['choices'][0]['message']['content'] ?? 'Sem resposta da IA';
 }
 
+/**
+ * Chama API DeepSeek
+ */
 function chamarDeepSeek($contexto, $config) {
-    $url = $config['api_url'];
+    $ch = curl_init();
     
-    $payload = [
-        'model' => $config['model'],
-        'messages' => [
-            ['role' => 'user', 'content' => $contexto]
+    curl_setopt_array($ch, [
+        CURLOPT_URL => 'https://api.deepseek.com/v1/chat/completions',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $config['api_key']
         ],
-        'temperature' => 0.3,
-        'max_tokens' => 500
-    ];
-    
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . $config['api_key']
+        CURLOPT_POSTFIELDS => json_encode([
+            'model' => $config['model'],
+            'messages' => [
+                ['role' => 'system', 'content' => 'Você é um assistente técnico especializado em análise de dados de sistemas de abastecimento de água.'],
+                ['role' => 'user', 'content' => $contexto]
+            ],
+            'temperature' => 0.3,
+            'max_tokens' => 500
+        ]),
+        CURLOPT_TIMEOUT => 30
     ]);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
     
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    $curlErrno = curl_errno($ch);
     curl_close($ch);
     
-    if ($curlErrno !== 0) {
-        throw new Exception("Erro cURL $curlErrno: $curlError");
-    }
-    
     if ($httpCode !== 200) {
-        $errorMsg = "Erro HTTP $httpCode";
-        if ($response) {
-            $errorData = json_decode($response, true);
-            if (isset($errorData['error']['message'])) {
-                $errorMsg .= ": " . $errorData['error']['message'];
-            }
-        }
-        throw new Exception($errorMsg);
+        throw new Exception("Erro na API DeepSeek: HTTP {$httpCode}");
     }
     
     $data = json_decode($response, true);
-    return $data['choices'][0]['message']['content'] ?? 'Sem resposta';
+    return $data['choices'][0]['message']['content'] ?? 'Sem resposta da IA';
+}
+
+/**
+ * Chama API Gemini
+ */
+function chamarGemini($contexto, $config) {
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$config['model']}:generateContent?key={$config['api_key']}";
+    
+    $ch = curl_init();
+    
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_POSTFIELDS => json_encode([
+            'contents' => [
+                ['parts' => [['text' => $contexto]]]
+            ],
+            'generationConfig' => [
+                'temperature' => 0.3,
+                'maxOutputTokens' => 500
+            ]
+        ]),
+        CURLOPT_TIMEOUT => 30
+    ]);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode !== 200) {
+        throw new Exception("Erro na API Gemini: HTTP {$httpCode}");
+    }
+    
+    $data = json_decode($response, true);
+    return $data['candidates'][0]['content']['parts'][0]['text'] ?? 'Sem resposta da IA';
 }

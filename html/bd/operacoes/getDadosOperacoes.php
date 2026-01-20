@@ -166,7 +166,7 @@ try {
         } else {
             $sqlRegistros = "SELECT 
                                 CONVERT(VARCHAR(10), DT_LEITURA, 120) AS DT_LEITURA,
-                                SUM(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} ELSE 0 END) / 1440.0 AS VALOR,
+                                AVG(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} ELSE 0 END) AS VALOR,
                                 MIN(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} END) AS VALOR_MIN,
                                 MAX(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} END) AS VALOR_MAX,
                                 SUM(CASE WHEN ID_SITUACAO = 1 THEN 1 ELSE 0 END) AS QTD_REGISTROS,
@@ -391,7 +391,7 @@ try {
                 } else {
                     $sqlRegistros = "SELECT 
                                         CONVERT(VARCHAR(10), DT_LEITURA, 120) AS DT_LEITURA,
-                                        SUM(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} ELSE 0 END) / 1440.0 AS VALOR,
+                                        AVG(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} ELSE 0 END) AS VALOR,
                                         MIN(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} END) AS VALOR_MIN,
                                         MAX(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} END) AS VALOR_MAX,
                                         SUM(CASE WHEN ID_SITUACAO = 1 THEN 1 ELSE 0 END) AS QTD_REGISTROS,

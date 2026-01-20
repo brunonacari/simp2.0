@@ -2,6 +2,8 @@
 /**
  * SIMP - Buscar datas com dados de um ponto de medição
  * Retorna lista de datas no período com resumo (total registros, média, etc)
+ * 
+ * @version 2.2 - Alterado para usar AVG em vez de SUM/1440
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -39,14 +41,14 @@ try {
     }
     
     // Buscar datas com dados agrupados por dia
-    // Média = SOMA / 1440 (regra do SIMP)
+    // ALTERADO: Usando AVG em vez de SUM/1440 para média diária
     $sql = "SELECT 
                 CAST(DT_LEITURA AS DATE) as DATA,
                 COUNT(*) as TOTAL_REGISTROS,
-                SUM(VL_VAZAO_EFETIVA) / 1440.0 as MEDIA_VAZAO,
+                AVG(VL_VAZAO_EFETIVA) as MEDIA_VAZAO,
                 MIN(VL_VAZAO_EFETIVA) as MIN_VAZAO,
                 MAX(VL_VAZAO_EFETIVA) as MAX_VAZAO,
-                SUM(VL_PRESSAO) / 1440.0 as MEDIA_PRESSAO,
+                AVG(VL_PRESSAO) as MEDIA_PRESSAO,
                 SUM(CASE WHEN NR_EXTRAVASOU = 1 THEN 1 ELSE 0 END) as MINUTOS_EXTRAVASOU
             FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
             WHERE CD_PONTO_MEDICAO = :cdPonto
@@ -119,7 +121,8 @@ try {
         'success' => true,
         'datas' => $datas,
         'totalDias' => count($datas),
-        'cdPonto' => $cdPonto
+        'cdPonto' => $cdPonto,
+        'formula_media' => 'AVG'
     ]);
     
 } catch (Exception $e) {
