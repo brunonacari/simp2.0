@@ -20,6 +20,24 @@ $pontosMedicao = [];
 $totalTipos = 0;
 $totalValores = 0;
 $totalItens = 0;
+
+// Buscar favoritos do usuário logado
+$favoritos = [];
+try {
+    $cdUsuarioLogado = isset($_SESSION['cd_usuario']) ? (int) $_SESSION['cd_usuario'] : 0;
+    if ($cdUsuarioLogado > 0) {
+        $sqlFav = "SELECT CD_ENTIDADE_VALOR FROM SIMP.dbo.ENTIDADE_VALOR_FAVORITO WHERE CD_USUARIO = :cdUsuario";
+        $stmtFav = $pdoSIMP->prepare($sqlFav);
+        $stmtFav->execute([':cdUsuario' => $cdUsuarioLogado]);
+        while ($rowFav = $stmtFav->fetch(PDO::FETCH_ASSOC)) {
+            $favoritos[] = (int) $rowFav['CD_ENTIDADE_VALOR'];
+        }
+    }
+} catch (Exception $e) {
+    // Tabela pode não existir ainda
+    $favoritos = [];
+}
+
 $erroMsg = '';
 
 // Buscar dados hierárquicos
@@ -277,6 +295,19 @@ try {
                 </label>
             </div>
         </div>
+        <div class="filtro-favoritos">
+            <span class="filtro-label">Favoritos:</span>
+            <div class="radio-group-filtro">
+                <label class="radio-filtro">
+                    <input type="radio" name="filtroFavoritos" value="todos" checked>
+                    <span>Todos</span>
+                </label>
+                <label class="radio-filtro favorito">
+                    <input type="radio" name="filtroFavoritos" value="favoritos">
+                    <span><ion-icon name="star"></ion-icon> Favoritos</span>
+                </label>
+            </div>
+        </div>
         <div class="filtro-acoes">
             <button type="button" class="btn-acao-filtro" id="btnToggleAcordeoes" onclick="toggleTodosAcordeoes()"
                 title="Expandir/Recolher todos">
@@ -378,7 +409,8 @@ try {
                         <?php foreach ($tipo['valores'] as $valor): ?>
                             <div class="valor-card" id="valor-<?= $valor['cd'] ?>"
                                 data-valor-nome="<?= htmlspecialchars(strtolower($valor['nome'])) ?>"
-                                data-valor-id="<?= htmlspecialchars(strtolower($valor['id'] ?? '')) ?>">
+                                data-valor-id="<?= htmlspecialchars(strtolower($valor['id'] ?? '')) ?>"
+                                data-favorito="<?= in_array($valor['cd'], $favoritos) ? '1' : '0' ?>">
                                 <!-- Valor Header -->
                                 <?php
                                 // Mapeamento de fluxo
@@ -406,6 +438,12 @@ try {
                                     <div class="valor-card-header-right">
                                         <span class="valor-badge-count"><?= count($valor['itens']) ?> Ponto(s) de Medição</span>
                                         <div class="header-actions" onclick="event.stopPropagation();">
+                                            <button class="btn-action favorito <?= in_array($valor['cd'], $favoritos) ? 'ativo' : '' ?>"
+                                                onclick="toggleFavorito(<?= $valor['cd'] ?>, this)"
+                                                title="<?= in_array($valor['cd'], $favoritos) ? 'Remover dos favoritos' : 'Adicionar aos favoritos' ?>">
+                                                <ion-icon
+                                                    name="<?= in_array($valor['cd'], $favoritos) ? 'star' : 'star-outline' ?>"></ion-icon>
+                                            </button>
                                             <button class="btn-action chart"
                                                 onclick="abrirGraficoValor(<?= $tipo['cd'] ?>, <?= $valor['cd'] ?>, '<?= $valor['id'] ?? '' ?>')"
                                                 title="Ver Gráfico">
@@ -987,6 +1025,7 @@ try {
     function saveFiltrosState() {
         const busca = document.getElementById('filtroBusca').value;
         const descarte = document.querySelector('input[name="filtroDescarte"]:checked')?.value || 'todos';
+        const favoritos = document.querySelector('input[name="filtroFavoritos"]:checked')?.value || 'todos';
 
         localStorage.setItem(STORAGE_KEY_FILTROS, JSON.stringify({
             busca: busca,
@@ -1013,6 +1052,11 @@ try {
                 // Aplicar filtros se houver algum salvo
                 if (state.busca || state.descarte !== 'todos') {
                     aplicarFiltros();
+                }
+
+                if (state.favoritos) {
+                    const radio = document.querySelector(`input[name="filtroFavoritos"][value="${state.favoritos}"]`);
+                    if (radio) radio.checked = true;
                 }
             }
         } catch (e) {
@@ -1138,7 +1182,15 @@ try {
     function initFiltros() {
         const inputBusca = document.getElementById('filtroBusca');
         const btnLimpar = document.getElementById('btnLimparBusca');
-        const radiosDescarte = document.querySelectorAll('input[name="filtroDescarte"]');
+        
+        // Evento de mudança no filtro de favoritos
+        const radiosFavoritos = document.querySelectorAll('input[name="filtroFavoritos"]');
+        radiosFavoritos.forEach(radio => {
+            radio.addEventListener('change', function () {
+                aplicarFiltros();
+                saveFiltrosState();
+            });
+        });
 
         // Evento de digitação na busca
         inputBusca.addEventListener('input', function () {
@@ -1166,40 +1218,39 @@ try {
             .replace(/[\u0300-\u036f]/g, '');
     }
 
-    function aplicarFiltros() {
-        const termoBusca = normalizarTexto(document.getElementById('filtroBusca').value.trim());
-        const filtroDescarte = document.querySelector('input[name="filtroDescarte"]:checked').value;
+   function aplicarFiltros() {
+        const termoBusca = normalizarTexto(document.getElementById('filtroBusca').value);
+        const filtroDescarte = document.querySelector('input[name="filtroDescarte"]:checked')?.value || 'todos';
+        const filtroFavoritos = document.querySelector('input[name="filtroFavoritos"]:checked')?.value || 'todos';
 
-        // Salvar estado dos filtros
-        saveFiltrosState();
-
-        const tipoCards = document.querySelectorAll('.tipo-card');
         let totalTiposVisiveis = 0;
         let totalValoresVisiveis = 0;
         let totalItensVisiveis = 0;
 
+        const tipoCards = document.querySelectorAll('.tipo-card');
+
         tipoCards.forEach(tipoCard => {
             const tipoNome = normalizarTexto(tipoCard.dataset.tipoNome || '');
             const tipoId = normalizarTexto(tipoCard.dataset.tipoId || '');
-            const descarte = tipoCard.dataset.descarte;
+            const tipoDescarte = tipoCard.dataset.descarte;
 
-            // Filtro de descarte
-            let passaFiltroDescarte = true;
-            if (filtroDescarte === 'sim' && descarte !== '1') passaFiltroDescarte = false;
-            if (filtroDescarte === 'nao' && descarte !== '0') passaFiltroDescarte = false;
-
-            if (!passaFiltroDescarte) {
+            // Filtro de descarte no tipo
+            if (filtroDescarte === 'sim' && tipoDescarte !== '1') {
+                tipoCard.classList.add('filtro-oculto');
+                tipoCard.classList.remove('filtro-match');
+                return;
+            }
+            if (filtroDescarte === 'nao' && tipoDescarte === '1') {
                 tipoCard.classList.add('filtro-oculto');
                 tipoCard.classList.remove('filtro-match');
                 return;
             }
 
-            // Se não há termo de busca, mostra o tipo
-            if (!termoBusca) {
+            // Se não há busca textual e não há filtro de favoritos, mostrar tudo
+            if (!termoBusca && filtroFavoritos === 'todos') {
                 tipoCard.classList.remove('filtro-oculto', 'filtro-match');
                 totalTiposVisiveis++;
 
-                // Mostrar todos os valores e itens
                 tipoCard.querySelectorAll('.valor-card').forEach(v => {
                     v.classList.remove('filtro-oculto', 'filtro-match');
                     totalValoresVisiveis++;
@@ -1211,16 +1262,24 @@ try {
                 return;
             }
 
-            // Busca textual
-            let tipoMatch = tipoNome.includes(termoBusca) || tipoId.includes(termoBusca);
+            // Busca textual e/ou filtro de favoritos
+            let tipoMatch = termoBusca && (tipoNome.includes(termoBusca) || tipoId.includes(termoBusca));
             let tipoTemFilhoVisivel = false;
 
             const valorCards = tipoCard.querySelectorAll('.valor-card');
             valorCards.forEach(valorCard => {
                 const valorNome = normalizarTexto(valorCard.dataset.valorNome || '');
                 const valorId = normalizarTexto(valorCard.dataset.valorId || '');
+                const isFavorito = valorCard.dataset.favorito === '1';
 
-                let valorMatch = valorNome.includes(termoBusca) || valorId.includes(termoBusca);
+                // Filtro de favoritos
+                if (filtroFavoritos === 'favoritos' && !isFavorito) {
+                    valorCard.classList.add('filtro-oculto');
+                    valorCard.classList.remove('filtro-match');
+                    return;
+                }
+
+                let valorMatch = !termoBusca || valorNome.includes(termoBusca) || valorId.includes(termoBusca);
                 let valorTemFilhoVisivel = false;
 
                 const itemRows = valorCard.querySelectorAll('.item-row');
@@ -1234,8 +1293,7 @@ try {
                     const tagTempAgua = normalizarTexto(itemRow.dataset.tagTempAgua || '');
                     const tagTempAmbiente = normalizarTexto(itemRow.dataset.tagTempAmbiente || '');
 
-                    // Busca por nome, código ou qualquer TAG
-                    let itemMatch = pontoNome.includes(termoBusca) ||
+                    let itemMatch = !termoBusca || pontoNome.includes(termoBusca) ||
                         pontoCodigo.includes(termoBusca) ||
                         tagVazao.includes(termoBusca) ||
                         tagPressao.includes(termoBusca) ||
@@ -1246,26 +1304,28 @@ try {
 
                     if (itemMatch) {
                         itemRow.classList.remove('filtro-oculto');
-                        itemRow.classList.add('filtro-match');
+                        totalItensVisiveis++;
                         valorTemFilhoVisivel = true;
-                        totalItensVisiveis++;
-                    } else if (tipoMatch || valorMatch) {
-                        // Se pai deu match, mostra filho sem highlight
-                        itemRow.classList.remove('filtro-oculto', 'filtro-match');
-                        totalItensVisiveis++;
+
+                        if (termoBusca && (pontoNome.includes(termoBusca) || pontoCodigo.includes(termoBusca) ||
+                            tagVazao.includes(termoBusca) || tagPressao.includes(termoBusca))) {
+                            itemRow.classList.add('filtro-match');
+                        } else {
+                            itemRow.classList.remove('filtro-match');
+                        }
                     } else {
                         itemRow.classList.add('filtro-oculto');
                         itemRow.classList.remove('filtro-match');
                     }
                 });
 
-                // Valor visível se: ele mesmo deu match, ou tem filho visível, ou tipo deu match
-                if (valorMatch || valorTemFilhoVisivel || tipoMatch) {
+                // Valor visível se: ele mesmo deu match ou tem filho visível
+                if (valorMatch || valorTemFilhoVisivel) {
                     valorCard.classList.remove('filtro-oculto');
-                    tipoTemFilhoVisivel = true;
                     totalValoresVisiveis++;
+                    tipoTemFilhoVisivel = true;
 
-                    if (valorMatch && !tipoMatch) {
+                    if (termoBusca && (valorNome.includes(termoBusca) || valorId.includes(termoBusca))) {
                         valorCard.classList.add('filtro-match');
                     } else {
                         valorCard.classList.remove('filtro-match');
@@ -1303,14 +1363,14 @@ try {
         });
 
         // Atualizar contagem de resultados
-        atualizarContagemFiltro(termoBusca, filtroDescarte, totalTiposVisiveis, totalValoresVisiveis, totalItensVisiveis);
+        atualizarContagemFiltro(termoBusca, filtroDescarte, filtroFavoritos, totalTiposVisiveis, totalValoresVisiveis, totalItensVisiveis);
     }
 
-    function atualizarContagemFiltro(termoBusca, filtroDescarte, tipos, valores, itens) {
+    function atualizarContagemFiltro(termoBusca, filtroDescarte, filtroFavoritos, tipos, valores, itens) {
         const divResultado = document.getElementById('filtroResultado');
         const spanContagem = document.getElementById('filtroContagem');
 
-        if (termoBusca || filtroDescarte !== 'todos') {
+        if (termoBusca || filtroDescarte !== 'todos' || filtroFavoritos !== 'todos') {
             divResultado.style.display = 'flex';
 
             let texto = [];
@@ -1327,7 +1387,6 @@ try {
             divResultado.style.display = 'none';
         }
 
-        // Atualizar botão de expandir/recolher
         verificarEstadoAcordeoes();
     }
 
@@ -1335,6 +1394,7 @@ try {
         document.getElementById('filtroBusca').value = '';
         document.getElementById('btnLimparBusca').style.display = 'none';
         document.querySelector('input[name="filtroDescarte"][value="todos"]').checked = true;
+        document.querySelector('input[name="filtroFavoritos"][value="todos"]').checked = true;
 
         // Remover classes de filtro
         document.querySelectorAll('.tipo-card, .valor-card, .item-row').forEach(el => {
@@ -2100,8 +2160,69 @@ try {
             });
     }
 
+    // ============================================
+    // Sistema de Favoritos
+    // ============================================
+
+    /**
+     * Alterna favorito de uma unidade operacional
+     */
+    function toggleFavorito(cdEntidadeValor, btn) {
+        event.stopPropagation();
+
+        // Feedback visual imediato
+        btn.classList.toggle('ativo');
+        const icon = btn.querySelector('ion-icon');
+        const isAtivo = btn.classList.contains('ativo');
+        icon.setAttribute('name', isAtivo ? 'star' : 'star-outline');
+        btn.title = isAtivo ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
+
+        // Atualizar data-favorito no card
+        const valorCard = document.getElementById('valor-' + cdEntidadeValor);
+        if (valorCard) {
+            valorCard.dataset.favorito = isAtivo ? '1' : '0';
+        }
+
+        // Chamada AJAX
+        $.ajax({
+            url: 'bd/entidade/toggleFavorito.php',
+            type: 'POST',
+            data: { cdEntidadeValor: cdEntidadeValor },
+            dataType: 'json',
+            success: function (response) {
+                if (response.success) {
+                    showToast(response.message, 'sucesso');
+                    // Reaplicar filtros se estiver filtrando por favoritos
+                    const filtroFav = document.querySelector('input[name="filtroFavoritos"]:checked')?.value;
+                    if (filtroFav === 'favoritos') {
+                        aplicarFiltros();
+                    }
+                } else {
+                    // Reverter visual em caso de erro
+                    btn.classList.toggle('ativo');
+                    icon.setAttribute('name', btn.classList.contains('ativo') ? 'star' : 'star-outline');
+                    if (valorCard) {
+                        valorCard.dataset.favorito = btn.classList.contains('ativo') ? '1' : '0';
+                    }
+                    showToast(response.message || 'Erro ao atualizar favorito', 'erro');
+                }
+            },
+            error: function () {
+                // Reverter visual em caso de erro
+                btn.classList.toggle('ativo');
+                icon.setAttribute('name', btn.classList.contains('ativo') ? 'star' : 'star-outline');
+                if (valorCard) {
+                    valorCard.dataset.favorito = btn.classList.contains('ativo') ? '1' : '0';
+                }
+                showToast('Erro ao comunicar com o servidor', 'erro');
+            }
+        });
+    }
+
     // Inicializar drag and drop após carregar a página
     document.addEventListener('DOMContentLoaded', initDragAndDrop);
+
+
 </script>
 
 <?php include_once 'includes/footer.inc.php'; ?>

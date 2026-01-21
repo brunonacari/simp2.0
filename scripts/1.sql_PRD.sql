@@ -302,3 +302,20 @@ BEGIN
     PRINT 'Instruções já existem, nenhuma inserção necessária.';
 END
 GO
+
+-- =============================================================================================================================
+-- =============================================================================================================================
+
+
+-- Tabela para armazenar favoritos de unidades operacionais por usuário
+CREATE TABLE SIMP.dbo.ENTIDADE_VALOR_FAVORITO (
+    CD_CHAVE INT IDENTITY(1,1) PRIMARY KEY,
+    CD_USUARIO BIGINT NOT NULL,
+    CD_ENTIDADE_VALOR BIGINT NOT NULL,
+    DT_CRIACAO DATETIME DEFAULT GETDATE(),
+    CONSTRAINT FK_FAVORITO_USUARIO FOREIGN KEY (CD_USUARIO) REFERENCES SIMP.dbo.USUARIO(CD_USUARIO),
+    CONSTRAINT FK_FAVORITO_VALOR FOREIGN KEY (CD_ENTIDADE_VALOR) REFERENCES SIMP.dbo.ENTIDADE_VALOR(CD_CHAVE),
+    CONSTRAINT UQ_FAVORITO_USUARIO_VALOR UNIQUE (CD_USUARIO, CD_ENTIDADE_VALOR)
+);
+
+CREATE INDEX IX_FAVORITO_USUARIO ON SIMP.dbo.ENTIDADE_VALOR_FAVORITO(CD_USUARIO);
