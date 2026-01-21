@@ -1,6 +1,7 @@
 <?php
 // bd/programacaoManutencao/excluirProgramacao.php
 header('Content-Type: application/json');
+session_start();
 include_once '../conexao.php';
 
 try {
@@ -10,8 +11,8 @@ try {
         throw new Exception('Programação não informada.');
     }
 
-    // Verifica se a programação existe
-    $sqlVerifica = "SELECT CD_CODIGO, CD_ANO FROM SIMP.dbo.PROGRAMACAO_MANUTENCAO WHERE CD_CHAVE = :cd_chave";
+    // Busca dados antes de excluir (para log)
+    $sqlVerifica = "SELECT * FROM SIMP.dbo.PROGRAMACAO_MANUTENCAO WHERE CD_CHAVE = :cd_chave";
     $stmtVerifica = $pdoSIMP->prepare($sqlVerifica);
     $stmtVerifica->execute([':cd_chave' => $cdChave]);
     $programacao = $stmtVerifica->fetch(PDO::FETCH_ASSOC);
@@ -26,6 +27,14 @@ try {
     $sql = "DELETE FROM SIMP.dbo.PROGRAMACAO_MANUTENCAO WHERE CD_CHAVE = :cd_chave";
     $stmt = $pdoSIMP->prepare($sql);
     $stmt->execute([':cd_chave' => $cdChave]);
+
+    // Log (isolado)
+    try {
+        @include_once '../logHelper.php';
+        if (function_exists('registrarLogDelete')) {
+            registrarLogDelete('Programação de Manutenção', 'Programação', $cdChave, $codigoFormatado, $programacao);
+        }
+    } catch (Exception $logEx) {}
 
     echo json_encode([
         'success' => true,

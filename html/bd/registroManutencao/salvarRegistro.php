@@ -65,7 +65,32 @@ try {
     // Obtém usuário logado
     $cdUsuarioLogado = isset($_SESSION['usuario']['CD_USUARIO']) ? $_SESSION['usuario']['CD_USUARIO'] : 1;
 
+    // Buscar código da programação para identificador do log
+    $codigoProgramacao = '';
+    try {
+        $sqlProg = "SELECT CD_CODIGO, CD_ANO FROM SIMP.dbo.PROGRAMACAO_MANUTENCAO WHERE CD_CHAVE = :id";
+        $stmtProg = $pdoSIMP->prepare($sqlProg);
+        $stmtProg->execute([':id' => $cdProgramacao]);
+        $prog = $stmtProg->fetch(PDO::FETCH_ASSOC);
+        if ($prog) {
+            $codigoProgramacao = str_pad($prog['CD_CODIGO'], 3, '0', STR_PAD_LEFT) . '/' . $prog['CD_ANO'];
+        }
+    } catch (Exception $e) {}
+
     if ($isEdicao) {
+        // Buscar dados anteriores para log
+        $dadosAnteriores = null;
+        $ocorrenciaLog = '';
+        try {
+            $sqlAnt = "SELECT * FROM SIMP.dbo.REGISTRO_MANUTENCAO WHERE CD_CHAVE = :id";
+            $stmtAnt = $pdoSIMP->prepare($sqlAnt);
+            $stmtAnt->execute([':id' => $cdChave]);
+            $dadosAnteriores = $stmtAnt->fetch(PDO::FETCH_ASSOC);
+            if ($dadosAnteriores) {
+                $ocorrenciaLog = $dadosAnteriores['CD_OCORRENCIA'] ?? '';
+            }
+        } catch (Exception $e) {}
+
         // UPDATE
         $sql = "UPDATE SIMP.dbo.REGISTRO_MANUTENCAO SET
                     CD_PROGRAMACAO = :cd_programacao,
@@ -101,6 +126,27 @@ try {
 
         $stmt = $pdoSIMP->prepare($sql);
         $stmt->execute($params);
+
+        // Log (isolado)
+        try {
+            @include_once '../logHelper.php';
+            if (function_exists('registrarLogUpdate')) {
+                $identificador = $codigoProgramacao ? "$codigoProgramacao - Ocorrência $ocorrenciaLog" : "ID: $cdChave";
+                $dadosNovos = [
+                    'CD_PROGRAMACAO' => $cdProgramacao,
+                    'ID_SITUACAO' => $idSituacao,
+                    'CD_TECNICO' => $cdTecnico,
+                    'DT_REALIZADO' => $dtRealizado,
+                    'DS_CONDICAO_PRIMARIO' => $dsCondicaoPrimario,
+                    'DS_CONDICAO_SECUNDARIO' => $dsCondicaoSecundario,
+                    'DS_CONDICAO_TERCIARIO' => $dsCondicaoTerciario,
+                    'ID_CLASSIFICACAO_MANUTENCAO' => $idClassificacaoManutencao,
+                    'ID_TIPO_CALIBRACAO' => $idTipoCalibracao
+                ];
+                registrarLogUpdate('Registro de Manutenção', 'Registro', $cdChave, $identificador,
+                    ['anterior' => $dadosAnteriores, 'novo' => $dadosNovos]);
+            }
+        } catch (Exception $logEx) {}
 
         echo json_encode([
             'success' => true,
@@ -169,11 +215,39 @@ try {
         $stmt = $pdoSIMP->prepare($sql);
         $stmt->execute($params);
 
-        $novoCdChave = $pdoSIMP->lastInsertId();
+        // Obter ID gerado
+        $novoCdChave = null;
+        try {
+            $stmtId = $pdoSIMP->query("SELECT SCOPE_IDENTITY() AS ID");
+            $novoCdChave = $stmtId->fetch(PDO::FETCH_ASSOC)['ID'];
+        } catch (Exception $e) {
+            $novoCdChave = $pdoSIMP->lastInsertId();
+        }
+
+        // Log (isolado)
+        try {
+            @include_once '../logHelper.php';
+            if (function_exists('registrarLogInsert')) {
+                $identificador = $codigoProgramacao ? "$codigoProgramacao - Ocorrência $proximaOcorrencia" : "ID: $novoCdChave";
+                $dadosInseridos = [
+                    'CD_PROGRAMACAO' => $cdProgramacao,
+                    'CD_OCORRENCIA' => $proximaOcorrencia,
+                    'ID_SITUACAO' => $idSituacao,
+                    'CD_TECNICO' => $cdTecnico,
+                    'DT_REALIZADO' => $dtRealizado,
+                    'DS_CONDICAO_PRIMARIO' => $dsCondicaoPrimario,
+                    'DS_CONDICAO_SECUNDARIO' => $dsCondicaoSecundario,
+                    'DS_CONDICAO_TERCIARIO' => $dsCondicaoTerciario,
+                    'ID_CLASSIFICACAO_MANUTENCAO' => $idClassificacaoManutencao,
+                    'ID_TIPO_CALIBRACAO' => $idTipoCalibracao
+                ];
+                registrarLogInsert('Registro de Manutenção', 'Registro', $novoCdChave, $identificador, $dadosInseridos);
+            }
+        } catch (Exception $logEx) {}
 
         echo json_encode([
             'success' => true,
-            'message' => "Registro cadastrado com sucesso! Ocorrência: $proximaOcorrencia",
+            'message' => "Registro cadastrado com sucesso!",
             'cd_chave' => $novoCdChave,
             'cd_ocorrencia' => $proximaOcorrencia
         ]);

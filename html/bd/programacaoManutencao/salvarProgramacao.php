@@ -25,10 +25,9 @@ try {
     $dtSolicitacao = '';
     
     if (!empty($dtProgramacaoRaw)) {
-        // Converte '2025-12-29T14:57' para '2025-12-29 14:57:00'
         $dtProgramacao = str_replace('T', ' ', $dtProgramacaoRaw);
         if (strlen($dtProgramacao) == 16) {
-            $dtProgramacao .= ':00'; // Adiciona segundos se não tiver
+            $dtProgramacao .= ':00';
         }
     }
     
@@ -57,56 +56,32 @@ try {
 
     // Validações obrigatórias
     if ($cdPontoMedicao <= 0) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Ponto de Medição é obrigatório.',
-            'debug' => $debugInfo
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Ponto de Medição é obrigatório.', 'debug' => $debugInfo]);
         exit;
     }
 
     if ($idTipoProgramacao <= 0) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Tipo de Programação é obrigatório.',
-            'debug' => $debugInfo
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Tipo de Programação é obrigatório.', 'debug' => $debugInfo]);
         exit;
     }
 
     if ($cdUsuarioResponsavel <= 0) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Responsável é obrigatório.',
-            'debug' => $debugInfo
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Responsável é obrigatório.', 'debug' => $debugInfo]);
         exit;
     }
 
     if (empty($dtProgramacao)) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Data da Programação é obrigatória.',
-            'debug' => $debugInfo
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Data da Programação é obrigatória.', 'debug' => $debugInfo]);
         exit;
     }
 
     if (empty($dsSolicitante)) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Solicitante é obrigatório.',
-            'debug' => $debugInfo
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Solicitante é obrigatório.', 'debug' => $debugInfo]);
         exit;
     }
 
     if (empty($dtSolicitacao)) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Data da Solicitação é obrigatória.',
-            'debug' => $debugInfo
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Data da Solicitação é obrigatória.', 'debug' => $debugInfo]);
         exit;
     }
 
@@ -114,6 +89,19 @@ try {
     $cdUsuarioLogado = isset($_SESSION['usuario']['CD_USUARIO']) ? $_SESSION['usuario']['CD_USUARIO'] : 1;
 
     if ($isEdicao) {
+        // Buscar dados anteriores para log
+        $dadosAnteriores = null;
+        $codigoFormatadoLog = '';
+        try {
+            $sqlAnt = "SELECT * FROM SIMP.dbo.PROGRAMACAO_MANUTENCAO WHERE CD_CHAVE = :id";
+            $stmtAnt = $pdoSIMP->prepare($sqlAnt);
+            $stmtAnt->execute([':id' => $cdChave]);
+            $dadosAnteriores = $stmtAnt->fetch(PDO::FETCH_ASSOC);
+            if ($dadosAnteriores) {
+                $codigoFormatadoLog = str_pad($dadosAnteriores['CD_CODIGO'], 3, '0', STR_PAD_LEFT) . '/' . $dadosAnteriores['CD_ANO'];
+            }
+        } catch (Exception $e) {}
+
         // UPDATE
         $sql = "UPDATE SIMP.dbo.PROGRAMACAO_MANUTENCAO SET
                     CD_PONTO_MEDICAO = :cd_ponto_medicao,
@@ -143,6 +131,25 @@ try {
 
         $stmt = $pdoSIMP->prepare($sql);
         $result = $stmt->execute($params);
+
+        // Log (isolado)
+        try {
+            @include_once '../logHelper.php';
+            if (function_exists('registrarLogUpdate')) {
+                $dadosNovos = [
+                    'CD_PONTO_MEDICAO' => $cdPontoMedicao,
+                    'ID_TIPO_PROGRAMACAO' => $idTipoProgramacao,
+                    'ID_SITUACAO' => $idSituacao,
+                    'CD_USUARIO_RESPONSAVEL' => $cdUsuarioResponsavel,
+                    'DT_PROGRAMACAO' => $dtProgramacao,
+                    'DS_SOLICITANTE' => $dsSolicitante,
+                    'DT_SOLICITACAO' => $dtSolicitacao,
+                    'DS_SOLICITACAO' => $dsSolicitacao
+                ];
+                registrarLogUpdate('Programação de Manutenção', 'Programação', $cdChave, $codigoFormatadoLog,
+                    ['anterior' => $dadosAnteriores, 'novo' => $dadosNovos]);
+            }
+        } catch (Exception $logEx) {}
 
         // Monta SQL legível para debug
         $debugSql = "UPDATE SIMP.dbo.PROGRAMACAO_MANUTENCAO SET 
@@ -224,8 +231,36 @@ try {
         $stmt = $pdoSIMP->prepare($sql);
         $result = $stmt->execute($params);
 
-        $novoCdChave = $pdoSIMP->lastInsertId();
+        // Obter ID gerado
+        $novoCdChave = null;
+        try {
+            $stmtId = $pdoSIMP->query("SELECT SCOPE_IDENTITY() AS ID");
+            $novoCdChave = $stmtId->fetch(PDO::FETCH_ASSOC)['ID'];
+        } catch (Exception $e) {
+            $novoCdChave = $pdoSIMP->lastInsertId();
+        }
+
         $codigoFormatado = str_pad($proximoCodigo, 3, '0', STR_PAD_LEFT) . '/' . $anoAtual;
+
+        // Log (isolado)
+        try {
+            @include_once '../logHelper.php';
+            if (function_exists('registrarLogInsert')) {
+                $dadosInseridos = [
+                    'CD_CODIGO' => $proximoCodigo,
+                    'CD_ANO' => $anoAtual,
+                    'CD_PONTO_MEDICAO' => $cdPontoMedicao,
+                    'ID_TIPO_PROGRAMACAO' => $idTipoProgramacao,
+                    'ID_SITUACAO' => $idSituacao,
+                    'CD_USUARIO_RESPONSAVEL' => $cdUsuarioResponsavel,
+                    'DT_PROGRAMACAO' => $dtProgramacao,
+                    'DS_SOLICITANTE' => $dsSolicitante,
+                    'DT_SOLICITACAO' => $dtSolicitacao,
+                    'DS_SOLICITACAO' => $dsSolicitacao
+                ];
+                registrarLogInsert('Programação de Manutenção', 'Programação', $novoCdChave, $codigoFormatado, $dadosInseridos);
+            }
+        } catch (Exception $logEx) {}
 
         // Monta SQL legível para debug
         $debugSql = "INSERT INTO SIMP.dbo.PROGRAMACAO_MANUTENCAO (
