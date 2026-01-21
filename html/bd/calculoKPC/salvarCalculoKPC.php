@@ -1,6 +1,7 @@
 <?php
 /**
  * SIMP - Salvar Cálculo de KPC
+ * COM REGISTRO DE LOG
  * 
  * Salva ou atualiza um cálculo de KPC com suas leituras.
  */
@@ -9,6 +10,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 try {
     require_once '../verificarAuth.php';
+    require_once '../logHelper.php';
     include_once '../conexao.php';
 
     // Receber dados JSON
@@ -84,6 +86,23 @@ try {
     // Converter data para formato SQL Server
     $dtLeitura = date('Y-m-d H:i:s', strtotime($dtLeitura));
 
+    // Buscar dados do ponto para log (unidade)
+    $cdUnidadeLog = null;
+    $dsPontoMedicao = '';
+    try {
+        $sqlPonto = "SELECT PM.DS_NOME, L.CD_UNIDADE 
+                     FROM SIMP.dbo.PONTO_MEDICAO PM 
+                     LEFT JOIN SIMP.dbo.LOCALIDADE L ON L.CD_CHAVE = PM.CD_LOCALIDADE
+                     WHERE PM.CD_PONTO_MEDICAO = :cdPonto";
+        $stmtPonto = $pdoSIMP->prepare($sqlPonto);
+        $stmtPonto->execute([':cdPonto' => $cdPontoMedicao]);
+        $rowPonto = $stmtPonto->fetch(PDO::FETCH_ASSOC);
+        if ($rowPonto) {
+            $cdUnidadeLog = (int)$rowPonto['CD_UNIDADE'];
+            $dsPontoMedicao = $rowPonto['DS_NOME'] ?? '';
+        }
+    } catch (Exception $e) {}
+
     // Iniciar transação
     $pdoSIMP->beginTransaction();
 
@@ -91,6 +110,15 @@ try {
         $isEdicao = $cdChave > 0;
 
         if ($isEdicao) {
+            // Buscar dados anteriores para log
+            $dadosAnteriores = null;
+            try {
+                $sqlAnt = "SELECT * FROM SIMP.dbo.CALCULO_KPC WHERE CD_CHAVE = :id";
+                $stmtAnt = $pdoSIMP->prepare($sqlAnt);
+                $stmtAnt->execute([':id' => $cdChave]);
+                $dadosAnteriores = $stmtAnt->fetch(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {}
+
             // UPDATE do cálculo existente
             $sql = "UPDATE SIMP.dbo.CALCULO_KPC SET
                         VL_DIAMETRO_NOMINAL = :vl_diametro_nominal,
@@ -142,6 +170,32 @@ try {
             $stmtDelete->execute([':cd_chave' => $cdChave]);
 
             $mensagem = 'Cálculo de KPC atualizado com sucesso!';
+
+            // Log de UPDATE (isolado)
+            try {
+                $codigoCalculo = ($dadosAnteriores['CD_CODIGO'] ?? '') . '/' . ($dadosAnteriores['CD_ANO'] ?? '');
+                $alteracoes = [
+                    'dados_novos' => [
+                        'VL_KPC' => $vlKPC,
+                        'VL_DIAMETRO_REAL' => $vlDiametroReal,
+                        'VL_VAZAO' => $vlVazao,
+                        'VL_PRESSAO' => $vlPressao,
+                        'ID_METODO' => $idMetodo
+                    ]
+                ];
+                if ($dadosAnteriores) {
+                    $alteracoes['dados_anteriores'] = [
+                        'VL_KPC' => $dadosAnteriores['VL_KPC'] ?? null,
+                        'VL_DIAMETRO_REAL' => $dadosAnteriores['VL_DIAMETRO_REAL'] ?? null,
+                        'VL_VAZAO' => $dadosAnteriores['VL_VAZAO'] ?? null,
+                        'VL_PRESSAO' => $dadosAnteriores['VL_PRESSAO'] ?? null,
+                        'ID_METODO' => $dadosAnteriores['ID_METODO'] ?? null
+                    ];
+                }
+                registrarLogUpdate('Cálculo do KPC', 'Cálculo KPC', $cdChave, "KPC $codigoCalculo - $dsPontoMedicao", $alteracoes, $cdUnidadeLog);
+            } catch (Exception $logEx) {
+                error_log('Erro ao registrar log de UPDATE Cálculo KPC: ' . $logEx->getMessage());
+            }
 
         } else {
             // Gerar próximo código
@@ -234,6 +288,24 @@ try {
             $cdChave = $pdoSIMP->lastInsertId();
 
             $mensagem = 'Cálculo de KPC cadastrado com sucesso!';
+
+            // Log de INSERT (isolado)
+            try {
+                $codigoCalculo = "$proximoCodigo/$anoAtual";
+                $dadosInseridos = [
+                    'CD_CODIGO' => $proximoCodigo,
+                    'CD_ANO' => $anoAtual,
+                    'CD_PONTO_MEDICAO' => $cdPontoMedicao,
+                    'DS_PONTO_MEDICAO' => $dsPontoMedicao,
+                    'VL_KPC' => $vlKPC,
+                    'VL_DIAMETRO_REAL' => $vlDiametroReal,
+                    'ID_METODO' => $idMetodo,
+                    'DT_LEITURA' => $dtLeitura
+                ];
+                registrarLogInsert('Cálculo do KPC', 'Cálculo KPC', $cdChave, "KPC $codigoCalculo - $dsPontoMedicao", $dadosInseridos, $cdUnidadeLog);
+            } catch (Exception $logEx) {
+                error_log('Erro ao registrar log de INSERT Cálculo KPC: ' . $logEx->getMessage());
+            }
         }
 
         // Inserir leituras
@@ -254,8 +326,8 @@ try {
         $stmtLeitura = $pdoSIMP->prepare($sqlLeitura);
         
         foreach ($leituras as $leitura) {
-            $cdOrdemLeitura = (int)$leitura['leitura'];    // Número da leitura (1-20 ou 21 para média)
-            $cdPosicaoLeitura = (int)$leitura['ponto'];    // Número do ponto (1-11)
+            $cdOrdemLeitura = (int)$leitura['leitura'];
+            $cdPosicaoLeitura = (int)$leitura['ponto'];
             $deflexao = (float)$leitura['deflexao'];
             $vlPosicao = isset($leitura['posicao']) ? (float)$leitura['posicao'] : null;
             
@@ -284,6 +356,14 @@ try {
     }
 
 } catch (Exception $e) {
+    // Registrar log de erro
+    try {
+        registrarLogErro('Cálculo do KPC', isset($isEdicao) && $isEdicao ? 'UPDATE' : 'INSERT', $e->getMessage(), [
+            'cd_chave' => $cdChave ?? null,
+            'cd_ponto_medicao' => $cdPontoMedicao ?? null
+        ]);
+    } catch (Exception $logEx) {}
+
     http_response_code(500);
     echo json_encode([
         'success' => false,

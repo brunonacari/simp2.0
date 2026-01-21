@@ -2,17 +2,10 @@
 /**
  * SIMP - Sistema Integrado de Macromedição e Pitometria
  * Endpoint: Salvar/Atualizar Ponto de Medição
+ * COM REGISTRO DE LOG
  */
 
 header('Content-Type: application/json; charset=utf-8');
-
-// DEBUG: Log para arquivo (remover em produção)
-$debugLog = __DIR__ . '/salvar_debug.log';
-$debugData = [
-    'timestamp' => date('Y-m-d H:i:s'),
-    'POST' => $_POST
-];
-file_put_contents($debugLog, print_r($debugData, true) . "\n" . str_repeat('-', 50) . "\n", FILE_APPEND);
 
 // Capturar erros e warnings para incluir na resposta
 $phpErrors = [];
@@ -26,6 +19,8 @@ error_reporting(E_ALL);
 
 // Verificação de autenticação e permissão
 require_once '../verificarAuth.php';
+require_once '../logHelper.php';
+
 verificarPermissaoAjax('CADASTRO DE PONTO', ACESSO_ESCRITA);
 
 include_once '../conexao.php';
@@ -97,11 +92,29 @@ try {
 
     // Verifica se é INSERT ou UPDATE
     $isEdicao = $cdPontoMedicao > 0;
-    
-    // DEBUG: Log da decisão INSERT/UPDATE
-    file_put_contents($debugLog, "MODO: " . ($isEdicao ? "UPDATE (ID=$cdPontoMedicao)" : "INSERT (novo registro)") . "\n", FILE_APPEND);
+
+    // Buscar dados da unidade para log
+    $cdUnidadeLog = null;
+    try {
+        $sqlUnidade = "SELECT L.CD_UNIDADE FROM SIMP.dbo.LOCALIDADE L WHERE L.CD_CHAVE = :cdLocalidade";
+        $stmtUnidade = $pdoSIMP->prepare($sqlUnidade);
+        $stmtUnidade->execute([':cdLocalidade' => $cdLocalidade]);
+        $rowUnidade = $stmtUnidade->fetch(PDO::FETCH_ASSOC);
+        if ($rowUnidade) {
+            $cdUnidadeLog = (int)$rowUnidade['CD_UNIDADE'];
+        }
+    } catch (Exception $e) {}
 
     if ($isEdicao) {
+        // Buscar dados anteriores para log de alteração
+        $dadosAnteriores = null;
+        try {
+            $sqlAnt = "SELECT * FROM SIMP.dbo.PONTO_MEDICAO WHERE CD_PONTO_MEDICAO = :id";
+            $stmtAnt = $pdoSIMP->prepare($sqlAnt);
+            $stmtAnt->execute([':id' => $cdPontoMedicao]);
+            $dadosAnteriores = $stmtAnt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {}
+
         // UPDATE
         $sql = "UPDATE SIMP.dbo.PONTO_MEDICAO SET
                     CD_LOCALIDADE = :cd_localidade,
@@ -166,6 +179,32 @@ try {
         $stmt->execute($params);
 
         $mensagem = 'Ponto de medição atualizado com sucesso!';
+
+        // Registrar log de UPDATE (isolado para não afetar a operação principal)
+        try {
+            $alteracoes = [
+                'dados_novos' => [
+                    'DS_NOME' => $dsNome,
+                    'CD_LOCALIDADE' => $cdLocalidade,
+                    'ID_TIPO_MEDIDOR' => $idTipoMedidor,
+                    'ID_TIPO_LEITURA' => $idTipoLeitura,
+                    'DS_LOCALIZACAO' => $dsLocalizacao
+                ]
+            ];
+            if ($dadosAnteriores) {
+                $alteracoes['dados_anteriores'] = [
+                    'DS_NOME' => $dadosAnteriores['DS_NOME'] ?? null,
+                    'CD_LOCALIDADE' => $dadosAnteriores['CD_LOCALIDADE'] ?? null,
+                    'ID_TIPO_MEDIDOR' => $dadosAnteriores['ID_TIPO_MEDIDOR'] ?? null,
+                    'ID_TIPO_LEITURA' => $dadosAnteriores['ID_TIPO_LEITURA'] ?? null,
+                    'DS_LOCALIZACAO' => $dadosAnteriores['DS_LOCALIZACAO'] ?? null
+                ];
+            }
+            registrarLogUpdate('Cadastro de Ponto de Medição', 'Ponto de Medição', $cdPontoMedicao, $dsNome, $alteracoes, $cdUnidadeLog);
+        } catch (Exception $logEx) {
+            // Não interrompe a operação principal se o log falhar
+            error_log('Erro ao registrar log de UPDATE Ponto de Medição: ' . $logEx->getMessage());
+        }
 
     } else {
         // INSERT
@@ -256,23 +295,31 @@ try {
             ':dt_atualizacao' => $dtAtualizacao
         ];
         
-        // DEBUG: Log dos parâmetros do INSERT
-        file_put_contents($debugLog, "INSERT PARAMS:\n" . print_r($insertParams, true) . "\n", FILE_APPEND);
-        
-        $executeResult = $stmt->execute($insertParams);
-        
-        // DEBUG: Log do resultado
-        file_put_contents($debugLog, "EXECUTE RESULT: " . ($executeResult ? 'TRUE' : 'FALSE') . "\n", FILE_APPEND);
-        file_put_contents($debugLog, "ROW COUNT: " . $stmt->rowCount() . "\n", FILE_APPEND);
+        $stmt->execute($insertParams);
 
         // Pegar o ID inserido usando SCOPE_IDENTITY() (SQL Server)
         $stmtId = $pdoSIMP->query("SELECT SCOPE_IDENTITY() AS ID");
         $cdPontoMedicao = $stmtId->fetch(PDO::FETCH_ASSOC)['ID'];
         
-        // DEBUG: Log do ID
-        file_put_contents($debugLog, "NEW ID: " . ($cdPontoMedicao ?? 'NULL') . "\n" . str_repeat('=', 50) . "\n", FILE_APPEND);
-        
         $mensagem = 'Ponto de medição cadastrado com sucesso!';
+
+        // Registrar log de INSERT (isolado para não afetar a operação principal)
+        try {
+            $dadosInseridos = [
+                'DS_NOME' => $dsNome,
+                'CD_LOCALIDADE' => $cdLocalidade,
+                'ID_TIPO_MEDIDOR' => $idTipoMedidor,
+                'ID_TIPO_LEITURA' => $idTipoLeitura,
+                'DS_LOCALIZACAO' => $dsLocalizacao,
+                'COORDENADAS' => $coordenadas,
+                'DS_TAG_VAZAO' => $dsTagVazao,
+                'DS_TAG_PRESSAO' => $dsTagPressao
+            ];
+            registrarLogInsert('Cadastro de Ponto de Medição', 'Ponto de Medição', $cdPontoMedicao, $dsNome, $dadosInseridos, $cdUnidadeLog);
+        } catch (Exception $logEx) {
+            // Não interrompe a operação principal se o log falhar
+            error_log('Erro ao registrar log de INSERT Ponto de Medição: ' . $logEx->getMessage());
+        }
     }
 
     $response = [
@@ -289,8 +336,10 @@ try {
     echo json_encode($response);
 
 } catch (PDOException $e) {
-    // DEBUG: Log do erro PDO
-    file_put_contents($debugLog, "PDO EXCEPTION: " . $e->getMessage() . "\nCode: " . $e->getCode() . "\nLine: " . $e->getLine() . "\n", FILE_APPEND);
+    // Registrar log de erro
+    try {
+        registrarLogErro('Cadastro de Ponto de Medição', $isEdicao ? 'UPDATE' : 'INSERT', $e->getMessage(), ['cd_ponto_medicao' => $cdPontoMedicao ?? null, 'ds_nome' => $dsNome ?? null]);
+    } catch (Exception $logEx) {}
     
     $response = [
         'success' => false,
@@ -303,9 +352,12 @@ try {
         $response['warnings'] = $phpErrors;
     }
     echo json_encode($response);
+
 } catch (Exception $e) {
-    // DEBUG: Log do erro genérico
-    file_put_contents($debugLog, "EXCEPTION: " . $e->getMessage() . "\n", FILE_APPEND);
+    // Registrar log de erro
+    try {
+        registrarLogErro('Cadastro de Ponto de Medição', $isEdicao ? 'UPDATE' : 'INSERT', $e->getMessage(), ['cd_ponto_medicao' => $cdPontoMedicao ?? null]);
+    } catch (Exception $logEx) {}
     
     $response = [
         'success' => false,
