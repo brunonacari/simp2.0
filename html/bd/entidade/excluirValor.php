@@ -29,6 +29,19 @@ try {
         throw new Exception('ID não informado');
     }
 
+    // Buscar dados antes de excluir para log
+    $dadosExcluidos = null;
+    $identificador = "ID: $cd";
+    try {
+        $sqlBusca = "SELECT * FROM SIMP.dbo.ENTIDADE_VALOR WHERE CD_CHAVE = :cd";
+        $stmtBusca = $pdoSIMP->prepare($sqlBusca);
+        $stmtBusca->execute([':cd' => $cd]);
+        $dadosExcluidos = $stmtBusca->fetch(PDO::FETCH_ASSOC);
+        if ($dadosExcluidos) {
+            $identificador = ($dadosExcluidos['CD_ENTIDADE_VALOR_ID'] ?? '') . ' - ' . ($dadosExcluidos['DS_NOME'] ?? "ID: $cd");
+        }
+    } catch (Exception $e) {}
+
     // Iniciar transação para garantir integridade
     $pdoSIMP->beginTransaction();
 
@@ -47,6 +60,19 @@ try {
         // Confirmar transação
         $pdoSIMP->commit();
 
+        // Adicionar quantidade de itens excluídos ao log
+        if ($dadosExcluidos) {
+            $dadosExcluidos['itens_excluidos'] = $itensExcluidos;
+        }
+
+        // Log (isolado)
+        try {
+            @include_once '../logHelper.php';
+            if (function_exists('registrarLogDelete')) {
+                registrarLogDelete('Cadastro de Entidade', 'Unidade Operacional', $cd, $identificador, $dadosExcluidos);
+            }
+        } catch (Exception $logEx) {}
+
         echo json_encode([
             'success' => true,
             'message' => "Valor excluído com sucesso! ($itensExcluidos pontos desvinculados)"
@@ -59,11 +85,27 @@ try {
     }
 
 } catch (PDOException $e) {
+    // Log de erro (isolado)
+    try {
+        @include_once '../logHelper.php';
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Cadastro de Entidade', 'DELETE', $e->getMessage(), ['cd' => $cd ?? null]);
+        }
+    } catch (Exception $logEx) {}
+    
     echo json_encode([
         'success' => false,
         'message' => 'Erro BD: ' . $e->getMessage()
     ]);
 } catch (Exception $e) {
+    // Log de erro (isolado)
+    try {
+        @include_once '../logHelper.php';
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Cadastro de Entidade', 'DELETE', $e->getMessage(), ['cd' => $cd ?? null]);
+        }
+    } catch (Exception $logEx) {}
+    
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()

@@ -38,7 +38,28 @@ try {
         throw new Exception('A operação é obrigatória');
     }
 
+    // Buscar nome do ponto de medição para log
+    $nomePonto = "Ponto $cdPonto";
+    try {
+        $sqlPonto = "SELECT DS_NOME FROM SIMP.dbo.PONTO_MEDICAO WHERE CD_PONTO_MEDICAO = :cdPonto";
+        $stmtPonto = $pdoSIMP->prepare($sqlPonto);
+        $stmtPonto->execute([':cdPonto' => $cdPonto]);
+        $rowPonto = $stmtPonto->fetch(PDO::FETCH_ASSOC);
+        if ($rowPonto) {
+            $nomePonto = $rowPonto['DS_NOME'];
+        }
+    } catch (Exception $e) {}
+
     if ($cd !== null) {
+        // Buscar dados anteriores para log
+        $dadosAnteriores = null;
+        try {
+            $sqlAnterior = "SELECT CD_PONTO_MEDICAO, DT_INICIO, DT_FIM, ID_OPERACAO FROM SIMP.dbo.ENTIDADE_VALOR_ITEM WHERE CD_CHAVE = :cd";
+            $stmtAnterior = $pdoSIMP->prepare($sqlAnterior);
+            $stmtAnterior->execute([':cd' => $cd]);
+            $dadosAnteriores = $stmtAnterior->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {}
+
         // UPDATE
         $sql = "UPDATE SIMP.dbo.ENTIDADE_VALOR_ITEM 
                 SET CD_PONTO_MEDICAO = :cdPonto, 
@@ -55,6 +76,15 @@ try {
             ':cd' => $cd
         ]);
 
+        // Log (isolado)
+        try {
+            @include_once '../logHelper.php';
+            if (function_exists('registrarLogUpdate')) {
+                registrarLogUpdate('Cadastro de Entidade', 'Vínculo Ponto-Entidade', $cd, $nomePonto,
+                    ['anterior' => $dadosAnteriores, 'novo' => ['CD_PONTO_MEDICAO' => $cdPonto, 'DT_INICIO' => $dtInicio, 'DT_FIM' => $dtFim, 'ID_OPERACAO' => $operacao]]);
+            }
+        } catch (Exception $logEx) {}
+
         echo json_encode([
             'success' => true,
             'message' => 'Vínculo atualizado com sucesso!'
@@ -65,67 +95,44 @@ try {
             throw new Exception('O valor de entidade é obrigatório');
         }
 
-        // Verifica se o ponto já está vinculado a este valor
-        $sqlVerifica = "SELECT CD_CHAVE FROM SIMP.dbo.ENTIDADE_VALOR_ITEM 
-                        WHERE CD_ENTIDADE_VALOR = :cdValor AND CD_PONTO_MEDICAO = :cdPonto";
-        $stmtVerifica = $pdoSIMP->prepare($sqlVerifica);
-        $stmtVerifica->execute([':cdValor' => $cdValor, ':cdPonto' => $cdPonto]);
-        
-        if ($stmtVerifica->fetch()) {
-            throw new Exception('Este ponto de medição já está vinculado a este valor');
-        }
+        $sql = "INSERT INTO SIMP.dbo.ENTIDADE_VALOR_ITEM 
+                (CD_ENTIDADE_VALOR, CD_PONTO_MEDICAO, DT_INICIO, DT_FIM, ID_OPERACAO) 
+                VALUES (:cdValor, :cdPonto, :dtInicio, :dtFim, :operacao)";
+        $stmt = $pdoSIMP->prepare($sql);
+        $stmt->execute([
+            ':cdValor' => $cdValor,
+            ':cdPonto' => $cdPonto,
+            ':dtInicio' => $dtInicio,
+            ':dtFim' => $dtFim,
+            ':operacao' => $operacao
+        ]);
 
-        // Verificar se coluna NR_ORDEM existe
-        $temNrOrdem = false;
+        // Log (isolado)
         try {
-            $checkCol = $pdoSIMP->query("SELECT TOP 1 NR_ORDEM FROM SIMP.dbo.ENTIDADE_VALOR_ITEM");
-            $temNrOrdem = true;
-        } catch (Exception $e) {
-            $temNrOrdem = false;
-        }
-
-        if ($temNrOrdem) {
-            // Obter próxima ordem
-            $sqlOrdem = "SELECT ISNULL(MAX(NR_ORDEM), 0) + 1 AS PROX_ORDEM 
-                         FROM SIMP.dbo.ENTIDADE_VALOR_ITEM 
-                         WHERE CD_ENTIDADE_VALOR = :cdValor";
-            $stmtOrdem = $pdoSIMP->prepare($sqlOrdem);
-            $stmtOrdem->execute([':cdValor' => $cdValor]);
-            $proxOrdem = $stmtOrdem->fetchColumn();
-
-            $sql = "INSERT INTO SIMP.dbo.ENTIDADE_VALOR_ITEM 
-                    (CD_ENTIDADE_VALOR, CD_PONTO_MEDICAO, DT_INICIO, DT_FIM, ID_OPERACAO, NR_ORDEM) 
-                    VALUES (:cdValor, :cdPonto, :dtInicio, :dtFim, :operacao, :ordem)";
-            $stmt = $pdoSIMP->prepare($sql);
-            $stmt->execute([
-                ':cdValor' => $cdValor,
-                ':cdPonto' => $cdPonto,
-                ':dtInicio' => $dtInicio,
-                ':dtFim' => $dtFim,
-                ':operacao' => $operacao,
-                ':ordem' => $proxOrdem
-            ]);
-        } else {
-            $sql = "INSERT INTO SIMP.dbo.ENTIDADE_VALOR_ITEM 
-                    (CD_ENTIDADE_VALOR, CD_PONTO_MEDICAO, DT_INICIO, DT_FIM, ID_OPERACAO) 
-                    VALUES (:cdValor, :cdPonto, :dtInicio, :dtFim, :operacao)";
-            $stmt = $pdoSIMP->prepare($sql);
-            $stmt->execute([
-                ':cdValor' => $cdValor,
-                ':cdPonto' => $cdPonto,
-                ':dtInicio' => $dtInicio,
-                ':dtFim' => $dtFim,
-                ':operacao' => $operacao
-            ]);
-        }
+            @include_once '../logHelper.php';
+            if (function_exists('registrarLogInsert')) {
+                $stmtId = $pdoSIMP->query("SELECT SCOPE_IDENTITY() AS ID");
+                $novoId = $stmtId->fetch(PDO::FETCH_ASSOC)['ID'];
+                registrarLogInsert('Cadastro de Entidade', 'Vínculo Ponto-Entidade', $novoId, $nomePonto,
+                    ['CD_ENTIDADE_VALOR' => $cdValor, 'CD_PONTO_MEDICAO' => $cdPonto, 'DT_INICIO' => $dtInicio, 'DT_FIM' => $dtFim, 'ID_OPERACAO' => $operacao]);
+            }
+        } catch (Exception $logEx) {}
 
         echo json_encode([
             'success' => true,
-            'message' => 'Ponto vinculado com sucesso!'
+            'message' => 'Vínculo cadastrado com sucesso!'
         ]);
     }
 
 } catch (Exception $e) {
+    // Log de erro (isolado)
+    try {
+        @include_once '../logHelper.php';
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Cadastro de Entidade', $cd !== null ? 'UPDATE' : 'INSERT', $e->getMessage(), $_POST);
+        }
+    } catch (Exception $logEx) {}
+    
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()

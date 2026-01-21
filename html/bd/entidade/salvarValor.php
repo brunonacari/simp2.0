@@ -34,6 +34,15 @@ try {
     }
 
     if ($cd !== null) {
+        // Buscar dados anteriores para log
+        $dadosAnteriores = null;
+        try {
+            $sqlAnterior = "SELECT DS_NOME, CD_ENTIDADE_VALOR_ID, ID_FLUXO FROM SIMP.dbo.ENTIDADE_VALOR WHERE CD_CHAVE = :cd";
+            $stmtAnterior = $pdoSIMP->prepare($sqlAnterior);
+            $stmtAnterior->execute([':cd' => $cd]);
+            $dadosAnteriores = $stmtAnterior->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {}
+
         // UPDATE
         $sql = "UPDATE SIMP.dbo.ENTIDADE_VALOR 
                 SET DS_NOME = :nome, 
@@ -49,6 +58,15 @@ try {
             ':fluxo' => $fluxo,
             ':cd' => $cd
         ]);
+
+        // Log (isolado)
+        try {
+            @include_once '../logHelper.php';
+            if (function_exists('registrarLogUpdate')) {
+                registrarLogUpdate('Cadastro de Entidade', 'Unidade Operacional', $cd, "$idExterno - $nome",
+                    ['anterior' => $dadosAnteriores, 'novo' => ['DS_NOME' => $nome, 'CD_ENTIDADE_VALOR_ID' => $idExterno, 'ID_FLUXO' => $fluxo]]);
+            }
+        } catch (Exception $logEx) {}
 
         echo json_encode([
             'success' => true,
@@ -71,6 +89,17 @@ try {
             ':fluxo' => $fluxo
         ]);
 
+        // Log (isolado)
+        try {
+            @include_once '../logHelper.php';
+            if (function_exists('registrarLogInsert')) {
+                $stmtId = $pdoSIMP->query("SELECT SCOPE_IDENTITY() AS ID");
+                $novoId = $stmtId->fetch(PDO::FETCH_ASSOC)['ID'];
+                registrarLogInsert('Cadastro de Entidade', 'Unidade Operacional', $novoId, "$idExterno - $nome",
+                    ['CD_ENTIDADE_TIPO' => $cdTipo, 'DS_NOME' => $nome, 'CD_ENTIDADE_VALOR_ID' => $idExterno, 'ID_FLUXO' => $fluxo]);
+            }
+        } catch (Exception $logEx) {}
+
         echo json_encode([
             'success' => true,
             'message' => 'Valor cadastrado com sucesso!'
@@ -78,6 +107,14 @@ try {
     }
 
 } catch (Exception $e) {
+    // Log de erro (isolado)
+    try {
+        @include_once '../logHelper.php';
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Cadastro de Entidade', $cd !== null ? 'UPDATE' : 'INSERT', $e->getMessage(), $_POST);
+        }
+    } catch (Exception $logEx) {}
+    
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()
