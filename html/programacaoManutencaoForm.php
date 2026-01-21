@@ -150,35 +150,6 @@ $letrasTipoMedidor = [
         position: absolute !important;
     }
 
-    .choices {
-        position: relative;
-        z-index: 1;
-    }
-
-    .choices.is-open {
-        z-index: 99999;
-    }
-
-    .form-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        overflow: visible;
-        margin-bottom: 16px;
-    }
-
-    .form-card-body {
-        padding: 20px;
-        overflow: visible;
-    }
-
-    .form-row {
-        display: flex;
-        flex-wrap: wrap;
-        margin: 0 -8px 16px -8px;
-        position: relative;
-    }
-
     .choices__list--dropdown .choices__item {
         padding: 12px 16px;
         font-size: 14px;
@@ -227,6 +198,15 @@ $letrasTipoMedidor = [
 
     .choices.is-disabled .choices__list--single .choices__item {
         color: #94a3b8;
+    }
+
+    .choices {
+        position: relative;
+        z-index: 1;
+    }
+
+    .choices.is-open {
+        z-index: 99999;
     }
 
     /* ============================================
@@ -304,6 +284,17 @@ $letrasTipoMedidor = [
         background: rgba(255, 255, 255, 0.25);
     }
 
+    /* ============================================
+       Form Card
+       ============================================ */
+    .form-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: visible;
+        margin-bottom: 16px;
+    }
+
     .form-card-header {
         display: flex;
         align-items: center;
@@ -325,6 +316,21 @@ $letrasTipoMedidor = [
         margin: 0;
     }
 
+    .form-card-body {
+        padding: 20px;
+        overflow: visible;
+    }
+
+    /* ============================================
+       Form Grid
+       ============================================ */
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -8px 16px -8px;
+        position: relative;
+    }
+
     .form-row:last-child {
         margin-bottom: 0;
     }
@@ -335,6 +341,7 @@ $letrasTipoMedidor = [
         display: flex;
         flex-direction: column;
         gap: 6px;
+        box-sizing: border-box;
     }
 
     .col-12 { width: 100%; }
@@ -382,10 +389,8 @@ $letrasTipoMedidor = [
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
-    .form-control:disabled {
-        background-color: #f1f5f9;
-        color: #64748b;
-        cursor: not-allowed;
+    .form-control::placeholder {
+        color: #94a3b8;
     }
 
     textarea.form-control {
@@ -393,71 +398,62 @@ $letrasTipoMedidor = [
         resize: vertical;
     }
 
-    .info-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 8px 12px;
-        background: #f1f5f9;
-        border-radius: 6px;
-        font-size: 12px;
-        color: #475569;
-    }
-
-    .info-badge.codigo {
-        background: #eff6ff;
-        color: #3b82f6;
-        font-family: 'SF Mono', Monaco, monospace;
-        font-weight: 600;
-    }
-
-    /* Radio Button Group - Estilo igual aos filtros */
+    /* ============================================
+       Radio Group
+       ============================================ */
     .radio-group {
         display: flex;
-        gap: 4px;
-        background: #f1f5f9;
-        padding: 4px;
-        border-radius: 10px;
-        flex-wrap: wrap;
+        gap: 16px;
+        padding: 10px 0;
     }
 
     .radio-item {
         display: flex;
         align-items: center;
+        gap: 8px;
         cursor: pointer;
-        margin: 0;
     }
 
     .radio-item input[type="radio"] {
-        display: none;
+        width: 18px;
+        height: 18px;
+        accent-color: #3b82f6;
     }
 
-    .radio-item .radio-label {
-        padding: 8px 14px;
-        font-size: 13px;
-        font-weight: 500;
+    .radio-label {
+        font-size: 14px;
+        color: #334155;
+    }
+
+    /* ============================================
+       Info Badge
+       ============================================ */
+    .info-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 14px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
         color: #64748b;
-        border-radius: 8px;
-        transition: all 0.2s ease;
-        white-space: nowrap;
     }
 
-    .radio-item input[type="radio"]:checked + .radio-label {
-        background: #ffffff;
-        color: #1e293b;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    .info-badge.codigo {
+        background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+        color: #1e40af;
+        font-weight: 600;
+        font-family: 'Courier New', monospace;
     }
 
-    .radio-item:hover .radio-label {
-        color: #1e293b;
-    }
-
+    /* ============================================
+       Form Actions
+       ============================================ */
     .form-actions {
         display: flex;
-        align-items: center;
         justify-content: flex-end;
-        gap: 10px;
-        padding: 14px 20px;
+        gap: 12px;
+        padding: 16px 20px;
         background: #f8fafc;
         border-top: 1px solid #e2e8f0;
     }
@@ -465,15 +461,14 @@ $letrasTipoMedidor = [
     .btn {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 10px 18px;
+        gap: 8px;
+        padding: 12px 20px;
+        border: none;
         border-radius: 10px;
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
-        border: none;
         text-decoration: none;
     }
 
@@ -522,6 +517,9 @@ $letrasTipoMedidor = [
         margin: 16px 0;
     }
 
+    /* ============================================
+       Responsivo
+       ============================================ */
     @media (max-width: 992px) {
         .col-3 { width: 50%; }
         .col-4 { width: 50%; }
@@ -571,6 +569,14 @@ $letrasTipoMedidor = [
             width: 100%;
         }
 
+        .form-row {
+            margin-bottom: 0;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
         .form-actions {
             flex-direction: column;
             padding: 16px;
@@ -614,7 +620,7 @@ $letrasTipoMedidor = [
             </div>
             <div class="form-card-body">
                 <div class="form-row">
-                    <div class="form-group col-6">
+                    <div class="form-group col-4">
                         <label class="form-label">
                             <ion-icon name="business-outline"></ion-icon>
                             Unidade <span class="required">*</span>
@@ -630,7 +636,7 @@ $letrasTipoMedidor = [
                         </select>
                     </div>
 
-                    <div class="form-group col-6">
+                    <div class="form-group col-4">
                         <label class="form-label">
                             <ion-icon name="location-outline"></ion-icon>
                             Localidade <span class="required">*</span>
@@ -639,10 +645,8 @@ $letrasTipoMedidor = [
                             <option value="">Selecione a Unidade primeiro</option>
                         </select>
                     </div>
-                </div>
 
-                <div class="form-row">
-                    <div class="form-group col-12">
+                    <div class="form-group col-4">
                         <label class="form-label">
                             <ion-icon name="speedometer-outline"></ion-icon>
                             Ponto de Medição <span class="required">*</span>
@@ -675,7 +679,7 @@ $letrasTipoMedidor = [
                             <?php foreach ($tiposProgramacao as $id => $nome): ?>
                             <label class="radio-item">
                                 <input type="radio" name="id_tipo_programacao" value="<?= $id ?>" 
-                                    <?= ($isEdicao && $programacao['ID_TIPO_PROGRAMACAO'] == $id) ? 'checked' : '' ?> required>
+                                    <?= ($isEdicao && $programacao['ID_TIPO_PROGRAMACAO'] == $id) ? 'checked' : (!$isEdicao && $id == 1 ? 'checked' : '') ?> required>
                                 <span class="radio-label"><?= $nome ?></span>
                             </label>
                             <?php endforeach; ?>
@@ -685,23 +689,22 @@ $letrasTipoMedidor = [
                     <div class="form-group col-4">
                         <label class="form-label">
                             <ion-icon name="calendar-outline"></ion-icon>
-                            Data da Programação <span class="required">*</span>
+                            Data Programada <span class="required">*</span>
                         </label>
-                        <input type="datetime-local" name="dt_programacao" class="form-control" required
-                               value="<?= $isEdicao && $programacao['DT_PROGRAMACAO'] ? date('Y-m-d\TH:i', strtotime($programacao['DT_PROGRAMACAO'])) : '' ?>">
+                        <input type="date" name="dt_programacao" class="form-control" required
+                               value="<?= $isEdicao && $programacao['DT_PROGRAMACAO'] ? date('Y-m-d', strtotime($programacao['DT_PROGRAMACAO'])) : '' ?>">
                     </div>
 
                     <div class="form-group col-4">
                         <label class="form-label">
-                            <ion-icon name="person-outline"></ion-icon>
-                            Responsável <span class="required">*</span>
+                            <ion-icon name="flag-outline"></ion-icon>
+                            Situação <span class="required">*</span>
                         </label>
-                        <select id="selectResponsavel" name="cd_usuario_responsavel" required>
-                            <option value="">Selecione o Responsável</option>
-                            <?php foreach ($usuarios as $usuario): ?>
-                                <option value="<?= $usuario['CD_USUARIO'] ?>"
-                                    <?= ($isEdicao && $programacao['CD_USUARIO_RESPONSAVEL'] == $usuario['CD_USUARIO']) ? 'selected' : '' ?>>
-                                    <?= $usuario['DS_MATRICULA'] . ' - ' . $usuario['DS_NOME'] ?>
+                        <select name="id_situacao" class="form-control" required>
+                            <?php foreach ($situacoes as $id => $nome): ?>
+                                <option value="<?= $id ?>" 
+                                    <?= ($isEdicao && $programacao['ID_SITUACAO'] == $id) ? 'selected' : (!$isEdicao && $id == 1 ? 'selected' : '') ?>>
+                                    <?= $nome ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -711,22 +714,22 @@ $letrasTipoMedidor = [
                 <div class="form-row">
                     <div class="form-group col-6">
                         <label class="form-label">
-                            <ion-icon name="flag-outline"></ion-icon>
-                            Situação <span class="required">*</span>
+                            <ion-icon name="person-outline"></ion-icon>
+                            Responsável
                         </label>
-                        <div class="radio-group">
-                            <?php foreach ($situacoes as $id => $nome): ?>
-                            <label class="radio-item">
-                                <input type="radio" name="id_situacao" value="<?= $id ?>" 
-                                    <?= ($isEdicao && $programacao['ID_SITUACAO'] == $id) ? 'checked' : (!$isEdicao && $id == 1 ? 'checked' : '') ?> required>
-                                <span class="radio-label"><?= $nome ?></span>
-                            </label>
+                        <select id="selectResponsavel" name="cd_usuario_responsavel">
+                            <option value="">Selecione o Responsável</option>
+                            <?php foreach ($usuarios as $usuario): ?>
+                                <option value="<?= $usuario['CD_USUARIO'] ?>"
+                                    <?= ($isEdicao && $programacao['CD_USUARIO_RESPONSAVEL'] == $usuario['CD_USUARIO']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($usuario['DS_MATRICULA'] . ' - ' . $usuario['DS_NOME']) ?>
+                                </option>
                             <?php endforeach; ?>
-                        </div>
+                        </select>
                     </div>
 
                     <?php if ($isEdicao): ?>
-                    <div class="form-group col-4">
+                    <div class="form-group col-6">
                         <label class="form-label">
                             <ion-icon name="barcode-outline"></ion-icon>
                             Código
@@ -774,24 +777,8 @@ $letrasTipoMedidor = [
                         </label>
                         <textarea name="ds_solicitacao" class="form-control" rows="4"
                                   placeholder="Descreva o motivo e detalhes da solicitação" maxlength="200"><?= $isEdicao ? htmlspecialchars($programacao['DS_SOLICITACAO']) : '' ?></textarea>
-                        <small style="color: #94a3b8; font-size: 10px;">Máximo de 200 caracteres</small>
                     </div>
                 </div>
-
-                <?php if ($isEdicao && $programacao['DT_ULTIMA_ATUALIZACAO']): ?>
-                <div class="form-divider"></div>
-                <div class="form-row">
-                    <div class="form-group col-12">
-                        <small style="color: #94a3b8; font-size: 11px;">
-                            <ion-icon name="time-outline" style="vertical-align: middle;"></ion-icon>
-                            Última atualização: <?= date('d/m/Y H:i', strtotime($programacao['DT_ULTIMA_ATUALIZACAO'])) ?>
-                            <?php if ($programacao['DS_USUARIO_ATUALIZACAO']): ?>
-                                por <?= htmlspecialchars($programacao['DS_USUARIO_ATUALIZACAO']) ?>
-                            <?php endif; ?>
-                        </small>
-                    </div>
-                </div>
-                <?php endif; ?>
             </div>
 
             <div class="form-actions">
@@ -805,9 +792,9 @@ $letrasTipoMedidor = [
                     Excluir
                 </button>
                 <?php endif; ?>
-                <button type="submit" class="btn btn-primary" id="btnSalvar">
+                <button type="submit" id="btnSalvar" class="btn btn-primary">
                     <ion-icon name="save-outline"></ion-icon>
-                    <?= $isEdicao ? 'Salvar Alterações' : 'Cadastrar Programação' ?>
+                    Salvar
                 </button>
             </div>
         </div>
@@ -818,10 +805,7 @@ $letrasTipoMedidor = [
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
 <script>
-    // Variáveis globais
     let choicesUnidade, choicesLocalidade, choicesPontoMedicao, choicesResponsavel;
-    
-    // Valores salvos no banco (para edição)
     const isEdicao = <?= $isEdicao ? 'true' : 'false' ?>;
     const valorSalvo = {
         cdUnidade: <?= $isEdicao ? (int)$programacao['CD_UNIDADE'] : 'null' ?>,
@@ -921,7 +905,7 @@ $letrasTipoMedidor = [
                 choicesLocalidade.setChoices(choices, 'value', 'label', true);
                 choicesLocalidade.enable();
 
-                // Se tem localidade selecionada, carrega os pontos
+                // Se tem localidade selecionada, carrega pontos de medição
                 if (cdLocalidadeSelecionada) {
                     carregarPontosMedicao(cdLocalidadeSelecionada, valorSalvo.cdPontoMedicao);
                 }
@@ -942,23 +926,18 @@ $letrasTipoMedidor = [
             return;
         }
 
-        fetch(`bd/programacaoManutencao/getPontosMedicaoFormatado.php?cd_localidade=${cdLocalidade}`)
+        fetch(`bd/pontoMedicao/getPontosMedicao.php?cd_localidade=${cdLocalidade}`)
             .then(response => response.json())
             .then(data => {
-                const choices = [{ value: '', label: 'Selecione o Ponto de Medição', selected: !cdPontoSelecionado }];
+                const choices = [{ value: '', label: 'Selecione o Ponto', selected: !cdPontoSelecionado }];
                 
                 if (data.success && data.data.length > 0) {
                     data.data.forEach(item => {
-                        // Código formatado: LOCALIDADE-ID_PONTO-LETRA-CD_UNIDADE
                         const letraTipo = letrasTipoMedidor[item.ID_TIPO_MEDIDOR] || 'X';
-                        const codigoPonto = item.CD_LOCALIDADE + '-' + 
-                                           String(item.CD_PONTO_MEDICAO).padStart(6, '0') + '-' + 
-                                           letraTipo + '-' + 
-                                           item.CD_UNIDADE;
-                        
+                        const codigoFormatado = `${item.CD_LOCALIDADE}-${String(item.CD_PONTO_MEDICAO).padStart(6, '0')}-${letraTipo}`;
                         choices.push({
                             value: item.CD_PONTO_MEDICAO,
-                            label: `${codigoPonto} - ${item.DS_NOME}`,
+                            label: `${codigoFormatado} - ${item.DS_NOME}`,
                             selected: cdPontoSelecionado && item.CD_PONTO_MEDICAO == cdPontoSelecionado
                         });
                     });
@@ -998,82 +977,22 @@ $letrasTipoMedidor = [
         console.log('=== DEBUG: Dados do formulário ===');
         console.log('========================================');
         for (let [key, value] of formData.entries()) {
-            console.log(`${key}: "${value}"`);
+            console.log(`${key}: ${value}`);
         }
         console.log('========================================');
-        
-        // Validar campos obrigatórios
-        const cdPontoMedicao = formData.get('cd_ponto_medicao');
-        const idTipoProgramacao = formData.get('id_tipo_programacao');
-        const cdUsuarioResponsavel = formData.get('cd_usuario_responsavel');
-        const dtProgramacao = formData.get('dt_programacao');
-        const dsSolicitante = formData.get('ds_solicitante');
-        const dtSolicitacao = formData.get('dt_solicitacao');
-        
-        if (!cdPontoMedicao || cdPontoMedicao === '') {
-            showToast('Selecione o Ponto de Medição', 'erro');
-            btnSalvar.disabled = false;
-            btnSalvar.innerHTML = '<ion-icon name="save-outline"></ion-icon> Salvar';
-            return;
-        }
-        
-        if (!idTipoProgramacao) {
-            showToast('Selecione o Tipo de Programação', 'erro');
-            btnSalvar.disabled = false;
-            btnSalvar.innerHTML = '<ion-icon name="save-outline"></ion-icon> Salvar';
-            return;
-        }
-        
-        if (!cdUsuarioResponsavel || cdUsuarioResponsavel === '') {
-            showToast('Selecione o Responsável', 'erro');
-            btnSalvar.disabled = false;
-            btnSalvar.innerHTML = '<ion-icon name="save-outline"></ion-icon> Salvar';
-            return;
-        }
 
         fetch('bd/programacaoManutencao/salvarProgramacao.php', {
             method: 'POST',
             body: formData
         })
         .then(response => {
-            console.log('=== DEBUG: Response status:', response.status);
+            console.log('Response status:', response.status);
             return response.text();
         })
         .then(text => {
-            console.log('========================================');
-            console.log('=== DEBUG: Response RAW ===');
-            console.log('========================================');
-            console.log(text);
-            console.log('========================================');
-            
+            console.log('Response text:', text);
             try {
                 const data = JSON.parse(text);
-                
-                // Mostrar debug detalhado
-                if (data.debug_sql) {
-                    console.log('========================================');
-                    console.log('=== DEBUG: SQL EXECUTADO ===');
-                    console.log('========================================');
-                    console.log(data.debug_sql);
-                    console.log('========================================');
-                }
-                
-                if (data.debug_params) {
-                    console.log('=== DEBUG: PARÂMETROS ===');
-                    console.log(JSON.stringify(data.debug_params, null, 2));
-                    console.log('========================================');
-                }
-
-                if (data.debug) {
-                    console.log('=== DEBUG: VALORES RECEBIDOS ===');
-                    console.log(JSON.stringify(data.debug, null, 2));
-                    console.log('========================================');
-                }
-
-                if (data.rows_affected !== undefined) {
-                    console.log('=== LINHAS AFETADAS:', data.rows_affected);
-                }
-                
                 if (data.success) {
                     showToast(data.message, 'sucesso');
                     setTimeout(function() {
@@ -1086,8 +1005,7 @@ $letrasTipoMedidor = [
                 }
             } catch (e) {
                 console.error('Erro ao parsear JSON:', e);
-                console.error('Texto recebido:', text);
-                showToast('Erro na resposta do servidor. Verifique o console (F12).', 'erro');
+                showToast('Erro ao processar resposta. Verifique o console (F12).', 'erro');
                 btnSalvar.disabled = false;
                 btnSalvar.innerHTML = '<ion-icon name="save-outline"></ion-icon> Salvar';
             }

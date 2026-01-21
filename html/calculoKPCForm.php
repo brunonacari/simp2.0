@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SIMP - Sistema Integrado de Macromedição e Pitometria
  * Formulário de Cálculo de KPC
@@ -463,6 +464,80 @@ if ($isEdicao) {
         text-align: center;
         color: #94a3b8;
         font-size: 13px;
+    }
+
+    .autocomplete-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 10px 14px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .autocomplete-item:last-child {
+        border-bottom: none;
+    }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.highlighted {
+        background-color: #3b82f6;
+    }
+
+    .autocomplete-item .item-code {
+        font-weight: 600;
+        font-size: 13px;
+        color: #1e293b;
+        font-family: 'Courier New', monospace;
+    }
+
+    .autocomplete-item .item-name {
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .autocomplete-item:hover .item-code,
+    .autocomplete-item:hover .item-name,
+    .autocomplete-item.highlighted .item-code,
+    .autocomplete-item.highlighted .item-name {
+        color: white;
+    }
+
+    .autocomplete-loading {
+        padding: 12px 14px;
+        color: #64748b;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .autocomplete-empty {
+        padding: 12px 14px;
+        color: #94a3b8;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .btn-limpar-autocomplete {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 4px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-limpar-autocomplete:hover {
+        color: #ef4444;
+    }
+
+    .btn-limpar-autocomplete ion-icon {
+        font-size: 18px;
     }
 
     .btn-limpar-autocomplete {
@@ -1186,7 +1261,7 @@ if ($isEdicao) {
                                     } else {
                                         $posCalc = ($diametroReal / 10) * ($p - 1);
                                     }
-                                    ?>
+                                ?>
                                     <th id="posicao_<?= $p ?>"><?= number_format($posCalc, 2, ',', '.') ?></th>
                                 <?php endfor; ?>
                             </tr>
@@ -1199,7 +1274,7 @@ if ($isEdicao) {
                             }
 
                             for ($leitura = 1; $leitura <= 20; $leitura++):
-                                ?>
+                            ?>
                                 <tr>
                                     <td class="leitura-label">Leitura <?= $leitura ?>:</td>
                                     <?php for ($ponto = 1; $ponto <= 11; $ponto++): ?>
@@ -1332,24 +1407,18 @@ if ($isEdicao) {
 </div>
 
 <script>
-    /**
-    * ============================================================
-    * calculoKPCForm.php - JAVASCRIPT COMPLETO
-    * ============================================================
-    * 
-    * Substitua TODO o conteúdo da tag <script> pelo código abaixo.
-    * 
-    * Inclui:
-    * - Funções de cálculo KPC (fórmula corrigida do sistema legado)
-    * - Funções do gráfico Curva de Velocidade
-    * - Funções auxiliares (autocomplete, posições, etc.)
-    * 
-    * ============================================================
-    */
-
     const PI = Math.PI;
     const isEdicao = <?= $isEdicao ? 'true' : 'false' ?>;
     let graficoVelocidade = null;
+
+    // Mapeamento de letras por tipo de medidor
+    const letrasTipoMedidor = {
+        1: 'M', // Macromedidor
+        2: 'E', // Estação Pitométrica
+        4: 'P', // Medidor Pressão
+        6: 'R', // Nível Reservatório
+        8: 'H' // Hidrômetro
+    };
 
     // ============================================================
     // AUTOCOMPLETE - PONTO DE MEDIÇÃO
@@ -1357,32 +1426,65 @@ if ($isEdicao) {
 
     function initAutocomplete() {
         const input = document.getElementById('inputPontoMedicao');
+        if (!input) return;
+
         const dropdown = document.getElementById('pontoMedicaoDropdown');
         const btnLimpar = document.getElementById('btnLimparPonto');
         let debounce = null;
         let idx = -1;
 
-        input.addEventListener('input', e => {
+        input.addEventListener('focus', function() {
+            const cdPonto = document.getElementById('cdPontoMedicao').value;
+            if (!cdPonto) {
+                buscarPontosMedicao('');
+            }
+        });
+
+        input.addEventListener('input', function(e) {
             clearTimeout(debounce);
+            idx = -1;
             debounce = setTimeout(() => {
                 const termo = e.target.value.trim();
-                if (termo.length >= 2) buscarPontosMedicao(termo);
-                else dropdown.classList.remove('active');
+                buscarPontosMedicao(termo);
             }, 300);
         });
 
-        input.addEventListener('keydown', e => {
+        input.addEventListener('keydown', function(e) {
             const items = dropdown.querySelectorAll('.autocomplete-item');
-            if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); highlight(items); }
-            else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(idx - 1, 0); highlight(items); }
-            else if (e.key === 'Enter' && idx >= 0 && items[idx]) { e.preventDefault(); items[idx].click(); }
-            else if (e.key === 'Escape') dropdown.classList.remove('active');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                idx = Math.min(idx + 1, items.length - 1);
+                highlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                idx = Math.max(idx - 1, 0);
+                highlight(items);
+            } else if (e.key === 'Enter' && idx >= 0 && items[idx]) {
+                e.preventDefault();
+                items[idx].click();
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('active');
+            }
         });
 
-        function highlight(items) { items.forEach((it, i) => it.classList.toggle('highlighted', i === idx)); }
+        function highlight(items) {
+            items.forEach((it, i) => it.classList.toggle('highlighted', i === idx));
+            if (idx >= 0 && items[idx]) {
+                items[idx].scrollIntoView({
+                    block: 'nearest'
+                });
+            }
+        }
 
-        document.addEventListener('click', e => { if (!input.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('active'); });
-        btnLimpar.addEventListener('click', limparPontoMedicao);
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        if (btnLimpar) {
+            btnLimpar.addEventListener('click', limparPontoMedicao);
+        }
     }
 
     function buscarPontosMedicao(termo) {
@@ -1393,66 +1495,119 @@ if ($isEdicao) {
         dropdown.innerHTML = '<div class="autocomplete-loading">Buscando...</div>';
         dropdown.classList.add('active');
 
-        const params = new URLSearchParams({ busca: termo });
-        if (cdUnidade) params.append('cd_unidade', cdUnidade);
-        if (cdLocalidade) params.append('cd_localidade', cdLocalidade);
+        let url = 'bd/pontoMedicao/buscarPontosMedicao.php?limite=50';
+        if (termo) url += '&busca=' + encodeURIComponent(termo);
+        if (cdUnidade) url += '&cd_unidade=' + cdUnidade;
+        if (cdLocalidade) url += '&cd_localidade=' + cdLocalidade;
 
-        fetch('bd/pontoMedicao/buscarPontosMedicao.php?' + params)
+        fetch(url)
             .then(r => r.json())
             .then(data => {
                 if (data.success && data.data.length > 0) {
-                    dropdown.innerHTML = data.data.map(p => `
-                    <div class="autocomplete-item" data-id="${p.CD_PONTO_MEDICAO}" data-nome="${p.DS_NOME}"
-                         data-localidade="${p.CD_LOCALIDADE}" data-unidade="${p.CD_UNIDADE}">
-                        <strong>${p.DS_NOME}</strong>
-                        <small>${p.DS_LOCALIDADE} - ${p.DS_UNIDADE}</small>
-                    </div>
-                `).join('');
+                    let html = '';
+                    data.data.forEach(item => {
+                        const letraTipo = letrasTipoMedidor[item.ID_TIPO_MEDIDOR] || 'X';
+                        const codigoPonto = item.CD_LOCALIDADE + '-' +
+                            String(item.CD_PONTO_MEDICAO).padStart(6, '0') + '-' +
+                            letraTipo + '-' +
+                            item.CD_UNIDADE;
+
+                        html += '<div class="autocomplete-item" ' +
+                            'data-id="' + item.CD_PONTO_MEDICAO + '" ' +
+                            'data-label="' + codigoPonto + ' - ' + item.DS_NOME + '" ' +
+                            'data-localidade="' + item.CD_LOCALIDADE + '" ' +
+                            'data-localidade-chave="' + (item.CD_LOCALIDADE_CHAVE || '') + '" ' +
+                            'data-unidade="' + item.CD_UNIDADE + '">' +
+                            '<span class="item-code">' + codigoPonto + '</span>' +
+                            '<span class="item-name">' + item.DS_NOME + '</span>' +
+                            '</div>';
+                    });
+                    dropdown.innerHTML = html;
+
                     dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
-                        item.addEventListener('click', () => selecionarPontoMedicao(item));
+                        item.addEventListener('click', function() {
+                            selecionarPontoMedicao(this);
+                        });
                     });
                 } else {
                     dropdown.innerHTML = '<div class="autocomplete-empty">Nenhum ponto encontrado</div>';
                 }
             })
-            .catch(() => {
+            .catch(function() {
                 dropdown.innerHTML = '<div class="autocomplete-empty">Erro ao buscar</div>';
             });
     }
 
     function selecionarPontoMedicao(item) {
-        document.getElementById('cdPontoMedicao').value = item.dataset.id;
-        document.getElementById('inputPontoMedicao').value = item.dataset.nome;
-        document.getElementById('pontoMedicaoDropdown').classList.remove('active');
+        var cdPonto = item.dataset.id;
+        var label = item.dataset.label;
+        var cdUnidade = item.dataset.unidade;
+        var cdLocalidade = item.dataset.localidade;
+        var cdLocalidadeChave = item.dataset.localidadeChave;
 
-        // Atualiza selects
-        const unidade = item.dataset.unidade;
-        const localidade = item.dataset.localidade;
-        if (unidade) {
-            document.getElementById('selectUnidade').value = unidade;
-            carregarLocalidades(unidade, localidade);
+        document.getElementById('cdPontoMedicao').value = cdPonto;
+        document.getElementById('inputPontoMedicao').value = label;
+        document.getElementById('pontoMedicaoDropdown').classList.remove('active');
+        document.getElementById('btnLimparPonto').style.display = 'flex';
+
+        var selectUnidade = document.getElementById('selectUnidade');
+        if (selectUnidade.value !== cdUnidade) {
+            selectUnidade.value = cdUnidade;
         }
+
+        carregarLocalidadesComSelecao(cdUnidade, cdLocalidadeChave || cdLocalidade);
     }
 
     function limparPontoMedicao() {
-        document.getElementById('cdPontoMedicao').value = '';
-        document.getElementById('inputPontoMedicao').value = '';
+        var cdPonto = document.getElementById('cdPontoMedicao');
+        var inputPonto = document.getElementById('inputPontoMedicao');
+        var btnLimpar = document.getElementById('btnLimparPonto');
+        var dropdown = document.getElementById('pontoMedicaoDropdown');
+
+        if (cdPonto) cdPonto.value = '';
+        if (inputPonto) inputPonto.value = '';
+        if (btnLimpar) btnLimpar.style.display = 'none';
+        if (dropdown) dropdown.classList.remove('active');
     }
 
-    function carregarLocalidades(cdUnidade, cdLocalidadeSelecionada = '') {
-        const select = document.getElementById('selectLocalidade');
-        select.innerHTML = '<option value="">Carregando...</option>';
+    // ============================================================
+    // CARREGAR LOCALIDADES
+    // ============================================================
 
-        fetch('bd/localidade/listarLocalidades.php?cd_unidade=' + cdUnidade)
-            .then(r => r.json())
-            .then(data => {
-                select.innerHTML = '<option value="">Todas</option>';
-                if (data.success) {
-                    data.data.forEach(l => {
-                        const selected = l.CD_CHAVE == cdLocalidadeSelecionada ? 'selected' : '';
-                        select.innerHTML += `<option value="${l.CD_CHAVE}" ${selected}>${l.CD_LOCALIDADE} - ${l.DS_NOME}</option>`;
+    function carregarLocalidades(cdUnidade, cdLocalidadeSelecionada) {
+        carregarLocalidadesComSelecao(cdUnidade, cdLocalidadeSelecionada || '');
+    }
+
+    function carregarLocalidadesComSelecao(cdUnidade, cdLocalidadeSelecionada) {
+        var select = document.getElementById('selectLocalidade');
+
+        if (!cdUnidade) {
+            select.innerHTML = '<option value="">Selecione a unidade primeiro</option>';
+            select.disabled = true;
+            return;
+        }
+
+        select.innerHTML = '<option value="">Carregando...</option>';
+        select.disabled = true;
+
+        fetch('bd/pontoMedicao/getLocalidades.php?cd_unidade=' + cdUnidade)
+            .then(function(r) {
+                return r.json();
+            })
+            .then(function(data) {
+                var options = '<option value="">Selecione a Localidade</option>';
+                if (data.success && data.data) {
+                    data.data.forEach(function(l) {
+                        var selected = (l.CD_CHAVE == cdLocalidadeSelecionada) ? 'selected' : '';
+                        options += '<option value="' + l.CD_CHAVE + '" ' + selected + '>' + l.CD_LOCALIDADE + ' - ' + l.DS_NOME + '</option>';
                     });
                 }
+                select.innerHTML = options;
+                select.disabled = false;
+            })
+            .catch(function() {
+                select.innerHTML = '<option value="">Erro ao carregar</option>';
+                select.disabled = false;
             });
     }
 
@@ -1461,29 +1616,31 @@ if ($isEdicao) {
     // ============================================================
 
     function calcularPosicoesPontos() {
-        const metodo = parseInt(document.getElementById('selectMetodo').value) || 1;
-        const dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
-        const up = parseFloat(document.getElementById('vlUltimaPosicao')?.value) || dr;
+        var metodo = parseInt(document.getElementById('selectMetodo').value) || 1;
+        var dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
+        var upEl = document.getElementById('vlUltimaPosicao');
+        var up = upEl ? (parseFloat(upEl.value) || dr) : dr;
 
-        const pos = {};
-        for (let p = 1; p <= 11; p++) {
+        var pos = {};
+        for (var p = 1; p <= 11; p++) {
             pos[p] = (p === 1) ? 0 : (p === 11) ? (metodo === 2 ? up : dr) : (dr / 10) * (p - 1);
         }
         return pos;
     }
 
     function atualizarPosicoes() {
-        const pos = calcularPosicoesPontos();
-        for (let p = 1; p <= 11; p++) {
-            const th = document.getElementById('posicao_' + p);
+        var pos = calcularPosicoesPontos();
+        for (var p = 1; p <= 11; p++) {
+            var th = document.getElementById('posicao_' + p);
             if (th) th.textContent = pos[p].toFixed(2).replace('.', ',');
         }
     }
 
     function toggleCampoConvencional() {
-        const campo = document.getElementById('campoUltimaPosicao');
+        var campo = document.getElementById('campoUltimaPosicao');
         if (campo) {
-            campo.classList.toggle('visivel', document.getElementById('selectMetodo').value == '2');
+            var metodo = document.getElementById('selectMetodo').value;
+            campo.classList.toggle('visivel', metodo == '2');
         }
     }
 
@@ -1492,26 +1649,27 @@ if ($isEdicao) {
     // ============================================================
 
     function calcularMediaPonto(ponto) {
-        let soma = 0, count = 0;
-        for (let l = 1; l <= 20; l++) {
-            const input = document.querySelector('input[data-leitura="' + l + '"][data-ponto="' + ponto + '"]');
+        var soma = 0,
+            count = 0;
+        for (var l = 1; l <= 20; l++) {
+            var input = document.querySelector('input[data-leitura="' + l + '"][data-ponto="' + ponto + '"]');
             if (input && input.value !== '' && !isNaN(parseFloat(input.value))) {
                 soma += parseFloat(input.value);
                 count++;
             }
         }
-        const mediaInput = document.getElementById('media_' + ponto);
+        var mediaInput = document.getElementById('media_' + ponto);
         if (mediaInput) {
             mediaInput.value = count > 0 ? (soma / count).toFixed(2) : '';
         }
     }
 
     function obterMediasDeflexoes() {
-        const medias = [];
-        for (let p = 1; p <= 11; p++) {
-            const mediaInput = document.getElementById('media_' + p);
-            const valor = mediaInput ? parseFloat(mediaInput.value) || 0 : 0;
-            medias.push(valor);
+        var medias = [];
+        for (var p = 1; p <= 11; p++) {
+            var mediaInput = document.getElementById('media_' + p);
+            var valor = mediaInput ? parseFloat(mediaInput.value) : 0;
+            medias.push(isNaN(valor) ? 0 : valor);
         }
         return medias;
     }
@@ -1525,13 +1683,13 @@ if ($isEdicao) {
      * FV = (Σ √médias exceto central) / (10 × √média_central)
      */
     function calcularFatorVelocidadePadrao(medias) {
-        const indiceCentral = 5; // Ponto 6
-        const mediaCentral = medias[indiceCentral];
+        var indiceCentral = 5; // Ponto 6
+        var mediaCentral = medias[indiceCentral];
 
         if (mediaCentral <= 0) return 0;
 
-        let somaRaizes = 0;
-        for (let i = 0; i < medias.length; i++) {
+        var somaRaizes = 0;
+        for (var i = 0; i < medias.length; i++) {
             if (i !== indiceCentral && medias[i] > 0) {
                 somaRaizes += Math.sqrt(medias[i]);
             }
@@ -1545,7 +1703,7 @@ if ($isEdicao) {
      * Usa interpolação com coeficientes específicos
      */
     function calcularFatorVelocidadeConvencional(medias) {
-        const deflexao = new Array(11);
+        var deflexao = new Array(11);
 
         deflexao[0] = (medias[1] - medias[0]) * 0.2565835 + medias[0];
         deflexao[1] = (medias[1] - deflexao[0]) * 0.8166999 + medias[0];
@@ -1559,8 +1717,8 @@ if ($isEdicao) {
         deflexao[9] = (medias[9] - medias[10]) * 0.8166999 + medias[10];
         deflexao[10] = (medias[9] - medias[10]) * 0.2565835 + medias[10];
 
-        let fv = 0;
-        for (let i = 0; i < deflexao.length; i++) {
+        var fv = 0;
+        for (var i = 0; i < deflexao.length; i++) {
             if (deflexao[i] > 0) fv += Math.sqrt(deflexao[i]);
         }
 
@@ -1589,27 +1747,82 @@ if ($isEdicao) {
     function obterCorrecaoProjecaoTap(pt, dn) {
         if (dn >= 301) return 1.0;
 
-        const tabelaKp = {
-            25: { 50: 0.98, 75: 0.99, 100: 0.995, 150: 0.998, 200: 0.999, 250: 1.0, 300: 1.0 },
-            30: { 50: 0.97, 75: 0.98, 100: 0.99, 150: 0.995, 200: 0.998, 250: 0.999, 300: 1.0 },
-            35: { 50: 0.96, 75: 0.97, 100: 0.98, 150: 0.99, 200: 0.995, 250: 0.998, 300: 1.0 },
-            40: { 50: 0.95, 75: 0.96, 100: 0.97, 150: 0.98, 200: 0.99, 250: 0.995, 300: 1.0 },
-            45: { 50: 0.94, 75: 0.95, 100: 0.96, 150: 0.97, 200: 0.98, 250: 0.99, 300: 1.0 },
-            50: { 50: 0.93, 75: 0.94, 100: 0.95, 150: 0.96, 200: 0.97, 250: 0.98, 300: 1.0 }
+        var tabelaKp = {
+            25: {
+                50: 0.98,
+                75: 0.99,
+                100: 0.995,
+                150: 0.998,
+                200: 0.999,
+                250: 1.0,
+                300: 1.0
+            },
+            30: {
+                50: 0.97,
+                75: 0.98,
+                100: 0.99,
+                150: 0.995,
+                200: 0.998,
+                250: 0.999,
+                300: 1.0
+            },
+            35: {
+                50: 0.96,
+                75: 0.97,
+                100: 0.98,
+                150: 0.99,
+                200: 0.995,
+                250: 0.998,
+                300: 1.0
+            },
+            40: {
+                50: 0.95,
+                75: 0.96,
+                100: 0.97,
+                150: 0.98,
+                200: 0.99,
+                250: 0.995,
+                300: 1.0
+            },
+            45: {
+                50: 0.94,
+                75: 0.95,
+                100: 0.96,
+                150: 0.97,
+                200: 0.98,
+                250: 0.99,
+                300: 1.0
+            },
+            50: {
+                50: 0.93,
+                75: 0.94,
+                100: 0.95,
+                150: 0.96,
+                200: 0.97,
+                250: 0.98,
+                300: 1.0
+            }
         };
 
-        let ptProxima = 25, menorDif = Math.abs(pt - 25);
-        for (const p of Object.keys(tabelaKp)) {
-            const dif = Math.abs(pt - parseInt(p));
-            if (dif < menorDif) { menorDif = dif; ptProxima = parseInt(p); }
+        var ptProxima = 25,
+            menorDif = Math.abs(pt - 25);
+        for (var p in tabelaKp) {
+            var dif = Math.abs(pt - parseInt(p));
+            if (dif < menorDif) {
+                menorDif = dif;
+                ptProxima = parseInt(p);
+            }
         }
 
         if (tabelaKp[ptProxima]) {
-            let dnProximo = 50;
+            var dnProximo = 50;
             menorDif = Math.abs(dn - 50);
-            for (const d of Object.keys(tabelaKp[ptProxima])) {
-                const dif = Math.abs(dn - parseInt(d));
-                if (dif < menorDif) { menorDif = dif; dnProximo = parseInt(d); }
+            for (var d in tabelaKp[ptProxima]) {
+                var dif = Math.abs(dn - parseInt(d));
+                if (dif < menorDif) {
+                    menorDif = dif;
+                    dnProximo = parseInt(d);
+                }
             }
             return tabelaKp[ptProxima][dnProximo];
         }
@@ -1621,23 +1834,39 @@ if ($isEdicao) {
      * Densidade da água por temperatura
      */
     function obterDensidade(temp) {
-        const tabelaDensidade = {
-            0: 999.84, 5: 999.96, 10: 999.70, 15: 999.10, 20: 998.20,
-            25: 997.05, 30: 995.65, 35: 994.03, 40: 992.22, 45: 990.21, 50: 988.03
+        var tabelaDensidade = {
+            0: 999.84,
+            5: 999.96,
+            10: 999.70,
+            15: 999.10,
+            20: 998.20,
+            25: 997.05,
+            30: 995.65,
+            35: 994.03,
+            40: 992.22,
+            45: 990.21,
+            50: 988.03
         };
 
         if (tabelaDensidade[temp]) return tabelaDensidade[temp];
 
-        const temps = Object.keys(tabelaDensidade).map(Number).sort((a, b) => a - b);
-        let tempInf = temps[0], tempSup = temps[temps.length - 1];
+        var temps = Object.keys(tabelaDensidade).map(Number).sort(function(a, b) {
+            return a - b;
+        });
+        var tempInf = temps[0],
+            tempSup = temps[temps.length - 1];
 
-        for (const t of temps) {
+        for (var i = 0; i < temps.length; i++) {
+            var t = temps[i];
             if (t <= temp) tempInf = t;
-            if (t >= temp) { tempSup = t; break; }
+            if (t >= temp) {
+                tempSup = t;
+                break;
+            }
         }
 
         if (tempInf !== tempSup) {
-            const fator = (temp - tempInf) / (tempSup - tempInf);
+            var fator = (temp - tempInf) / (tempSup - tempInf);
             return tabelaDensidade[tempInf] + fator * (tabelaDensidade[tempSup] - tabelaDensidade[tempInf]);
         }
 
@@ -1650,14 +1879,14 @@ if ($isEdicao) {
      */
     function calcular() {
         // 1. Calcula as médias de cada ponto
-        for (let p = 1; p <= 11; p++) calcularMediaPonto(p);
+        for (var p = 1; p <= 11; p++) calcularMediaPonto(p);
 
         // 2. Obtém os parâmetros
-        const dn = parseFloat(document.getElementById('vlDiametroNominal').value) || 0;
-        const dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
-        const pt = parseFloat(document.getElementById('vlProjecaoTap').value) || 0;
-        const temperatura = parseFloat(document.getElementById('vlTemperatura').value) || 25;
-        const metodo = parseInt(document.getElementById('selectMetodo').value) || 1;
+        var dn = parseFloat(document.getElementById('vlDiametroNominal').value) || 0;
+        var dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
+        var pt = parseFloat(document.getElementById('vlProjecaoTap').value) || 0;
+        var temperatura = parseFloat(document.getElementById('vlTemperatura').value) || 25;
+        var metodo = parseInt(document.getElementById('selectMetodo').value) || 1;
 
         if (dn <= 0 || dr <= 0) {
             alert('Preencha os parâmetros do cálculo (Diâmetro Nominal e Real)');
@@ -1665,39 +1894,41 @@ if ($isEdicao) {
         }
 
         // 3. Obtém as médias das deflexões
-        const medias = obterMediasDeflexoes();
+        var medias = obterMediasDeflexoes();
 
-        if (!medias.some(m => m > 0)) {
+        if (!medias.some(function(m) {
+                return m > 0;
+            })) {
             alert('Preencha ao menos uma leitura de deflexão');
             return;
         }
 
         // 4. Fator de Velocidade
-        let fv = (metodo === 2) ? calcularFatorVelocidadeConvencional(medias) : calcularFatorVelocidadePadrao(medias);
+        var fv = (metodo === 2) ? calcularFatorVelocidadeConvencional(medias) : calcularFatorVelocidadePadrao(medias);
 
         // 5. Correção de Diâmetro = (DR / DN)² (AO QUADRADO!)
-        const cd = Math.pow(dr / dn, 2);
+        var cd = Math.pow(dr / dn, 2);
 
         // 6. Área Efetiva = π × (DR / 2000)² (USA DIÂMETRO REAL!)
-        const ae = obterAreaEfetiva(dr);
+        var ae = obterAreaEfetiva(dr);
 
         // 7. Correção Projeção TAP
-        let cp = obterCorrecaoProjecaoTap(pt, dn);
+        var cp = obterCorrecaoProjecaoTap(pt, dn);
         if (cp === 0) cp = 1;
 
         // 8. Densidade
-        const densidade = obterDensidade(temperatura);
+        var densidade = obterDensidade(temperatura);
 
         // 9. KPC = FV × CD × CP × AE
-        const kpc = fv * cd * cp * ae;
+        var kpc = fv * cd * cp * ae;
 
         // 10. Velocidade e Vazão
-        const mediaCentral = medias[5];
-        let velocidade = 0;
+        var mediaCentral = medias[5];
+        var velocidade = 0;
         if (mediaCentral > 0 && densidade > 0) {
             velocidade = Math.pow(mediaCentral / 1000, 0.4931) * 3.8078 * (densidade / 1000);
         }
-        const vazao = kpc * velocidade * 1000;
+        var vazao = kpc * velocidade * 1000;
 
         // 11. Atualiza campos
         document.getElementById('vlFatorVelocidade').value = fv.toFixed(10);
@@ -1707,98 +1938,131 @@ if ($isEdicao) {
         document.getElementById('vlKPC').value = kpc.toFixed(10);
         document.getElementById('vlVazao').value = vazao.toFixed(2);
 
-        console.log('Cálculo KPC:', { metodo: metodo === 1 ? 'Padrão' : 'Convencional', dn, dr, pt, fv, cd, cp, ae, kpc, vazao });
+        console.log('Cálculo KPC:', {
+            metodo: metodo === 1 ? 'Padrão' : 'Convencional',
+            dn: dn,
+            dr: dr,
+            pt: pt,
+            fv: fv,
+            cd: cd,
+            cp: cp,
+            ae: ae,
+            kpc: kpc,
+            vazao: vazao
+        });
     }
 
     // ============================================================
-    // GRÁFICO - CURVA DE VELOCIDADE
+    // GRÁFICO CURVA DE VELOCIDADE
     // ============================================================
 
-    /**
-     * Abre o modal do gráfico da Curva de Velocidade
-     */
     function abrirGraficoCurvaVelocidade() {
-        // Primeiro calcula as médias
-        for (let p = 1; p <= 11; p++) calcularMediaPonto(p);
+        console.log('Abrindo gráfico...');
 
-        // Obtém posições e médias
-        const posicoes = calcularPosicoesPontos();
-        const dadosGrafico = [];
+        for (var p = 1; p <= 11; p++) {
+            calcularMediaPonto(p);
+        }
 
-        for (let p = 1; p <= 11; p++) {
-            const mediaInput = document.getElementById('media_' + p);
-            const deflexao = mediaInput ? parseFloat(mediaInput.value) || 0 : 0;
-            const posicao = posicoes[p] || 0;
+        var posicoes = calcularPosicoesPontos();
+        var dadosGrafico = [];
+
+        for (var p = 1; p <= 11; p++) {
+            var mediaInput = document.getElementById('media_' + p);
+            var deflexao = mediaInput ? parseFloat(mediaInput.value) || 0 : 0;
+            var posicao = posicoes[p] || 0;
 
             if (deflexao > 0) {
-                dadosGrafico.push({ posicao: posicao, deflexao: deflexao, ponto: p });
+                dadosGrafico.push({
+                    posicao: posicao,
+                    deflexao: deflexao,
+                    ponto: p
+                });
             }
         }
 
-        // Verifica se há dados
         if (dadosGrafico.length === 0) {
             alert('Preencha ao menos uma leitura de deflexão para visualizar o gráfico.');
             return;
         }
 
-        // Ordena por posição
-        dadosGrafico.sort((a, b) => a.posicao - b.posicao);
+        dadosGrafico.sort(function(a, b) {
+            return a.posicao - b.posicao;
+        });
 
-        // Abre o modal
-        document.getElementById('modalGraficoOverlay').classList.add('ativo');
+        var modal = document.getElementById('modalGraficoOverlay');
+        if (modal) {
+            modal.classList.add('ativo');
+        }
         document.body.style.overflow = 'hidden';
 
-        // Cria o gráfico após o modal renderizar
-        setTimeout(() => criarGraficoVelocidade(dadosGrafico), 100);
+        setTimeout(function() {
+            criarGraficoVelocidade(dadosGrafico);
+        }, 150);
     }
 
-    /**
-     * Fecha o modal do gráfico
-     */
     function fecharModalGrafico(event) {
         if (event && event.target !== event.currentTarget) return;
 
-        document.getElementById('modalGraficoOverlay').classList.remove('ativo');
+        var modal = document.getElementById('modalGraficoOverlay');
+        if (modal) {
+            modal.classList.remove('ativo');
+        }
         document.body.style.overflow = '';
 
-        // Destroi o gráfico
         if (graficoVelocidade) {
             graficoVelocidade.destroy();
             graficoVelocidade = null;
         }
     }
 
-    /**
-     * Cria o gráfico da Curva de Velocidade
-     */
     function criarGraficoVelocidade(dadosGrafico) {
+        console.log('Criando gráfico com dados:', dadosGrafico);
+
         if (graficoVelocidade) {
             graficoVelocidade.destroy();
             graficoVelocidade = null;
         }
 
-        const canvas = document.getElementById('graficoVelocidade');
-        if (!canvas) return;
+        var canvas = document.getElementById('graficoVelocidade');
+        if (!canvas) {
+            console.error('Canvas não encontrado');
+            return;
+        }
 
-        const ctx = canvas.getContext('2d');
+        var ctx = canvas.getContext('2d');
 
-        // Calcula limites dos eixos
-        const maxPosicao = Math.max(...dadosGrafico.map(d => d.posicao));
-        const maxDeflexao = Math.max(...dadosGrafico.map(d => d.deflexao));
-        const limiteY = Math.ceil(maxPosicao / 10) * 10 + 10;
-        const limiteX = Math.ceil(maxDeflexao / 10) * 10 + 10;
+        if (typeof Chart === 'undefined') {
+            alert('Erro: Chart.js não está carregado');
+            return;
+        }
 
-        // Registra plugin de datalabels
+        var maxPosicao = Math.max.apply(null, dadosGrafico.map(function(d) {
+            return d.posicao;
+        }));
+        var maxDeflexao = Math.max.apply(null, dadosGrafico.map(function(d) {
+            return d.deflexao;
+        }));
+        var limiteY = Math.ceil(maxPosicao / 10) * 10 + 10;
+        var limiteX = Math.ceil(maxDeflexao / 10) * 10 + 10;
+
         if (typeof ChartDataLabels !== 'undefined') {
             Chart.register(ChartDataLabels);
         }
+
+        var chartData = dadosGrafico.map(function(d) {
+            return {
+                x: d.deflexao,
+                y: d.posicao,
+                ponto: d.ponto
+            };
+        });
 
         graficoVelocidade = new Chart(ctx, {
             type: 'scatter',
             data: {
                 datasets: [{
                     label: 'Curva de Velocidade',
-                    data: dadosGrafico.map(d => ({ x: d.deflexao, y: d.posicao, ponto: d.ponto })),
+                    data: chartData,
                     borderColor: '#c9a227',
                     backgroundColor: '#c9a227',
                     showLine: true,
@@ -1814,67 +2078,46 @@ if ($isEdicao) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: {
-                    padding: { top: 20, right: 80, bottom: 20, left: 20 }
-                },
                 plugins: {
-                    legend: { display: false },
+                    legend: {
+                        display: false
+                    },
                     title: {
                         display: true,
                         text: 'Curva de Velocidade',
-                        font: { size: 16, weight: 'bold' },
-                        color: '#1e293b'
-                    },
-                    tooltip: {
-                        enabled: true,
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        callbacks: {
-                            label: function (context) {
-                                return [
-                                    `Ponto: ${context.raw.ponto}`,
-                                    `Posição: ${context.raw.y.toFixed(2)} mm`,
-                                    `Deflexão: ${context.raw.x.toFixed(4)} mm`
-                                ];
-                            }
+                        font: {
+                            size: 16,
+                            weight: 'bold'
                         }
-                    },
-                    datalabels: {
-                        display: true,
-                        align: 'right',
-                        anchor: 'end',
-                        offset: 6,
-                        color: '#475569',
-                        font: { size: 10, weight: 'bold' },
-                        formatter: function (value) {
-                            return value.y.toFixed(0) + ': ' + value.x.toFixed(2);
-                        },
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        borderRadius: 3,
-                        padding: { top: 2, bottom: 2, left: 4, right: 4 }
                     }
                 },
                 scales: {
                     x: {
-                        title: { display: true, text: 'Deflexão Média (mm)', font: { size: 12, weight: 'bold' }, color: '#475569' },
-                        min: 0, max: limiteX,
-                        grid: { color: '#e5e7eb' },
-                        ticks: { color: '#64748b' }
+                        title: {
+                            display: true,
+                            text: 'Deflexão Média (mm)'
+                        },
+                        min: 0,
+                        max: limiteX
                     },
                     y: {
-                        title: { display: true, text: 'Posição (mm)', font: { size: 12, weight: 'bold' }, color: '#475569' },
-                        min: 0, max: limiteY,
-                        grid: { color: '#e5e7eb' },
-                        ticks: { color: '#64748b' }
+                        title: {
+                            display: true,
+                            text: 'Posição (mm)'
+                        },
+                        min: 0,
+                        max: limiteY
                     }
                 }
             }
         });
+
+        console.log('Gráfico criado com sucesso');
     }
 
-    // Fecha modal com ESC
-    document.addEventListener('keydown', function (e) {
+    document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            const modal = document.getElementById('modalGraficoOverlay');
+            var modal = document.getElementById('modalGraficoOverlay');
             if (modal && modal.classList.contains('ativo')) {
                 fecharModalGrafico();
             }
@@ -1885,86 +2128,101 @@ if ($isEdicao) {
     // SUBMIT DO FORMULÁRIO
     // ============================================================
 
-    document.getElementById('formCalculoKPC').addEventListener('submit', function (e) {
+    document.getElementById('formCalculoKPC').addEventListener('submit', function(e) {
         e.preventDefault();
 
-        const cdPonto = document.getElementById('cdPontoMedicao').value;
-        if (!cdPonto) { showToast('Selecione um Ponto de Medição', 'alerta'); return; }
-
-        const kpc = document.getElementById('vlKPC').value;
-        if (!kpc || parseFloat(kpc) === 0) {
-            if (!confirm('O KPC não foi calculado. Deseja continuar mesmo assim?')) return;
+        var cdPonto = document.getElementById('cdPontoMedicao').value;
+        if (!isEdicao && !cdPonto) {
+            showToast('Selecione um Ponto de Medição', 'erro');
+            return;
         }
 
-        // Monta os dados - IMPORTANTE: usar mesmos nomes que o PHP espera
-        const leituras = [];
-        const posicoes = calcularPosicoesPontos();
+        var kpc = parseFloat(document.getElementById('vlKPC').value);
+        if (!kpc || kpc <= 0) {
+            if (!confirm('O KPC não foi calculado ou está zerado. Deseja continuar mesmo assim?')) return;
+        }
 
-        for (let l = 1; l <= 20; l++) {
-            for (let p = 1; p <= 11; p++) {
-                const input = document.querySelector(`input[data-leitura="${l}"][data-ponto="${p}"]`);
+        var leituras = [];
+        var posicoes = calcularPosicoesPontos();
+
+        for (var l = 1; l <= 20; l++) {
+            for (var p = 1; p <= 11; p++) {
+                var input = document.querySelector('input[data-leitura="' + l + '"][data-ponto="' + p + '"]');
                 if (input && input.value !== '' && !isNaN(parseFloat(input.value))) {
                     leituras.push({
-                        leitura: l,           // PHP espera 'leitura'
-                        ponto: p,             // PHP espera 'ponto'
-                        deflexao: parseFloat(input.value),  // PHP espera 'deflexao'
-                        posicao: posicoes[p]  // PHP espera 'posicao'
+                        leitura: l,
+                        ponto: p,
+                        deflexao: parseFloat(input.value),
+                        posicao: posicoes[p]
                     });
                 }
             }
         }
 
-        // Adiciona as médias (ordem 21)
-        for (let p = 1; p <= 11; p++) {
-            const media = parseFloat(document.getElementById('media_' + p).value) || 0;
+        for (var p = 1; p <= 11; p++) {
+            var media = parseFloat(document.getElementById('media_' + p).value) || 0;
             if (media > 0) {
                 leituras.push({
-                    leitura: 21,          // PHP espera 'leitura'
-                    ponto: p,             // PHP espera 'ponto'
-                    deflexao: media,      // PHP espera 'deflexao'
-                    posicao: posicoes[p]  // PHP espera 'posicao'
+                    leitura: 21,
+                    ponto: p,
+                    deflexao: media,
+                    posicao: posicoes[p]
                 });
             }
         }
 
-        const dados = {
+        var tecnicoEl = document.getElementById('selectTecnico');
+        var usuarioEl = document.getElementById('selectUsuario');
+        var observacaoEl = document.querySelector('input[name="ds_observacao"]');
+        var raioTipEl = document.getElementById('vlRaioTip');
+        var temperaturaEl = document.getElementById('vlTemperatura');
+        var ultimaPosEl = document.getElementById('vlUltimaPosicao');
+        var projecaoTapEl = document.getElementById('vlProjecaoTap');
+
+        var dados = {
             cd_chave: parseInt(document.querySelector('input[name="cd_chave"]').value) || 0,
             cd_ponto_medicao: parseInt(cdPonto),
             dt_leitura: document.querySelector('input[name="dt_leitura"]').value,
             id_metodo: parseInt(document.getElementById('selectMetodo').value) || 1,
             vl_diametro_nominal: parseFloat(document.getElementById('vlDiametroNominal').value) || 0,
             vl_diametro_real: parseFloat(document.getElementById('vlDiametroReal').value) || 0,
-            vl_projecao_tap: parseFloat(document.getElementById('vlProjecaoTap').value) || 0,
-            vl_raio_tip: parseFloat(document.getElementById('vlRaioTip').value) || 0,
-            vl_temperatura: parseFloat(document.getElementById('vlTemperatura').value) || 25,
+            vl_ultima_posicao: ultimaPosEl ? (parseFloat(ultimaPosEl.value) || 0) : 0,
+            vl_projecao_tap: projecaoTapEl ? (parseFloat(projecaoTapEl.value) || 0) : 0,
+            vl_raio_tip: raioTipEl ? (parseFloat(raioTipEl.value) || 0) : 0,
+            vl_temperatura: temperaturaEl ? (parseFloat(temperaturaEl.value) || 25) : 25,
             vl_fator_velocidade: parseFloat(document.getElementById('vlFatorVelocidade').value) || 0,
             vl_correcao_diametro: parseFloat(document.getElementById('vlCorrecaoDiametro').value) || 0,
             vl_correcao_projecao_tap: parseFloat(document.getElementById('vlCorrecaoProjecaoTap').value) || 0,
             vl_area_efetiva: parseFloat(document.getElementById('vlAreaEfetiva').value) || 0,
             vl_kpc: parseFloat(document.getElementById('vlKPC').value) || 0,
-            vl_vazao: parseFloat(document.getElementById('vlVazao').value) || null,
-            cd_tecnico_responsavel: parseInt(document.getElementById('selectTecnico').value) || 0,
-            cd_usuario_responsavel: parseInt(document.getElementById('selectUsuario').value) || 0,
-            ds_observacao: document.querySelector('input[name="ds_observacao"]')?.value || '',
+            vl_vazao: parseFloat(document.getElementById('vlVazao').value) || 0,
+            cd_tecnico_responsavel: tecnicoEl ? (parseInt(tecnicoEl.value) || 0) : 0,
+            cd_usuario_responsavel: usuarioEl ? (parseInt(usuarioEl.value) || 0) : 0,
+            ds_observacao: observacaoEl ? (observacaoEl.value || '') : '',
             leituras: leituras
         };
 
-        // Envia para o servidor
         fetch('bd/calculoKPC/salvarCalculoKPC.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dados)
-        })
-            .then(r => r.json())
-            .then(data => {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dados)
+            })
+            .then(function(r) {
+                return r.json();
+            })
+            .then(function(data) {
                 if (data.success) {
-                    showToast(data.message, 'sucesso');
-                    setTimeout(() => window.location.href = 'calculoKPC.php', 1500);
+                    showToast('Cálculo salvo com sucesso!', 'sucesso');
+                    setTimeout(function() {
+                        window.location.href = 'calculoKPC.php';
+                    }, 1500);
                 } else {
                     showToast(data.message || 'Erro ao salvar', 'erro');
                 }
             })
-            .catch(err => {
+            .catch(function(err) {
                 console.error(err);
                 showToast('Erro ao salvar', 'erro');
             });
@@ -1974,16 +2232,21 @@ if ($isEdicao) {
     // TOAST
     // ============================================================
 
-    function showToast(msg, tipo = 'info') {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
+    function showToast(msg, tipo) {
+        tipo = tipo || 'info';
+        var container = document.getElementById('toastContainer');
+        var toast = document.createElement('div');
         toast.className = 'toast toast-' + tipo;
-        toast.innerHTML = `<span>${msg}</span>`;
+        toast.innerHTML = '<span>' + msg + '</span>';
         container.appendChild(toast);
-        setTimeout(() => toast.classList.add('show'), 10);
-        setTimeout(() => {
+        setTimeout(function() {
+            toast.classList.add('show');
+        }, 10);
+        setTimeout(function() {
             toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
+            setTimeout(function() {
+                toast.remove();
+            }, 300);
         }, 3000);
     }
 
@@ -1991,11 +2254,10 @@ if ($isEdicao) {
     // INICIALIZAÇÃO
     // ============================================================
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         initAutocomplete();
         toggleCampoConvencional();
 
-        // Select2
         if (typeof $ !== 'undefined' && $.fn.select2) {
             $('.select2-tecnico, .select2-usuario').select2({
                 placeholder: 'Selecione...',
@@ -2004,13 +2266,14 @@ if ($isEdicao) {
             });
         }
 
-        // Eventos de alteração
-        document.getElementById('selectUnidade').addEventListener('change', function () {
+        document.getElementById('selectUnidade').addEventListener('change', function() {
             carregarLocalidades(this.value);
             limparPontoMedicao();
         });
 
-        document.getElementById('selectLocalidade').addEventListener('change', limparPontoMedicao);
+        document.getElementById('selectLocalidade').addEventListener('change', function() {
+            limparPontoMedicao();
+        });
     });
 </script>
 

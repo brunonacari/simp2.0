@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SIMP - Buscar Logs do Sistema
  * Endpoint para consulta de registros de log com filtros e paginação
@@ -62,10 +63,10 @@ try {
     }
 
     if (!empty($busca)) {
-        $where[] = "(L.NM_LOG LIKE :busca OR CAST(L.DS_LOG AS VARCHAR(MAX)) LIKE :busca)";
-        $params[':busca'] = '%' . $busca . '%';
+        $where[] = "(L.NM_LOG LIKE :busca1 OR CAST(L.DS_LOG AS VARCHAR(MAX)) LIKE :busca2)";
+        $params[':busca1'] = '%' . $busca . '%';
+        $params[':busca2'] = '%' . $busca . '%';
     }
-
     $whereClause = count($where) > 0 ? 'WHERE ' . implode(' AND ', $where) : '';
 
     // Contar total
@@ -105,16 +106,16 @@ try {
     ";
 
     $stmt = $pdoSIMP->prepare($sql);
-    
+
     // Bind dos parâmetros de filtro
     foreach ($params as $key => $value) {
         $stmt->bindValue($key, $value);
     }
-    
+
     // Bind dos parâmetros de paginação
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->bindValue(':limit', $porPagina, PDO::PARAM_INT);
-    
+
     $stmt->execute();
     $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -126,7 +127,6 @@ try {
         'total' => $total,
         'totalPaginas' => $totalPaginas
     ], JSON_UNESCAPED_UNICODE);
-
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([

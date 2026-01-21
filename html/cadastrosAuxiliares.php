@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SIMP - Sistema Integrado de Macromedição e Pitometria
  * Cadastros Auxiliares
@@ -44,10 +45,16 @@ $tiposCalculo = [
 
 <style>
     /* ============================================
-       Choices.js Customização
-       ============================================ */
+   Choices.js Customização - CORRIGIDO Z-INDEX
+   ============================================ */
     .choices {
         margin-bottom: 0;
+        position: relative;
+        z-index: 1;
+    }
+
+    .choices.is-open {
+        z-index: 99999;
     }
 
     .choices__inner {
@@ -90,7 +97,8 @@ $tiposCalculo = [
         border-radius: 10px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         margin-top: 4px;
-        z-index: 1001;
+        z-index: 99999 !important;
+        position: absolute !important;
     }
 
     .choices__list--dropdown .choices__item {
@@ -130,27 +138,50 @@ $tiposCalculo = [
         right: 14px;
     }
 
-    /* Choices.js dentro de modais - controle de largura */
+    /* Choices.js dentro de modais - controle de largura e z-index */
     .modal-body .choices {
         width: 100% !important;
         max-width: 100% !important;
     }
 
+    .modal-body .choices.is-open {
+        z-index: 100000 !important;
+    }
+
+
     .modal-body .choices__inner {
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box;
+        z-index: 100000 !important;
+
     }
 
     .modal-body .choices__list--dropdown {
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box;
+        z-index: 100001 !important;
+    }
+
+    /* Z-index elevado para dropdowns dentro de modais */
+    .modal-overlay .choices.is-open,
+    .modal .choices.is-open {
+        z-index: 100000 !important;
+    }
+
+    .modal-overlay .choices__list--dropdown,
+    .modal .choices__list--dropdown {
+        z-index: 100001 !important;
+    }
+
+    .modal-overlay .choices.is-open {
+        z-index: 100000 !important;
     }
 
     /* ============================================
-       Page Container
-       ============================================ */
+   Page Container
+   ============================================ */
     .page-container {
         padding: 24px;
         max-width: 1800px;
@@ -158,8 +189,8 @@ $tiposCalculo = [
     }
 
     /* ============================================
-       Page Header
-       ============================================ */
+   Page Header
+   ============================================ */
     .page-header {
         background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
         border-radius: 16px;
@@ -207,8 +238,8 @@ $tiposCalculo = [
     }
 
     /* ============================================
-       Tabs Navigation
-       ============================================ */
+   Tabs Navigation
+   ============================================ */
     .tabs-navigation {
         display: flex;
         gap: 4px;
@@ -266,8 +297,8 @@ $tiposCalculo = [
     }
 
     /* ============================================
-       Tab Content
-       ============================================ */
+   Tab Content
+   ============================================ */
     .tab-content {
         display: none;
     }
@@ -277,8 +308,8 @@ $tiposCalculo = [
     }
 
     /* ============================================
-       Filters Card
-       ============================================ */
+   Filters Card
+   ============================================ */
     .filters-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
@@ -342,8 +373,8 @@ $tiposCalculo = [
     }
 
     /* ============================================
-       Form Controls
-       ============================================ */
+   Form Controls
+   ============================================ */
     .form-group {
         display: flex;
         flex-direction: column;
@@ -387,8 +418,8 @@ $tiposCalculo = [
     }
 
     /* ============================================
-       Input Search com ícone
-       ============================================ */
+   Input Search com ícone
+   ============================================ */
     .input-search-wrapper {
         position: relative;
         display: flex;
@@ -440,8 +471,8 @@ $tiposCalculo = [
     }
 
     /* ============================================
-       Results Info
-       ============================================ */
+   Results Info
+   ============================================ */
     .results-info {
         display: flex;
         align-items: center;
@@ -461,18 +492,20 @@ $tiposCalculo = [
 
     .results-count strong {
         color: #334155;
-        font-weight: 600;
+    }
+
+    .results-count ion-icon {
+        font-size: 16px;
     }
 
     /* ============================================
-       Data Table
-       ============================================ */
+   Table Container
+   ============================================ */
     .table-container {
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 16px;
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         position: relative;
     }
 
@@ -485,191 +518,46 @@ $tiposCalculo = [
         border-collapse: collapse;
     }
 
-    .data-table thead {
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        position: sticky;
-        top: 0;
-        z-index: 5;
-    }
-
     .data-table th {
         padding: 14px 16px;
         text-align: left;
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 600;
         color: #64748b;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        white-space: nowrap;
-        cursor: pointer;
-        user-select: none;
-        transition: background 0.15s ease;
-    }
-
-    .data-table th:hover {
-        background: #f1f5f9;
-    }
-
-    .data-table th.no-sort {
-        cursor: default;
-    }
-
-    .data-table th.no-sort:hover {
+        letter-spacing: 0.03em;
         background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        white-space: nowrap;
     }
 
-    .data-table tbody tr {
+    .data-table td {
+        padding: 14px 16px;
+        font-size: 13px;
+        color: #334155;
         border-bottom: 1px solid #f1f5f9;
-        transition: background 0.15s ease;
     }
 
     .data-table tbody tr:hover {
         background: #f8fafc;
     }
 
-    .data-table tbody tr:last-child {
+    .data-table tbody tr:last-child td {
         border-bottom: none;
     }
 
-    .data-table td {
-        padding: 14px 16px;
-        font-size: 13px;
-        color: #475569;
-        vertical-align: middle;
-    }
-
-    .data-table td.code {
-        font-family: 'SF Mono', Monaco, 'Consolas', monospace;
-        font-size: 12px;
-        color: #3b82f6;
-        font-weight: 600;
-    }
-
-    .data-table td.name {
-        font-weight: 500;
-        color: #1e293b;
-    }
-
-    .data-table td.truncate {
-        max-width: 250px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    /* Badges */
-    .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 5px 10px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .badge-info {
-        background: #eff6ff;
-        color: #3b82f6;
-    }
-
-    .badge-success {
-        background: #dcfce7;
-        color: #15803d;
-    }
-
-    .badge-warning {
-        background: #fef3c7;
-        color: #b45309;
-    }
-
-    /* Actions */
-    .table-actions {
-        display: flex;
-        gap: 6px;
-    }
-
-    .btn-action {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        color: #64748b;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .btn-action:hover {
-        background: #eff6ff;
-        border-color: #3b82f6;
-        color: #3b82f6;
-    }
-
-    .btn-action.delete:hover {
-        background: #fef2f2;
-        border-color: #ef4444;
-        color: #ef4444;
-    }
-
-    .btn-action ion-icon {
-        font-size: 16px;
-    }
-
-    /* ============================================
-       Empty State
-       ============================================ */
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-    }
-
-    .empty-state-icon {
-        width: 80px;
-        height: 80px;
-        background: #f1f5f9;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 20px;
-        font-size: 36px;
-        color: #94a3b8;
-    }
-
-    .empty-state h3 {
-        font-size: 16px;
-        font-weight: 600;
-        color: #475569;
-        margin: 0 0 8px 0;
-    }
-
-    .empty-state p {
-        font-size: 13px;
-        color: #94a3b8;
-        margin: 0;
-    }
-
-    /* ============================================
-       Loading State
-       ============================================ */
+    /* Loading Overlay */
     .loading-overlay {
-        display: none;
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.8);
+        display: none;
         align-items: center;
         justify-content: center;
         z-index: 10;
-        border-radius: 16px;
     }
 
     .loading-overlay.active {
@@ -686,12 +574,59 @@ $tiposCalculo = [
     }
 
     @keyframes spin {
-        to { transform: rotate(360deg); }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     /* ============================================
-       Paginação
-       ============================================ */
+   Table Actions
+   ============================================ */
+    .table-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action.edit {
+        background: #eff6ff;
+        color: #3b82f6;
+    }
+
+    .btn-action.edit:hover {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .btn-action.delete {
+        background: #fef2f2;
+        color: #ef4444;
+    }
+
+    .btn-action.delete:hover {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-action ion-icon {
+        font-size: 16px;
+    }
+
+    /* ============================================
+   Pagination
+   ============================================ */
     .pagination-container {
         display: flex;
         align-items: center;
@@ -756,8 +691,8 @@ $tiposCalculo = [
     }
 
     /* ============================================
-       Modal
-       ============================================ */
+   Modal
+   ============================================ */
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -786,6 +721,8 @@ $tiposCalculo = [
         overflow-y: auto;
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
         animation: modalIn 0.2s ease;
+        overflow: visible !important;
+
     }
 
     @keyframes modalIn {
@@ -793,6 +730,7 @@ $tiposCalculo = [
             opacity: 0;
             transform: scale(0.95) translateY(-10px);
         }
+
         to {
             opacity: 1;
             transform: scale(1) translateY(0);
@@ -830,10 +768,12 @@ $tiposCalculo = [
     .modal-close:hover {
         background: #e2e8f0;
         color: #334155;
+
     }
 
     .modal-body {
         padding: 24px;
+        overflow: visible !important;
     }
 
     .modal-footer {
@@ -879,6 +819,8 @@ $tiposCalculo = [
 
     .form-group-modal {
         margin-bottom: 16px;
+        overflow: visible !important;
+
     }
 
     .form-group-modal:last-child {
@@ -916,8 +858,8 @@ $tiposCalculo = [
     }
 
     /* ============================================
-       Toast
-       ============================================ */
+   Toast
+   ============================================ */
     .toast-container {
         position: fixed;
         top: 20px;
@@ -943,6 +885,7 @@ $tiposCalculo = [
             transform: translateX(100%);
             opacity: 0;
         }
+
         to {
             transform: translateX(0);
             opacity: 1;
@@ -985,8 +928,8 @@ $tiposCalculo = [
     }
 
     /* ============================================
-       Responsive
-       ============================================ */
+   Responsive
+   ============================================ */
     @media (max-width: 1024px) {
         .filters-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -1118,10 +1061,10 @@ $tiposCalculo = [
                     Tipos de Medidor
                 </div>
                 <?php if ($podeEditar): ?>
-                <button type="button" class="btn-novo" onclick="abrirModalTipoMedidor()">
-                    <ion-icon name="add-outline"></ion-icon>
-                    Novo Tipo
-                </button>
+                    <button type="button" class="btn-novo" onclick="abrirModalTipoMedidor()">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Novo Tipo
+                    </button>
                 <?php endif; ?>
             </div>
             <div class="filters-grid">
@@ -1181,10 +1124,10 @@ $tiposCalculo = [
                     Tipos de Reservatório
                 </div>
                 <?php if ($podeEditar): ?>
-                <button type="button" class="btn-novo" onclick="abrirModalTipoReservatorio()">
-                    <ion-icon name="add-outline"></ion-icon>
-                    Novo Tipo
-                </button>
+                    <button type="button" class="btn-novo" onclick="abrirModalTipoReservatorio()">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Novo Tipo
+                    </button>
                 <?php endif; ?>
             </div>
             <div class="filters-grid">
@@ -1243,10 +1186,10 @@ $tiposCalculo = [
                     Áreas de Influência
                 </div>
                 <?php if ($podeEditar): ?>
-                <button type="button" class="btn-novo" onclick="abrirModalAreaInfluencia()">
-                    <ion-icon name="add-outline"></ion-icon>
-                    Nova Área
-                </button>
+                    <button type="button" class="btn-novo" onclick="abrirModalAreaInfluencia()">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Nova Área
+                    </button>
                 <?php endif; ?>
             </div>
             <div class="filters-grid">
@@ -1308,10 +1251,10 @@ $tiposCalculo = [
                     Unidades
                 </div>
                 <?php if ($podeEditar): ?>
-                <button type="button" class="btn-novo" onclick="abrirModalUnidade()">
-                    <ion-icon name="add-outline"></ion-icon>
-                    Nova Unidade
-                </button>
+                    <button type="button" class="btn-novo" onclick="abrirModalUnidade()">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Nova Unidade
+                    </button>
                 <?php endif; ?>
             </div>
             <div class="filters-grid">
@@ -1371,10 +1314,10 @@ $tiposCalculo = [
                     Localidades
                 </div>
                 <?php if ($podeEditar): ?>
-                <button type="button" class="btn-novo" onclick="abrirModalLocalidade()">
-                    <ion-icon name="add-outline"></ion-icon>
-                    Nova Localidade
-                </button>
+                    <button type="button" class="btn-novo" onclick="abrirModalLocalidade()">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Nova Localidade
+                    </button>
                 <?php endif; ?>
             </div>
             <div class="filters-grid">
@@ -1386,7 +1329,7 @@ $tiposCalculo = [
                     <select id="filtroLocalidadeUnidade" class="form-control">
                         <option value="">Todas as Unidades</option>
                         <?php foreach ($unidades as $u): ?>
-                        <option value="<?= $u['CD_UNIDADE'] ?>"><?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?></option>
+                            <option value="<?= $u['CD_UNIDADE'] ?>"><?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -1447,10 +1390,10 @@ $tiposCalculo = [
                     Sistemas de Água
                 </div>
                 <?php if ($podeEditar): ?>
-                <button type="button" class="btn-novo" onclick="abrirModalSistemaAgua()">
-                    <ion-icon name="add-outline"></ion-icon>
-                    Novo Sistema
-                </button>
+                    <button type="button" class="btn-novo" onclick="abrirModalSistemaAgua()">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Novo Sistema
+                    </button>
                 <?php endif; ?>
             </div>
             <div class="filters-grid">
@@ -1512,10 +1455,10 @@ $tiposCalculo = [
                     ETAs - Estações de Tratamento de Água
                 </div>
                 <?php if ($podeEditar): ?>
-                <button type="button" class="btn-novo" onclick="abrirModalEta()">
-                    <ion-icon name="add-outline"></ion-icon>
-                    Nova ETA
-                </button>
+                    <button type="button" class="btn-novo" onclick="abrirModalEta()">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Nova ETA
+                    </button>
                 <?php endif; ?>
             </div>
             <div class="filters-grid">
@@ -1527,7 +1470,7 @@ $tiposCalculo = [
                     <select id="filtroEtaSistema" class="form-control">
                         <option value="">Todos os Sistemas</option>
                         <?php foreach ($sistemasAgua as $s): ?>
-                        <option value="<?= $s['CD_CHAVE'] ?>"><?= htmlspecialchars($s['DS_NOME']) ?></option>
+                            <option value="<?= $s['CD_CHAVE'] ?>"><?= htmlspecialchars($s['DS_NOME']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -1604,7 +1547,7 @@ $tiposCalculo = [
                 <select class="form-control choices-select" id="tipoMedidorCalculo">
                     <option value="">Selecione...</option>
                     <?php foreach ($tiposCalculo as $id => $nome): ?>
-                    <option value="<?= $id ?>"><?= $nome ?></option>
+                        <option value="<?= $id ?>"><?= $nome ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -1725,7 +1668,7 @@ $tiposCalculo = [
                 <select class="form-control choices-select" id="localidadeUnidade">
                     <option value="">Selecione...</option>
                     <?php foreach ($unidades as $u): ?>
-                    <option value="<?= $u['CD_UNIDADE'] ?>"><?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?></option>
+                        <option value="<?= $u['CD_UNIDADE'] ?>"><?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -1764,7 +1707,7 @@ $tiposCalculo = [
                 <select class="form-control choices-select" id="sistemaAguaLocalidade">
                     <option value="">Selecione...</option>
                     <?php foreach ($localidades as $loc): ?>
-                    <option value="<?= htmlspecialchars($loc['CD_CHAVE']) ?>"><?= htmlspecialchars($loc['CD_LOCALIDADE'] . ' - ' . $loc['DS_NOME']) ?></option>
+                        <option value="<?= htmlspecialchars($loc['CD_CHAVE']) ?>"><?= htmlspecialchars($loc['CD_LOCALIDADE'] . ' - ' . $loc['DS_NOME']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -1803,7 +1746,7 @@ $tiposCalculo = [
                 <select class="form-control choices-select" id="etaSistema">
                     <option value="">Selecione...</option>
                     <?php foreach ($sistemasAgua as $s): ?>
-                    <option value="<?= $s['CD_CHAVE'] ?>"><?= htmlspecialchars($s['DS_NOME']) ?></option>
+                        <option value="<?= $s['CD_CHAVE'] ?>"><?= htmlspecialchars($s['DS_NOME']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -1820,7 +1763,7 @@ $tiposCalculo = [
                 <select class="form-control choices-select" id="etaFormula">
                     <option value="">Selecione...</option>
                     <?php foreach ($formulas as $f): ?>
-                    <option value="<?= $f['CD_CHAVE'] ?>"><?= htmlspecialchars($f['DS_NOME']) ?></option>
+                        <option value="<?= $f['CD_CHAVE'] ?>"><?= htmlspecialchars($f['DS_NOME']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -1854,13 +1797,41 @@ $tiposCalculo = [
 
     // Estado de paginação para cada aba
     let estadoPaginacao = {
-        tipoMedidor: { pagina: 1, total: 0, totalPaginas: 0 },
-        tipoReservatorio: { pagina: 1, total: 0, totalPaginas: 0 },
-        areaInfluencia: { pagina: 1, total: 0, totalPaginas: 0 },
-        unidade: { pagina: 1, total: 0, totalPaginas: 0 },
-        localidade: { pagina: 1, total: 0, totalPaginas: 0 },
-        sistemaAgua: { pagina: 1, total: 0, totalPaginas: 0 },
-        eta: { pagina: 1, total: 0, totalPaginas: 0 }
+        tipoMedidor: {
+            pagina: 1,
+            total: 0,
+            totalPaginas: 0
+        },
+        tipoReservatorio: {
+            pagina: 1,
+            total: 0,
+            totalPaginas: 0
+        },
+        areaInfluencia: {
+            pagina: 1,
+            total: 0,
+            totalPaginas: 0
+        },
+        unidade: {
+            pagina: 1,
+            total: 0,
+            totalPaginas: 0
+        },
+        localidade: {
+            pagina: 1,
+            total: 0,
+            totalPaginas: 0
+        },
+        sistemaAgua: {
+            pagina: 1,
+            total: 0,
+            totalPaginas: 0
+        },
+        eta: {
+            pagina: 1,
+            total: 0,
+            totalPaginas: 0
+        }
     };
 
     // ============================================
@@ -1870,7 +1841,7 @@ $tiposCalculo = [
         btn.addEventListener('click', function() {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
+
             this.classList.add('active');
             document.getElementById('tab-' + this.dataset.tab).classList.add('active');
         });
@@ -1955,7 +1926,7 @@ $tiposCalculo = [
         }
 
         let html = '<div class="pagination">';
-        
+
         // Anterior
         html += `<button class="btn-page ${estado.pagina === 1 ? 'disabled' : ''}" 
                   onclick="${estado.pagina > 1 ? callbackBusca + '(' + (estado.pagina - 1) + ')' : ''}"
@@ -2002,26 +1973,26 @@ $tiposCalculo = [
         const filtro = document.getElementById('filtroTipoMedidor').value;
         const loading = document.getElementById('loadingTipoMedidor');
         const tbody = document.getElementById('tabelaTipoMedidor');
-        
+
         loading.classList.add('active');
-        
-        $.get('bd/cadastrosAuxiliares/getTiposMedidor.php', { 
-            busca: filtro, 
+
+        $.get('bd/cadastrosAuxiliares/getTiposMedidor.php', {
+            busca: filtro,
             pagina: pagina,
             porPagina: porPagina
         }, function(response) {
             loading.classList.remove('active');
-            
+
             if (response.success) {
                 estadoPaginacao.tipoMedidor = {
                     pagina: response.pagina,
                     total: response.total,
                     totalPaginas: response.totalPaginas
                 };
-                
-                document.getElementById('countTipoMedidor').innerHTML = 
+
+                document.getElementById('countTipoMedidor').innerHTML =
                     `<strong>${response.total}</strong> registro(s) encontrado(s)`;
-                
+
                 let html = '';
                 if (response.data.length > 0) {
                     response.data.forEach(item => {
@@ -2054,7 +2025,7 @@ $tiposCalculo = [
                         </div>
                     </td></tr>`;
                 }
-                
+
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoTipoMedidor', estadoPaginacao.tipoMedidor, 'buscarTiposMedidor');
             }
@@ -2073,7 +2044,9 @@ $tiposCalculo = [
     }
 
     function editarTipoMedidor(id) {
-        $.get('bd/cadastrosAuxiliares/getTipoMedidor.php', { id: id }, function(response) {
+        $.get('bd/cadastrosAuxiliares/getTipoMedidor.php', {
+            id: id
+        }, function(response) {
             if (response.success && response.data) {
                 document.getElementById('tipoMedidorId').value = response.data.CD_CHAVE;
                 document.getElementById('tipoMedidorNome').value = response.data.DS_NOME || '';
@@ -2094,12 +2067,12 @@ $tiposCalculo = [
             nome: document.getElementById('tipoMedidorNome').value,
             tipo_calculo: document.getElementById('tipoMedidorCalculo').value
         };
-        
+
         if (!dados.nome || !dados.tipo_calculo) {
             showToast('Preencha todos os campos obrigatórios', 'erro');
             return;
         }
-        
+
         $.post('bd/cadastrosAuxiliares/salvarTipoMedidor.php', dados, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
@@ -2115,8 +2088,10 @@ $tiposCalculo = [
 
     function excluirTipoMedidor(id) {
         if (!confirm('Deseja realmente excluir este registro?')) return;
-        
-        $.post('bd/cadastrosAuxiliares/excluirTipoMedidor.php', { id: id }, function(response) {
+
+        $.post('bd/cadastrosAuxiliares/excluirTipoMedidor.php', {
+            id: id
+        }, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarTiposMedidor(estadoPaginacao.tipoMedidor.pagina);
@@ -2135,26 +2110,26 @@ $tiposCalculo = [
         const filtro = document.getElementById('filtroTipoReservatorio').value;
         const loading = document.getElementById('loadingTipoReservatorio');
         const tbody = document.getElementById('tabelaTipoReservatorio');
-        
+
         loading.classList.add('active');
-        
-        $.get('bd/cadastrosAuxiliares/getTiposReservatorio.php', { 
-            busca: filtro, 
+
+        $.get('bd/cadastrosAuxiliares/getTiposReservatorio.php', {
+            busca: filtro,
             pagina: pagina,
             porPagina: porPagina
         }, function(response) {
             loading.classList.remove('active');
-            
+
             if (response.success) {
                 estadoPaginacao.tipoReservatorio = {
                     pagina: response.pagina,
                     total: response.total,
                     totalPaginas: response.totalPaginas
                 };
-                
-                document.getElementById('countTipoReservatorio').innerHTML = 
+
+                document.getElementById('countTipoReservatorio').innerHTML =
                     `<strong>${response.total}</strong> registro(s) encontrado(s)`;
-                
+
                 let html = '';
                 if (response.data.length > 0) {
                     response.data.forEach(item => {
@@ -2186,7 +2161,7 @@ $tiposCalculo = [
                         </div>
                     </td></tr>`;
                 }
-                
+
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoTipoReservatorio', estadoPaginacao.tipoReservatorio, 'buscarTiposReservatorio');
             }
@@ -2204,7 +2179,9 @@ $tiposCalculo = [
     }
 
     function editarTipoReservatorio(id) {
-        $.get('bd/cadastrosAuxiliares/getTipoReservatorio.php', { id: id }, function(response) {
+        $.get('bd/cadastrosAuxiliares/getTipoReservatorio.php', {
+            id: id
+        }, function(response) {
             if (response.success && response.data) {
                 document.getElementById('tipoReservatorioId').value = response.data.CD_CHAVE;
                 document.getElementById('tipoReservatorioNome').value = response.data.NOME || '';
@@ -2223,12 +2200,12 @@ $tiposCalculo = [
             id: document.getElementById('tipoReservatorioId').value,
             nome: document.getElementById('tipoReservatorioNome').value
         };
-        
+
         if (!dados.nome) {
             showToast('Preencha o nome', 'erro');
             return;
         }
-        
+
         $.post('bd/cadastrosAuxiliares/salvarTipoReservatorio.php', dados, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
@@ -2244,8 +2221,10 @@ $tiposCalculo = [
 
     function excluirTipoReservatorio(id) {
         if (!confirm('Deseja realmente excluir este registro?')) return;
-        
-        $.post('bd/cadastrosAuxiliares/excluirTipoReservatorio.php', { id: id }, function(response) {
+
+        $.post('bd/cadastrosAuxiliares/excluirTipoReservatorio.php', {
+            id: id
+        }, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarTiposReservatorio(estadoPaginacao.tipoReservatorio.pagina);
@@ -2264,26 +2243,26 @@ $tiposCalculo = [
         const filtro = document.getElementById('filtroAreaInfluencia').value;
         const loading = document.getElementById('loadingAreaInfluencia');
         const tbody = document.getElementById('tabelaAreaInfluencia');
-        
+
         loading.classList.add('active');
-        
-        $.get('bd/cadastrosAuxiliares/getAreasInfluencia.php', { 
-            busca: filtro, 
+
+        $.get('bd/cadastrosAuxiliares/getAreasInfluencia.php', {
+            busca: filtro,
             pagina: pagina,
             porPagina: porPagina
         }, function(response) {
             loading.classList.remove('active');
-            
+
             if (response.success) {
                 estadoPaginacao.areaInfluencia = {
                     pagina: response.pagina,
                     total: response.total,
                     totalPaginas: response.totalPaginas
                 };
-                
-                document.getElementById('countAreaInfluencia').innerHTML = 
+
+                document.getElementById('countAreaInfluencia').innerHTML =
                     `<strong>${response.total}</strong> registro(s) encontrado(s)`;
-                
+
                 let html = '';
                 if (response.data.length > 0) {
                     response.data.forEach(item => {
@@ -2318,7 +2297,7 @@ $tiposCalculo = [
                         </div>
                     </td></tr>`;
                 }
-                
+
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoAreaInfluencia', estadoPaginacao.areaInfluencia, 'buscarAreasInfluencia');
             }
@@ -2338,7 +2317,9 @@ $tiposCalculo = [
     }
 
     function editarAreaInfluencia(id) {
-        $.get('bd/cadastrosAuxiliares/getAreaInfluencia.php', { id: id }, function(response) {
+        $.get('bd/cadastrosAuxiliares/getAreaInfluencia.php', {
+            id: id
+        }, function(response) {
             if (response.success && response.data) {
                 document.getElementById('areaInfluenciaId').value = response.data.CD_AREA_INFLUENCIA;
                 document.getElementById('areaInfluenciaMunicipio').value = response.data.DS_MUNICIPIO || '';
@@ -2361,12 +2342,12 @@ $tiposCalculo = [
             taxa_ocupacao: document.getElementById('areaInfluenciaTaxa').value,
             densidade: document.getElementById('areaInfluenciaDensidade').value
         };
-        
+
         if (!dados.municipio) {
             showToast('Preencha o município', 'erro');
             return;
         }
-        
+
         $.post('bd/cadastrosAuxiliares/salvarAreaInfluencia.php', dados, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
@@ -2382,8 +2363,10 @@ $tiposCalculo = [
 
     function excluirAreaInfluencia(id) {
         if (!confirm('Deseja realmente excluir este registro e seus bairros vinculados?')) return;
-        
-        $.post('bd/cadastrosAuxiliares/excluirAreaInfluencia.php', { id: id }, function(response) {
+
+        $.post('bd/cadastrosAuxiliares/excluirAreaInfluencia.php', {
+            id: id
+        }, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarAreasInfluencia(estadoPaginacao.areaInfluencia.pagina);
@@ -2402,26 +2385,26 @@ $tiposCalculo = [
         const filtro = document.getElementById('filtroUnidade').value;
         const loading = document.getElementById('loadingUnidade');
         const tbody = document.getElementById('tabelaUnidade');
-        
+
         loading.classList.add('active');
-        
-        $.get('bd/cadastrosAuxiliares/getUnidades.php', { 
-            busca: filtro, 
+
+        $.get('bd/cadastrosAuxiliares/getUnidades.php', {
+            busca: filtro,
             pagina: pagina,
             porPagina: porPagina
         }, function(response) {
             loading.classList.remove('active');
-            
+
             if (response.success) {
                 estadoPaginacao.unidade = {
                     pagina: response.pagina,
                     total: response.total,
                     totalPaginas: response.totalPaginas
                 };
-                
-                document.getElementById('countUnidade').innerHTML = 
+
+                document.getElementById('countUnidade').innerHTML =
                     `<strong>${response.total}</strong> registro(s) encontrado(s)`;
-                
+
                 let html = '';
                 if (response.data.length > 0) {
                     response.data.forEach(item => {
@@ -2454,7 +2437,7 @@ $tiposCalculo = [
                         </div>
                     </td></tr>`;
                 }
-                
+
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoUnidade', estadoPaginacao.unidade, 'buscarUnidades');
             }
@@ -2473,7 +2456,9 @@ $tiposCalculo = [
     }
 
     function editarUnidade(id) {
-        $.get('bd/cadastrosAuxiliares/getUnidade.php', { id: id }, function(response) {
+        $.get('bd/cadastrosAuxiliares/getUnidade.php', {
+            id: id
+        }, function(response) {
             if (response.success && response.data) {
                 document.getElementById('unidadeId').value = response.data.CD_UNIDADE;
                 document.getElementById('unidadeCodigo').value = response.data.CD_CODIGO || '';
@@ -2494,12 +2479,12 @@ $tiposCalculo = [
             codigo: document.getElementById('unidadeCodigo').value,
             nome: document.getElementById('unidadeNome').value
         };
-        
+
         if (!dados.codigo || !dados.nome) {
             showToast('Preencha todos os campos obrigatórios', 'erro');
             return;
         }
-        
+
         $.post('bd/cadastrosAuxiliares/salvarUnidade.php', dados, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
@@ -2515,8 +2500,10 @@ $tiposCalculo = [
 
     function excluirUnidade(id) {
         if (!confirm('Deseja realmente excluir este registro?')) return;
-        
-        $.post('bd/cadastrosAuxiliares/excluirUnidade.php', { id: id }, function(response) {
+
+        $.post('bd/cadastrosAuxiliares/excluirUnidade.php', {
+            id: id
+        }, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarUnidades(estadoPaginacao.unidade.pagina);
@@ -2536,27 +2523,27 @@ $tiposCalculo = [
         const unidade = document.getElementById('filtroLocalidadeUnidade').value;
         const loading = document.getElementById('loadingLocalidade');
         const tbody = document.getElementById('tabelaLocalidade');
-        
+
         loading.classList.add('active');
-        
-        $.get('bd/cadastrosAuxiliares/getLocalidades.php', { 
-            busca: filtro, 
+
+        $.get('bd/cadastrosAuxiliares/getLocalidades.php', {
+            busca: filtro,
             cd_unidade: unidade,
             pagina: pagina,
             porPagina: porPagina
         }, function(response) {
             loading.classList.remove('active');
-            
+
             if (response.success) {
                 estadoPaginacao.localidade = {
                     pagina: response.pagina,
                     total: response.total,
                     totalPaginas: response.totalPaginas
                 };
-                
-                document.getElementById('countLocalidade').innerHTML = 
+
+                document.getElementById('countLocalidade').innerHTML =
                     `<strong>${response.total}</strong> registro(s) encontrado(s)`;
-                
+
                 let html = '';
                 if (response.data.length > 0) {
                     response.data.forEach(item => {
@@ -2590,7 +2577,7 @@ $tiposCalculo = [
                         </div>
                     </td></tr>`;
                 }
-                
+
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoLocalidade', estadoPaginacao.localidade, 'buscarLocalidades');
             }
@@ -2610,7 +2597,9 @@ $tiposCalculo = [
     }
 
     function editarLocalidade(id) {
-        $.get('bd/cadastrosAuxiliares/getLocalidade.php', { id: id }, function(response) {
+        $.get('bd/cadastrosAuxiliares/getLocalidade.php', {
+            id: id
+        }, function(response) {
             if (response.success && response.data) {
                 document.getElementById('localidadeId').value = response.data.CD_CHAVE;
                 setChoicesValue('localidadeUnidade', response.data.CD_UNIDADE || '');
@@ -2633,12 +2622,12 @@ $tiposCalculo = [
             cd_localidade: document.getElementById('localidadeCodigo').value,
             nome: document.getElementById('localidadeNome').value
         };
-        
+
         if (!dados.cd_unidade || !dados.cd_localidade || !dados.nome) {
             showToast('Preencha todos os campos obrigatórios', 'erro');
             return;
         }
-        
+
         $.post('bd/cadastrosAuxiliares/salvarLocalidade.php', dados, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
@@ -2654,8 +2643,10 @@ $tiposCalculo = [
 
     function excluirLocalidade(id) {
         if (!confirm('Deseja realmente excluir este registro?')) return;
-        
-        $.post('bd/cadastrosAuxiliares/excluirLocalidade.php', { id: id }, function(response) {
+
+        $.post('bd/cadastrosAuxiliares/excluirLocalidade.php', {
+            id: id
+        }, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarLocalidades(estadoPaginacao.localidade.pagina);
@@ -2674,32 +2665,32 @@ $tiposCalculo = [
         const filtro = document.getElementById('filtroSistemaAgua').value;
         const loading = document.getElementById('loadingSistemaAgua');
         const tbody = document.getElementById('tabelaSistemaAgua');
-        
+
         loading.classList.add('active');
-        
-        $.get('bd/cadastrosAuxiliares/getSistemasAgua.php', { 
-            busca: filtro, 
+
+        $.get('bd/cadastrosAuxiliares/getSistemasAgua.php', {
+            busca: filtro,
             pagina: pagina,
             porPagina: porPagina
         }, function(response) {
             loading.classList.remove('active');
-            
+
             if (response.success) {
                 estadoPaginacao.sistemaAgua = {
                     pagina: response.pagina,
                     total: response.total,
                     totalPaginas: response.totalPaginas
                 };
-                
-                document.getElementById('countSistemaAgua').innerHTML = 
+
+                document.getElementById('countSistemaAgua').innerHTML =
                     `<strong>${response.total}</strong> registro(s) encontrado(s)`;
-                
+
                 let html = '';
                 if (response.data.length > 0) {
                     response.data.forEach(item => {
-                        const dataAtualizacao = item.DT_ULTIMA_ATUALIZACAO ? 
+                        const dataAtualizacao = item.DT_ULTIMA_ATUALIZACAO ?
                             new Date(item.DT_ULTIMA_ATUALIZACAO).toLocaleDateString('pt-BR') : '-';
-                        
+
                         html += `
                             <tr>
                                 <td class="code">${item.CD_CHAVE}</td>
@@ -2731,7 +2722,7 @@ $tiposCalculo = [
                         </div>
                     </td></tr>`;
                 }
-                
+
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoSistemaAgua', estadoPaginacao.sistemaAgua, 'buscarSistemasAgua');
             }
@@ -2751,7 +2742,9 @@ $tiposCalculo = [
     }
 
     function editarSistemaAgua(id) {
-        $.get('bd/cadastrosAuxiliares/getSistemaAgua.php', { id: id }, function(response) {
+        $.get('bd/cadastrosAuxiliares/getSistemaAgua.php', {
+            id: id
+        }, function(response) {
             if (response.success && response.data) {
                 document.getElementById('sistemaAguaId').value = response.data.CD_CHAVE;
                 setChoicesValue('sistemaAguaLocalidade', response.data.CD_LOCALIDADE || '');
@@ -2774,12 +2767,12 @@ $tiposCalculo = [
             nome: document.getElementById('sistemaAguaNome').value,
             descricao: document.getElementById('sistemaAguaDescricao').value
         };
-        
+
         if (!dados.cd_localidade || !dados.nome) {
             showToast('Preencha todos os campos obrigatórios', 'erro');
             return;
         }
-        
+
         $.post('bd/cadastrosAuxiliares/salvarSistemaAgua.php', dados, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
@@ -2795,8 +2788,10 @@ $tiposCalculo = [
 
     function excluirSistemaAgua(id) {
         if (!confirm('Deseja realmente excluir este registro?')) return;
-        
-        $.post('bd/cadastrosAuxiliares/excluirSistemaAgua.php', { id: id }, function(response) {
+
+        $.post('bd/cadastrosAuxiliares/excluirSistemaAgua.php', {
+            id: id
+        }, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarSistemasAgua(estadoPaginacao.sistemaAgua.pagina);
@@ -2816,33 +2811,33 @@ $tiposCalculo = [
         const sistema = document.getElementById('filtroEtaSistema').value;
         const loading = document.getElementById('loadingEta');
         const tbody = document.getElementById('tabelaEta');
-        
+
         loading.classList.add('active');
-        
-        $.get('bd/cadastrosAuxiliares/getEtas.php', { 
-            busca: filtro, 
+
+        $.get('bd/cadastrosAuxiliares/getEtas.php', {
+            busca: filtro,
             cd_sistema: sistema,
             pagina: pagina,
             porPagina: porPagina
         }, function(response) {
             loading.classList.remove('active');
-            
+
             if (response.success) {
                 estadoPaginacao.eta = {
                     pagina: response.pagina,
                     total: response.total,
                     totalPaginas: response.totalPaginas
                 };
-                
-                document.getElementById('countEta').innerHTML = 
+
+                document.getElementById('countEta').innerHTML =
                     `<strong>${response.total}</strong> registro(s) encontrado(s)`;
-                
+
                 let html = '';
                 if (response.data.length > 0) {
                     response.data.forEach(item => {
-                        const dataAtualizacao = item.DT_ULTIMA_ATUALIZACAO ? 
+                        const dataAtualizacao = item.DT_ULTIMA_ATUALIZACAO ?
                             new Date(item.DT_ULTIMA_ATUALIZACAO).toLocaleDateString('pt-BR') : '-';
-                        
+
                         html += `
                             <tr>
                                 <td class="code">${item.CD_CHAVE}</td>
@@ -2874,7 +2869,7 @@ $tiposCalculo = [
                         </div>
                     </td></tr>`;
                 }
-                
+
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoEta', estadoPaginacao.eta, 'buscarEtas');
             }
@@ -2897,7 +2892,9 @@ $tiposCalculo = [
     }
 
     function editarEta(id) {
-        $.get('bd/cadastrosAuxiliares/getEta.php', { id: id }, function(response) {
+        $.get('bd/cadastrosAuxiliares/getEta.php', {
+            id: id
+        }, function(response) {
             if (response.success && response.data) {
                 document.getElementById('etaId').value = response.data.CD_CHAVE;
                 setChoicesValue('etaSistema', response.data.CD_SISTEMA_AGUA || '');
@@ -2926,12 +2923,12 @@ $tiposCalculo = [
             cd_entidade_valor_id: document.getElementById('etaEntidadeValorId').value,
             meta_dia: document.getElementById('etaMetaDia').value
         };
-        
+
         if (!dados.cd_sistema || !dados.nome) {
             showToast('Preencha todos os campos obrigatórios', 'erro');
             return;
         }
-        
+
         $.post('bd/cadastrosAuxiliares/salvarEta.php', dados, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
@@ -2947,8 +2944,10 @@ $tiposCalculo = [
 
     function excluirEta(id) {
         if (!confirm('Deseja realmente excluir este registro?')) return;
-        
-        $.post('bd/cadastrosAuxiliares/excluirEta.php', { id: id }, function(response) {
+
+        $.post('bd/cadastrosAuxiliares/excluirEta.php', {
+            id: id
+        }, function(response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarEtas(estadoPaginacao.eta.pagina);
@@ -2963,31 +2962,45 @@ $tiposCalculo = [
     // ============================================
     // Event Listeners - Busca ao digitar (debounce)
     // ============================================
-    document.getElementById('filtroTipoMedidor').addEventListener('input', 
-        debounce(function() { buscarTiposMedidor(1); }, 400, 'tipoMedidor'));
+    document.getElementById('filtroTipoMedidor').addEventListener('input',
+        debounce(function() {
+            buscarTiposMedidor(1);
+        }, 400, 'tipoMedidor'));
 
-    document.getElementById('filtroTipoReservatorio').addEventListener('input', 
-        debounce(function() { buscarTiposReservatorio(1); }, 400, 'tipoReservatorio'));
+    document.getElementById('filtroTipoReservatorio').addEventListener('input',
+        debounce(function() {
+            buscarTiposReservatorio(1);
+        }, 400, 'tipoReservatorio'));
 
-    document.getElementById('filtroAreaInfluencia').addEventListener('input', 
-        debounce(function() { buscarAreasInfluencia(1); }, 400, 'areaInfluencia'));
+    document.getElementById('filtroAreaInfluencia').addEventListener('input',
+        debounce(function() {
+            buscarAreasInfluencia(1);
+        }, 400, 'areaInfluencia'));
 
-    document.getElementById('filtroUnidade').addEventListener('input', 
-        debounce(function() { buscarUnidades(1); }, 400, 'unidade'));
+    document.getElementById('filtroUnidade').addEventListener('input',
+        debounce(function() {
+            buscarUnidades(1);
+        }, 400, 'unidade'));
 
-    document.getElementById('filtroLocalidade').addEventListener('input', 
-        debounce(function() { buscarLocalidades(1); }, 400, 'localidade'));
-    document.getElementById('filtroLocalidadeUnidade').addEventListener('change', function() { 
-        buscarLocalidades(1); 
+    document.getElementById('filtroLocalidade').addEventListener('input',
+        debounce(function() {
+            buscarLocalidades(1);
+        }, 400, 'localidade'));
+    document.getElementById('filtroLocalidadeUnidade').addEventListener('change', function() {
+        buscarLocalidades(1);
     });
 
-    document.getElementById('filtroSistemaAgua').addEventListener('input', 
-        debounce(function() { buscarSistemasAgua(1); }, 400, 'sistemaAgua'));
+    document.getElementById('filtroSistemaAgua').addEventListener('input',
+        debounce(function() {
+            buscarSistemasAgua(1);
+        }, 400, 'sistemaAgua'));
 
-    document.getElementById('filtroEta').addEventListener('input', 
-        debounce(function() { buscarEtas(1); }, 400, 'eta'));
-    document.getElementById('filtroEtaSistema').addEventListener('change', function() { 
-        buscarEtas(1); 
+    document.getElementById('filtroEta').addEventListener('input',
+        debounce(function() {
+            buscarEtas(1);
+        }, 400, 'eta'));
+    document.getElementById('filtroEtaSistema').addEventListener('change', function() {
+        buscarEtas(1);
     });
 
     // ============================================
@@ -2998,19 +3011,33 @@ $tiposCalculo = [
     });
 
     // Carregar dados ao trocar de aba (apenas se não carregou ainda)
-    let abasCarregadas = { tipoMedidor: true };
+    let abasCarregadas = {
+        tipoMedidor: true
+    };
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const tab = this.dataset.tab;
             if (!abasCarregadas[tab]) {
                 abasCarregadas[tab] = true;
-                switch(tab) {
-                    case 'tipoReservatorio': buscarTiposReservatorio(1); break;
-                    case 'areaInfluencia': buscarAreasInfluencia(1); break;
-                    case 'unidade': buscarUnidades(1); break;
-                    case 'localidade': buscarLocalidades(1); break;
-                    case 'sistemaAgua': buscarSistemasAgua(1); break;
-                    case 'eta': buscarEtas(1); break;
+                switch (tab) {
+                    case 'tipoReservatorio':
+                        buscarTiposReservatorio(1);
+                        break;
+                    case 'areaInfluencia':
+                        buscarAreasInfluencia(1);
+                        break;
+                    case 'unidade':
+                        buscarUnidades(1);
+                        break;
+                    case 'localidade':
+                        buscarLocalidades(1);
+                        break;
+                    case 'sistemaAgua':
+                        buscarSistemasAgua(1);
+                        break;
+                    case 'eta':
+                        buscarEtas(1);
+                        break;
                 }
             }
         });
@@ -3030,7 +3057,7 @@ $tiposCalculo = [
             if (choicesInstances[select.id]) {
                 return; // Já inicializado
             }
-            
+
             choicesInstances[select.id] = new Choices(select, {
                 searchEnabled: true,
                 searchPlaceholderValue: 'Digite para buscar...',
