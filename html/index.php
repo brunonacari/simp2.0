@@ -1,128 +1,75 @@
 <?php
 /**
- * SIMP - Sistema Integrado de Macromedição e Pitometria
- * Dashboard / Página Inicial
+ * SIMP - Sistema Integrado de Macromedicao e Pitometria
+ * Dashboard de Metricas IA
  * 
- * @version 2.0 - Inclui análise de qualidade dos dados
+ * Exibe metricas consolidadas da tabela IA_METRICAS_DIARIAS
+ * Data base: MAX(DT_REFERENCIA) da tabela (nao GETDATE)
+ * 
+ * @author Bruno
+ * @version 1.0
+ * @date 2026-01-22
  */
 
 include_once 'includes/header.inc.php';
 include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
-// ============================================
-// CONSULTAS BÁSICAS DO DASHBOARD
-// ============================================
-try {
-    // Total de pontos de medição (ativos = sem data de desativação ou data futura)
-    $stmtPontos = $pdoSIMP->query("
-        SELECT COUNT(*) as total 
-        FROM SIMP.dbo.PONTO_MEDICAO 
-        WHERE DT_DESATIVACAO IS NULL OR DT_DESATIVACAO > GETDATE()
-    ");
-    $totalPontos = $stmtPontos->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
-    
-    // Manutenções previstas (ID_SITUACAO = 1)
-    $stmtManutencoes = $pdoSIMP->query("
-        SELECT COUNT(*) as total 
-        FROM SIMP.dbo.PROGRAMACAO_MANUTENCAO 
-        WHERE ID_SITUACAO = 1
-    ");
-    $totalManutencoes = $stmtManutencoes->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
-    
-    // Calibrações previstas (ID_TIPO_PROGRAMACAO = 1 AND ID_SITUACAO = 1)
-    $stmtCalibracoes = $pdoSIMP->query("
-        SELECT COUNT(*) as total 
-        FROM SIMP.dbo.PROGRAMACAO_MANUTENCAO 
-        WHERE ID_TIPO_PROGRAMACAO = 1 AND ID_SITUACAO = 1
-    ");
-    $totalCalibracoes = $stmtCalibracoes->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
-    
-    // Manutenções do tipo 2 (Manutenção) previstas
-    $stmtManutencoesTipo2 = $pdoSIMP->query("
-        SELECT COUNT(*) as total 
-        FROM SIMP.dbo.PROGRAMACAO_MANUTENCAO 
-        WHERE ID_TIPO_PROGRAMACAO = 2 AND ID_SITUACAO = 1
-    ");
-    $totalManutencoesTipo2 = $stmtManutencoesTipo2->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
-    
-    // Últimas programações de manutenção
-    $stmtUltimasManut = $pdoSIMP->query("
-        SELECT TOP 5
-            PM.CD_CODIGO,
-            PM.CD_ANO,
-            PM.ID_TIPO_PROGRAMACAO,
-            PM.ID_SITUACAO,
-            PM.DT_PROGRAMACAO,
-            P.DS_NOME AS DS_PONTO
-        FROM SIMP.dbo.PROGRAMACAO_MANUTENCAO PM
-        LEFT JOIN SIMP.dbo.PONTO_MEDICAO P ON P.CD_PONTO_MEDICAO = PM.CD_PONTO_MEDICAO
-        ORDER BY PM.DT_CADASTRO DESC
-    ");
-    $ultimasManutencoes = $stmtUltimasManut->fetchAll(PDO::FETCH_ASSOC);
-    
-} catch (Exception $e) {
-    $totalPontos = 0;
-    $totalManutencoes = 0;
-    $totalCalibracoes = 0;
-    $totalManutencoesTipo2 = 0;
-    $ultimasManutencoes = [];
-}
+// exigePermissaoTela('Análise dos Dados', ACESSO_LEITURA);
 
-// Dia da semana
-$diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-$diaSemana = $diasSemana[date('w')];
+// Verifica permissao de acesso
 
-// Situações e tipos
-$situacoes = [
-    1 => ['nome' => 'Prevista', 'cor' => 'warning', 'icone' => 'time-outline'],
-    2 => ['nome' => 'Realizada', 'cor' => 'success', 'icone' => 'checkmark-circle-outline'],
-    3 => ['nome' => 'Cancelada', 'cor' => 'danger', 'icone' => 'close-circle-outline']
-];
-
-$tiposProgramacao = [
-    1 => 'Calibração',
-    2 => 'Manutenção'
-];
+// exigePermissaoTela('DASHBOARD METRICAS IA', ACESSO_LEITURA);
 
 // Buscar unidades para filtro
-$unidades = [];
-try {
-    $sqlUnidades = "SELECT CD_UNIDADE, DS_NOME FROM SIMP.dbo.UNIDADE ORDER BY DS_NOME";
-    $stmtUnidades = $pdoSIMP->query($sqlUnidades);
-    $unidades = $stmtUnidades->fetchAll(PDO::FETCH_ASSOC);
-} catch (Exception $e) {
-    $unidades = [];
-}
+$sqlUnidades = $pdoSIMP->query("
+    SELECT DISTINCT U.CD_UNIDADE, U.DS_NOME 
+    FROM SIMP.dbo.UNIDADE U
+    INNER JOIN SIMP.dbo.LOCALIDADE L ON U.CD_UNIDADE = L.CD_UNIDADE
+    INNER JOIN SIMP.dbo.PONTO_MEDICAO PM ON L.CD_CHAVE = PM.CD_LOCALIDADE
+    ORDER BY U.DS_NOME
+");
+$unidades = $sqlUnidades->fetchAll(PDO::FETCH_ASSOC);
+
+// Buscar tipos de medidor
+$tiposMedidor = [
+    1 => 'Macromedidor',
+    2 => 'Est. Pitometrica',
+    4 => 'Pressao',
+    6 => 'Nivel',
+    8 => 'Hidrometro'
+];
+
+// Buscar ultima data disponivel
+$sqlUltimaData = $pdoSIMP->query("SELECT MAX(DT_REFERENCIA) AS ULTIMA_DATA FROM SIMP.dbo.IA_METRICAS_DIARIAS");
+$ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-m-d');
 ?>
 
 <style>
     /* ============================================
-       Reset e Base
+       Page Container
        ============================================ */
     .page-container {
+        padding: 24px;
         max-width: 1600px;
         margin: 0 auto;
-        padding: 24px;
-        background: #f1f5f9;
-        min-height: 100vh;
     }
 
     /* ============================================
-       Page Header (mesmo padrão filters-header)
+       Page Header
        ============================================ */
     .page-header {
         background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
         border-radius: 16px;
-        padding: 24px 32px;
+        padding: 28px 32px;
         margin-bottom: 24px;
-        box-shadow: 0 4px 20px rgba(30, 58, 95, 0.3);
+        color: white;
     }
 
     .page-header-content {
         display: flex;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
         flex-wrap: wrap;
         gap: 16px;
     }
@@ -130,35 +77,34 @@ try {
     .page-header-info {
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 16px;
     }
 
     .page-header-icon {
-        width: 64px;
-        height: 64px;
+        width: 52px;
+        height: 52px;
         background: rgba(255, 255, 255, 0.15);
-        border-radius: 16px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 28px;
-        color: white;
+        font-size: 24px;
     }
 
     .page-header h1 {
         font-size: 22px;
         font-weight: 700;
-        color: white;
         margin: 0 0 4px 0;
+        color: white;
     }
 
     .page-header-subtitle {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.8);
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
         margin: 0;
     }
 
-    .header-date {
+    .header-data-ref {
         display: flex;
         align-items: center;
         gap: 12px;
@@ -168,23 +114,24 @@ try {
         color: white;
     }
 
-    .header-date ion-icon {
+    .header-data-ref ion-icon {
         font-size: 24px;
     }
 
-    .header-date-day {
+    .header-data-ref-label {
+        font-size: 11px;
+        opacity: 0.8;
+        display: block;
+    }
+
+    .header-data-ref-value {
         font-size: 14px;
         font-weight: 600;
         display: block;
     }
 
-    .header-date-full {
-        font-size: 12px;
-        opacity: 0.8;
-    }
-
     /* ============================================
-       Stats Cards (cards superiores)
+       Stats Cards
        ============================================ */
     .stats-grid {
         display: grid;
@@ -194,11 +141,15 @@ try {
     }
 
     @media (max-width: 1200px) {
-        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
-    
+
     @media (max-width: 640px) {
-        .stats-grid { grid-template-columns: 1fr; }
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
     }
 
     .stat-card {
@@ -227,228 +178,164 @@ try {
         height: 4px;
     }
 
-    .stat-card.primary::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-    .stat-card.success::before { background: linear-gradient(90deg, #10b981, #34d399); }
-    .stat-card.warning::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-    .stat-card.danger::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .stat-card.primary::before {
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    }
 
-    .stat-card-content {
+    .stat-card.success::before {
+        background: linear-gradient(90deg, #10b981, #34d399);
+    }
+
+    .stat-card.warning::before {
+        background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    }
+
+    .stat-card.danger::before {
+        background: linear-gradient(90deg, #ef4444, #f87171);
+    }
+
+    .stat-card-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
+        margin-bottom: 12px;
     }
 
-    .stat-info h3 {
-        font-size: 12px;
-        font-weight: 600;
-        color: #64748b;
-        margin: 0 0 8px 0;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .stat-value {
-        font-size: 32px;
-        font-weight: 700;
-        color: #1e293b;
-        line-height: 1;
-        margin-bottom: 8px;
-    }
-
-    .stat-label {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 12px;
-        color: #64748b;
-    }
-
-    .stat-label ion-icon {
-        font-size: 14px;
-    }
-
-    .stat-icon {
-        width: 48px;
-        height: 48px;
+    .stat-card-icon {
+        width: 44px;
+        height: 44px;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 22px;
-        color: white;
     }
 
-    .stat-icon.primary { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
-    .stat-icon.success { background: linear-gradient(135deg, #10b981, #34d399); }
-    .stat-icon.warning { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
-    .stat-icon.danger { background: linear-gradient(135deg, #ef4444, #f87171); }
-
-    /* ============================================
-       Seção de Análise de Qualidade
-       ============================================ */
-    .analise-section {
-        margin-bottom: 24px;
-    }
-
-    .analise-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .analise-title {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 18px;
-        font-weight: 600;
-        color: #1e293b;
-    }
-
-    .analise-title ion-icon {
-        font-size: 24px;
+    .stat-card.primary .stat-card-icon {
+        background: #eff6ff;
         color: #3b82f6;
     }
 
-    .analise-filtros {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
+    .stat-card.success .stat-card-icon {
+        background: #ecfdf5;
+        color: #10b981;
     }
 
-    .analise-filtros select {
-        padding: 8px 12px;
+    .stat-card.warning .stat-card-icon {
+        background: #fffbeb;
+        color: #f59e0b;
+    }
+
+    .stat-card.danger .stat-card-icon {
+        background: #fef2f2;
+        color: #ef4444;
+    }
+
+    .stat-card-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .stat-card-label {
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    .stat-card-trend {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+    .stat-card-trend.up {
+        color: #10b981;
+    }
+
+    .stat-card-trend.down {
+        color: #ef4444;
+    }
+
+    .stat-card-trend.neutral {
+        color: #64748b;
+    }
+
+    /* ============================================
+       Filtros
+       ============================================ */
+    .filtros-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .filtros-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        align-items: end;
+    }
+
+    .filtro-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .filtro-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .filtro-group select,
+    .filtro-group input {
+        padding: 10px 12px;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         font-size: 13px;
-        color: #475569;
-        background: white;
-        cursor: pointer;
+        color: #1e293b;
+        background: #ffffff;
+        transition: border-color 0.2s;
     }
 
-    .analise-filtros select:focus {
+    .filtro-group select:focus,
+    .filtro-group input:focus {
         outline: none;
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
-    .btn-carregar {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 16px;
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
+    .btn-filtrar {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
         color: white;
         border: none;
         border-radius: 8px;
         font-size: 13px;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-carregar:hover {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    }
-
-    .btn-carregar:disabled {
-        background: #94a3b8;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }
-
-    .btn-carregar ion-icon {
-        font-size: 16px;
-    }
-
-    /* ============================================
-       Cards de Resumo da Análise
-       ============================================ */
-    .analise-resumo-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    @media (max-width: 1200px) {
-        .analise-resumo-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-    
-    @media (max-width: 768px) {
-        .analise-resumo-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    
-    @media (max-width: 480px) {
-        .analise-resumo-grid { grid-template-columns: 1fr; }
-    }
-
-    .analise-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 16px;
-        text-align: center;
-        transition: all 0.2s;
-    }
-
-    .analise-card:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-
-    .analise-card-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        margin: 0 auto 10px;
-        font-size: 18px;
+        gap: 8px;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    .analise-card-icon.bom { background: #dcfce7; color: #16a34a; }
-    .analise-card-icon.regular { background: #fef3c7; color: #d97706; }
-    .analise-card-icon.pessimo { background: #fee2e2; color: #dc2626; }
-    .analise-card-icon.info { background: #dbeafe; color: #2563eb; }
-    .analise-card-icon.roxo { background: #ede9fe; color: #7c3aed; }
-
-    .analise-card-valor {
-        font-size: 24px;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 4px;
-    }
-
-    .analise-card-label {
-        font-size: 12px;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .btn-filtrar:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
     }
 
     /* ============================================
-       Dashboard Grid Principal
-       ============================================ */
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-    }
-
-    @media (max-width: 1024px) {
-        .dashboard-grid { grid-template-columns: 1fr; }
-    }
-
-    /* ============================================
-       Content Cards (padrão SIMP)
+       Content Card
        ============================================ */
     .content-card {
         background: #ffffff;
@@ -456,6 +343,7 @@ try {
         border-radius: 16px;
         overflow: hidden;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        margin-bottom: 24px;
     }
 
     .content-card-header {
@@ -482,27 +370,228 @@ try {
     }
 
     .content-card-body {
-        padding: 16px 20px;
+        padding: 0;
     }
 
-    .btn-ver-todos {
+    /* ============================================
+       Tabela de Dados
+       ============================================ */
+    .tabela-container {
+        overflow-x: auto;
+    }
+
+    .tabela-metricas {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .tabela-metricas th {
+        background: #f8fafc;
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: #475569;
+        border-bottom: 2px solid #e2e8f0;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+    }
+
+    .tabela-metricas td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #1e293b;
+        vertical-align: middle;
+    }
+
+    .tabela-metricas tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .tabela-metricas tbody tr.critico {
+        background: #fef2f2;
+    }
+
+    .tabela-metricas tbody tr.atencao {
+        background: #fffbeb;
+    }
+
+    /* Status Badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 100px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-badge.ok {
+        background: #ecfdf5;
+        color: #059669;
+    }
+
+    .status-badge.atencao {
+        background: #fffbeb;
+        color: #d97706;
+    }
+
+    .status-badge.critico {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    /* Cobertura */
+    .cobertura-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .cobertura-bar-track {
+        flex: 1;
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+        min-width: 60px;
+    }
+
+    .cobertura-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s;
+    }
+
+    .cobertura-bar-fill.alta {
+        background: #10b981;
+    }
+
+    .cobertura-bar-fill.media {
+        background: #f59e0b;
+    }
+
+    .cobertura-bar-fill.baixa {
+        background: #ef4444;
+    }
+
+    .cobertura-value {
+        font-size: 12px;
+        font-weight: 600;
+        min-width: 40px;
+        text-align: right;
+    }
+
+    /* Ponto Info */
+    .ponto-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .ponto-nome {
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .ponto-tipo {
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    /* Tendencia */
+    .tendencia {
         display: flex;
         align-items: center;
         gap: 4px;
         font-size: 12px;
+    }
+
+    .tendencia.subindo {
+        color: #10b981;
+    }
+
+    .tendencia.descendo {
+        color: #ef4444;
+    }
+
+    .tendencia.estavel {
+        color: #64748b;
+    }
+
+    /* Flags */
+    .flags-container {
+        display: flex;
+        gap: 4px;
+    }
+
+    .flag-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+
+    .flag-icon.ativo {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .flag-icon.inativo {
+        background: #f1f5f9;
+        color: #cbd5e1;
+    }
+
+    /* Acoes */
+    .btn-acao {
+        padding: 6px 10px;
+        background: #eff6ff;
         color: #3b82f6;
-        text-decoration: none;
-        padding: 6px 12px;
+        border: none;
         border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px;
         transition: background 0.2s;
     }
 
-    .btn-ver-todos:hover {
-        background: #eff6ff;
+    .btn-acao:hover {
+        background: #dbeafe;
     }
 
     /* ============================================
-       Lista de Ranking
+       Dashboard Grid
+       ============================================ */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+
+    @media (max-width: 1200px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ============================================
+       Grafico Container
+       ============================================ */
+    .grafico-container {
+        padding: 20px;
+        min-height: 300px;
+    }
+
+    /* ============================================
+       Lista Ranking
        ============================================ */
     .ranking-list {
         list-style: none;
@@ -514,57 +603,46 @@ try {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 12px 0;
+        padding: 12px 20px;
         border-bottom: 1px solid #f1f5f9;
         transition: background 0.2s;
+    }
+
+    .ranking-item:hover {
+        background: #f8fafc;
     }
 
     .ranking-item:last-child {
         border-bottom: none;
     }
 
-    .ranking-item:hover {
-        background: #f8fafc;
-        margin: 0 -20px;
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-
-    .ranking-posicao {
+    .ranking-position {
         width: 28px;
         height: 28px;
-        border-radius: 50%;
+        background: #f1f5f9;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 12px;
         font-weight: 700;
-        flex-shrink: 0;
+        color: #64748b;
     }
 
-    .ranking-posicao.top1 { background: #fef3c7; color: #b45309; }
-    .ranking-posicao.top2 { background: #e5e7eb; color: #4b5563; }
-    .ranking-posicao.top3 { background: #fed7aa; color: #c2410c; }
-    .ranking-posicao.normal { background: #f1f5f9; color: #64748b; }
-
-    .ranking-tipo {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        font-weight: 700;
-        color: white;
-        flex-shrink: 0;
+    .ranking-item:nth-child(1) .ranking-position {
+        background: #fef3c7;
+        color: #d97706;
     }
 
-    .ranking-tipo.M { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
-    .ranking-tipo.E { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
-    .ranking-tipo.P { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
-    .ranking-tipo.R { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
-    .ranking-tipo.H { background: linear-gradient(135deg, #10b981, #34d399); }
+    .ranking-item:nth-child(2) .ranking-position {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .ranking-item:nth-child(3) .ranking-position {
+        background: #fed7aa;
+        color: #c2410c;
+    }
 
     .ranking-info {
         flex: 1;
@@ -580,19 +658,9 @@ try {
         text-overflow: ellipsis;
     }
 
-    .ranking-local {
+    .ranking-detalhe {
         font-size: 11px;
         color: #64748b;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .ranking-stats {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 2px;
     }
 
     .ranking-valor {
@@ -600,810 +668,803 @@ try {
         font-weight: 700;
     }
 
-    .ranking-valor.bom { color: #16a34a; }
-    .ranking-valor.regular { color: #d97706; }
-    .ranking-valor.pessimo { color: #dc2626; }
+    .ranking-valor.critico {
+        color: #dc2626;
+    }
 
-    .ranking-detalhe {
-        font-size: 10px;
-        color: #94a3b8;
+    .ranking-valor.atencao {
+        color: #d97706;
+    }
+
+    .ranking-valor.ok {
+        color: #059669;
     }
 
     /* ============================================
-       Barra de Progresso
+       Loading e Empty State
        ============================================ */
-    .progress-bar-container {
-        width: 80px;
-        height: 6px;
-        background: #e2e8f0;
-        border-radius: 3px;
-        overflow: hidden;
-    }
-
-    .progress-bar-fill {
-        height: 100%;
-        border-radius: 3px;
-        transition: width 0.5s ease;
-    }
-
-    .progress-bar-fill.bom { background: linear-gradient(90deg, #10b981, #34d399); }
-    .progress-bar-fill.regular { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-    .progress-bar-fill.pessimo { background: linear-gradient(90deg, #ef4444, #f87171); }
-
-    /* ============================================
-       Badge de Classificação
-       ============================================ */
-    .badge-classificacao {
-        display: inline-flex;
+    .loading-container {
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 4px;
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .badge-classificacao.bom { background: #dcfce7; color: #16a34a; }
-    .badge-classificacao.regular { background: #fef3c7; color: #d97706; }
-    .badge-classificacao.pessimo { background: #fee2e2; color: #dc2626; }
-
-    /* ============================================
-       Tabela de Dados
-       ============================================ */
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-    }
-
-    .data-table th,
-    .data-table td {
-        padding: 10px 12px;
-        text-align: left;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .data-table th {
-        font-weight: 600;
-        color: #64748b;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        background: #f8fafc;
-    }
-
-    .data-table tr:hover td {
-        background: #f8fafc;
-    }
-
-    .data-table .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 8px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 500;
-    }
-
-    .data-table .badge.warning { background: #fef3c7; color: #b45309; }
-    .data-table .badge.success { background: #dcfce7; color: #15803d; }
-    .data-table .badge.danger { background: #fee2e2; color: #b91c1c; }
-    .data-table .badge.calibracao { background: #dbeafe; color: #1d4ed8; }
-    .data-table .badge.manutencao { background: #ede9fe; color: #7c3aed; }
-
-    /* ============================================
-       Loading e Empty States
-       ============================================ */
-    .loading-state,
-    .empty-state {
-        text-align: center;
-        padding: 40px 20px;
+        justify-content: center;
+        padding: 60px 20px;
         color: #64748b;
     }
 
-    .loading-state ion-icon,
-    .empty-state ion-icon {
+    .loading-container ion-icon {
         font-size: 48px;
-        margin-bottom: 12px;
-        opacity: 0.5;
-    }
-
-    .loading-spinner {
+        margin-bottom: 16px;
         animation: spin 1s linear infinite;
     }
 
     @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
     }
 
-    /* ============================================
-       Gráfico Container
-       ============================================ */
-    .grafico-container {
-        position: relative;
-        height: 250px;
-        margin-top: 16px;
+    .empty-state {
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        padding: 60px 20px;
+        color: #64748b;
     }
 
-    .grafico-container .empty-state {
-        position: absolute;
-        width: 100%;
+    .empty-state ion-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #475569;
+        margin: 0 0 8px 0;
+    }
+
+    .empty-state p {
+        font-size: 13px;
+        margin: 0;
     }
 
     /* ============================================
-       Legenda do Gráfico
+       Select2 Customizacao
        ============================================ */
-    .grafico-legenda {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 12px;
-        font-size: 12px;
+    .select2-container--default .select2-selection--single {
+        height: 40px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
     }
 
-    .grafico-legenda-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 38px;
+        padding-left: 12px;
+        color: #1e293b;
     }
 
-    .grafico-legenda-cor {
-        width: 12px;
-        height: 12px;
-        border-radius: 3px;
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 38px;
+    }
+
+    .select2-dropdown {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background: #3b82f6;
     }
 
     /* ============================================
-       Responsivo
+       Responsividade
        ============================================ */
     @media (max-width: 768px) {
-        .page-container { padding: 16px; }
-        .page-header { padding: 16px 20px; }
-        .page-header-icon { display: none; }
-        .page-header h1 { font-size: 18px; }
-        .stat-value { font-size: 24px; }
-        .content-card-header { padding: 12px 16px; }
-        .content-card-body { padding: 12px 16px; }
+        .page-container {
+            padding: 16px;
+        }
+
+        .page-header {
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .page-header-content {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .page-header-info {
+            flex-direction: column;
+        }
+
+        .filtros-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .content-card-header {
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .tabela-metricas th,
+        .tabela-metricas td {
+            padding: 10px 12px;
+        }
     }
 </style>
 
 <div class="page-container">
-    <!-- Header -->
+    <!-- Page Header -->
     <div class="page-header">
         <div class="page-header-content">
             <div class="page-header-info">
                 <div class="page-header-icon">
-                    <ion-icon name="speedometer-outline"></ion-icon>
+                    <ion-icon name="analytics-outline"></ion-icon>
                 </div>
                 <div>
-                    <h1>Olá, <?= htmlspecialchars($_SESSION['DS_NOME'] ?? 'Usuário') ?>!</h1>
-                    <p class="page-header-subtitle">Bem-vindo ao SIMP - Sistema Integrado de Macromedição e Pitometria</p>
+                    <h1>Dashboard Metricas IA</h1>
+                    <p class="page-header-subtitle">Monitoramento inteligente dos pontos de medicao</p>
                 </div>
             </div>
-            <div class="header-date">
+            <div class="header-data-ref">
                 <ion-icon name="calendar-outline"></ion-icon>
-                <div class="header-date-info">
-                    <span class="header-date-day"><?= $diaSemana ?></span>
-                    <span class="header-date-full"><?= date('d/m/Y') ?></span>
+                <div>
+                    <span class="header-data-ref-label">Ultima atualizacao</span>
+                    <span class="header-data-ref-value"
+                        id="dataReferencia"><?= date('d/m/Y', strtotime($ultimaData)) ?></span>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="stats-grid">
-        <div class="stat-card primary" onclick="window.location.href='pontoMedicao.php'">
-            <div class="stat-card-content">
-                <div class="stat-info">
-                    <h3>Pontos de Medição</h3>
-                    <div class="stat-value"><?= number_format($totalPontos, 0, ',', '.') ?></div>
-                    <div class="stat-label">
-                        <ion-icon name="checkmark-circle"></ion-icon>
-                        Ativos no sistema
-                    </div>
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card primary" onclick="filtrarPorStatus('')">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">
+                    <ion-icon name="speedometer-outline"></ion-icon>
                 </div>
-                <div class="stat-icon primary">
-                    <ion-icon name="location-outline"></ion-icon>
-                </div>
+            </div>
+            <div class="stat-card-value" id="statTotal">-</div>
+            <div class="stat-card-label">Total de Pontos</div>
+            <div class="stat-card-trend neutral" id="statTotalTrend">
+                <ion-icon name="remove-outline"></ion-icon>
+                <span>Carregando...</span>
             </div>
         </div>
 
-        <div class="stat-card warning" onclick="window.location.href='programacaoManutencao.php'">
-            <div class="stat-card-content">
-                <div class="stat-info">
-                    <h3>Programações Previstas</h3>
-                    <div class="stat-value"><?= number_format($totalManutencoes, 0, ',', '.') ?></div>
-                    <div class="stat-label">
-                        <ion-icon name="time-outline"></ion-icon>
-                        Aguardando execução
-                    </div>
+        <div class="stat-card success" onclick="filtrarPorStatus('OK')">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">
+                    <ion-icon name="checkmark-circle-outline"></ion-icon>
                 </div>
-                <div class="stat-icon warning">
-                    <ion-icon name="clipboard-outline"></ion-icon>
-                </div>
+            </div>
+            <div class="stat-card-value" id="statOk">-</div>
+            <div class="stat-card-label">Status OK</div>
+            <div class="stat-card-trend up" id="statOkTrend">
+                <ion-icon name="trending-up-outline"></ion-icon>
+                <span>-</span>
             </div>
         </div>
 
-        <div class="stat-card success" onclick="window.location.href='programacaoManutencao.php?tipo=1'">
-            <div class="stat-card-content">
-                <div class="stat-info">
-                    <h3>Calibrações Previstas</h3>
-                    <div class="stat-value"><?= number_format($totalCalibracoes, 0, ',', '.') ?></div>
-                    <div class="stat-label">
-                        <ion-icon name="analytics-outline"></ion-icon>
-                        Tipo Calibração
-                    </div>
+        <div class="stat-card warning" onclick="filtrarPorStatus('ATENCAO')">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">
+                    <ion-icon name="alert-circle-outline"></ion-icon>
                 </div>
-                <div class="stat-icon success">
-                    <ion-icon name="analytics-outline"></ion-icon>
-                </div>
+            </div>
+            <div class="stat-card-value" id="statAtencao">-</div>
+            <div class="stat-card-label">Atencao</div>
+            <div class="stat-card-trend neutral" id="statAtencaoTrend">
+                <ion-icon name="remove-outline"></ion-icon>
+                <span>-</span>
             </div>
         </div>
 
-        <div class="stat-card danger" onclick="window.location.href='programacaoManutencao.php?tipo=2'">
-            <div class="stat-card-content">
-                <div class="stat-info">
-                    <h3>Manutenções Previstas</h3>
-                    <div class="stat-value"><?= number_format($totalManutencoesTipo2, 0, ',', '.') ?></div>
-                    <div class="stat-label">
-                        <ion-icon name="build-outline"></ion-icon>
-                        Tipo Manutenção
-                    </div>
+        <div class="stat-card danger" onclick="filtrarPorStatus('CRITICO')">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">
+                    <ion-icon name="warning-outline"></ion-icon>
                 </div>
-                <div class="stat-icon danger">
-                    <ion-icon name="construct-outline"></ion-icon>
-                </div>
+            </div>
+            <div class="stat-card-value" id="statCritico">-</div>
+            <div class="stat-card-label">Criticos</div>
+            <div class="stat-card-trend down" id="statCriticoTrend">
+                <ion-icon name="trending-down-outline"></ion-icon>
+                <span>-</span>
             </div>
         </div>
     </div>
 
-    <!-- Seção de Análise de Qualidade dos Dados -->
-    <div class="analise-section">
-        <div class="analise-header">
-            <div class="analise-title">
-                <ion-icon name="pulse-outline"></ion-icon>
-                Análise de Qualidade dos Dados
-            </div>
-            <div class="analise-filtros">
-                <select id="filtro-dias">
-                    <option value="7" selected>Últimos 7 dias</option>
-                    <option value="14">Últimos 14 dias</option>
-                    <option value="30">Últimos 30 dias</option>
-                    <option value="60">Últimos 60 dias</option>
+    <!-- Filtros -->
+    <div class="filtros-card">
+        <div class="filtros-grid">
+            <div class="filtro-group">
+                <label>Periodo</label>
+                <select id="filtroPeriodo">
+                    <option value="1">Ultimo dia</option>
+                    <option value="7" selected>Ultimos 7 dias</option>
+                    <option value="15">Ultimos 15 dias</option>
+                    <option value="30">Ultimos 30 dias</option>
                 </select>
-                <select id="filtro-unidade">
-                    <option value="">Todas as Unidades</option>
-                    <?php foreach ($unidades as $uni): ?>
-                    <option value="<?= $uni['CD_UNIDADE'] ?>"><?= htmlspecialchars($uni['DS_NOME']) ?></option>
+            </div>
+
+            <div class="filtro-group">
+                <label>Unidade</label>
+                <select id="filtroUnidade" class="select2-filtro">
+                    <option value="">Todas</option>
+                    <?php foreach ($unidades as $u): ?>
+                        <option value="<?= $u['CD_UNIDADE'] ?>"><?= htmlspecialchars($u['DS_NOME']) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <button type="button" id="btn-carregar-analise" class="btn-carregar" onclick="carregarAnalise()">
-                    <ion-icon name="analytics-outline"></ion-icon>
-                    Carregar Análise
+            </div>
+
+            <div class="filtro-group">
+                <label>Tipo Medidor</label>
+                <select id="filtroTipo" class="select2-filtro">
+                    <option value="">Todos</option>
+                    <?php foreach ($tiposMedidor as $id => $nome): ?>
+                        <option value="<?= $id ?>"><?= $nome ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="filtro-group">
+                <label>Status</label>
+                <select id="filtroStatus">
+                    <option value="">Todos</option>
+                    <option value="OK">OK</option>
+                    <option value="ATENCAO">Atencao</option>
+                    <option value="CRITICO">Critico</option>
+                </select>
+            </div>
+
+            <div class="filtro-group">
+                <label>Exibir</label>
+                <select id="filtroLimite">
+                    <option value="50">50 registros</option>
+                    <option value="100" selected>100 registros</option>
+                    <option value="200">200 registros</option>
+                    <option value="500">500 registros</option>
+                </select>
+            </div>
+
+            <div class="filtro-group">
+                <label>&nbsp;</label>
+                <button type="button" class="btn-filtrar" onclick="carregarDados()">
+                    <ion-icon name="search-outline"></ion-icon>
+                    Filtrar
                 </button>
             </div>
         </div>
+    </div>
 
-        <!-- Cards de Resumo -->
-        <div class="analise-resumo-grid" id="analise-resumo">
-            <div class="analise-card">
-                <div class="analise-card-icon info">
-                    <ion-icon name="document-text-outline"></ion-icon>
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Grafico Evolucao -->
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="content-card-title">
+                    <ion-icon name="trending-up-outline"></ion-icon>
+                    Evolucao por Status
                 </div>
-                <div class="analise-card-valor" id="total-registros">-</div>
-                <div class="analise-card-label">Registros</div>
             </div>
-            <div class="analise-card">
-                <div class="analise-card-icon roxo">
-                    <ion-icon name="trash-outline"></ion-icon>
+            <div class="content-card-body">
+                <div class="grafico-container">
+                    <canvas id="graficoEvolucao"></canvas>
                 </div>
-                <div class="analise-card-valor" id="taxa-descarte">-</div>
-                <div class="analise-card-label">Taxa Descarte</div>
             </div>
-            <div class="analise-card">
-                <div class="analise-card-icon bom">
-                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+        </div>
+
+        <!-- Ranking Criticos -->
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="content-card-title">
+                    <ion-icon name="warning-outline"></ion-icon>
+                    Pontos Criticos
                 </div>
-                <div class="analise-card-valor" id="dias-bom">-</div>
-                <div class="analise-card-label">Dias Bom (≥80%)</div>
             </div>
-            <div class="analise-card">
-                <div class="analise-card-icon regular">
-                    <ion-icon name="alert-circle-outline"></ion-icon>
-                </div>
-                <div class="analise-card-valor" id="dias-regular">-</div>
-                <div class="analise-card-label">Dias Regular (≥50%)</div>
-            </div>
-            <div class="analise-card">
-                <div class="analise-card-icon pessimo">
-                    <ion-icon name="close-circle-outline"></ion-icon>
-                </div>
-                <div class="analise-card-valor" id="dias-pessimo">-</div>
-                <div class="analise-card-label">Dias Péssimo (&lt;50%)</div>
+            <div class="content-card-body">
+                <ul class="ranking-list" id="rankingCriticos">
+                    <li class="loading-container">
+                        <ion-icon name="sync-outline"></ion-icon>
+                        <span>Carregando...</span>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
 
-    <!-- Dashboard Grid com Rankings -->
-    <div class="dashboard-grid">
-        <!-- Pontos com Maior Taxa de Descarte -->
-        <div class="content-card">
-            <div class="content-card-header">
-                <div class="content-card-title">
-                    <ion-icon name="trending-down-outline"></ion-icon>
-                    Maior Taxa de Descarte
-                </div>
-                <a href="registroVazaoPressao.php" class="btn-ver-todos">
-                    <ion-icon name="eye-outline"></ion-icon>
-                    Ver Todos
-                </a>
+    <!-- Tabela de Dados -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <div class="content-card-title">
+                <ion-icon name="list-outline"></ion-icon>
+                Detalhamento por Ponto
             </div>
-            <div class="content-card-body">
-                <ul class="ranking-list" id="ranking-descarte">
-                    <li class="empty-state">
-                        <ion-icon name="analytics-outline"></ion-icon>
-                        <p>Clique em "Carregar Análise" para ver os dados</p>
-                    </li>
-                </ul>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-acao" onclick="exportarCSV()">
+                    <ion-icon name="download-outline"></ion-icon>
+                    Exportar
+                </button>
             </div>
         </div>
-
-        <!-- Pontos com Pior Integridade -->
-        <div class="content-card">
-            <div class="content-card-header">
-                <div class="content-card-title">
-                    <ion-icon name="cellular-outline"></ion-icon>
-                    Menor Integridade de Dados
-                </div>
-                <a href="monitoramento.php" class="btn-ver-todos">
-                    <ion-icon name="eye-outline"></ion-icon>
-                    Monitorar
-                </a>
-            </div>
-            <div class="content-card-body">
-                <ul class="ranking-list" id="ranking-integridade">
-                    <li class="empty-state">
-                        <ion-icon name="cellular-outline"></ion-icon>
-                        <p>Clique em "Carregar Análise" para ver os dados</p>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Evolução Diária -->
-        <div class="content-card">
-            <div class="content-card-header">
-                <div class="content-card-title">
-                    <ion-icon name="bar-chart-outline"></ion-icon>
-                    Evolução Diária - Registros vs Descartes
-                </div>
-            </div>
-            <div class="content-card-body">
-                <div class="grafico-container" id="grafico-container">
-                    <div class="empty-state" id="grafico-placeholder">
-                        <ion-icon name="bar-chart-outline"></ion-icon>
-                        <p>Clique em "Carregar Análise" para ver o gráfico</p>
-                    </div>
-                    <canvas id="grafico-evolucao" style="display: none;"></canvas>
-                </div>
-                <div class="grafico-legenda" id="grafico-legenda" style="display: none;">
-                    <div class="grafico-legenda-item">
-                        <div class="grafico-legenda-cor" style="background: #3b82f6;"></div>
-                        <span>Registros Válidos</span>
-                    </div>
-                    <div class="grafico-legenda-item">
-                        <div class="grafico-legenda-cor" style="background: #ef4444;"></div>
-                        <span>Descartados</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Últimas Programações -->
-        <div class="content-card">
-            <div class="content-card-header">
-                <div class="content-card-title">
-                    <ion-icon name="list-outline"></ion-icon>
-                    Últimas Programações
-                </div>
-                <a href="programacaoManutencao.php" class="btn-ver-todos">
-                    <ion-icon name="eye-outline"></ion-icon>
-                    Ver Todas
-                </a>
-            </div>
-            <div class="content-card-body">
-                <?php if (!empty($ultimasManutencoes)): ?>
-                <table class="data-table">
+        <div class="content-card-body">
+            <div class="tabela-container">
+                <table class="tabela-metricas">
                     <thead>
                         <tr>
-                            <th>Código</th>
                             <th>Ponto</th>
-                            <th>Tipo</th>
                             <th>Data</th>
-                            <th>Situação</th>
+                            <th>Cobertura</th>
+                            <th>Media</th>
+                            <th>Hist. 4 Sem</th>
+                            <th>Desvio %</th>
+                            <th>Tendencia</th>
+                            <th>Flags</th>
+                            <th>Status</th>
+                            <th>Acoes</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <?php foreach ($ultimasManutencoes as $manut): 
-                            $sit = $situacoes[$manut['ID_SITUACAO']] ?? ['nome' => 'Desconhecida', 'cor' => 'secondary', 'icone' => 'help-outline'];
-                            $tipo = $tiposProgramacao[$manut['ID_TIPO_PROGRAMACAO']] ?? 'Outro';
-                            $tipoClasse = $manut['ID_TIPO_PROGRAMACAO'] == 1 ? 'calibracao' : 'manutencao';
-                            $codigoFormatado = str_pad($manut['CD_CODIGO'], 3, '0', STR_PAD_LEFT) . '-' . $manut['CD_ANO'] . '/' . $manut['ID_TIPO_PROGRAMACAO'];
-                        ?>
+                    <tbody id="tabelaBody">
                         <tr>
-                            <td><strong><?= $codigoFormatado ?></strong></td>
-                            <td><?= htmlspecialchars(mb_substr($manut['DS_PONTO'] ?? 'N/I', 0, 25)) ?></td>
-                            <td><span class="badge <?= $tipoClasse ?>"><?= $tipo ?></span></td>
-                            <td><?= date('d/m/Y', strtotime($manut['DT_PROGRAMACAO'])) ?></td>
-                            <td>
-                                <span class="badge <?= $sit['cor'] ?>">
-                                    <ion-icon name="<?= $sit['icone'] ?>"></ion-icon>
-                                    <?= $sit['nome'] ?>
-                                </span>
+                            <td colspan="10">
+                                <div class="loading-container">
+                                    <ion-icon name="sync-outline"></ion-icon>
+                                    <span>Carregando dados...</span>
+                                </div>
                             </td>
                         </tr>
-                        <?php endforeach; ?>
                     </tbody>
                 </table>
-                <?php else: ?>
-                <div class="empty-state">
-                    <ion-icon name="calendar-outline"></ion-icon>
-                    <p>Nenhuma programação encontrada</p>
-                </div>
-                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-    alert('teste');
-// Variável global do gráfico
-let graficoEvolucao = null;
-let dadosCarregados = false;
+    /**
+     * Dashboard Metricas IA - JavaScript
+     * @version 1.0
+     */
 
-// Caminho da API
-const API_BASE = '/bd/dashboard/getAnaliseQualidade.php';
+    // Variaveis globais
+    let graficoEvolucao = null;
+    let dadosAtuais = [];
 
-/**
- * Formata número com separador de milhares
- */
-function formatarNumero(num) {
-    return new Intl.NumberFormat('pt-BR').format(num);
-}
+    // Tipos de medidor
+    const tiposMedidor = {
+        1: 'Macromedidor',
+        2: 'Est. Pitometrica',
+        4: 'Pressao',
+        6: 'Nivel',
+        8: 'Hidrometro'
+    };
 
-/**
- * Carrega todos os dados de análise
- */
-async function carregarAnalise() {
-    // Mostrar loading
-    document.getElementById('btn-carregar-analise').disabled = true;
-    document.getElementById('btn-carregar-analise').innerHTML = '<ion-icon name="sync-outline" class="loading-spinner"></ion-icon> Carregando...';
-    
-    const dias = document.getElementById('filtro-dias').value;
-    const unidade = document.getElementById('filtro-unidade').value;
-    
-    // Construir parâmetros
-    let params = `dias=${dias}`;
-    if (unidade) params += `&cd_unidade=${unidade}`;
-    
-    try {
-        // Carregar em paralelo
-        await Promise.all([
-            carregarResumo(params),
-            carregarRankingDescarte(params),
-            carregarRankingIntegridade(params),
-            carregarEvolucao(params)
-        ]);
-        
-        dadosCarregados = true;
-    } catch (error) {
-        console.error('Erro ao carregar análise:', error);
-    } finally {
-        // Restaurar botão
-        document.getElementById('btn-carregar-analise').disabled = false;
-        document.getElementById('btn-carregar-analise').innerHTML = '<ion-icon name="refresh-outline"></ion-icon> Atualizar Análise';
-    }
-}
+    const unidadesMedidor = {
+        1: 'l/s',
+        2: 'l/s',
+        4: 'mca',
+        6: '%',
+        8: 'l/s'
+    };
 
-/**
- * Carrega resumo geral
- */
-async function carregarResumo(params) {
-    // Mostrar loading nos cards
-    document.getElementById('total-registros').textContent = '...';
-    document.getElementById('taxa-descarte').textContent = '...';
-    document.getElementById('dias-bom').textContent = '...';
-    document.getElementById('dias-regular').textContent = '...';
-    document.getElementById('dias-pessimo').textContent = '...';
-    
-    try {
-        const response = await fetch(`${API_BASE}?tipo=resumo&${params}`);
-        const text = await response.text();
-        
-        // Debug - mostrar resposta bruta se não for JSON válido
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch (e) {
-            console.error('Resposta não é JSON válido:', text);
-            return;
-        }
-        
-        if (data.success) {
-            document.getElementById('total-registros').textContent = formatarNumero(data.totais.total_registros);
-            document.getElementById('taxa-descarte').textContent = (data.totais.taxa_descarte_geral || 0).toFixed(1) + '%';
-            document.getElementById('dias-bom').textContent = formatarNumero(data.integridade_diaria.BOM || 0);
-            document.getElementById('dias-regular').textContent = formatarNumero(data.integridade_diaria.REGULAR || 0);
-            document.getElementById('dias-pessimo').textContent = formatarNumero(data.integridade_diaria.PESSIMO || 0);
-        } else {
-            console.error('Erro no resumo:', data.message);
-        }
-    } catch (error) {
-        console.error('Erro ao carregar resumo:', error);
-    }
-}
+    /**
+     * Inicializacao
+     */
+    $(document).ready(function () {
+        // Inicializar Select2
+        $('.select2-filtro').select2({
+            placeholder: 'Selecione...',
+            allowClear: true,
+            width: '100%'
+        });
 
-/**
- * Carrega ranking de descarte
- */
-async function carregarRankingDescarte(params) {
-    const container = document.getElementById('ranking-descarte');
-    
-    // Mostrar loading
-    container.innerHTML = `<li class="loading-state"><ion-icon name="sync-outline" class="loading-spinner"></ion-icon><p>Carregando...</p></li>`;
-    
-    try {
-        const response = await fetch(`${API_BASE}?tipo=descarte&limite=5&${params}`);
-        const text = await response.text();
-        
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch (e) {
-            console.error('Resposta descarte não é JSON:', text);
-            container.innerHTML = `<li class="empty-state"><ion-icon name="alert-circle-outline"></ion-icon><p>Erro: resposta inválida</p></li>`;
-            return;
-        }
-        
-        if (data.success && data.data && data.data.length > 0) {
-            container.innerHTML = data.data.map((item, idx) => `
-                <li class="ranking-item" onclick="window.location.href='registroVazaoPressao.php?cdPonto=${item.CD_PONTO_MEDICAO}'">
-                    <div class="ranking-posicao ${idx < 3 ? 'top' + (idx + 1) : 'normal'}">${idx + 1}</div>
-                    <div class="ranking-tipo ${item.TIPO_MEDIDOR_LETRA}">${item.TIPO_MEDIDOR_LETRA}</div>
-                    <div class="ranking-info">
-                        <div class="ranking-nome">${item.CD_PONTO_MEDICAO} - ${item.DS_PONTO || 'N/I'}</div>
-                        <div class="ranking-local">${item.DS_UNIDADE || ''} ${item.DS_LOCALIDADE ? '• ' + item.DS_LOCALIDADE : ''}</div>
-                    </div>
-                    <div class="ranking-stats">
-                        <div class="ranking-valor pessimo">${(item.TAXA_DESCARTE || 0).toFixed(1)}%</div>
-                        <div class="ranking-detalhe">${formatarNumero(item.REGISTROS_DESCARTADOS || 0)} descartados</div>
-                    </div>
-                </li>
-            `).join('');
-        } else {
-            container.innerHTML = `
-                <li class="empty-state">
-                    <ion-icon name="checkmark-circle-outline"></ion-icon>
-                    <p>${data.message || 'Nenhum descarte no período'}</p>
-                </li>
-            `;
-        }
-    } catch (error) {
-        console.error('Erro ao carregar ranking descarte:', error);
-        container.innerHTML = `
-            <li class="empty-state">
-                <ion-icon name="alert-circle-outline"></ion-icon>
-                <p>Erro ao carregar dados</p>
-            </li>
-        `;
-    }
-}
-
-/**
- * Carrega ranking de integridade (piores)
- */
-async function carregarRankingIntegridade(params) {
-    const container = document.getElementById('ranking-integridade');
-    
-    // Mostrar loading
-    container.innerHTML = `<li class="loading-state"><ion-icon name="sync-outline" class="loading-spinner"></ion-icon><p>Carregando...</p></li>`;
-    
-    try {
-        const response = await fetch(`${API_BASE}?tipo=integridade&limite=5&ordem=piores&${params}`);
-        const text = await response.text();
-        
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch (e) {
-            console.error('Resposta integridade não é JSON:', text);
-            container.innerHTML = `<li class="empty-state"><ion-icon name="alert-circle-outline"></ion-icon><p>Erro: resposta inválida</p></li>`;
-            return;
-        }
-        
-        if (data.success && data.data && data.data.length > 0) {
-            container.innerHTML = data.data.map((item, idx) => {
-                const classificacao = (item.CLASSIFICACAO || 'PESSIMO').toLowerCase();
-                const percentual = item.PERCENTUAL_INTEGRIDADE || 0;
-                
-                return `
-                <li class="ranking-item" onclick="window.location.href='registroVazaoPressao.php?cdPonto=${item.CD_PONTO_MEDICAO}'">
-                    <div class="ranking-posicao ${idx < 3 ? 'top' + (idx + 1) : 'normal'}">${idx + 1}</div>
-                    <div class="ranking-tipo ${item.TIPO_MEDIDOR_LETRA}">${item.TIPO_MEDIDOR_LETRA}</div>
-                    <div class="ranking-info">
-                        <div class="ranking-nome">${item.CD_PONTO_MEDICAO} - ${item.DS_PONTO || 'N/I'}</div>
-                        <div class="ranking-local">${item.DS_UNIDADE || ''} ${item.DS_LOCALIDADE ? '• ' + item.DS_LOCALIDADE : ''}</div>
-                    </div>
-                    <div class="ranking-stats">
-                        <div class="ranking-valor ${classificacao}">${percentual.toFixed(1)}%</div>
-                        <div class="ranking-detalhe">
-                            <span class="badge-classificacao ${classificacao}">${item.CLASSIFICACAO || 'N/I'}</span>
-                        </div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill ${classificacao}" style="width: ${Math.min(percentual, 100)}%"></div>
-                        </div>
-                    </div>
-                </li>
-            `}).join('');
-        } else {
-            container.innerHTML = `
-                <li class="empty-state">
-                    <ion-icon name="analytics-outline"></ion-icon>
-                    <p>${data.message || 'Sem dados no período'}</p>
-                </li>
-            `;
-        }
-    } catch (error) {
-        console.error('Erro ao carregar ranking integridade:', error);
-        container.innerHTML = `
-            <li class="empty-state">
-                <ion-icon name="alert-circle-outline"></ion-icon>
-                <p>Erro ao carregar dados</p>
-            </li>
-        `;
-    }
-}
-
-/**
- * Carrega e renderiza gráfico de evolução
- */
-async function carregarEvolucao(params) {
-    try {
-        const response = await fetch(`${API_BASE}?tipo=evolucao&${params}`);
-        const text = await response.text();
-        
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch (e) {
-            console.error('Resposta evolução não é JSON:', text);
-            return;
-        }
-        
-        if (data.success && data.data && data.data.length > 0) {
-            renderizarGrafico(data.data);
-        } else {
-            console.log('Sem dados para gráfico:', data.message);
-        }
-    } catch (error) {
-        console.error('Erro ao carregar evolução:', error);
-    }
-}
-
-/**
- * Renderiza gráfico com Chart.js
- */
-function renderizarGrafico(dados) {
-    // Esconder placeholder e mostrar canvas
-    const placeholder = document.getElementById('grafico-placeholder');
-    const canvas = document.getElementById('grafico-evolucao');
-    const legenda = document.getElementById('grafico-legenda');
-    
-    if (placeholder) placeholder.style.display = 'none';
-    if (canvas) canvas.style.display = 'block';
-    if (legenda) legenda.style.display = 'flex';
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Destruir gráfico anterior se existir
-    if (graficoEvolucao) {
-        graficoEvolucao.destroy();
-    }
-    
-    const labels = dados.map(d => {
-        const dt = new Date(d.DT_DIA);
-        return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        // Carregar dados iniciais
+        carregarDados();
     });
-    
-    const validos = dados.map(d => d.REGISTROS_VALIDOS);
-    const descartados = dados.map(d => d.REGISTROS_DESCARTADOS);
-    
-    graficoEvolucao = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Registros Válidos',
-                    data: validos,
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderColor: '#3b82f6',
-                    borderWidth: 1,
-                    borderRadius: 4
-                },
-                {
-                    label: 'Descartados',
-                    data: descartados,
-                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                    borderColor: '#ef4444',
-                    borderWidth: 1,
-                    borderRadius: 4
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: '#1e293b',
-                    titleFont: { size: 12 },
-                    bodyFont: { size: 11 },
-                    padding: 10,
-                    cornerRadius: 8,
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + formatarNumero(context.raw);
-                        }
+
+    /**
+     * Carrega dados do servidor
+     */
+    function carregarDados() {
+        const periodo = $('#filtroPeriodo').val();
+        const unidade = $('#filtroUnidade').val();
+        const tipo = $('#filtroTipo').val();
+        const status = $('#filtroStatus').val();
+        const limite = $('#filtroLimite').val();
+
+        // Loading
+        $('#tabelaBody').html(`
+        <tr>
+            <td colspan="10">
+                <div class="loading-container">
+                    <ion-icon name="sync-outline"></ion-icon>
+                    <span>Carregando dados...</span>
+                </div>
+            </td>
+        </tr>
+    `);
+
+        $.ajax({
+            url: 'bd/dashboard/getMetricasIA.php',
+            method: 'GET',
+            data: {
+                acao: 'listar',
+                periodo: periodo,
+                unidade: unidade,
+                tipo: tipo,
+                status: status,
+                limite: limite
+            },
+            dataType: 'json',
+            success: function (response) {
+                if (response.success) {
+                    dadosAtuais = response.data;
+
+                    // Atualizar data de referencia
+                    if (response.dataReferencia) {
+                        $('#dataReferencia').text(response.dataReferencia);
                     }
+
+                    // Atualizar cards
+                    atualizarCards(response.resumo);
+
+                    // Atualizar tabela
+                    atualizarTabela(response.data);
+
+                    // Atualizar grafico
+                    atualizarGrafico(response.evolucao);
+
+                    // Atualizar ranking
+                    atualizarRanking(response.criticos);
+                } else {
+                    mostrarErro(response.message || 'Erro ao carregar dados');
                 }
             },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: { 
-                        font: { size: 10 },
-                        color: '#64748b'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#f1f5f9' },
-                    ticks: { 
-                        font: { size: 10 },
-                        color: '#64748b',
-                        callback: function(value) {
-                            return formatarNumero(value);
-                        }
-                    }
-                }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
+            error: function (xhr, status, error) {
+                console.error('Erro:', error);
+                mostrarErro('Erro de conexao com o servidor');
             }
-        }
-    });
-}
+        });
+    }
 
-// Inicialização - NÃO carrega dados automaticamente (consultas pesadas)
-document.addEventListener('DOMContentLoaded', function() {
-    // Página pronta - dados serão carregados ao clicar no botão
-    console.log('Página carregada. Clique em "Carregar Análise" para buscar os dados.');
-});
+    /**
+     * Atualiza os cards de estatisticas
+     */
+    function atualizarCards(resumo) {
+        if (!resumo) return;
+
+        $('#statTotal').text(resumo.total || 0);
+        $('#statOk').text(resumo.ok || 0);
+        $('#statAtencao').text(resumo.atencao || 0);
+        $('#statCritico').text(resumo.critico || 0);
+
+        // Percentuais
+        const total = resumo.total || 1;
+        $('#statOkTrend span').text(Math.round((resumo.ok / total) * 100) + '% do total');
+        $('#statAtencaoTrend span').text(Math.round((resumo.atencao / total) * 100) + '% do total');
+        $('#statCriticoTrend span').text(Math.round((resumo.critico / total) * 100) + '% do total');
+        $('#statTotalTrend span').text('Cobertura media: ' + (resumo.coberturaMedia || 0).toFixed(1) + '%');
+    }
+
+    /**
+     * Atualiza a tabela de dados
+     */
+    /**
+  * Atualiza a tabela de dados
+  */
+    function atualizarTabela(dados) {
+        if (!dados || dados.length === 0) {
+            $('#tabelaBody').html(`
+            <tr>
+                <td colspan="10">
+                    <div class="empty-state">
+                        <ion-icon name="file-tray-outline"></ion-icon>
+                        <h3>Nenhum dado encontrado</h3>
+                        <p>Ajuste os filtros e tente novamente</p>
+                    </div>
+                </td>
+            </tr>
+        `);
+            return;
+        }
+
+        let html = '';
+        dados.forEach(item => {
+            const statusClass = item.DS_STATUS ? item.DS_STATUS.toLowerCase() : '';
+            const cobertura = parseFloat(item.PERC_COBERTURA) || 0;
+            const coberturaClass = cobertura >= 95 ? 'alta' : (cobertura >= 50 ? 'media' : 'baixa');
+            const tendenciaClass = item.VL_TENDENCIA_7D ? item.VL_TENDENCIA_7D.toLowerCase() : 'estavel';
+            const unidade = unidadesMedidor[item.ID_TIPO_MEDIDOR] || '';
+
+            html += `
+            <tr class="${statusClass}">
+                <td>
+                    <div class="ponto-info">
+                        <span class="ponto-nome">${gerarCodigoPonto(item)}</span>
+                        <span class="ponto-tipo">${item.DS_NOME || '-'} | ${tiposMedidor[item.ID_TIPO_MEDIDOR] || '-'}</span>
+                    </div>
+                </td>
+                <td>${formatarData(item.DT_REFERENCIA)}</td>
+                <td>
+                    <div class="cobertura-bar">
+                        <div class="cobertura-bar-track">
+                            <div class="cobertura-bar-fill ${coberturaClass}" style="width: ${cobertura}%"></div>
+                        </div>
+                        <span class="cobertura-value">${cobertura.toFixed(0)}%</span>
+                    </div>
+                </td>
+                <td>${formatarNumero(item.VL_MEDIA)} ${unidade}</td>
+                <td>${formatarNumero(item.VL_MEDIA_HIST_4SEM)} ${unidade}</td>
+                <td>${formatarDesvio(item.VL_DESVIO_HIST_PERC)}</td>
+                <td>
+                    <span class="tendencia ${tendenciaClass}">
+                        <ion-icon name="${getTendenciaIcon(item.VL_TENDENCIA_7D)}"></ion-icon>
+                        ${item.VL_TENDENCIA_7D || 'ESTAVEL'}
+                    </span>
+                </td>
+                <td>
+                    <div class="flags-container">
+                        <span class="flag-icon ${item.FL_COBERTURA_BAIXA == 1 ? 'ativo' : 'inativo'}" title="Cobertura Baixa">
+                            <ion-icon name="cloud-offline-outline"></ion-icon>
+                        </span>
+                        <span class="flag-icon ${item.FL_SENSOR_PROBLEMA == 1 ? 'ativo' : 'inativo'}" title="Problema Sensor">
+                            <ion-icon name="hardware-chip-outline"></ion-icon>
+                        </span>
+                        <span class="flag-icon ${item.FL_VALOR_ANOMALO == 1 ? 'ativo' : 'inativo'}" title="Valor Anomalo">
+                            <ion-icon name="alert-outline"></ion-icon>
+                        </span>
+                        <span class="flag-icon ${item.FL_DESVIO_SIGNIFICATIVO == 1 ? 'ativo' : 'inativo'}" title="Desvio Significativo">
+                            <ion-icon name="stats-chart-outline"></ion-icon>
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge ${statusClass}">${item.DS_STATUS || '-'}</span>
+                </td>
+                <td>
+                    <button type="button" class="btn-acao" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')" title="Ver detalhes">
+                        <ion-icon name="eye-outline"></ion-icon>
+                    </button>
+                </td>
+            </tr>
+        `;
+        });
+
+        $('#tabelaBody').html(html);
+    }
+    /**
+ * Gera codigo formatado do ponto no padrao SIMP
+ */
+    function gerarCodigoPonto(item) {
+        const letrasTipo = { 1: 'M', 2: 'E', 4: 'P', 6: 'R', 8: 'H' };
+        const letra = letrasTipo[item.ID_TIPO_MEDIDOR] || 'X';
+        const cdPonto = String(item.CD_PONTO_MEDICAO).padStart(6, '0');
+        const localidade = item.CD_LOCALIDADE_CODIGO || '0';
+        const unidade = item.CD_UNIDADE || '0';
+        return `${localidade}-${cdPonto}-${letra}-${unidade}`;
+    }
+
+    /**
+     * Atualiza o grafico de evolucao
+     */
+    function atualizarGrafico(evolucao) {
+        const ctx = document.getElementById('graficoEvolucao').getContext('2d');
+
+        if (graficoEvolucao) {
+            graficoEvolucao.destroy();
+        }
+
+        if (!evolucao || evolucao.length === 0) {
+            return;
+        }
+
+        const labels = evolucao.map(e => formatarData(e.DT_REFERENCIA));
+        const dataOk = evolucao.map(e => e.QTD_OK || 0);
+        const dataAtencao = evolucao.map(e => e.QTD_ATENCAO || 0);
+        const dataCritico = evolucao.map(e => e.QTD_CRITICO || 0);
+
+        graficoEvolucao = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'OK',
+                        data: dataOk,
+                        backgroundColor: '#10b981',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Atencao',
+                        data: dataAtencao,
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Critico',
+                        data: dataCritico,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+ * Atualiza o ranking de pontos criticos
+ */
+    function atualizarRanking(criticos) {
+        if (!criticos || criticos.length === 0) {
+            $('#rankingCriticos').html(`
+            <li class="empty-state">
+                <ion-icon name="checkmark-circle-outline"></ion-icon>
+                <h3>Nenhum ponto critico</h3>
+                <p>Todos os pontos estao operando normalmente</p>
+            </li>
+        `);
+            return;
+        }
+
+        let html = '';
+        criticos.slice(0, 10).forEach((item, index) => {
+            const statusClass = item.DS_STATUS ? item.DS_STATUS.toLowerCase() : '';
+            const cobertura = parseFloat(item.PERC_COBERTURA) || 0;
+            html += `
+            <li class="ranking-item" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')">
+                <span class="ranking-position">${index + 1}</span>
+                <div class="ranking-info">
+                    <div class="ranking-nome">${item.DS_NOME || 'Ponto ' + item.CD_PONTO_MEDICAO}</div>
+                    <div class="ranking-detalhe">${cobertura.toFixed(0)}% cobertura</div>
+                </div>
+                <span class="ranking-valor ${statusClass}">${item.DS_STATUS}</span>
+            </li>
+        `;
+        });
+
+        $('#rankingCriticos').html(html);
+    }
+
+    /**
+ * Ver detalhes do ponto - redireciona para operacoes.php com validacao aberta
+ */
+    function verDetalhes(cdPonto, data) {
+        // Extrair mes e ano da data (formato YYYY-MM-DD)
+        const partes = data.split('-');
+        const ano = partes[0];
+        const mes = parseInt(partes[1], 10);
+
+        // Redirecionar para operacoes.php abrindo modal de validacao
+        window.location.href = `operacoes.php?abrirValidacao=1&cdPonto=${cdPonto}&dataValidacao=${data}&mes=${mes}&ano=${ano}`;
+    }
+
+    /**
+     * Filtrar por status (clique nos cards)
+     */
+    function filtrarPorStatus(status) {
+        $('#filtroStatus').val(status);
+        carregarDados();
+    }
+
+
+
+    /**
+     * Exportar para CSV
+     */
+    function exportarCSV() {
+        if (!dadosAtuais || dadosAtuais.length === 0) {
+            alert('Nenhum dado para exportar');
+            return;
+        }
+
+        let csv = 'Ponto;Nome;Data;Cobertura;Media;Historico;Desvio%;Tendencia;Status;Resumo\n';
+
+        dadosAtuais.forEach(item => {
+            csv += `${item.CD_PONTO_MEDICAO};`;
+            csv += `"${item.DS_NOME || ''}";`;
+            csv += `${formatarData(item.DT_REFERENCIA)};`;
+            csv += `${(item.PERC_COBERTURA || 0).toFixed(1)};`;
+            csv += `${(item.VL_MEDIA || 0).toFixed(2)};`;
+            csv += `${(item.VL_MEDIA_HIST_4SEM || 0).toFixed(2)};`;
+            csv += `${(item.VL_DESVIO_HIST_PERC || 0).toFixed(1)};`;
+            csv += `${item.VL_TENDENCIA_7D || ''};`;
+            csv += `${item.DS_STATUS || ''};`;
+            csv += `"${(item.DS_RESUMO || '').replace(/"/g, '""')}"\n`;
+        });
+
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `metricas_ia_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+    }
+
+    /**
+     * Funcoes auxiliares
+     */
+    function formatarData(data) {
+        if (!data) return '-';
+        const d = new Date(data);
+        return d.toLocaleDateString('pt-BR');
+    }
+
+    function formatarNumero(valor) {
+        if (valor === null || valor === undefined) return '-';
+        return parseFloat(valor).toFixed(2);
+    }
+
+    function formatarDesvio(valor) {
+        if (valor === null || valor === undefined) return '-';
+        const v = parseFloat(valor);
+        const sinal = v > 0 ? '+' : '';
+        const cor = Math.abs(v) > 30 ? (v > 0 ? 'color: #ef4444' : 'color: #3b82f6') : '';
+        return `<span style="${cor}">${sinal}${v.toFixed(1)}%</span>`;
+    }
+
+    function getTendenciaIcon(tendencia) {
+        switch (tendencia) {
+            case 'SUBINDO': return 'trending-up-outline';
+            case 'DESCENDO': return 'trending-down-outline';
+            default: return 'remove-outline';
+        }
+    }
+
+    function mostrarErro(mensagem) {
+        $('#tabelaBody').html(`
+        <tr>
+            <td colspan="10">
+                <div class="empty-state">
+                    <ion-icon name="alert-circle-outline"></ion-icon>
+                    <h3>Erro</h3>
+                    <p>${mensagem}</p>
+                </div>
+            </td>
+        </tr>
+    `);
+    }
 </script>
 
 <?php include_once 'includes/footer.inc.php'; ?>
