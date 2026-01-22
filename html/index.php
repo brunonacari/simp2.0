@@ -267,12 +267,209 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     /* ============================================
    Filters Card - Padrão do Sistema
    ============================================ */
+    /* ============================================
+   FIX: Select2 - Z-index e Posicionamento
+   ============================================ */
     .filters-card {
-        background: #ffffff;
+        position: relative;
+        z-index: 10;
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 16px;
+        align-items: end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+        position: relative;
+    }
+
+    /* Fix para Select2 dentro do grid */
+    .select2-container {
+        width: 100% !important;
+        min-width: 0;
+    }
+
+    .select2-container--default .select2-selection--single {
+        height: 44px;
+        padding: 6px 12px;
+        background-color: #f8fafc;
         border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .select2-container--default .select2-selection--single:hover {
+        border-color: #cbd5e1;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 1;
+        padding-left: 0;
+        padding-right: 28px;
+        color: #334155;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__placeholder {
+        color: #94a3b8;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 100%;
+        right: 10px;
+        top: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        border-color: #64748b transparent transparent transparent;
+        border-width: 5px 5px 0 5px;
+    }
+
+    .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+        border-color: transparent transparent #64748b transparent;
+        border-width: 0 5px 5px 5px;
+    }
+
+    .select2-container--default.select2-container--focus .select2-selection--single,
+    .select2-container--default.select2-container--open .select2-selection--single {
+        background-color: #ffffff;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    /* Dropdown do Select2 - Z-index alto para sobrepor outros elementos */
+    .select2-dropdown {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+        margin-top: 4px;
+        z-index: 9999 !important;
+    }
+
+    .select2-container--open .select2-dropdown {
+        z-index: 9999 !important;
+    }
+
+    .select2-container--open .select2-dropdown--below {
+        border-top: 1px solid #e2e8f0;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+
+    /* Search dentro do dropdown */
+    .select2-search--dropdown {
+        padding: 10px;
+    }
+
+    .select2-search--dropdown .select2-search__field {
+        padding: 10px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+        transition: all 0.2s ease;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .select2-search--dropdown .select2-search__field:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Resultados */
+    .select2-results__options {
+        max-height: 250px;
+        overflow-y: auto;
+    }
+
+    .select2-container--default .select2-results__option {
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #334155;
+        transition: background 0.15s ease;
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #3b82f6;
+        color: #ffffff;
+    }
+
+    .select2-container--default .select2-results__option[aria-selected="true"] {
+        background-color: #eff6ff;
+        color: #1e40af;
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected="true"] {
+        background-color: #3b82f6;
+        color: #ffffff;
+    }
+
+    /* Mensagem de "nenhum resultado" */
+    .select2-results__message {
+        padding: 12px 14px;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    /* Clear button (X) */
+    .select2-container--default .select2-selection--single .select2-selection__clear {
+        color: #94a3b8;
+        font-size: 18px;
+        font-weight: normal;
+        margin-right: 8px;
+        cursor: pointer;
+        position: relative;
+        z-index: 1;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__clear:hover {
+        color: #ef4444;
+    }
+
+    /* Responsividade para filtros */
+    @media (max-width: 1400px) {
+        .filters-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .filters-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .filters-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .select2-container--default .select2-selection--single {
+            height: 44px;
+        }
+
+        .select2-dropdown {
+            border-radius: 8px;
+        }
     }
 
     .filters-header {
@@ -320,19 +517,7 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         font-size: 16px;
     }
 
-    .filters-grid {
-        display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 16px;
-        align-items: end;
-    }
 
-    .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        min-width: 0;
-    }
 
     .form-label {
         display: flex;
@@ -1164,6 +1349,236 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         gap: 6px;
         flex-wrap: wrap;
     }
+
+    /* ============================================
+   Colunas Ordenáveis na Tabela
+   ============================================ */
+    .tabela-metricas th.sortable {
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .tabela-metricas th.sortable:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
+
+    .tabela-metricas th.sortable ion-icon {
+        font-size: 14px;
+        margin-left: 4px;
+        opacity: 0.4;
+        vertical-align: middle;
+        transition: all 0.2s ease;
+    }
+
+    .tabela-metricas th.sortable:hover ion-icon {
+        opacity: 0.7;
+    }
+
+    .tabela-metricas th.sortable.asc ion-icon,
+    .tabela-metricas th.sortable.desc ion-icon {
+        opacity: 1;
+        color: #3b82f6;
+    }
+
+    .tabela-metricas th.sortable.asc ion-icon {
+        transform: rotate(180deg);
+    }
+
+    .tabela-metricas th.sortable.desc ion-icon {
+        transform: rotate(0deg);
+    }
+
+    /* ============================================
+   FIX CRÍTICO: Select2 Dropdowns
+   ============================================ */
+
+    /* Reset completo do Select2 */
+    .filters-card .select2-container {
+        width: 100% !important;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .filters-card .select2-container--default .select2-selection--single {
+        height: 44px;
+        padding: 0 12px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        box-sizing: border-box;
+        position: relative;
+    }
+
+    .filters-card .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #334155;
+        line-height: 1;
+        padding-left: 0;
+        padding-right: 30px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .filters-card .select2-container--default .select2-selection--single .select2-selection__placeholder {
+        color: #94a3b8;
+    }
+
+    .filters-card .select2-container--default .select2-selection--single .select2-selection__arrow {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        height: auto;
+        width: auto;
+    }
+
+    .filters-card .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        border-color: #64748b transparent transparent transparent;
+        border-style: solid;
+        border-width: 5px 4px 0 4px;
+        margin: 0;
+        position: static;
+    }
+
+    .filters-card .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+        border-color: transparent transparent #64748b transparent;
+        border-width: 0 4px 5px 4px;
+    }
+
+    /* Focus state */
+    .filters-card .select2-container--default.select2-container--focus .select2-selection--single,
+    .filters-card .select2-container--default.select2-container--open .select2-selection--single {
+        background-color: #ffffff;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    /* Dropdown */
+    .select2-dropdown {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        margin-top: 4px;
+        z-index: 9999 !important;
+        overflow: hidden;
+    }
+
+    .select2-container--open .select2-dropdown {
+        z-index: 9999 !important;
+    }
+
+    .select2-search--dropdown .select2-search__field {
+        padding: 10px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 13px;
+        outline: none;
+    }
+
+    .select2-search--dropdown .select2-search__field:focus {
+        border-color: #3b82f6;
+    }
+
+    .select2-results__options {
+        max-height: 250px;
+        overflow-y: auto;
+    }
+
+    .select2-container--default .select2-results__option {
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #334155;
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #3b82f6;
+        color: #ffffff;
+    }
+
+    .select2-container--default .select2-results__option[aria-selected="true"] {
+        background-color: #eff6ff;
+        color: #1e40af;
+    }
+
+    /* Card Info (Tratamento Manual) */
+    .stat-card.info::before {
+        background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+    }
+
+    .stat-card.info .stat-card-icon {
+        background: #f5f3ff;
+        color: #8b5cf6;
+    }
+
+    /* Ajuste do grid para 5 cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 20px;
+    }
+
+    @media (max-width: 1400px) {
+        .stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 900px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 600px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Badge de tratamento */
+    .ranking-tratados-badge {
+        background: #f5f3ff;
+        color: #8b5cf6;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    .tratados-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .tratados-badge.alto {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .tratados-badge.medio {
+        background: #fffbeb;
+        color: #d97706;
+    }
+
+    .tratados-badge.baixo {
+        background: #f5f3ff;
+        color: #8b5cf6;
+    }
 </style>
 
 <div class="page-container">
@@ -1245,6 +1660,20 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
             <div class="stat-card-trend down" id="statCriticoTrend">
                 <ion-icon name="trending-down-outline"></ion-icon>
                 <span>-</span>
+            </div>
+        </div>
+
+        <div class="stat-card info" onclick="mostrarPontosTratados()">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">
+                    <ion-icon name="construct-outline"></ion-icon>
+                </div>
+            </div>
+            <div class="stat-card-value" id="statTratados">-</div>
+            <div class="stat-card-label">Tratamento Manual</div>
+            <div class="stat-card-trend neutral" id="statTratadosTrend">
+                <ion-icon name="hand-right-outline"></ion-icon>
+                <span>Registros com ID_SITUACAO = 2</span>
             </div>
         </div>
     </div>
@@ -1383,6 +1812,7 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                     Pontos Criticos
                 </div>
             </div>
+           
             <div class="content-card-body">
                 <ul class="ranking-list" id="rankingCriticos">
                     <li class="loading-container">
@@ -1391,7 +1821,27 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                     </li>
                 </ul>
             </div>
+             <!-- Ranking Tratamento Manual -->
+                <div class="content-card-header">
+                    <div class="content-card-title">
+                        <ion-icon name="construct-outline"></ion-icon>
+                        Maior Esforco Operacional
+                    </div>
+                    <span class="badge"
+                        style="background:#f5f3ff;color:#8b5cf6;font-size:11px;padding:4px 8px;border-radius:6px;">
+                        ID_SITUACAO = 2
+                    </span>
+                </div>
+                <div class="content-card-body">
+                    <ul class="ranking-list" id="rankingTratados">
+                        <li class="loading-container">
+                            <ion-icon name="sync-outline"></ion-icon>
+                            <span>Carregando...</span>
+                        </li>
+                    </ul>
+                </div>
         </div>
+        
     </div>
 
     <!-- Tabela de Dados -->
@@ -1413,15 +1863,34 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                 <table class="tabela-metricas">
                     <thead>
                         <tr>
-                            <th>Ponto</th>
-                            <th>Data</th>
-                            <th>Cobertura</th>
-                            <th>Media</th>
-                            <th>Hist. 4 Sem</th>
-                            <th>Desvio %</th>
-                            <th>Tendencia</th>
+                            <th class="sortable" data-column="DS_NOME">
+                                Ponto <ion-icon name="swap-vertical-outline"></ion-icon>
+                            </th>
+                            <th class="sortable" data-column="DT_REFERENCIA">
+                                Data <ion-icon name="swap-vertical-outline"></ion-icon>
+                            </th>
+                            <th class="sortable" data-column="PERC_COBERTURA">
+                                Cobertura <ion-icon name="swap-vertical-outline"></ion-icon>
+                            </th>
+                            <th class="sortable" data-column="VL_MEDIA">
+                                Media <ion-icon name="swap-vertical-outline"></ion-icon>
+                            </th>
+                            <th class="sortable" data-column="VL_MEDIA_HIST_4SEM">
+                                Med 4 Sem <ion-icon name="swap-vertical-outline"></ion-icon>
+                            </th>
+                            <th class="sortable" data-column="VL_DESVIO_HIST_PERC">
+                                Desvio % <ion-icon name="swap-vertical-outline"></ion-icon>
+                            </th>
+                            <th class="sortable" data-column="VL_TENDENCIA_7D">
+                                Tendencia <ion-icon name="swap-vertical-outline"></ion-icon>
+                            </th>
                             <th>Flags</th>
-                            <th>Status</th>
+                            <th class="sortable" data-column="DS_STATUS">
+                                Status <ion-icon name="swap-vertical-outline"></ion-icon>
+                            </th>
+                            <th title="Registros que necessitaram tratamento manual (ID_SITUACAO = 2)">
+                                <ion-icon name="construct-outline"></ion-icon> Tratados
+                            </th>
                             <th>Acoes</th>
                         </tr>
                     </thead>
@@ -1450,18 +1919,22 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
 
 <script>
     /**
-     * Dashboard Metricas IA - JavaScript
-     * @version 1.2 - Corrigido carregamento de dados
-     */
+  * ============================================
+  * SIMP - Dashboard Métricas IA
+  * JavaScript Atualizado com Tratamento Manual
+  * ============================================
+  * 
+  * SUBSTITUIR as funções existentes no index.php
+  * pelas versões abaixo.
+  */
 
-    // Variaveis globais
-    let graficoEvolucao = null;
+    // Variáveis globais (manter as existentes)
     let dadosAtuais = [];
+    let graficoEvolucao = null;
 
-    // Tipos de medidor com informações completas
     const tiposMedidor = {
         1: { nome: 'Macro', nomeCompleto: 'Macromedidor', icone: 'speedometer-outline' },
-        2: { nome: 'Pito', nomeCompleto: 'Est. Pitométrica', icone: 'pulse-outline' },
+        2: { nome: 'Pito', nomeCompleto: 'Estação Pitométrica', icone: 'pulse-outline' },
         4: { nome: 'Pressão', nomeCompleto: 'Pressão', icone: 'thermometer-outline' },
         6: { nome: 'Nível', nomeCompleto: 'Nível Reservatório', icone: 'water-outline' },
         8: { nome: 'Hidro', nomeCompleto: 'Hidrômetro', icone: 'stopwatch-outline' }
@@ -1502,9 +1975,9 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         if (!tipo) return '';
 
         return `<span class="badge-tipo-medidor tipo-${idTipo}" title="${tipo.nomeCompleto}">
-            <ion-icon name="${tipo.icone}"></ion-icon>
-            ${tipo.nome}
-        </span>`;
+        <ion-icon name="${tipo.icone}"></ion-icon>
+        ${tipo.nome}
+    </span>`;
     }
 
     /**
@@ -1522,30 +1995,39 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         $('#statOk').text('-');
         $('#statAtencao').text('-');
         $('#statCritico').text('-');
+        $('#statTratados').text('-');
         $('#statTotalTrend span').text('Carregando...');
         $('#statOkTrend span').text('-');
         $('#statAtencaoTrend span').text('-');
         $('#statCriticoTrend span').text('-');
+        $('#statTratadosTrend span').text('-');
 
         // Loading na tabela
         $('#tabelaBody').html(`
-            <tr>
-                <td colspan="10">
-                    <div class="loading-container">
-                        <ion-icon name="sync-outline"></ion-icon>
-                        <span>Carregando dados...</span>
-                    </div>
-                </td>
-            </tr>
-        `);
+        <tr>
+            <td colspan="11">
+                <div class="loading-container">
+                    <ion-icon name="sync-outline"></ion-icon>
+                    <span>Carregando dados...</span>
+                </div>
+            </td>
+        </tr>
+    `);
 
-        // Loading no ranking
+        // Loading nos rankings
         $('#rankingCriticos').html(`
-            <li class="loading-container">
-                <ion-icon name="sync-outline"></ion-icon>
-                <span>Carregando...</span>
-            </li>
-        `);
+        <li class="loading-container">
+            <ion-icon name="sync-outline"></ion-icon>
+            <span>Carregando...</span>
+        </li>
+    `);
+
+        $('#rankingTratados').html(`
+        <li class="loading-container">
+            <ion-icon name="sync-outline"></ion-icon>
+            <span>Carregando...</span>
+        </li>
+    `);
 
         $.ajax({
             url: 'bd/dashboard/getMetricasIA.php',
@@ -1556,11 +2038,11 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                 unidade: unidade,
                 tipo: tipo,
                 status: status,
-                limite: limite  // <-- IMPORTANTE: enviar o limite
+                limite: limite
             },
             dataType: 'json',
             success: function (response) {
-                console.log('Resposta do servidor:', response); // Debug
+                console.log('Resposta do servidor:', response);
 
                 if (response.success) {
                     dadosAtuais = response.dados || response.data || [];
@@ -1579,8 +2061,12 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                     // Atualizar grafico
                     atualizarGrafico(response.evolucao);
 
-                    // Atualizar ranking
+                    // Atualizar ranking críticos
                     atualizarRanking(response.criticos);
+
+                    // NOVO: Atualizar ranking de tratados
+                    atualizarRankingTratados(response.maisTratados);
+
                 } else {
                     mostrarErro(response.message || 'Erro ao carregar dados');
                 }
@@ -1593,7 +2079,7 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     }
 
     /**
-     * Atualiza os cards de estatisticas
+     * Atualiza os cards de estatísticas (ATUALIZADO)
      */
     function atualizarCards(resumo) {
         if (!resumo) {
@@ -1606,30 +2092,54 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         $('#statAtencao').text(resumo.atencao || 0);
         $('#statCritico').text(resumo.critico || 0);
 
+        // NOVO: Card de tratamento manual
+        $('#statTratados').text(resumo.pontosComTratamento || 0);
+
         // Percentuais
         const total = resumo.total || 1;
         $('#statOkTrend span').text(Math.round((resumo.ok / total) * 100) + '% do total');
         $('#statAtencaoTrend span').text(Math.round((resumo.atencao / total) * 100) + '% do total');
         $('#statCriticoTrend span').text(Math.round((resumo.critico / total) * 100) + '% do total');
         $('#statTotalTrend span').text('Cobertura média: ' + (resumo.coberturaMedia || 0).toFixed(1) + '%');
+
+        // NOVO: Trend de tratamento manual com indicadores visuais
+        const percTratado = resumo.percentualTratado || 0;
+        const totalTratados = resumo.totalRegistrosTratados || 0;
+
+        $('#statTratadosTrend span').text(
+            totalTratados.toLocaleString('pt-BR') + ' reg. (' + percTratado.toFixed(2) + '%)'
+        );
+
+        // Indicador de cor baseado no percentual de tratamento
+        // Mais tratamento = mais esforço operacional = indicador negativo
+        if (percTratado > 5) {
+            $('#statTratadosTrend').removeClass('neutral up').addClass('down');
+            $('#statTratadosTrend ion-icon').attr('name', 'alert-circle-outline');
+        } else if (percTratado > 1) {
+            $('#statTratadosTrend').removeClass('up down').addClass('neutral');
+            $('#statTratadosTrend ion-icon').attr('name', 'hand-right-outline');
+        } else {
+            $('#statTratadosTrend').removeClass('neutral down').addClass('up');
+            $('#statTratadosTrend ion-icon').attr('name', 'checkmark-circle-outline');
+        }
     }
 
     /**
-     * Atualiza a tabela de dados
+     * Atualiza a tabela de dados (ATUALIZADO COM COLUNA TRATADOS)
      */
     function atualizarTabela(dados) {
         if (!dados || dados.length === 0) {
             $('#tabelaBody').html(`
-                <tr>
-                    <td colspan="10">
-                        <div class="empty-state">
-                            <ion-icon name="file-tray-outline"></ion-icon>
-                            <h3>Nenhum dado encontrado</h3>
-                            <p>Ajuste os filtros e tente novamente</p>
-                        </div>
-                    </td>
-                </tr>
-            `);
+            <tr>
+                <td colspan="11">
+                    <div class="empty-state">
+                        <ion-icon name="file-tray-outline"></ion-icon>
+                        <h3>Nenhum dado encontrado</h3>
+                        <p>Ajuste os filtros e tente novamente</p>
+                    </div>
+                </td>
+            </tr>
+        `);
             return;
         }
 
@@ -1639,187 +2149,206 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
             const cobertura = parseFloat(item.PERC_COBERTURA) || 0;
             const coberturaClass = cobertura >= 95 ? 'alta' : (cobertura >= 50 ? 'media' : 'baixa');
             const tendenciaClass = item.VL_TENDENCIA_7D ? item.VL_TENDENCIA_7D.toLowerCase() : 'estavel';
+
             const unidade = unidadesMedidor[item.ID_TIPO_MEDIDOR] || '';
+            const media = parseFloat(item.VL_MEDIA) || 0;
+            const hist = parseFloat(item.VL_MEDIA_HIST_4SEM) || 0;
+            const desvio = parseFloat(item.VL_DESVIO_HIST_PERC) || 0;
+
+            // NOVO: Dados de tratamento manual
+            const qtdTratados = parseInt(item.QTD_TRATADOS_MANUAL) || 0;
+            const qtdRegistros = parseInt(item.QTD_REGISTROS) || 1;
+            const percTratados = ((qtdTratados / qtdRegistros) * 100).toFixed(1);
+
+            // Classificação do nível de tratamento
+            let tratadosClass = 'baixo';
+            if (qtdTratados > 200 || percTratados > 20) {
+                tratadosClass = 'alto';
+            } else if (qtdTratados > 50 || percTratados > 5) {
+                tratadosClass = 'medio';
+            }
 
             html += `
-                <tr class="${statusClass}">
-                    <td>
-                        <div class="ponto-info">
-                            <div class="ponto-info-header">
-                                <span class="ponto-nome">${gerarCodigoPonto(item)}</span>
-                                ${getBadgeTipoMedidor(item.ID_TIPO_MEDIDOR)}
-                            </div>
-                            <span class="ponto-descricao">${item.DS_NOME || '-'}</span>
-                        </div>
-                    </td>
-                    <td>${formatarData(item.DT_REFERENCIA)}</td>
-                    <td>
-                        <div class="cobertura-bar">
-                            <div class="cobertura-bar-track">
-                                <div class="cobertura-bar-fill ${coberturaClass}" style="width: ${cobertura}%"></div>
-                            </div>
-                            <span class="cobertura-value">${cobertura.toFixed(0)}%</span>
-                        </div>
-                    </td>
-                    <td>${formatarNumero(item.VL_MEDIA)} ${unidade}</td>
-                    <td>${formatarNumero(item.VL_MEDIA_HIST_4SEM)} ${unidade}</td>
-                    <td>${formatarDesvio(item.VL_DESVIO_HIST_PERC)}</td>
-                    <td>
-                        <span class="tendencia ${tendenciaClass}">
-                            <ion-icon name="${getTendenciaIcon(item.VL_TENDENCIA_7D)}"></ion-icon>
-                            ${item.VL_TENDENCIA_7D || 'ESTAVEL'}
+            <tr onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')" style="cursor:pointer;">
+                <td>
+                    <div class="ponto-info">
+                        <span class="ponto-nome">${item.DS_NOME || 'Ponto ' + item.CD_PONTO_MEDICAO}</span>
+                        <span class="ponto-tipo">${getBadgeTipoMedidor(item.ID_TIPO_MEDIDOR)}</span>
+                    </div>
+                </td>
+                <td>${new Date(item.DT_REFERENCIA).toLocaleDateString('pt-BR')}</td>
+                <td>
+                    <div class="cobertura-bar ${coberturaClass}">
+                        <div class="cobertura-fill" style="width: ${Math.min(cobertura, 100)}%"></div>
+                    </div>
+                    <span class="cobertura-text">${cobertura.toFixed(0)}%</span>
+                </td>
+                <td>${media.toFixed(2)} ${unidade}</td>
+                <td>${hist > 0 ? hist.toFixed(2) + ' ' + unidade : '-'}</td>
+                <td>
+                    <span class="desvio ${desvio > 30 ? 'alto' : (desvio < -30 ? 'baixo' : '')}">
+                        ${desvio !== 0 ? (desvio > 0 ? '+' : '') + desvio.toFixed(0) + '%' : '-'}
+                    </span>
+                </td>
+                <td>
+                    <span class="tendencia ${tendenciaClass}">
+                        <ion-icon name="${tendenciaClass === 'subindo' ? 'trending-up-outline' :
+                    (tendenciaClass === 'descendo' ? 'trending-down-outline' : 'remove-outline')}"></ion-icon>
+                        ${item.VL_TENDENCIA_7D || 'ESTAVEL'}
+                    </span>
+                </td>
+                <td>
+                    <div class="flags-container">
+                        <span class="flag-icon ${item.FL_COBERTURA_BAIXA == 1 ? 'ativo' : 'inativo'}" 
+                              title="Cobertura baixa">
+                            <ion-icon name="wifi-outline"></ion-icon>
                         </span>
-                    </td>
-                    <td>
-                        <div class="flags-container">
-                            <span class="flag-icon ${item.FL_COBERTURA_BAIXA == 1 ? 'ativo' : 'inativo'}" title="Cobertura Baixa">
-                                <ion-icon name="cloud-offline-outline"></ion-icon>
-                            </span>
-                            <span class="flag-icon ${item.FL_SENSOR_PROBLEMA == 1 ? 'ativo' : 'inativo'}" title="Problema Sensor">
-                                <ion-icon name="hardware-chip-outline"></ion-icon>
-                            </span>
-                            <span class="flag-icon ${item.FL_VALOR_ANOMALO == 1 ? 'ativo' : 'inativo'}" title="Valor Anômalo">
-                                <ion-icon name="alert-outline"></ion-icon>
-                            </span>
-                            <span class="flag-icon ${item.FL_DESVIO_SIGNIFICATIVO == 1 ? 'ativo' : 'inativo'}" title="Desvio Significativo">
-                                <ion-icon name="stats-chart-outline"></ion-icon>
-                            </span>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="status-badge ${statusClass}">${item.DS_STATUS || '-'}</span>
-                    </td>
-                    <td>
-                        <button type="button" class="btn-acao" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')" title="Ver detalhes">
-                            <ion-icon name="eye-outline"></ion-icon>
-                        </button>
-                    </td>
-                </tr>
-            `;
+                        <span class="flag-icon ${item.FL_SENSOR_PROBLEMA == 1 ? 'ativo' : 'inativo'}" 
+                              title="Problema no sensor">
+                            <ion-icon name="hardware-chip-outline"></ion-icon>
+                        </span>
+                        <span class="flag-icon ${item.FL_VALOR_ANOMALO == 1 ? 'ativo' : 'inativo'}" 
+                              title="Valor anômalo">
+                            <ion-icon name="alert-outline"></ion-icon>
+                        </span>
+                        <span class="flag-icon ${item.FL_DESVIO_SIGNIFICATIVO == 1 ? 'ativo' : 'inativo'}" 
+                              title="Desvio significativo">
+                            <ion-icon name="stats-chart-outline"></ion-icon>
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    ${qtdTratados > 0
+                    ? `<span class="tratados-badge ${tratadosClass}" 
+                                 title="${percTratados}% dos ${qtdRegistros.toLocaleString('pt-BR')} registros">
+                             <ion-icon name="construct-outline"></ion-icon>
+                             ${qtdTratados.toLocaleString('pt-BR')}
+                           </span>`
+                    : '<span style="color:#cbd5e1">-</span>'}
+                </td>
+                <td>
+                    <span class="status-badge ${statusClass}">${item.DS_STATUS}</span>
+                </td>
+            </tr>
+        `;
         });
 
         $('#tabelaBody').html(html);
     }
 
     /**
-     * Gera codigo formatado do ponto no padrao SIMP
-     */
-    function gerarCodigoPonto(item) {
-        const letrasTipo = { 1: 'M', 2: 'E', 4: 'P', 6: 'R', 8: 'H' };
-        const letra = letrasTipo[item.ID_TIPO_MEDIDOR] || 'X';
-        const cdPonto = String(item.CD_PONTO_MEDICAO).padStart(6, '0');
-        const localidade = item.CD_LOCALIDADE_CODIGO || '0';
-        const unidade = item.CD_UNIDADE || '0';
-        return `${localidade}-${cdPonto}-${letra}-${unidade}`;
-    }
-
-    /**
-     * Atualiza o grafico de evolucao
-     */
-    function atualizarGrafico(evolucao) {
-        const ctx = document.getElementById('graficoEvolucao').getContext('2d');
-
-        if (graficoEvolucao) {
-            graficoEvolucao.destroy();
-        }
-
-        if (!evolucao || evolucao.length === 0) {
-            return;
-        }
-
-        const labels = evolucao.map(e => formatarData(e.DT_REFERENCIA));
-        const dataOk = evolucao.map(e => e.QTD_OK || 0);
-        const dataAtencao = evolucao.map(e => e.QTD_ATENCAO || 0);
-        const dataCritico = evolucao.map(e => e.QTD_CRITICO || 0);
-
-        graficoEvolucao = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'OK',
-                        data: dataOk,
-                        backgroundColor: '#10b981',
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Atenção',
-                        data: dataAtencao,
-                        backgroundColor: '#f59e0b',
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Crítico',
-                        data: dataCritico,
-                        backgroundColor: '#ef4444',
-                        borderRadius: 4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: true,
-                        grid: {
-                            display: false
-                        }
-                    },
-                    y: {
-                        stacked: true,
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    /**
-     * Atualiza o ranking de pontos criticos
+     * Atualiza o ranking de críticos
      */
     function atualizarRanking(criticos) {
         if (!criticos || criticos.length === 0) {
             $('#rankingCriticos').html(`
-                <li class="empty-state" style="padding: 40px 20px; text-align: center;">
-                    <ion-icon name="checkmark-circle-outline" style="font-size: 48px; color: #10b981;"></ion-icon>
-                    <h3 style="margin: 12px 0 4px; font-size: 14px; color: #1e293b;">Nenhum ponto crítico</h3>
-                    <p style="margin: 0; font-size: 12px; color: #64748b;">Todos os pontos estão operando normalmente</p>
-                </li>
-            `);
+            <li class="empty-state" style="padding: 20px; text-align: center;">
+                <ion-icon name="checkmark-circle-outline" style="font-size: 32px; color: #10b981;"></ion-icon>
+                <p style="margin: 8px 0 0; color: #64748b; font-size: 13px;">
+                    Nenhum ponto crítico ou em atenção
+                </p>
+            </li>
+        `);
             return;
         }
 
         let html = '';
-        criticos.slice(0, 10).forEach((item, index) => {
+        criticos.forEach((item, index) => {
             const statusClass = item.DS_STATUS ? item.DS_STATUS.toLowerCase() : '';
             const cobertura = parseFloat(item.PERC_COBERTURA) || 0;
 
             html += `
-                <li class="ranking-item" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')">
-                    <span class="ranking-position">${index + 1}</span>
-                    <div class="ranking-info">
-                        <div class="ranking-header">
-                            <span class="ranking-nome">${item.DS_NOME || 'Ponto ' + item.CD_PONTO_MEDICAO}</span>
-                            ${getBadgeTipoMedidor(item.ID_TIPO_MEDIDOR)}
-                        </div>
-                        <div class="ranking-detalhe">${cobertura.toFixed(0)}% cobertura</div>
+            <li class="ranking-item" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')">
+                <span class="ranking-position">${index + 1}</span>
+                <div class="ranking-info">
+                    <div class="ranking-header">
+                        <span class="ranking-nome">${item.DS_NOME || 'Ponto ' + item.CD_PONTO_MEDICAO}</span>
+                        ${getBadgeTipoMedidor(item.ID_TIPO_MEDIDOR)}
                     </div>
-                    <span class="ranking-valor ${statusClass}">${item.DS_STATUS}</span>
-                </li>
-            `;
+                    <div class="ranking-detalhe">${cobertura.toFixed(0)}% cobertura</div>
+                </div>
+                <span class="ranking-valor ${statusClass}">${item.DS_STATUS}</span>
+            </li>
+        `;
         });
 
         $('#rankingCriticos').html(html);
+    }
+
+    /**
+     * NOVO: Atualiza o ranking de pontos com maior tratamento manual
+     */
+    function atualizarRankingTratados(maisTratados) {
+        const container = $('#rankingTratados');
+
+        if (!maisTratados || maisTratados.length === 0) {
+            container.html(`
+            <li class="empty-state" style="padding: 20px; text-align: center;">
+                <ion-icon name="checkmark-circle-outline" style="font-size: 32px; color: #10b981;"></ion-icon>
+                <p style="margin: 8px 0 0; color: #64748b; font-size: 13px;">
+                    Nenhum ponto necessitou de tratamento manual hoje
+                </p>
+            </li>
+        `);
+            return;
+        }
+
+        let html = '';
+        maisTratados.forEach((item, index) => {
+            const qtdTratados = parseInt(item.QTD_TRATADOS_MANUAL) || 0;
+            const percTratado = parseFloat(item.PERC_TRATADO) || 0;
+
+            // Cor baseada na quantidade
+            let badgeColor = '#8b5cf6'; // roxo padrão
+            let bgColor = '#f5f3ff';
+            if (qtdTratados > 200 || percTratado > 20) {
+                badgeColor = '#dc2626'; // vermelho
+                bgColor = '#fef2f2';
+            } else if (qtdTratados > 100 || percTratado > 10) {
+                badgeColor = '#d97706'; // laranja
+                bgColor = '#fffbeb';
+            }
+
+            html += `
+            <li class="ranking-item" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')">
+                <span class="ranking-position">${index + 1}</span>
+                <div class="ranking-info">
+                    <div class="ranking-header">
+                        <span class="ranking-nome">${item.DS_NOME || 'Ponto ' + item.CD_PONTO_MEDICAO}</span>
+                        ${getBadgeTipoMedidor(item.ID_TIPO_MEDIDOR)}
+                    </div>
+                    <div class="ranking-detalhe" style="color: ${badgeColor};">
+                        <strong>${qtdTratados.toLocaleString('pt-BR')}</strong> registros (${percTratado.toFixed(1)}%)
+                    </div>
+                </div>
+                <span class="ranking-tratados-badge" style="background: ${bgColor}; color: ${badgeColor};">
+                    <ion-icon name="construct-outline"></ion-icon>
+                </span>
+            </li>
+        `;
+        });
+
+        container.html(html);
+    }
+
+    /**
+     * NOVO: Destaca o card de tratados e scroll
+     */
+    function mostrarPontosTratados() {
+        const elemento = document.getElementById('rankingTratados');
+        if (elemento) {
+            elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Highlight temporário no card
+            const card = elemento.closest('.content-card');
+            if (card) {
+                card.style.boxShadow = '0 0 0 3px #8b5cf6';
+                card.style.transition = 'box-shadow 0.3s';
+                setTimeout(() => {
+                    card.style.boxShadow = '';
+                }, 2000);
+            }
+        }
     }
 
     /**
@@ -1853,7 +2382,7 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     }
 
     /**
-     * Exportar para CSV
+     * Exportar para CSV (ATUALIZADO COM TRATADOS)
      */
     function exportarCSV() {
         if (!dadosAtuais || dadosAtuais.length === 0) {
@@ -1861,72 +2390,142 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
             return;
         }
 
-        let csv = 'Ponto;Nome;Tipo;Data;Cobertura;Media;Historico;Desvio%;Tendencia;Status;Resumo\n';
+        // Cabeçalho atualizado com coluna de tratados
+        let csv = 'Ponto;Nome;Tipo;Data;Cobertura;Media;Historico;Desvio%;Tendencia;Tratados;%Tratado;Status;Resumo\n';
 
         dadosAtuais.forEach(item => {
             const tipo = tiposMedidor[item.ID_TIPO_MEDIDOR];
+            const qtdTratados = parseInt(item.QTD_TRATADOS_MANUAL) || 0;
+            const qtdRegistros = parseInt(item.QTD_REGISTROS) || 1;
+            const percTratados = ((qtdTratados / qtdRegistros) * 100).toFixed(2);
+
             csv += `${item.CD_PONTO_MEDICAO};`;
             csv += `"${item.DS_NOME || ''}";`;
             csv += `"${tipo ? tipo.nomeCompleto : ''}";`;
-            csv += `${formatarData(item.DT_REFERENCIA)};`;
-            csv += `${(item.PERC_COBERTURA || 0).toFixed(1)};`;
-            csv += `${(item.VL_MEDIA || 0).toFixed(2)};`;
-            csv += `${(item.VL_MEDIA_HIST_4SEM || 0).toFixed(2)};`;
-            csv += `${(item.VL_DESVIO_HIST_PERC || 0).toFixed(1)};`;
+            csv += `${item.DT_REFERENCIA};`;
+            csv += `${parseFloat(item.PERC_COBERTURA || 0).toFixed(1)};`;
+            csv += `${parseFloat(item.VL_MEDIA || 0).toFixed(2)};`;
+            csv += `${parseFloat(item.VL_MEDIA_HIST_4SEM || 0).toFixed(2)};`;
+            csv += `${parseFloat(item.VL_DESVIO_HIST_PERC || 0).toFixed(1)};`;
             csv += `${item.VL_TENDENCIA_7D || ''};`;
+            csv += `${qtdTratados};`;
+            csv += `${percTratados};`;
             csv += `${item.DS_STATUS || ''};`;
             csv += `"${(item.DS_RESUMO || '').replace(/"/g, '""')}"\n`;
         });
 
+        // Download
         const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `metricas_ia_${new Date().toISOString().slice(0, 10)}.csv`;
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `metricas_ia_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
     }
 
     /**
-     * Funcoes auxiliares
+     * Mostra erro na interface
      */
-    function formatarData(data) {
-        if (!data) return '-';
-        const d = new Date(data);
-        return d.toLocaleDateString('pt-BR');
-    }
-
-    function formatarNumero(valor) {
-        if (valor === null || valor === undefined) return '-';
-        return parseFloat(valor).toFixed(2);
-    }
-
-    function formatarDesvio(valor) {
-        if (valor === null || valor === undefined) return '-';
-        const v = parseFloat(valor);
-        const sinal = v > 0 ? '+' : '';
-        const cor = Math.abs(v) > 30 ? (v > 0 ? 'color: #ef4444' : 'color: #3b82f6') : '';
-        return `<span style="${cor}">${sinal}${v.toFixed(1)}%</span>`;
-    }
-
-    function getTendenciaIcon(tendencia) {
-        switch (tendencia) {
-            case 'SUBINDO': return 'trending-up-outline';
-            case 'DESCENDO': return 'trending-down-outline';
-            default: return 'remove-outline';
-        }
-    }
-
     function mostrarErro(mensagem) {
         $('#tabelaBody').html(`
-            <tr>
-                <td colspan="10">
-                    <div class="empty-state">
-                        <ion-icon name="alert-circle-outline"></ion-icon>
-                        <h3>Erro</h3>
-                        <p>${mensagem}</p>
-                    </div>
-                </td>
-            </tr>
-        `);
+        <tr>
+            <td colspan="11">
+                <div class="empty-state" style="color: #dc2626;">
+                    <ion-icon name="alert-circle-outline"></ion-icon>
+                    <h3>Erro ao carregar dados</h3>
+                    <p>${mensagem}</p>
+                </div>
+            </td>
+        </tr>
+    `);
+    }
+
+    /**
+     * Atualiza gráfico de evolução
+     */
+    function atualizarGrafico(evolucao) {
+        const ctx = document.getElementById('graficoEvolucao');
+        if (!ctx) return;
+
+        // Destruir gráfico anterior se existir
+        if (graficoEvolucao) {
+            graficoEvolucao.destroy();
+        }
+
+        if (!evolucao || evolucao.length === 0) {
+            return;
+        }
+
+        const labels = evolucao.map(e => {
+            const data = new Date(e.DT_REFERENCIA);
+            return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        });
+
+        graficoEvolucao = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'OK',
+                        data: evolucao.map(e => e.QTD_OK),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Atenção',
+                        data: evolucao.map(e => e.QTD_ATENCAO),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Crítico',
+                        data: evolucao.map(e => e.QTD_CRITICO),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Tratados',
+                        data: evolucao.map(e => e.PONTOS_COM_TRATAMENTO || 0),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        fill: false,
+                        tension: 0.4,
+                        borderDash: [5, 5] // Linha pontilhada para diferenciar
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
     }
 </script>
 
