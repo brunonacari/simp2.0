@@ -1,5 +1,7 @@
 <?php
 // bd/grupoUsuario/getGruposUsuario.php
+// Retorna lista de grupos de usuário com paginação
+// Permite buscar por: código, nome do grupo OU nome da funcionalidade vinculada
 header('Content-Type: application/json');
 session_start();
 include_once '../conexao.php';
@@ -19,9 +21,21 @@ try {
     $params = [];
     
     if ($busca !== '') {
-        $where .= " AND (G.DS_NOME LIKE :busca OR CAST(G.CD_GRUPO_USUARIO AS VARCHAR(20)) LIKE :busca2)";
+        // Busca por: código do grupo, nome do grupo OU nome da funcionalidade vinculada
+        $where .= " AND (
+            G.DS_NOME LIKE :busca 
+            OR CAST(G.CD_GRUPO_USUARIO AS VARCHAR(20)) LIKE :busca2
+            OR EXISTS (
+                SELECT 1 
+                FROM SIMP.dbo.GRUPO_USUARIO_X_FUNCIONALIDADE GF
+                INNER JOIN SIMP.dbo.FUNCIONALIDADE F ON F.CD_FUNCIONALIDADE = GF.CD_FUNCIONALIDADE
+                WHERE GF.CD_GRUPO_USUARIO = G.CD_GRUPO_USUARIO
+                AND F.DS_NOME LIKE :busca3
+            )
+        )";
         $params[':busca'] = '%' . $busca . '%';
         $params[':busca2'] = '%' . $busca . '%';
+        $params[':busca3'] = '%' . $busca . '%';
     }
     
     // Query de contagem
@@ -30,7 +44,7 @@ try {
     $stmtCount->execute($params);
     $total = $stmtCount->fetch(PDO::FETCH_ASSOC)['total'];
     
-    // Query principal com contagem de usuários
+    // Query principal com contagem de usuários e permissões
     $sql = "SELECT 
                 G.CD_GRUPO_USUARIO,
                 G.DS_NOME,

@@ -19,10 +19,8 @@ $isDesenvolvedor = temPermissaoTela('Desenvolvedor', ACESSO_LEITURA);
 // ============================================
 
 // Restaura ambiente do cookie se não existir na sessão (apenas desenvolvedores)
-// Isso garante que o ambiente seja lembrado entre sessões
 if ($isDesenvolvedor && !isset($_SESSION['ambiente_forcado']) && isset($_COOKIE['simp_ambiente_preferido'])) {
     $ambienteCookie = $_COOKIE['simp_ambiente_preferido'];
-    // Valida valor do cookie antes de usar
     if (in_array($ambienteCookie, ['HOMOLOGAÇÃO', 'PRODUÇÃO'])) {
         $_SESSION['ambiente_forcado'] = $ambienteCookie;
     }
@@ -32,19 +30,18 @@ if ($isDesenvolvedor && !isset($_SESSION['ambiente_forcado']) && isset($_COOKIE[
 if ($isDesenvolvedor && isset($_POST['alternar_ambiente'])) {
     $novoAmbiente = $_POST['alternar_ambiente'];
     
-    // Salva na sessão
     $_SESSION['ambiente_forcado'] = $novoAmbiente;
     
-    // Salva em cookie para persistir entre sessões (30 dias)
+    // Cookie com secure dinâmico (funciona em HTTP e HTTPS)
     setcookie(
-        'simp_ambiente_preferido',  // nome do cookie
-        $novoAmbiente,              // valor
+        'simp_ambiente_preferido',
+        $novoAmbiente,
         [
-            'expires' => time() + (30 * 24 * 60 * 60), // 30 dias
-            'path' => '/',                              // disponível em todo o site
-            'secure' => true,                           // apenas HTTPS
-            'httponly' => true,                         // não acessível via JavaScript
-            'samesite' => 'Strict'                      // proteção CSRF
+            'expires' => time() + (30 * 24 * 60 * 60),
+            'path' => '/',
+            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'httponly' => true,
+            'samesite' => 'Lax'
         ]
     );
     
@@ -93,6 +90,67 @@ if (isset($_SESSION['msg'])) {
         z-index: 1000;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
+
+/* ============================================
+   DIFERENCIAÇÃO VISUAL POR AMBIENTE
+   ============================================ */
+
+/* Produção - Azul escuro (padrão) */
+.modern-header.ambiente-producao {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+/* Homologação - Laranja/Âmbar para alertar */
+.modern-header.ambiente-homologacao {
+    background: linear-gradient(135deg, #92400e 0%, #b45309 100%);
+    box-shadow: 0 4px 12px rgba(180, 83, 9, 0.3);
+}
+
+/* Ajusta cor dos botões no ambiente de homologação */
+.modern-header.ambiente-homologacao .btn-toggle-menu {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.modern-header.ambiente-homologacao .btn-toggle-menu:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Badge de ambiente no header (para não-desenvolvedores) */
+.modern-header.ambiente-homologacao .ambiente-badge {
+    background: #fef3c7;
+    color: #92400e;
+    animation: pulse-hom 2s infinite;
+}
+
+@keyframes pulse-hom {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(254, 243, 199, 0.7); }
+    50% { opacity: 0.9; box-shadow: 0 0 8px 2px rgba(254, 243, 199, 0.5); }
+}
+
+/* Indicador extra de homologação (canto superior) */
+.modern-header.ambiente-homologacao::before {
+    content: '⚠ HOMOLOGAÇÃO';
+    position: absolute;
+    top: 0;
+    right: 120px;
+    background: #fbbf24;
+    color: #78350f;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 10px;
+    border-radius: 0 0 6px 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+    .modern-header.ambiente-homologacao::before {
+        right: 60px;
+        font-size: 8px;
+        padding: 2px 6px;
+    }
+}
 
     .modern-header-left {
         display: flex;
@@ -1109,8 +1167,7 @@ if (isset($_SESSION['msg'])) {
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
 
 <!-- Header Moderno -->
-<header class="modern-header">
-    <div class="modern-header-left">
+<header class="modern-header <?= $ambiente === 'HOMOLOGAÇÃO' ? 'ambiente-homologacao' : 'ambiente-producao' ?>">    <div class="modern-header-left">
         <button class="btn-toggle-menu" onclick="toggleSidebar()" title="Menu">
             <ion-icon name="menu-outline"></ion-icon>
         </button>
