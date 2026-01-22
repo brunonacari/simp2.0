@@ -265,9 +265,9 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     }
 
     /* ============================================
-       Filtros
-       ============================================ */
-    .filtros-card {
+   Filters Card - Padrão do Sistema
+   ============================================ */
+    .filters-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 16px;
@@ -275,63 +275,225 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         margin-bottom: 24px;
     }
 
-    .filtros-grid {
+    .filters-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .filters-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .filters-title ion-icon {
+        font-size: 18px;
+        color: #3b82f6;
+    }
+
+    .btn-clear-filters {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: #f1f5f9;
+        color: #64748b;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-clear-filters:hover {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .btn-clear-filters ion-icon {
+        font-size: 16px;
+    }
+
+    .filters-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(6, 1fr);
         gap: 16px;
         align-items: end;
     }
 
-    .filtro-group {
+    .form-group {
         display: flex;
         flex-direction: column;
         gap: 6px;
+        min-width: 0;
     }
 
-    .filtro-group label {
-        font-size: 12px;
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
         font-weight: 600;
-        color: #475569;
+        color: #64748b;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.03em;
     }
 
-    .filtro-group select,
-    .filtro-group input {
-        padding: 10px 12px;
+    .form-label ion-icon {
+        font-size: 14px;
+        color: #94a3b8;
+    }
+
+    .form-control {
+        width: 100%;
+        height: 44px;
+        padding: 10px 14px;
+        background-color: #f8fafc;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 13px;
-        color: #1e293b;
-        background: #ffffff;
-        transition: border-color 0.2s;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 14px;
+        color: #334155;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
     }
 
-    .filtro-group select:focus,
-    .filtro-group input:focus {
+    .form-control:focus {
         outline: none;
+        background-color: #ffffff;
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
     .btn-filtrar {
-        padding: 10px 20px;
-        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
-        transition: transform 0.2s, box-shadow 0.2s;
+        width: 100%;
+        height: 44px;
+        padding: 0 20px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
     }
 
     .btn-filtrar:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-filtrar ion-icon {
+        font-size: 18px;
+    }
+
+    /* ============================================
+   Select2 - Customização Padrão
+   ============================================ */
+    .select2-container--default .select2-selection--single {
+        height: 44px;
+        padding: 6px 12px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 30px;
+        padding-left: 0;
+        color: #334155;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 42px;
+        right: 8px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__placeholder {
+        color: #94a3b8;
+    }
+
+    .select2-container--default.select2-container--focus .select2-selection--single {
+        background-color: #ffffff;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .select2-dropdown {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #3b82f6;
+    }
+
+    .select2-search--dropdown .select2-search__field {
+        padding: 10px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+
+    .select2-search--dropdown .select2-search__field:focus {
+        border-color: #3b82f6;
+        outline: none;
+    }
+
+    /* ============================================
+   Responsividade
+   ============================================ */
+    @media (max-width: 1400px) {
+        .filters-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .filters-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .filters-card {
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .filters-header {
+            flex-direction: column;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .btn-clear-filters {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .filters-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .select2-container {
+            width: 100% !important;
+        }
     }
 
     /* ============================================
@@ -801,6 +963,106 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
             padding: 10px 12px;
         }
     }
+
+    /* ============================================
+   Badges de Tipo de Medidor
+   ============================================ */
+    .badge-tipo-medidor {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    /* Macromedidor (1) - Azul */
+    .badge-tipo-medidor.tipo-1 {
+        background: #dbeafe;
+        color: #1d4ed8;
+        border: 1px solid #93c5fd;
+    }
+
+    /* Estação Pitométrica (2) - Verde */
+    .badge-tipo-medidor.tipo-2 {
+        background: #dcfce7;
+        color: #15803d;
+        border: 1px solid #86efac;
+    }
+
+    /* Pressão (4) - Laranja */
+    .badge-tipo-medidor.tipo-4 {
+        background: #ffedd5;
+        color: #c2410c;
+        border: 1px solid #fdba74;
+    }
+
+    /* Nível Reservatório (6) - Roxo */
+    .badge-tipo-medidor.tipo-6 {
+        background: #f3e8ff;
+        color: #7e22ce;
+        border: 1px solid #d8b4fe;
+    }
+
+    /* Hidrômetro (8) - Ciano */
+    .badge-tipo-medidor.tipo-8 {
+        background: #cffafe;
+        color: #0e7490;
+        border: 1px solid #67e8f9;
+    }
+
+    /* Ícones dos tipos */
+    .badge-tipo-medidor ion-icon {
+        font-size: 12px;
+    }
+
+    /* Ajuste no ponto-info para acomodar o badge */
+    .ponto-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .ponto-info-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .ponto-nome {
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .ponto-descricao {
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    /* Ranking - badge menor */
+    .ranking-item .badge-tipo-medidor {
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+
+    .ranking-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .ranking-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
 </style>
 
 <div class="page-container">
@@ -887,51 +1149,84 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     </div>
 
     <!-- Filtros -->
-    <div class="filtros-card">
-        <div class="filtros-grid">
-            <div class="filtro-group">
-                <label>Periodo</label>
-                <select id="filtroPeriodo">
-                    <option value="1">Ultimo dia</option>
-                    <option value="7" selected>Ultimos 7 dias</option>
-                    <option value="15">Ultimos 15 dias</option>
-                    <option value="30">Ultimos 30 dias</option>
+    <div class="filters-card">
+        <div class="filters-header">
+            <div class="filters-title">
+                <ion-icon name="filter-outline"></ion-icon>
+                Filtros de Pesquisa
+            </div>
+            <button type="button" class="btn-clear-filters" onclick="limparFiltros()">
+                <ion-icon name="refresh-outline"></ion-icon>
+                Limpar Filtros
+            </button>
+        </div>
+
+        <div class="filters-grid">
+            <!-- Período -->
+            <div class="form-group">
+                <label class="form-label">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    Período
+                </label>
+                <select id="filtroPeriodo" class="form-control">
+                    <option value="1">Último dia</option>
+                    <option value="7" selected>Últimos 7 dias</option>
+                    <option value="15">Últimos 15 dias</option>
+                    <option value="30">Últimos 30 dias</option>
                 </select>
             </div>
 
-            <div class="filtro-group">
-                <label>Unidade</label>
-                <select id="filtroUnidade" class="select2-filtro">
-                    <option value="">Todas</option>
+            <!-- Unidade -->
+            <div class="form-group">
+                <label class="form-label">
+                    <ion-icon name="business-outline"></ion-icon>
+                    Unidade
+                </label>
+                <select id="filtroUnidade" class="form-control select2-default">
+                    <option value="">Todas as Unidades</option>
                     <?php foreach ($unidades as $u): ?>
-                        <option value="<?= $u['CD_UNIDADE'] ?>"><?= htmlspecialchars($u['DS_NOME']) ?></option>
+                        <option value="<?= $u['CD_UNIDADE'] ?>">
+                            <?= htmlspecialchars($u['DS_NOME']) ?>
+                        </option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
-            <div class="filtro-group">
-                <label>Tipo Medidor</label>
-                <select id="filtroTipo" class="select2-filtro">
-                    <option value="">Todos</option>
+            <!-- Tipo Medidor -->
+            <div class="form-group">
+                <label class="form-label">
+                    <ion-icon name="hardware-chip-outline"></ion-icon>
+                    Tipo Medidor
+                </label>
+                <select id="filtroTipo" class="form-control select2-default">
+                    <option value="">Todos os Tipos</option>
                     <?php foreach ($tiposMedidor as $id => $nome): ?>
                         <option value="<?= $id ?>"><?= $nome ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
-            <div class="filtro-group">
-                <label>Status</label>
-                <select id="filtroStatus">
+            <!-- Status -->
+            <div class="form-group">
+                <label class="form-label">
+                    <ion-icon name="pulse-outline"></ion-icon>
+                    Status
+                </label>
+                <select id="filtroStatus" class="form-control">
                     <option value="">Todos</option>
                     <option value="OK">OK</option>
-                    <option value="ATENCAO">Atencao</option>
-                    <option value="CRITICO">Critico</option>
+                    <option value="ATENCAO">Atenção</option>
+                    <option value="CRITICO">Crítico</option>
                 </select>
             </div>
 
-            <div class="filtro-group">
-                <label>Exibir</label>
-                <select id="filtroLimite">
+            <!-- Exibir -->
+            <div class="form-group">
+                <label class="form-label">
+                    <ion-icon name="list-outline"></ion-icon>
+                    Exibir
+                </label>
+                <select id="filtroLimite" class="form-control">
                     <option value="50">50 registros</option>
                     <option value="100" selected>100 registros</option>
                     <option value="200">200 registros</option>
@@ -939,15 +1234,28 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                 </select>
             </div>
 
-            <div class="filtro-group">
-                <label>&nbsp;</label>
+            <!-- Botão Filtrar -->
+            <div class="form-group">
+                <label class="form-label">&nbsp;</label>
                 <button type="button" class="btn-filtrar" onclick="carregarDados()">
                     <ion-icon name="search-outline"></ion-icon>
                     Filtrar
                 </button>
             </div>
         </div>
+        <!-- Legenda de Tipos -->
+        <div class="legenda-tipos"
+            style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+            <span style="font-size: 12px; color: #64748b; margin-right: 8px;">Tipos:</span>
+            <span class="badge-tipo-medidor tipo-1"><ion-icon name="speedometer-outline"></ion-icon> Macro</span>
+            <span class="badge-tipo-medidor tipo-2"><ion-icon name="pulse-outline"></ion-icon> Pito</span>
+            <span class="badge-tipo-medidor tipo-4"><ion-icon name="thermometer-outline"></ion-icon> Pressão</span>
+            <span class="badge-tipo-medidor tipo-6"><ion-icon name="water-outline"></ion-icon> Nível</span>
+            <span class="badge-tipo-medidor tipo-8"><ion-icon name="watch-outline"></ion-icon> Hidro</span>
+        </div>
     </div>
+
+
 
     <!-- Dashboard Grid -->
     <div class="dashboard-grid">
@@ -1042,20 +1350,21 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
 <script>
     /**
      * Dashboard Metricas IA - JavaScript
-     * @version 1.0
+     * @version 1.1
+     * @update Adicionado badges de tipo de medidor com cores
      */
 
     // Variaveis globais
     let graficoEvolucao = null;
     let dadosAtuais = [];
 
-    // Tipos de medidor
+    // Tipos de medidor com informações completas
     const tiposMedidor = {
-        1: 'Macromedidor',
-        2: 'Est. Pitometrica',
-        4: 'Pressao',
-        6: 'Nivel',
-        8: 'Hidrometro'
+        1: { nome: 'Macro', nomeCompleto: 'Macromedidor', icone: 'speedometer-outline' },
+        2: { nome: 'Pito', nomeCompleto: 'Est. Pitométrica', icone: 'pulse-outline' },
+        4: { nome: 'Pressão', nomeCompleto: 'Pressão', icone: 'thermometer-outline' },
+        6: { nome: 'Nível', nomeCompleto: 'Nível Reservatório', icone: 'water-outline' },
+        8: { nome: 'Hidro', nomeCompleto: 'Hidrômetro', icone: 'stopwatch-outline' }
     };
 
     const unidadesMedidor = {
@@ -1082,8 +1391,46 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     });
 
     /**
-     * Carrega dados do servidor
+ * Limpa todos os filtros
+ */
+    function limparFiltros() {
+        // Resetar Select2
+        $('#filtroUnidade').val('').trigger('change');
+        $('#filtroTipo').val('').trigger('change');
+
+        // Resetar selects normais
+        $('#filtroPeriodo').val('7');
+        $('#filtroStatus').val('');
+        $('#filtroLimite').val('100');
+
+        // Recarregar dados
+        carregarDados();
+    }
+
+    /**
+     * Gera o badge HTML do tipo de medidor
      */
+    function getBadgeTipoMedidor(idTipo) {
+        const tipo = tiposMedidor[idTipo];
+        if (!tipo) return '';
+
+        return `<span class="badge-tipo-medidor tipo-${idTipo}" title="${tipo.nomeCompleto}">
+            <ion-icon name="${tipo.icone}"></ion-icon>
+            ${tipo.nome}
+        </span>`;
+    }
+
+    /**
+     * Retorna nome simples do tipo (para compatibilidade)
+     */
+    function getNomeTipoMedidor(idTipo) {
+        const tipo = tiposMedidor[idTipo];
+        return tipo ? tipo.nomeCompleto : '-';
+    }
+
+    /**
+  * Carrega dados do servidor
+  */
     function carregarDados() {
         const periodo = $('#filtroPeriodo').val();
         const unidade = $('#filtroUnidade').val();
@@ -1117,150 +1464,33 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
             dataType: 'json',
             success: function (response) {
                 if (response.success) {
-                    dadosAtuais = response.data;
+                    atualizarCards(response.resumo);
+                    atualizarGrafico(response.evolucao);
+                    atualizarRanking(response.criticos);
+                    renderizarTabela(response.dados);
 
-                    // Atualizar data de referencia
                     if (response.dataReferencia) {
                         $('#dataReferencia').text(response.dataReferencia);
                     }
-
-                    // Atualizar cards
-                    atualizarCards(response.resumo);
-
-                    // Atualizar tabela
-                    atualizarTabela(response.data);
-
-                    // Atualizar grafico
-                    atualizarGrafico(response.evolucao);
-
-                    // Atualizar ranking
-                    atualizarRanking(response.criticos);
                 } else {
                     mostrarErro(response.message || 'Erro ao carregar dados');
                 }
             },
-            error: function (xhr, status, error) {
-                console.error('Erro:', error);
-                mostrarErro('Erro de conexao com o servidor');
+            error: function () {
+                mostrarErro('Erro de comunicação com o servidor');
             }
         });
     }
-
     /**
-     * Atualiza os cards de estatisticas
+     * Atualiza os cards de resumo
      */
     function atualizarCards(resumo) {
         if (!resumo) return;
 
-        $('#statTotal').text(resumo.total || 0);
-        $('#statOk').text(resumo.ok || 0);
-        $('#statAtencao').text(resumo.atencao || 0);
-        $('#statCritico').text(resumo.critico || 0);
-
-        // Percentuais
-        const total = resumo.total || 1;
-        $('#statOkTrend span').text(Math.round((resumo.ok / total) * 100) + '% do total');
-        $('#statAtencaoTrend span').text(Math.round((resumo.atencao / total) * 100) + '% do total');
-        $('#statCriticoTrend span').text(Math.round((resumo.critico / total) * 100) + '% do total');
-        $('#statTotalTrend span').text('Cobertura media: ' + (resumo.coberturaMedia || 0).toFixed(1) + '%');
-    }
-
-    /**
-     * Atualiza a tabela de dados
-     */
-    /**
-  * Atualiza a tabela de dados
-  */
-    function atualizarTabela(dados) {
-        if (!dados || dados.length === 0) {
-            $('#tabelaBody').html(`
-            <tr>
-                <td colspan="10">
-                    <div class="empty-state">
-                        <ion-icon name="file-tray-outline"></ion-icon>
-                        <h3>Nenhum dado encontrado</h3>
-                        <p>Ajuste os filtros e tente novamente</p>
-                    </div>
-                </td>
-            </tr>
-        `);
-            return;
-        }
-
-        let html = '';
-        dados.forEach(item => {
-            const statusClass = item.DS_STATUS ? item.DS_STATUS.toLowerCase() : '';
-            const cobertura = parseFloat(item.PERC_COBERTURA) || 0;
-            const coberturaClass = cobertura >= 95 ? 'alta' : (cobertura >= 50 ? 'media' : 'baixa');
-            const tendenciaClass = item.VL_TENDENCIA_7D ? item.VL_TENDENCIA_7D.toLowerCase() : 'estavel';
-            const unidade = unidadesMedidor[item.ID_TIPO_MEDIDOR] || '';
-
-            html += `
-            <tr class="${statusClass}">
-                <td>
-                    <div class="ponto-info">
-                        <span class="ponto-nome">${gerarCodigoPonto(item)}</span>
-                        <span class="ponto-tipo">${item.DS_NOME || '-'} | ${tiposMedidor[item.ID_TIPO_MEDIDOR] || '-'}</span>
-                    </div>
-                </td>
-                <td>${formatarData(item.DT_REFERENCIA)}</td>
-                <td>
-                    <div class="cobertura-bar">
-                        <div class="cobertura-bar-track">
-                            <div class="cobertura-bar-fill ${coberturaClass}" style="width: ${cobertura}%"></div>
-                        </div>
-                        <span class="cobertura-value">${cobertura.toFixed(0)}%</span>
-                    </div>
-                </td>
-                <td>${formatarNumero(item.VL_MEDIA)} ${unidade}</td>
-                <td>${formatarNumero(item.VL_MEDIA_HIST_4SEM)} ${unidade}</td>
-                <td>${formatarDesvio(item.VL_DESVIO_HIST_PERC)}</td>
-                <td>
-                    <span class="tendencia ${tendenciaClass}">
-                        <ion-icon name="${getTendenciaIcon(item.VL_TENDENCIA_7D)}"></ion-icon>
-                        ${item.VL_TENDENCIA_7D || 'ESTAVEL'}
-                    </span>
-                </td>
-                <td>
-                    <div class="flags-container">
-                        <span class="flag-icon ${item.FL_COBERTURA_BAIXA == 1 ? 'ativo' : 'inativo'}" title="Cobertura Baixa">
-                            <ion-icon name="cloud-offline-outline"></ion-icon>
-                        </span>
-                        <span class="flag-icon ${item.FL_SENSOR_PROBLEMA == 1 ? 'ativo' : 'inativo'}" title="Problema Sensor">
-                            <ion-icon name="hardware-chip-outline"></ion-icon>
-                        </span>
-                        <span class="flag-icon ${item.FL_VALOR_ANOMALO == 1 ? 'ativo' : 'inativo'}" title="Valor Anomalo">
-                            <ion-icon name="alert-outline"></ion-icon>
-                        </span>
-                        <span class="flag-icon ${item.FL_DESVIO_SIGNIFICATIVO == 1 ? 'ativo' : 'inativo'}" title="Desvio Significativo">
-                            <ion-icon name="stats-chart-outline"></ion-icon>
-                        </span>
-                    </div>
-                </td>
-                <td>
-                    <span class="status-badge ${statusClass}">${item.DS_STATUS || '-'}</span>
-                </td>
-                <td>
-                    <button type="button" class="btn-acao" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')" title="Ver detalhes">
-                        <ion-icon name="eye-outline"></ion-icon>
-                    </button>
-                </td>
-            </tr>
-        `;
-        });
-
-        $('#tabelaBody').html(html);
-    }
-    /**
- * Gera codigo formatado do ponto no padrao SIMP
- */
-    function gerarCodigoPonto(item) {
-        const letrasTipo = { 1: 'M', 2: 'E', 4: 'P', 6: 'R', 8: 'H' };
-        const letra = letrasTipo[item.ID_TIPO_MEDIDOR] || 'X';
-        const cdPonto = String(item.CD_PONTO_MEDICAO).padStart(6, '0');
-        const localidade = item.CD_LOCALIDADE_CODIGO || '0';
-        const unidade = item.CD_UNIDADE || '0';
-        return `${localidade}-${cdPonto}-${letra}-${unidade}`;
+        $('#cardTotal').text(resumo.total || 0);
+        $('#cardOk').text(resumo.ok || 0);
+        $('#cardAtencao').text(resumo.atencao || 0);
+        $('#cardCritico').text(resumo.critico || 0);
     }
 
     /**
@@ -1294,13 +1524,13 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                         borderRadius: 4
                     },
                     {
-                        label: 'Atencao',
+                        label: 'Atenção',
                         data: dataAtencao,
                         backgroundColor: '#f59e0b',
                         borderRadius: 4
                     },
                     {
-                        label: 'Critico',
+                        label: 'Crítico',
                         data: dataCritico,
                         backgroundColor: '#ef4444',
                         borderRadius: 4
@@ -1335,17 +1565,17 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     }
 
     /**
- * Atualiza o ranking de pontos criticos
- */
+     * Atualiza o ranking de pontos criticos
+     */
     function atualizarRanking(criticos) {
         if (!criticos || criticos.length === 0) {
             $('#rankingCriticos').html(`
-            <li class="empty-state">
-                <ion-icon name="checkmark-circle-outline"></ion-icon>
-                <h3>Nenhum ponto critico</h3>
-                <p>Todos os pontos estao operando normalmente</p>
-            </li>
-        `);
+                <li class="empty-state">
+                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+                    <h3>Nenhum ponto crítico</h3>
+                    <p>Todos os pontos estão operando normalmente</p>
+                </li>
+            `);
             return;
         }
 
@@ -1353,31 +1583,133 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         criticos.slice(0, 10).forEach((item, index) => {
             const statusClass = item.DS_STATUS ? item.DS_STATUS.toLowerCase() : '';
             const cobertura = parseFloat(item.PERC_COBERTURA) || 0;
+
             html += `
-            <li class="ranking-item" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')">
-                <span class="ranking-position">${index + 1}</span>
-                <div class="ranking-info">
-                    <div class="ranking-nome">${item.DS_NOME || 'Ponto ' + item.CD_PONTO_MEDICAO}</div>
-                    <div class="ranking-detalhe">${cobertura.toFixed(0)}% cobertura</div>
-                </div>
-                <span class="ranking-valor ${statusClass}">${item.DS_STATUS}</span>
-            </li>
-        `;
+                <li class="ranking-item" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')">
+                    <span class="ranking-position">${index + 1}</span>
+                    <div class="ranking-info">
+                        <div class="ranking-header">
+                            <span class="ranking-nome">${item.DS_NOME || 'Ponto ' + item.CD_PONTO_MEDICAO}</span>
+                            ${getBadgeTipoMedidor(item.ID_TIPO_MEDIDOR)}
+                        </div>
+                        <div class="ranking-detalhe">${cobertura.toFixed(0)}% cobertura</div>
+                    </div>
+                    <span class="ranking-valor ${statusClass}">${item.DS_STATUS}</span>
+                </li>
+            `;
         });
 
         $('#rankingCriticos').html(html);
     }
 
     /**
- * Ver detalhes do ponto - redireciona para operacoes.php com validacao aberta
- */
+     * Renderiza tabela de dados
+     */
+    function renderizarTabela(dados) {
+        dadosAtuais = dados;
+
+        if (!dados || dados.length === 0) {
+            $('#tabelaBody').html(`
+                <tr>
+                    <td colspan="10">
+                        <div class="loading-container">
+                            <ion-icon name="file-tray-outline"></ion-icon>
+                            <span>Nenhum dado encontrado para os filtros selecionados</span>
+                        </div>
+                    </td>
+                </tr>
+            `);
+            return;
+        }
+
+        let html = '';
+        dados.forEach(item => {
+            const statusClass = item.DS_STATUS ? item.DS_STATUS.toLowerCase() : '';
+            const cobertura = parseFloat(item.PERC_COBERTURA) || 0;
+            const coberturaClass = cobertura >= 95 ? 'alta' : (cobertura >= 50 ? 'media' : 'baixa');
+            const tendenciaClass = item.VL_TENDENCIA_7D ? item.VL_TENDENCIA_7D.toLowerCase() : 'estavel';
+            const unidade = unidadesMedidor[item.ID_TIPO_MEDIDOR] || '';
+
+            html += `
+                <tr class="${statusClass}">
+                    <td>
+                        <div class="ponto-info">
+                            <div class="ponto-info-header">
+                                <span class="ponto-nome">${gerarCodigoPonto(item)}</span>
+                                ${getBadgeTipoMedidor(item.ID_TIPO_MEDIDOR)}
+                            </div>
+                            <span class="ponto-descricao">${item.DS_NOME || '-'}</span>
+                        </div>
+                    </td>
+                    <td>${formatarData(item.DT_REFERENCIA)}</td>
+                    <td>
+                        <div class="cobertura-bar">
+                            <div class="cobertura-bar-track">
+                                <div class="cobertura-bar-fill ${coberturaClass}" style="width: ${cobertura}%"></div>
+                            </div>
+                            <span class="cobertura-value">${cobertura.toFixed(0)}%</span>
+                        </div>
+                    </td>
+                    <td>${formatarNumero(item.VL_MEDIA)} ${unidade}</td>
+                    <td>${formatarNumero(item.VL_MEDIA_HIST_4SEM)} ${unidade}</td>
+                    <td>${formatarDesvio(item.VL_DESVIO_HIST_PERC)}</td>
+                    <td>
+                        <span class="tendencia ${tendenciaClass}">
+                            <ion-icon name="${getTendenciaIcon(item.VL_TENDENCIA_7D)}"></ion-icon>
+                            ${item.VL_TENDENCIA_7D || 'ESTAVEL'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="flags-container">
+                            <span class="flag-icon ${item.FL_COBERTURA_BAIXA == 1 ? 'ativo' : 'inativo'}" title="Cobertura Baixa">
+                                <ion-icon name="cloud-offline-outline"></ion-icon>
+                            </span>
+                            <span class="flag-icon ${item.FL_SENSOR_PROBLEMA == 1 ? 'ativo' : 'inativo'}" title="Problema Sensor">
+                                <ion-icon name="hardware-chip-outline"></ion-icon>
+                            </span>
+                            <span class="flag-icon ${item.FL_VALOR_ANOMALO == 1 ? 'ativo' : 'inativo'}" title="Valor Anômalo">
+                                <ion-icon name="alert-outline"></ion-icon>
+                            </span>
+                            <span class="flag-icon ${item.FL_DESVIO_SIGNIFICATIVO == 1 ? 'ativo' : 'inativo'}" title="Desvio Significativo">
+                                <ion-icon name="stats-chart-outline"></ion-icon>
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge ${statusClass}">${item.DS_STATUS || '-'}</span>
+                    </td>
+                    <td>
+                        <button type="button" class="btn-acao" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')" title="Ver detalhes">
+                            <ion-icon name="eye-outline"></ion-icon>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        $('#tabelaBody').html(html);
+    }
+
+    /**
+     * Gera codigo formatado do ponto no padrao SIMP
+     */
+    function gerarCodigoPonto(item) {
+        const letrasTipo = { 1: 'M', 2: 'E', 4: 'P', 6: 'R', 8: 'H' };
+        const letra = letrasTipo[item.ID_TIPO_MEDIDOR] || 'X';
+        const cdPonto = String(item.CD_PONTO_MEDICAO).padStart(6, '0');
+        const localidade = item.CD_LOCALIDADE_CODIGO || '0';
+        const unidade = item.CD_UNIDADE || '0';
+        return `${localidade}-${cdPonto}-${letra}-${unidade}`;
+    }
+
+    /**
+     * Ver detalhes do ponto - redireciona para operacoes.php com validacao aberta
+     */
     function verDetalhes(cdPonto, data) {
-        // Extrair mes e ano da data (formato YYYY-MM-DD)
         const partes = data.split('-');
         const ano = partes[0];
         const mes = parseInt(partes[1], 10);
 
-        // Redirecionar para operacoes.php abrindo modal de validacao
         window.location.href = `operacoes.php?abrirValidacao=1&cdPonto=${cdPonto}&dataValidacao=${data}&mes=${mes}&ano=${ano}`;
     }
 
@@ -1389,8 +1721,6 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         carregarDados();
     }
 
-
-
     /**
      * Exportar para CSV
      */
@@ -1400,11 +1730,13 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
             return;
         }
 
-        let csv = 'Ponto;Nome;Data;Cobertura;Media;Historico;Desvio%;Tendencia;Status;Resumo\n';
+        let csv = 'Ponto;Nome;Tipo;Data;Cobertura;Media;Historico;Desvio%;Tendencia;Status;Resumo\n';
 
         dadosAtuais.forEach(item => {
+            const tipo = tiposMedidor[item.ID_TIPO_MEDIDOR];
             csv += `${item.CD_PONTO_MEDICAO};`;
             csv += `"${item.DS_NOME || ''}";`;
+            csv += `"${tipo ? tipo.nomeCompleto : ''}";`;
             csv += `${formatarData(item.DT_REFERENCIA)};`;
             csv += `${(item.PERC_COBERTURA || 0).toFixed(1)};`;
             csv += `${(item.VL_MEDIA || 0).toFixed(2)};`;
@@ -1454,16 +1786,16 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
 
     function mostrarErro(mensagem) {
         $('#tabelaBody').html(`
-        <tr>
-            <td colspan="10">
-                <div class="empty-state">
-                    <ion-icon name="alert-circle-outline"></ion-icon>
-                    <h3>Erro</h3>
-                    <p>${mensagem}</p>
-                </div>
-            </td>
-        </tr>
-    `);
+            <tr>
+                <td colspan="10">
+                    <div class="empty-state">
+                        <ion-icon name="alert-circle-outline"></ion-icon>
+                        <h3>Erro</h3>
+                        <p>${mensagem}</p>
+                    </div>
+                </td>
+            </tr>
+        `);
     }
 </script>
 

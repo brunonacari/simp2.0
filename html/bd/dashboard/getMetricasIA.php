@@ -91,7 +91,7 @@ try {
     if ($acao === 'listar') {
 
         // Parametros de paginacao
-        $limite = (int) ($_GET['limite'] ?? 1);
+        $limite = (int) ($_GET['limite'] ?? 100);
         $pagina = (int) ($_GET['pagina'] ?? 1);
         $offset = ($pagina - 1) * $limite;
 
@@ -208,22 +208,23 @@ try {
         $stmtEvolucao->execute($paramsEvolucao);
         $evolucao = $stmtEvolucao->fetchAll(PDO::FETCH_ASSOC);
 
-        // 4. BUSCAR PONTOS CRITICOS (ranking)
+        // BUSCAR PONTOS CRITICOS (ranking)
         $sqlCriticos = "
-            SELECT TOP 10
-                IM.CD_PONTO_MEDICAO,
-                IM.DT_REFERENCIA,
-                IM.PERC_COBERTURA,
-                IM.VL_MEDIA,
-                IM.DS_STATUS,
-                IM.DS_RESUMO,
-                PM.DS_NOME
-            FROM SIMP.dbo.IA_METRICAS_DIARIAS IM
-            INNER JOIN SIMP.dbo.PONTO_MEDICAO PM ON IM.CD_PONTO_MEDICAO = PM.CD_PONTO_MEDICAO
-            LEFT JOIN SIMP.dbo.LOCALIDADE L ON PM.CD_LOCALIDADE = L.CD_CHAVE
-            WHERE IM.DT_REFERENCIA = :dataFim
-              AND IM.DS_STATUS IN ('CRITICO', 'ATENCAO')
-        ";
+                SELECT TOP 10
+                    IM.CD_PONTO_MEDICAO,
+                    IM.DT_REFERENCIA,
+                    IM.ID_TIPO_MEDIDOR,    -- ADICIONAR ESTA LINHA
+                    IM.PERC_COBERTURA,
+                    IM.VL_MEDIA,
+                    IM.DS_STATUS,
+                    IM.DS_RESUMO,
+                    PM.DS_NOME
+                FROM SIMP.dbo.IA_METRICAS_DIARIAS IM
+                INNER JOIN SIMP.dbo.PONTO_MEDICAO PM ON IM.CD_PONTO_MEDICAO = PM.CD_PONTO_MEDICAO
+                LEFT JOIN SIMP.dbo.LOCALIDADE L ON PM.CD_LOCALIDADE = L.CD_CHAVE
+                WHERE IM.DT_REFERENCIA = :dataFim
+                AND IM.DS_STATUS IN ('CRITICO', 'ATENCAO')
+            ";
 
         $paramsCriticos = [':dataFim' => $dataFim];
 

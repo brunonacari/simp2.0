@@ -245,9 +245,15 @@ BEGIN
             -- HORAS COM DADOS
             COUNT(DISTINCT DATEPART(HOUR, RVP.DT_LEITURA)) AS QTD_HORAS_COM_DADOS,
             
-            -- LIMITES
-            PM.VL_LIMITE_INFERIOR_VAZAO,
-            PM.VL_LIMITE_SUPERIOR_VAZAO,
+            -- LIMITES (para reservatório, usa 0-100 se não definido)
+            CASE 
+                WHEN PM.ID_TIPO_MEDIDOR = 6 THEN ISNULL(PM.VL_LIMITE_INFERIOR_VAZAO, 0)
+                ELSE PM.VL_LIMITE_INFERIOR_VAZAO
+            END,
+            CASE 
+                WHEN PM.ID_TIPO_MEDIDOR = 6 THEN ISNULL(PM.VL_LIMITE_SUPERIOR_VAZAO, 100)
+                ELSE PM.VL_LIMITE_SUPERIOR_VAZAO
+            END,
             
             -- TRATADOS MANUALMENTE
             SUM(CASE WHEN RVP.ID_SITUACAO = 2 THEN 1 ELSE 0 END) AS QTD_TRATADOS_MANUAL
@@ -348,43 +354,87 @@ BEGIN
         PRINT 'Etapa 5: Tendencia calculada.';
         
         -- ========================================
-        -- ETAPA 6: FLAGS SIMPLIFICADOS (4 apenas)
+        -- ETAPA 6: FLAGS (DIFERENCIADOS POR TIPO)
         -- ========================================
         UPDATE [dbo].[IA_METRICAS_DIARIAS]
         SET 
             -- FLAG 1: Cobertura baixa (<50%)
+            -- Igual para todos os tipos
             FL_COBERTURA_BAIXA = CASE 
                 WHEN QTD_REGISTROS < 720 THEN 1 
                 ELSE 0 
             END,
             
             -- FLAG 2: Problema no sensor
-            -- Travado (poucos valores distintos) OU Zeros excessivos
+            -- DIFERENCIADO: Reservatório tem critérios mais relaxados
             FL_SENSOR_PROBLEMA = CASE 
-                WHEN QTD_VALORES_DISTINTOS <= 3 AND QTD_REGISTROS >= 1000 THEN 1
-                WHEN QTD_ZEROS > (QTD_REGISTROS * 0.5) AND ISNULL(VL_MEDIA_HIST_4SEM, 0) > 0.1 THEN 1
-                WHEN VL_DESVIO_PADRAO < 0.01 AND VL_MEDIA > 0.1 AND QTD_REGISTROS >= 1000 THEN 1
-                ELSE 0 
+                -- RESERVATÓRIO (ID_TIPO_MEDIDOR = 6)
+                WHEN ID_TIPO_MEDIDOR = 6 THEN
+                    CASE
+                        -- Sensor travado: mesmo valor por muito tempo E com variação mínima
+                        -- (reservatório pode ficar estável, então exige critério mais rígido)
+                        WHEN QTD_VALORES_DISTINTOS = 1 AND QTD_REGISTROS >= 1000 THEN 1
+                        -- Desvio padrão zero com muitos registros = definitivamente travado
+                        WHEN VL_DESVIO_PADRAO = 0 AND QTD_REGISTROS >= 1000 THEN 1
+                        -- Zeros NÃO são problema para reservatório (pode estar vazio)
+                        ELSE 0
+                    END
+                    
+                -- MACROMEDIDORES E PRESSÃO (ID_TIPO_MEDIDOR IN 1, 2, 4, 8)
+                ELSE
+                    CASE
+                        -- Travado: poucos valores distintos
+                        WHEN QTD_VALORES_DISTINTOS <= 3 AND QTD_REGISTROS >= 1000 THEN 1
+                        -- Zeros excessivos quando deveria ter fluxo
+                        WHEN QTD_ZEROS > (QTD_REGISTROS * 0.5) AND ISNULL(VL_MEDIA_HIST_4SEM, 0) > 0.1 THEN 1
+                        -- Desvio padrão muito baixo
+                        WHEN VL_DESVIO_PADRAO < 0.01 AND VL_MEDIA > 0.1 AND QTD_REGISTROS >= 1000 THEN 1
+                        ELSE 0
+                    END
             END,
             
             -- FLAG 3: Valor anômalo
-            -- Negativo OU Acima do limite OU Spike (max > 10x média)
+            -- DIFERENCIADO: Reservatório tem faixa conhecida (0-100%)
             FL_VALOR_ANOMALO = CASE 
-                WHEN VL_MIN < 0 THEN 1
-                WHEN VL_LIMITE_SUPERIOR > 0 AND VL_MAX > VL_LIMITE_SUPERIOR THEN 1
-                WHEN VL_MEDIA > 0.1 AND VL_MAX > (VL_MEDIA * 10) THEN 1
-                ELSE 0 
+                -- RESERVATÓRIO (ID_TIPO_MEDIDOR = 6)
+                WHEN ID_TIPO_MEDIDOR = 6 THEN
+                    CASE
+                        -- Valor negativo = impossível
+                        WHEN VL_MIN < 0 THEN 1
+                        -- Acima de 100% = impossível (ou acima do limite configurado)
+                        WHEN VL_MAX > ISNULL(VL_LIMITE_SUPERIOR, 100) THEN 1
+                        -- NÃO aplica spike detection para reservatório
+                        ELSE 0
+                    END
+                    
+                -- MACROMEDIDORES E PRESSÃO
+                ELSE
+                    CASE
+                        -- Valor negativo
+                        WHEN VL_MIN < 0 THEN 1
+                        -- Acima do limite configurado
+                        WHEN VL_LIMITE_SUPERIOR > 0 AND VL_MAX > VL_LIMITE_SUPERIOR THEN 1
+                        -- Spike: max muito acima da média
+                        WHEN VL_MEDIA > 0.1 AND VL_MAX > (VL_MEDIA * 10) THEN 1
+                        ELSE 0
+                    END
             END,
             
-            -- FLAG 4: Desvio histórico significativo (>30%)
+            -- FLAG 4: Desvio histórico significativo
+            -- DIFERENCIADO: Reservatório permite mais variação (operação pode mudar)
             FL_DESVIO_SIGNIFICATIVO = CASE 
-                WHEN ABS(ISNULL(VL_DESVIO_HIST_PERC, 0)) > 30 THEN 1 
-                ELSE 0 
+                -- RESERVATÓRIO: threshold de 50% (mais tolerante)
+                WHEN ID_TIPO_MEDIDOR = 6 THEN
+                    CASE WHEN ABS(ISNULL(VL_DESVIO_HIST_PERC, 0)) > 50 THEN 1 ELSE 0 END
+                    
+                -- MACROMEDIDORES: threshold de 30%
+                ELSE
+                    CASE WHEN ABS(ISNULL(VL_DESVIO_HIST_PERC, 0)) > 30 THEN 1 ELSE 0 END
             END
             
         WHERE DT_REFERENCIA = @DT_PROCESSAMENTO;
         
-        PRINT 'Etapa 6: Flags calculados.';
+        PRINT 'Etapa 6: Flags calculados (diferenciados por tipo).';
         
         -- ========================================
         -- ETAPA 7: STATUS E RESUMO TEXTUAL
@@ -426,18 +476,36 @@ BEGIN
                 ' (min: ' + CAST(CAST(ISNULL(VL_MIN, 0) AS DECIMAL(12,2)) AS VARCHAR) +
                 ', max: ' + CAST(CAST(ISNULL(VL_MAX, 0) AS DECIMAL(12,2)) AS VARCHAR) + '). ' +
                 
+                -- Informação específica de reservatório
+                CASE 
+                    WHEN ID_TIPO_MEDIDOR = 6 THEN 
+                        'Amplitude: ' + CAST(CAST(ISNULL(VL_MAX, 0) - ISNULL(VL_MIN, 0) AS DECIMAL(5,1)) AS VARCHAR) + '%. '
+                    ELSE ''
+                END +
+                
                 -- Comparação histórica
                 CASE 
                     WHEN VL_MEDIA_HIST_4SEM IS NULL THEN 'Sem historico para comparacao. '
-                    WHEN VL_DESVIO_HIST_PERC > 30 THEN 'ACIMA do historico (+' + CAST(CAST(VL_DESVIO_HIST_PERC AS INT) AS VARCHAR) + '%). '
-                    WHEN VL_DESVIO_HIST_PERC < -30 THEN 'ABAIXO do historico (' + CAST(CAST(VL_DESVIO_HIST_PERC AS INT) AS VARCHAR) + '%). '
+                    -- Thresholds diferentes por tipo
+                    WHEN ID_TIPO_MEDIDOR = 6 AND VL_DESVIO_HIST_PERC > 50 THEN 'ACIMA do historico (+' + CAST(CAST(VL_DESVIO_HIST_PERC AS INT) AS VARCHAR) + '%). '
+                    WHEN ID_TIPO_MEDIDOR = 6 AND VL_DESVIO_HIST_PERC < -50 THEN 'ABAIXO do historico (' + CAST(CAST(VL_DESVIO_HIST_PERC AS INT) AS VARCHAR) + '%). '
+                    WHEN ID_TIPO_MEDIDOR != 6 AND VL_DESVIO_HIST_PERC > 30 THEN 'ACIMA do historico (+' + CAST(CAST(VL_DESVIO_HIST_PERC AS INT) AS VARCHAR) + '%). '
+                    WHEN ID_TIPO_MEDIDOR != 6 AND VL_DESVIO_HIST_PERC < -30 THEN 'ABAIXO do historico (' + CAST(CAST(VL_DESVIO_HIST_PERC AS INT) AS VARCHAR) + '%). '
                     ELSE 'Dentro do padrao historico (' + CAST(CAST(VL_DESVIO_HIST_PERC AS INT) AS VARCHAR) + '%). '
                 END +
                 
-                -- Tendência
+                -- Tendência (mais relevante para reservatório)
                 CASE 
-                    WHEN VL_TENDENCIA_7D = 'SUBINDO' THEN 'Tendencia de alta nos ultimos 7 dias. '
-                    WHEN VL_TENDENCIA_7D = 'DESCENDO' THEN 'Tendencia de queda nos ultimos 7 dias. '
+                    WHEN VL_TENDENCIA_7D = 'SUBINDO' THEN 
+                        CASE WHEN ID_TIPO_MEDIDOR = 6 
+                            THEN 'Nivel medio em alta nos ultimos 7 dias. '
+                            ELSE 'Tendencia de alta nos ultimos 7 dias. '
+                        END
+                    WHEN VL_TENDENCIA_7D = 'DESCENDO' THEN 
+                        CASE WHEN ID_TIPO_MEDIDOR = 6 
+                            THEN 'Nivel medio em queda nos ultimos 7 dias. '
+                            ELSE 'Tendencia de queda nos ultimos 7 dias. '
+                        END
                     ELSE ''
                 END +
                 
