@@ -400,8 +400,12 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     }
 
     /* ============================================
-   Select2 - Customização Padrão
+   Select2 - Customização Padrão SIMP
    ============================================ */
+    .select2-container {
+        width: 100% !important;
+    }
+
     .select2-container--default .select2-selection--single {
         height: 44px;
         padding: 6px 12px;
@@ -409,38 +413,68 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         border: 1px solid #e2e8f0;
         border-radius: 10px;
         font-size: 14px;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+    }
+
+    .select2-container--default .select2-selection--single:hover {
+        border-color: #cbd5e1;
     }
 
     .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 30px;
+        line-height: 1;
         padding-left: 0;
+        padding-right: 28px;
         color: #334155;
-    }
-
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 42px;
-        right: 8px;
     }
 
     .select2-container--default .select2-selection--single .select2-selection__placeholder {
         color: #94a3b8;
     }
 
-    .select2-container--default.select2-container--focus .select2-selection--single {
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 42px;
+        right: 10px;
+        top: 0;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        border-color: #64748b transparent transparent transparent;
+        border-width: 5px 5px 0 5px;
+    }
+
+    .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+        border-color: transparent transparent #64748b transparent;
+        border-width: 0 5px 5px 5px;
+    }
+
+    .select2-container--default.select2-container--focus .select2-selection--single,
+    .select2-container--default.select2-container--open .select2-selection--single {
         background-color: #ffffff;
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
     }
 
+    /* Dropdown */
     .select2-dropdown {
         border: 1px solid #e2e8f0;
         border-radius: 10px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
         overflow: hidden;
+        margin-top: 4px;
     }
 
-    .select2-container--default .select2-results__option--highlighted[aria-selected] {
-        background-color: #3b82f6;
+    .select2-container--open .select2-dropdown--below {
+        border-top: 1px solid #e2e8f0;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+
+    /* Search dentro do dropdown */
+    .select2-search--dropdown {
+        padding: 10px;
     }
 
     .select2-search--dropdown .select2-search__field {
@@ -448,11 +482,78 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         font-size: 13px;
+        font-family: inherit;
+        outline: none;
+        transition: all 0.2s ease;
     }
 
     .select2-search--dropdown .select2-search__field:focus {
         border-color: #3b82f6;
-        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Resultados */
+    .select2-results__options {
+        max-height: 250px;
+    }
+
+    .select2-container--default .select2-results__option {
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #334155;
+        transition: background 0.15s ease;
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #3b82f6;
+        color: #ffffff;
+    }
+
+    .select2-container--default .select2-results__option[aria-selected="true"] {
+        background-color: #eff6ff;
+        color: #1e40af;
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected="true"] {
+        background-color: #3b82f6;
+        color: #ffffff;
+    }
+
+    /* Mensagem de "nenhum resultado" */
+    .select2-results__message {
+        padding: 12px 14px;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    /* Clear button (X) */
+    .select2-container--default .select2-selection--single .select2-selection__clear {
+        color: #94a3b8;
+        font-size: 18px;
+        font-weight: normal;
+        margin-right: 8px;
+        cursor: pointer;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__clear:hover {
+        color: #ef4444;
+    }
+
+    /* Loading */
+    .select2-container--default .select2-results__option.loading-results {
+        padding: 12px 14px;
+        color: #64748b;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .select2-container--default .select2-selection--single {
+            height: 44px;
+        }
+
+        .select2-dropdown {
+            border-radius: 8px;
+        }
     }
 
     /* ============================================
@@ -1350,8 +1451,7 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
 <script>
     /**
      * Dashboard Metricas IA - JavaScript
-     * @version 1.1
-     * @update Adicionado badges de tipo de medidor com cores
+     * @version 1.2 - Corrigido carregamento de dados
      */
 
     // Variaveis globais
@@ -1380,32 +1480,19 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
      */
     $(document).ready(function () {
         // Inicializar Select2
-        $('.select2-filtro').select2({
+        $('.select2-default').select2({
             placeholder: 'Selecione...',
             allowClear: true,
-            width: '100%'
+            width: '100%',
+            language: {
+                noResults: function () { return "Nenhum resultado encontrado"; },
+                searching: function () { return "Buscando..."; }
+            }
         });
 
         // Carregar dados iniciais
         carregarDados();
     });
-
-    /**
- * Limpa todos os filtros
- */
-    function limparFiltros() {
-        // Resetar Select2
-        $('#filtroUnidade').val('').trigger('change');
-        $('#filtroTipo').val('').trigger('change');
-
-        // Resetar selects normais
-        $('#filtroPeriodo').val('7');
-        $('#filtroStatus').val('');
-        $('#filtroLimite').val('100');
-
-        // Recarregar dados
-        carregarDados();
-    }
 
     /**
      * Gera o badge HTML do tipo de medidor
@@ -1421,34 +1508,44 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     }
 
     /**
-     * Retorna nome simples do tipo (para compatibilidade)
+     * Carrega dados do servidor
      */
-    function getNomeTipoMedidor(idTipo) {
-        const tipo = tiposMedidor[idTipo];
-        return tipo ? tipo.nomeCompleto : '-';
-    }
-
-    /**
-  * Carrega dados do servidor
-  */
     function carregarDados() {
-        const periodo = $('#filtroPeriodo').val();
-        const unidade = $('#filtroUnidade').val();
-        const tipo = $('#filtroTipo').val();
-        const status = $('#filtroStatus').val();
-        const limite = $('#filtroLimite').val();
+        const periodo = $('#filtroPeriodo').val() || 7;
+        const unidade = $('#filtroUnidade').val() || '';
+        const tipo = $('#filtroTipo').val() || '';
+        const status = $('#filtroStatus').val() || '';
+        const limite = $('#filtroLimite').val() || 100;
 
-        // Loading
+        // Loading nos cards
+        $('#statTotal').text('-');
+        $('#statOk').text('-');
+        $('#statAtencao').text('-');
+        $('#statCritico').text('-');
+        $('#statTotalTrend span').text('Carregando...');
+        $('#statOkTrend span').text('-');
+        $('#statAtencaoTrend span').text('-');
+        $('#statCriticoTrend span').text('-');
+
+        // Loading na tabela
         $('#tabelaBody').html(`
-        <tr>
-            <td colspan="10">
-                <div class="loading-container">
-                    <ion-icon name="sync-outline"></ion-icon>
-                    <span>Carregando dados...</span>
-                </div>
-            </td>
-        </tr>
-    `);
+            <tr>
+                <td colspan="10">
+                    <div class="loading-container">
+                        <ion-icon name="sync-outline"></ion-icon>
+                        <span>Carregando dados...</span>
+                    </div>
+                </td>
+            </tr>
+        `);
+
+        // Loading no ranking
+        $('#rankingCriticos').html(`
+            <li class="loading-container">
+                <ion-icon name="sync-outline"></ion-icon>
+                <span>Carregando...</span>
+            </li>
+        `);
 
         $.ajax({
             url: 'bd/dashboard/getMetricasIA.php',
@@ -1459,162 +1556,76 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                 unidade: unidade,
                 tipo: tipo,
                 status: status,
-                limite: limite
+                limite: limite  // <-- IMPORTANTE: enviar o limite
             },
             dataType: 'json',
             success: function (response) {
-                if (response.success) {
-                    atualizarCards(response.resumo);
-                    atualizarGrafico(response.evolucao);
-                    atualizarRanking(response.criticos);
-                    renderizarTabela(response.dados);
+                console.log('Resposta do servidor:', response); // Debug
 
+                if (response.success) {
+                    dadosAtuais = response.dados || response.data || [];
+
+                    // Atualizar data de referencia
                     if (response.dataReferencia) {
                         $('#dataReferencia').text(response.dataReferencia);
                     }
+
+                    // Atualizar cards
+                    atualizarCards(response.resumo);
+
+                    // Atualizar tabela
+                    atualizarTabela(dadosAtuais);
+
+                    // Atualizar grafico
+                    atualizarGrafico(response.evolucao);
+
+                    // Atualizar ranking
+                    atualizarRanking(response.criticos);
                 } else {
                     mostrarErro(response.message || 'Erro ao carregar dados');
                 }
             },
-            error: function () {
-                mostrarErro('Erro de comunicação com o servidor');
+            error: function (xhr, status, error) {
+                console.error('Erro AJAX:', error, xhr.responseText);
+                mostrarErro('Erro de conexão com o servidor');
             }
         });
     }
+
     /**
-     * Atualiza os cards de resumo
+     * Atualiza os cards de estatisticas
      */
     function atualizarCards(resumo) {
-        if (!resumo) return;
-
-        $('#cardTotal').text(resumo.total || 0);
-        $('#cardOk').text(resumo.ok || 0);
-        $('#cardAtencao').text(resumo.atencao || 0);
-        $('#cardCritico').text(resumo.critico || 0);
-    }
-
-    /**
-     * Atualiza o grafico de evolucao
-     */
-    function atualizarGrafico(evolucao) {
-        const ctx = document.getElementById('graficoEvolucao').getContext('2d');
-
-        if (graficoEvolucao) {
-            graficoEvolucao.destroy();
-        }
-
-        if (!evolucao || evolucao.length === 0) {
+        if (!resumo) {
+            console.warn('Resumo vazio');
             return;
         }
 
-        const labels = evolucao.map(e => formatarData(e.DT_REFERENCIA));
-        const dataOk = evolucao.map(e => e.QTD_OK || 0);
-        const dataAtencao = evolucao.map(e => e.QTD_ATENCAO || 0);
-        const dataCritico = evolucao.map(e => e.QTD_CRITICO || 0);
+        $('#statTotal').text(resumo.total || 0);
+        $('#statOk').text(resumo.ok || 0);
+        $('#statAtencao').text(resumo.atencao || 0);
+        $('#statCritico').text(resumo.critico || 0);
 
-        graficoEvolucao = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'OK',
-                        data: dataOk,
-                        backgroundColor: '#10b981',
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Atenção',
-                        data: dataAtencao,
-                        backgroundColor: '#f59e0b',
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Crítico',
-                        data: dataCritico,
-                        backgroundColor: '#ef4444',
-                        borderRadius: 4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: true,
-                        grid: {
-                            display: false
-                        }
-                    },
-                    y: {
-                        stacked: true,
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
-                }
-            }
-        });
+        // Percentuais
+        const total = resumo.total || 1;
+        $('#statOkTrend span').text(Math.round((resumo.ok / total) * 100) + '% do total');
+        $('#statAtencaoTrend span').text(Math.round((resumo.atencao / total) * 100) + '% do total');
+        $('#statCriticoTrend span').text(Math.round((resumo.critico / total) * 100) + '% do total');
+        $('#statTotalTrend span').text('Cobertura média: ' + (resumo.coberturaMedia || 0).toFixed(1) + '%');
     }
 
     /**
-     * Atualiza o ranking de pontos criticos
+     * Atualiza a tabela de dados
      */
-    function atualizarRanking(criticos) {
-        if (!criticos || criticos.length === 0) {
-            $('#rankingCriticos').html(`
-                <li class="empty-state">
-                    <ion-icon name="checkmark-circle-outline"></ion-icon>
-                    <h3>Nenhum ponto crítico</h3>
-                    <p>Todos os pontos estão operando normalmente</p>
-                </li>
-            `);
-            return;
-        }
-
-        let html = '';
-        criticos.slice(0, 10).forEach((item, index) => {
-            const statusClass = item.DS_STATUS ? item.DS_STATUS.toLowerCase() : '';
-            const cobertura = parseFloat(item.PERC_COBERTURA) || 0;
-
-            html += `
-                <li class="ranking-item" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')">
-                    <span class="ranking-position">${index + 1}</span>
-                    <div class="ranking-info">
-                        <div class="ranking-header">
-                            <span class="ranking-nome">${item.DS_NOME || 'Ponto ' + item.CD_PONTO_MEDICAO}</span>
-                            ${getBadgeTipoMedidor(item.ID_TIPO_MEDIDOR)}
-                        </div>
-                        <div class="ranking-detalhe">${cobertura.toFixed(0)}% cobertura</div>
-                    </div>
-                    <span class="ranking-valor ${statusClass}">${item.DS_STATUS}</span>
-                </li>
-            `;
-        });
-
-        $('#rankingCriticos').html(html);
-    }
-
-    /**
-     * Renderiza tabela de dados
-     */
-    function renderizarTabela(dados) {
-        dadosAtuais = dados;
-
+    function atualizarTabela(dados) {
         if (!dados || dados.length === 0) {
             $('#tabelaBody').html(`
                 <tr>
                     <td colspan="10">
-                        <div class="loading-container">
+                        <div class="empty-state">
                             <ion-icon name="file-tray-outline"></ion-icon>
-                            <span>Nenhum dado encontrado para os filtros selecionados</span>
+                            <h3>Nenhum dado encontrado</h3>
+                            <p>Ajuste os filtros e tente novamente</p>
                         </div>
                     </td>
                 </tr>
@@ -1703,13 +1714,121 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     }
 
     /**
-     * Ver detalhes do ponto - redireciona para operacoes.php com validacao aberta
+     * Atualiza o grafico de evolucao
+     */
+    function atualizarGrafico(evolucao) {
+        const ctx = document.getElementById('graficoEvolucao').getContext('2d');
+
+        if (graficoEvolucao) {
+            graficoEvolucao.destroy();
+        }
+
+        if (!evolucao || evolucao.length === 0) {
+            return;
+        }
+
+        const labels = evolucao.map(e => formatarData(e.DT_REFERENCIA));
+        const dataOk = evolucao.map(e => e.QTD_OK || 0);
+        const dataAtencao = evolucao.map(e => e.QTD_ATENCAO || 0);
+        const dataCritico = evolucao.map(e => e.QTD_CRITICO || 0);
+
+        graficoEvolucao = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'OK',
+                        data: dataOk,
+                        backgroundColor: '#10b981',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Atenção',
+                        data: dataAtencao,
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Crítico',
+                        data: dataCritico,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Atualiza o ranking de pontos criticos
+     */
+    function atualizarRanking(criticos) {
+        if (!criticos || criticos.length === 0) {
+            $('#rankingCriticos').html(`
+                <li class="empty-state" style="padding: 40px 20px; text-align: center;">
+                    <ion-icon name="checkmark-circle-outline" style="font-size: 48px; color: #10b981;"></ion-icon>
+                    <h3 style="margin: 12px 0 4px; font-size: 14px; color: #1e293b;">Nenhum ponto crítico</h3>
+                    <p style="margin: 0; font-size: 12px; color: #64748b;">Todos os pontos estão operando normalmente</p>
+                </li>
+            `);
+            return;
+        }
+
+        let html = '';
+        criticos.slice(0, 10).forEach((item, index) => {
+            const statusClass = item.DS_STATUS ? item.DS_STATUS.toLowerCase() : '';
+            const cobertura = parseFloat(item.PERC_COBERTURA) || 0;
+
+            html += `
+                <li class="ranking-item" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')">
+                    <span class="ranking-position">${index + 1}</span>
+                    <div class="ranking-info">
+                        <div class="ranking-header">
+                            <span class="ranking-nome">${item.DS_NOME || 'Ponto ' + item.CD_PONTO_MEDICAO}</span>
+                            ${getBadgeTipoMedidor(item.ID_TIPO_MEDIDOR)}
+                        </div>
+                        <div class="ranking-detalhe">${cobertura.toFixed(0)}% cobertura</div>
+                    </div>
+                    <span class="ranking-valor ${statusClass}">${item.DS_STATUS}</span>
+                </li>
+            `;
+        });
+
+        $('#rankingCriticos').html(html);
+    }
+
+    /**
+     * Ver detalhes do ponto
      */
     function verDetalhes(cdPonto, data) {
         const partes = data.split('-');
         const ano = partes[0];
         const mes = parseInt(partes[1], 10);
-
         window.location.href = `operacoes.php?abrirValidacao=1&cdPonto=${cdPonto}&dataValidacao=${data}&mes=${mes}&ano=${ano}`;
     }
 
@@ -1718,6 +1837,18 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
      */
     function filtrarPorStatus(status) {
         $('#filtroStatus').val(status);
+        carregarDados();
+    }
+
+    /**
+     * Limpa todos os filtros
+     */
+    function limparFiltros() {
+        $('#filtroUnidade').val('').trigger('change');
+        $('#filtroTipo').val('').trigger('change');
+        $('#filtroPeriodo').val('7');
+        $('#filtroStatus').val('');
+        $('#filtroLimite').val('100');
         carregarDados();
     }
 
