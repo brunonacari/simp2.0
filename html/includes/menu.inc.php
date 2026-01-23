@@ -29,9 +29,9 @@ if ($isDesenvolvedor && !isset($_SESSION['ambiente_forcado']) && isset($_COOKIE[
 // Processa alteração de ambiente via POST (apenas desenvolvedores)
 if ($isDesenvolvedor && isset($_POST['alternar_ambiente'])) {
     $novoAmbiente = $_POST['alternar_ambiente'];
-    
+
     $_SESSION['ambiente_forcado'] = $novoAmbiente;
-    
+
     // Cookie com secure dinâmico (funciona em HTTP e HTTPS)
     setcookie(
         'simp_ambiente_preferido',
@@ -44,7 +44,7 @@ if ($isDesenvolvedor && isset($_POST['alternar_ambiente'])) {
             'samesite' => 'Lax'
         ]
     );
-    
+
     header("Location: " . $_SERVER['REQUEST_URI']);
     exit;
 }
@@ -91,66 +91,75 @@ if (isset($_SESSION['msg'])) {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
-/* ============================================
+    /* ============================================
    DIFERENCIAÇÃO VISUAL POR AMBIENTE
    ============================================ */
 
-/* Produção - Azul escuro (padrão) */
-.modern-header.ambiente-producao {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-}
-
-/* Homologação - Laranja/Âmbar para alertar */
-.modern-header.ambiente-homologacao {
-    background: linear-gradient(135deg, #92400e 0%, #b45309 100%);
-    box-shadow: 0 4px 12px rgba(180, 83, 9, 0.3);
-}
-
-/* Ajusta cor dos botões no ambiente de homologação */
-.modern-header.ambiente-homologacao .btn-toggle-menu {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.modern-header.ambiente-homologacao .btn-toggle-menu:hover {
-    background: rgba(255, 255, 255, 0.25);
-}
-
-/* Badge de ambiente no header (para não-desenvolvedores) */
-.modern-header.ambiente-homologacao .ambiente-badge {
-    background: #fef3c7;
-    color: #92400e;
-    animation: pulse-hom 2s infinite;
-}
-
-@keyframes pulse-hom {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(254, 243, 199, 0.7); }
-    50% { opacity: 0.9; box-shadow: 0 0 8px 2px rgba(254, 243, 199, 0.5); }
-}
-
-/* Indicador extra de homologação (canto superior) */
-.modern-header.ambiente-homologacao::before {
-    content: '⚠ HOMOLOGAÇÃO';
-    position: absolute;
-    top: 0;
-    right: 120px;
-    background: #fbbf24;
-    color: #78350f;
-    font-size: 9px;
-    font-weight: 800;
-    padding: 2px 10px;
-    border-radius: 0 0 6px 6px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-}
-
-@media (max-width: 768px) {
-    .modern-header.ambiente-homologacao::before {
-        right: 60px;
-        font-size: 8px;
-        padding: 2px 6px;
+    /* Produção - Azul escuro (padrão) */
+    .modern-header.ambiente-producao {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     }
-}
+
+    /* Homologação - Laranja/Âmbar para alertar */
+    .modern-header.ambiente-homologacao {
+        background: linear-gradient(135deg, #92400e 0%, #b45309 100%);
+        box-shadow: 0 4px 12px rgba(180, 83, 9, 0.3);
+    }
+
+    /* Ajusta cor dos botões no ambiente de homologação */
+    .modern-header.ambiente-homologacao .btn-toggle-menu {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .modern-header.ambiente-homologacao .btn-toggle-menu:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Badge de ambiente no header (para não-desenvolvedores) */
+    .modern-header.ambiente-homologacao .ambiente-badge {
+        background: #fef3c7;
+        color: #92400e;
+        animation: pulse-hom 2s infinite;
+    }
+
+    @keyframes pulse-hom {
+
+        0%,
+        100% {
+            opacity: 1;
+            box-shadow: 0 0 0 0 rgba(254, 243, 199, 0.7);
+        }
+
+        50% {
+            opacity: 0.9;
+            box-shadow: 0 0 8px 2px rgba(254, 243, 199, 0.5);
+        }
+    }
+
+    /* Indicador extra de homologação (canto superior) */
+    .modern-header.ambiente-homologacao::before {
+        content: '⚠ HOMOLOGAÇÃO';
+        position: absolute;
+        top: 0;
+        right: 120px;
+        background: #fbbf24;
+        color: #78350f;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 2px 10px;
+        border-radius: 0 0 6px 6px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    @media (max-width: 768px) {
+        .modern-header.ambiente-homologacao::before {
+            right: 60px;
+            font-size: 8px;
+            padding: 2px 6px;
+        }
+    }
 
     .modern-header-left {
         display: flex;
@@ -1161,13 +1170,45 @@ if (isset($_SESSION['msg'])) {
             width: auto;
         }
     }
+
+    /* Permissão da Página Atual */
+    .permissao-tipo-badge {
+        display: inline-block;
+        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-left: 6px;
+        font-weight: 600;
+        text-transform: uppercase;
+        vertical-align: middle;
+    }
+
+    .permissao-tipo-badge.leitura {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .permissao-tipo-badge.escrita {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .user-detail-item.permissao-tela {
+        background: #faf5ff;
+        border-left: 3px solid #8b5cf6;
+    }
+
+    .user-detail-item.permissao-tela ion-icon {
+        color: #8b5cf6;
+    }
 </style>
 
 <!-- Overlay para mobile -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
 
 <!-- Header Moderno -->
-<header class="modern-header <?= $ambiente === 'HOMOLOGAÇÃO' ? 'ambiente-homologacao' : 'ambiente-producao' ?>">    <div class="modern-header-left">
+<header class="modern-header <?= $ambiente === 'HOMOLOGAÇÃO' ? 'ambiente-homologacao' : 'ambiente-producao' ?>">
+    <div class="modern-header-left">
         <button class="btn-toggle-menu" onclick="toggleSidebar()" title="Menu">
             <ion-icon name="menu-outline"></ion-icon>
         </button>
@@ -1178,7 +1219,8 @@ if (isset($_SESSION['msg'])) {
                 <span class="brand-name">
                     SIMP
                     <?php if (!$isDesenvolvedor): ?>
-                        <span class="ambiente-badge <?= $ambiente === 'PRODUÇÃO' ? 'producao' : '' ?>"><?= $ambiente ?></span>
+                        <span
+                            class="ambiente-badge <?= $ambiente === 'PRODUÇÃO' ? 'producao' : '' ?>"><?= $ambiente ?></span>
                     <?php endif; ?>
                 </span>
                 <span class="system-fullname">Sistema Integrado de Macromedição e Pitometria</span>
@@ -1225,7 +1267,8 @@ if (isset($_SESSION['msg'])) {
                 <!-- Dropdown do Usuário -->
                 <div class="user-dropdown" id="userDropdown">
                     <div class="user-dropdown-header">
-                        <div class="user-dropdown-avatar <?= ($_SESSION['externo'] ?? '') == 'externo' ? 'external' : '' ?>">
+                        <div
+                            class="user-dropdown-avatar <?= ($_SESSION['externo'] ?? '') == 'externo' ? 'external' : '' ?>">
                             <?= getIniciaisUsuario() ?>
                         </div>
                         <div class="user-dropdown-info">
@@ -1269,6 +1312,21 @@ if (isset($_SESSION['msg'])) {
                             </div>
                         </div>
 
+                        <?php if (isset($GLOBALS['permissao_tela_atual'])): ?>
+                            <div class="user-detail-item permissao-tela">
+                                <ion-icon name="lock-closed-outline"></ion-icon>
+                                <div class="user-detail-content">
+                                    <span class="user-detail-label">Permissão da Página</span>
+                                    <span class="user-detail-value">
+                                        <?= htmlspecialchars($GLOBALS['permissao_tela_atual']['nome']) ?>
+                                        <span class="permissao-tipo-badge <?= ($GLOBALS['permissao_tela_atual']['tipo'] ?? 0) === ACESSO_ESCRITA ? 'escrita' : 'leitura' ?>">
+                                            <?= $GLOBALS['permissao_tela_atual']['tipo_label'] ?>
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
                         <div class="user-detail-item">
                             <ion-icon name="key-outline"></ion-icon>
                             <div class="user-detail-content">
@@ -1276,7 +1334,7 @@ if (isset($_SESSION['msg'])) {
                                 <span class="user-detail-value"><?= count($_SESSION['permissoes'] ?? []) ?> funcionalidades</span>
                             </div>
                         </div>
-                    </div>
+                    </div>               
 
                     <div class="user-dropdown-divider"></div>
 
@@ -1480,13 +1538,9 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Consulta de Log</span>
                     </a>
                 </li>
-
             </ul>
         </div>
     </div>
-    </div>
-
-
 
 </aside>
 
@@ -1551,7 +1605,7 @@ if (isset($_SESSION['msg'])) {
     // ============================================
     // Restore States on Load
     // ============================================
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Restore sidebar state (desktop only)
         if (window.innerWidth > 768) {
             const sidebarState = localStorage.getItem('sidebarCollapsed');
@@ -1578,7 +1632,7 @@ if (isset($_SESSION['msg'])) {
     // ============================================
     // Handle Resize
     // ============================================
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
         const sidebar = document.getElementById('modernSidebar');
         const overlay = document.getElementById('sidebarOverlay');
 
@@ -1641,7 +1695,7 @@ if (isset($_SESSION['msg'])) {
     }
 
     // Fechar dropdown ao clicar fora
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', function (event) {
         const dropdown = document.getElementById('userDropdown');
         const userInfo = document.querySelector('.user-info');
 
@@ -1652,7 +1706,7 @@ if (isset($_SESSION['msg'])) {
     });
 
     // Fechar dropdown ao pressionar ESC
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             const dropdown = document.getElementById('userDropdown');
             const userInfo = document.querySelector('.user-info');
@@ -1664,7 +1718,7 @@ if (isset($_SESSION['msg'])) {
 
 <?php if (!empty($msgSistema)): ?>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             showToast(<?= json_encode($msgSistema) ?>, 'info');
         });
     </script>

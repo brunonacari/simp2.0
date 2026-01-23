@@ -4,16 +4,13 @@ include_once 'includes/header.inc.php';
 include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
-// Verifica permissão para visualizar Registro de Manutenção
-$temPermissao = temPermissaoTela('Registro de Manutenção', ACESSO_LEITURA);
-$podeEditar = temPermissaoTela('Registro de Manutenção', ACESSO_ESCRITA);
+// Agora verificar permissão
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
 
-if (!$temPermissao) {
-    $_SESSION['msg'] = 'Você não tem permissão para acessar esta funcionalidade.';
-    $_SESSION['msg_tipo'] = 'erro';
-    header('Location: index.php');
-    exit;
-}
+// Agora verificar permissão
+exigePermissaoTela('Registro de Manutenção', ACESSO_LEITURA);
+$podeEditar = podeEditarTela('Registro de Manutenção');
 
 // Buscar Unidades para dropdown
 $sqlUnidades = $pdoSIMP->query("SELECT CD_UNIDADE, DS_NOME, CD_CODIGO FROM SIMP.dbo.UNIDADE ORDER BY DS_NOME");

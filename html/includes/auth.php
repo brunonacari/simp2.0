@@ -279,6 +279,13 @@ function podeEditarTela($nomeTela)
  */
 function exigePermissaoTela($nomeTela, $tipoAcessoMinimo = null, $paginaRedirect = 'index.php')
 {
+    // Armazena a permissão requerida pela tela atual (variável global para exibição no menu)
+    $GLOBALS['permissao_tela_atual'] = [
+        'nome' => $nomeTela,
+        'tipo' => $tipoAcessoMinimo,
+        'tipo_label' => $tipoAcessoMinimo === ACESSO_ESCRITA ? 'Escrita' : ($tipoAcessoMinimo === ACESSO_LEITURA ? 'Leitura' : 'Qualquer')
+    ];
+
     if (!temPermissaoTela($nomeTela, $tipoAcessoMinimo)) {
         $_SESSION['msg'] = 'Você não tem permissão para acessar esta funcionalidade.';
         $_SESSION['msg_tipo'] = 'erro';

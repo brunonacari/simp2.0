@@ -8,14 +8,12 @@ include_once 'includes/header.inc.php';
 include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
-// Verifica permissão
+// Agora verificar permissão
 // Recarregar permissões do banco (garante que estão atualizadas)
 recarregarPermissoesUsuario();
 
 // Agora verificar permissão
 exigePermissaoTela('Programação de Manutenção', ACESSO_LEITURA);
-
-// Permissão do usuário para este módulo
 $podeEditar = podeEditarTela('Programação de Manutenção');
 
 // Buscar Unidades para dropdown
