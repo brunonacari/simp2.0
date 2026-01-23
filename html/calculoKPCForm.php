@@ -8,18 +8,23 @@
  * Utiliza metodologia de medição pitométrica com leituras em múltiplas posições.
  */
 
+
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
-// Verifica permissão para editar Cálculo de KPC
-$temPermissao = temPermissaoTela('Cálculo do KPC', ACESSO_ESCRITA);
+// Agora verificar permissão
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
 
-if (!$temPermissao) {
-    $_SESSION['msg'] = 'Você não tem permissão para acessar esta funcionalidade.';
-    header('Location: calculoKPC.php');
-    exit;
-}
+// Agora verificar permissão
+exigePermissaoTela('Cálculo do KPC', ACESSO_LEITURA);
+
+// Permissão do usuário para este módulo
+$podeEditar = podeEditarTela('Cálculo do KPC');
+// Verifica permissão para acessar Cálculo de KPC
+
+include_once 'includes/menu.inc.php';
+
 
 // Verifica se é edição
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;

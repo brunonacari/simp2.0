@@ -1,6 +1,5 @@
 <?php
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Verifica permissão para visualizar Ponto de Medição (busca por nome na tabela FUNCIONALIDADE)
@@ -12,6 +11,8 @@ exigePermissaoTela('Cadastro de Ponto de Medição', ACESSO_LEITURA);
 
 // Permissões do usuário
 $podeEditar = podeEditarTela('Cadastro de Ponto de Medição');
+
+include_once 'includes/menu.inc.php';
 
 // Mapeamentos
 $tiposInstalacao = [

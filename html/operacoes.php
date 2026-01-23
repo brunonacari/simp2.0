@@ -6,7 +6,6 @@
  */
 
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Verifica permissão
@@ -18,6 +17,8 @@ exigePermissaoTela('Validação dos Dados', ACESSO_LEITURA);
 
 // Permissão do usuário para este módulo
 $podeEditar = podeEditarTela('Validação dos Dados');
+
+include_once 'includes/menu.inc.php';
 
 // Buscar tipos de entidade para o dropdown
 $tiposEntidade = [];

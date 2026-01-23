@@ -5,16 +5,7 @@
  */
 
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
-
-// Verifica permissão de acesso à tela
-// Recarregar permissões do banco (garante que estão atualizadas)
-recarregarPermissoesUsuario();
-
-// Agora verificar permissão
-// Recarregar permissões do banco (garante que estão atualizadas)
-recarregarPermissoesUsuario();
 
 // Agora verificar permissão
 // Recarregar permissões do banco (garante que estão atualizadas)
@@ -25,6 +16,8 @@ exigePermissaoTela('CADASTROS ADMINISTRATIVOS', ACESSO_LEITURA);
 
 // Verifica se pode editar (para ocultar/desabilitar botões)
 $podeEditar = podeEditarTela('CADASTROS ADMINISTRATIVOS');
+
+include_once 'includes/menu.inc.php';
 
 // Buscar grupos de usuário para select
 $sqlGrupos = $pdoSIMP->query("SELECT CD_GRUPO_USUARIO, DS_NOME FROM SIMP.dbo.GRUPO_USUARIO ORDER BY DS_NOME");

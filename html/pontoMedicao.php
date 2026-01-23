@@ -1,7 +1,6 @@
 <?php
 
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Verifica permissao para acessar Ponto de Medicao (busca por nome na tabela FUNCIONALIDADE)
@@ -13,6 +12,8 @@ exigePermissaoTela('Cadastro de Ponto de Medição', ACESSO_LEITURA);
 
 // Permissao do usuario para este modulo
 $podeEditar = podeEditarTela('Cadastro de Ponto de Medição');
+
+include_once 'includes/menu.inc.php';
 
 // Buscar Unidades
 $sqlUnidades = $pdoSIMP->query("SELECT CD_UNIDADE, DS_NOME, CD_CODIGO FROM SIMP.dbo.UNIDADE ORDER BY DS_NOME");

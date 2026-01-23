@@ -5,19 +5,8 @@
  */
 
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
-// ========== INÍCIO - Parâmetros GET para navegação externa ==========
-$cdPontoGet = isset($_GET['cdPonto']) ? $_GET['cdPonto'] : '';
-$dataInicioGet = isset($_GET['data_inicio']) ? $_GET['data_inicio'] : '';
-$dataFimGet = isset($_GET['data_fim']) ? $_GET['data_fim'] : '';
-$dataGet = isset($_GET['data']) ? $_GET['data'] : '';
-if (!empty($dataGet) && empty($dataInicioGet) && empty($dataFimGet)) {
-    $dataInicioGet = $dataGet;
-    $dataFimGet = $dataGet;
-}
-// ========== FIM - Parâmetros GET ==========
 
 header('Content-Type: text/html; charset=UTF-8');
 
@@ -30,6 +19,19 @@ exigePermissaoTela('Registro de Vazão e Pressão', ACESSO_LEITURA);
 
 // Permissão do usuário para este módulo
 $podeEditar = podeEditarTela('Registro de Vazão e Pressão');
+
+include_once 'includes/menu.inc.php';
+
+// ========== INÍCIO - Parâmetros GET para navegação externa ==========
+$cdPontoGet = isset($_GET['cdPonto']) ? $_GET['cdPonto'] : '';
+$dataInicioGet = isset($_GET['data_inicio']) ? $_GET['data_inicio'] : '';
+$dataFimGet = isset($_GET['data_fim']) ? $_GET['data_fim'] : '';
+$dataGet = isset($_GET['data']) ? $_GET['data'] : '';
+if (!empty($dataGet) && empty($dataInicioGet) && empty($dataFimGet)) {
+    $dataInicioGet = $dataGet;
+    $dataFimGet = $dataGet;
+}
+// ========== FIM - Parâmetros GET ==========
 
 // Buscar Unidades para dropdown
 $sqlUnidades = $pdoSIMP->query("SELECT CD_UNIDADE, DS_NOME, CD_CODIGO FROM SIMP.dbo.UNIDADE ORDER BY DS_NOME");

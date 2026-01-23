@@ -15,7 +15,6 @@
  */
 
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Recarregar permissões do banco (garante que estão atualizadas)
@@ -24,6 +23,8 @@ recarregarPermissoesUsuario();
 // Agora verificar permissão
 exigePermissaoTela('Cadastro de Conjunto Motor-Bomba', ACESSO_LEITURA);
 $podeEditar = podeEditarTela('Cadastro de Conjunto Motor-Bomba');
+
+include_once 'includes/menu.inc.php';
 
 // Buscar unidades para o filtro
 $sqlUnidades = $pdoSIMP->query("SELECT CD_UNIDADE, DS_NOME, CD_CODIGO FROM SIMP.dbo.UNIDADE ORDER BY DS_NOME");

@@ -12,7 +12,6 @@
  */
 
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Agora verificar permissão
@@ -22,6 +21,8 @@ recarregarPermissoesUsuario();
 // Agora verificar permissão
 exigePermissaoTela('Analise Dados', ACESSO_LEITURA);
 $podeEditar = podeEditarTela('Analise Dados');
+
+include_once 'includes/menu.inc.php';
 
 // Buscar unidades para filtro
 $sqlUnidades = $pdoSIMP->query("

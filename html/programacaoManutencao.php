@@ -5,7 +5,6 @@
  */
 
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Agora verificar permissão
@@ -15,6 +14,8 @@ recarregarPermissoesUsuario();
 // Agora verificar permissão
 exigePermissaoTela('Programação de Manutenção', ACESSO_LEITURA);
 $podeEditar = podeEditarTela('Programação de Manutenção');
+
+include_once 'includes/menu.inc.php';
 
 // Buscar Unidades para dropdown
 $sqlUnidades = $pdoSIMP->query("SELECT CD_UNIDADE, DS_NOME, CD_CODIGO FROM SIMP.dbo.UNIDADE ORDER BY DS_NOME");

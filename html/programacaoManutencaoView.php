@@ -1,7 +1,6 @@
 <?php
 //programacaoManutencaoView.php
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Verifica permissão para visualizar Programação de Manutenção
@@ -13,6 +12,8 @@ exigePermissaoTela('Programação de Manutenção', ACESSO_LEITURA);
 
 // Permissões do usuário
 $podeEditar = podeEditarTela('Programação de Manutenção');
+
+include_once 'includes/menu.inc.php';
 
 // Tipos de Programação
 $tiposProgramacao = [

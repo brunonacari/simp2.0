@@ -6,12 +6,7 @@
  */
 
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
-
-// Verifica permissão
-// Recarregar permissões do banco (garante que estão atualizadas)
-recarregarPermissoesUsuario();
 
 // Agora verificar permissão
 // Recarregar permissões do banco (garante que estão atualizadas)
@@ -22,6 +17,8 @@ exigePermissaoTela('CADASTRO', ACESSO_LEITURA);
 
 // Permissão do usuário para este módulo
 $podeEditar = podeEditarTela('CADASTRO');
+
+include_once 'includes/menu.inc.php';
 
 // Buscar Unidades para selects
 $sqlUnidades = $pdoSIMP->query("SELECT CD_UNIDADE, DS_NOME, CD_CODIGO FROM SIMP.dbo.UNIDADE ORDER BY DS_NOME");

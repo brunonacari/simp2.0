@@ -1,6 +1,5 @@
 <?php
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Recarregar permissões do banco (garante que estão atualizadas)
@@ -9,6 +8,8 @@ recarregarPermissoesUsuario();
 // Agora verificar permissão
 exigePermissaoTela('Cadastro de Conjunto Motor-Bomba', ACESSO_LEITURA);
 $podeEditar = podeEditarTela('Cadastro de Conjunto Motor-Bomba');
+
+include_once 'includes/menu.inc.php';
 
 $id = isset($_GET['id']) && $_GET['id'] !== '' ? (int)$_GET['id'] : 0;
 

@@ -1,7 +1,6 @@
 <?php
 // registroManutencaoForm.php
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Verifica permissão para editar
@@ -10,6 +9,8 @@ recarregarPermissoesUsuario();
 
 // Agora verificar permissão
 exigePermissaoTela('Registro de Manutenção', ACESSO_ESCRITA);
+
+include_once 'includes/menu.inc.php';
 
 // Verifica se é edição
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;

@@ -8,7 +8,6 @@
  */
 
 include_once 'includes/header.inc.php';
-include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Verifica permissão de acesso à tela (mínimo leitura)
@@ -20,6 +19,8 @@ exigePermissaoTela('Treinamento IA', ACESSO_LEITURA);
 
 // Verifica se pode editar (para ocultar/desabilitar botões)
 $podeEditar = podeEditarTela('Treinamento IA');
+
+include_once 'includes/menu.inc.php';
 
 // Buscar configuração atual da IA
 $configIA = [];
