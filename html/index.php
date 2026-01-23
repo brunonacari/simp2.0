@@ -1634,6 +1634,60 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
             max-height: 340px;
         }
     }
+
+    /* Navegação de Datas */
+    .navegacao-datas {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-nav-data {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .btn-nav-data:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-nav-data:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .btn-nav-data ion-icon {
+        font-size: 18px;
+    }
+
+    .data-ref-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 16px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        cursor: pointer;
+        position: relative;
+        transition: background 0.2s;
+    }
+
+    .data-ref-content:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .data-ref-content>ion-icon {
+        font-size: 24px;
+    }
 </style>
 
 <div class="page-container">
@@ -1649,13 +1703,29 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                     <p class="page-header-subtitle">Monitoramento inteligente dos pontos de medicao</p>
                 </div>
             </div>
-            <div class="header-data-ref">
-                <ion-icon name="calendar-outline"></ion-icon>
-                <div>
-                    <span class="header-data-ref-label">Ultima atualizacao</span>
-                    <span class="header-data-ref-value"
-                        id="dataReferencia"><?= date('d/m/Y', strtotime($ultimaData)) ?></span>
+            <!-- Navegação de Datas - Substituir o header-data-ref atual -->
+            <div class="header-data-ref navegacao-datas">
+                <button type="button" class="btn-nav-data" onclick="navegarData(-1)" title="Dia anterior">
+                    <ion-icon name="chevron-back-outline"></ion-icon>
+                </button>
+
+                <div class="data-ref-content" onclick="document.getElementById('inputDataRef').showPicker()">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    <div>
+                        <span class="header-data-ref-label">Data de Referência</span>
+                        <span class="header-data-ref-value" id="labelDataRef">
+                            <?= date('d/m/Y', strtotime($ultimaData)) ?>
+                        </span>
+                    </div>
+                    <input type="date" id="inputDataRef" value="<?= $ultimaData ?>" max="<?= $ultimaData ?>"
+                        onchange="alterarDataReferencia(this.value)"
+                        style="position:absolute;opacity:0;width:1px;height:1px;">
                 </div>
+
+                <button type="button" class="btn-nav-data" id="btnProximaData" onclick="navegarData(1)"
+                    title="Próximo dia" disabled>
+                    <ion-icon name="chevron-forward-outline"></ion-icon>
+                </button>
             </div>
         </div>
     </div>
@@ -1990,6 +2060,10 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
   * pelas versões abaixo.
   */
 
+    // Variáveis globais para navegação de datas
+    let dataReferencia = '<?= $ultimaData ?>';
+    const dataMaxima = '<?= $ultimaData ?>';
+
     // Variáveis globais
     let dadosAtuais = [];
     let graficoEvolucao = null;
@@ -2042,6 +2116,41 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         // Carregar dados iniciais
         carregarDados();
     });
+
+    /**
+     * Navega para data anterior ou próxima
+     */
+    function navegarData(direcao) {
+        const dataAtual = new Date(dataReferencia + 'T00:00:00');
+        dataAtual.setDate(dataAtual.getDate() + direcao);
+
+        const novaData = dataAtual.toISOString().split('T')[0];
+
+        // Não permitir avançar além da data máxima
+        if (novaData > dataMaxima) return;
+
+        alterarDataReferencia(novaData);
+    }
+
+    /**
+     * Altera data de referência e recarrega dados
+     */
+    function alterarDataReferencia(novaData) {
+        if (!novaData || novaData > dataMaxima) return;
+
+        dataReferencia = novaData;
+
+        // Atualizar label
+        const dataObj = new Date(novaData + 'T00:00:00');
+        document.getElementById('labelDataRef').textContent = dataObj.toLocaleDateString('pt-BR');
+        document.getElementById('inputDataRef').value = novaData;
+
+        // Habilitar/desabilitar botão próximo
+        document.getElementById('btnProximaData').disabled = (novaData >= dataMaxima);
+
+        // Recarregar dados com nova data
+        carregarDados();
+    }
 
     /**
      * Gera o badge HTML do tipo de medidor
@@ -2114,7 +2223,8 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                 unidade: unidade,
                 tipo: tipo,
                 status: status,
-                limite: limite
+                limite: limite,
+                dataRef: dataReferencia  // <<< ADICIONAR ESTA LINHA
             },
             dataType: 'json',
             success: function (response) {
@@ -2534,8 +2644,8 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     }
 
     /**
- * Atualiza o ranking de pontos com maior tratamento manual
- */
+  * Atualiza o ranking de pontos com maior tratamento manual
+  */
     function atualizarRankingTratados(maisTratados) {
         const container = $('#rankingTratados');
 
@@ -2544,7 +2654,7 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
             <li class="empty-state" style="padding: 20px; text-align: center;">
                 <ion-icon name="checkmark-circle-outline" style="font-size: 32px; color: #10b981;"></ion-icon>
                 <p style="margin: 8px 0 0; color: #64748b; font-size: 13px;">
-                    Nenhum ponto necessitou de tratamento manual hoje
+                    Nenhum ponto necessitou de tratamento manual no período
                 </p>
             </li>
         `);
@@ -2555,23 +2665,27 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         maisTratados.forEach((item, index) => {
             const qtdTratados = parseInt(item.QTD_TRATADOS_MANUAL) || 0;
             const percTratado = parseFloat(item.PERC_TRATADO) || 0;
+            const diasComTratamento = parseInt(item.DIAS_COM_TRATAMENTO) || 1;
 
-            // Cor baseada na quantidade
-            let badgeColor = '#8b5cf6'; // roxo padrão
-            let bgColor = '#f5f3ff';
-            if (qtdTratados > 200 || percTratado > 20) {
-                badgeColor = '#dc2626'; // vermelho
-                bgColor = '#fef2f2';
-            } else if (qtdTratados > 100 || percTratado > 10) {
-                badgeColor = '#d97706'; // laranja
-                bgColor = '#fffbeb';
-            }
+            // Usar ULTIMA_DATA (do período agregado) ou DT_REFERENCIA (fallback)
+            const dataReferencia = item.ULTIMA_DATA || item.DT_REFERENCIA || '';
 
             // Código formatado do ponto
             const codigoPonto = gerarCodigoPonto(item);
 
+            // Cor baseada na quantidade
+            let badgeColor = '#8b5cf6';
+            let bgColor = '#f5f3ff';
+            if (qtdTratados > 200 || percTratado > 20) {
+                badgeColor = '#dc2626';
+                bgColor = '#fef2f2';
+            } else if (qtdTratados > 100 || percTratado > 10) {
+                badgeColor = '#d97706';
+                bgColor = '#fffbeb';
+            }
+
             html += `
-            <li class="ranking-item" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${item.DT_REFERENCIA}')">
+            <li class="ranking-item" onclick="verDetalhes(${item.CD_PONTO_MEDICAO}, '${dataReferencia}')">
                 <span class="ranking-position">${index + 1}</span>
                 <div class="ranking-info">
                     <div class="ranking-header">
@@ -2579,7 +2693,9 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                         ${getBadgeTipoMedidor(item.ID_TIPO_MEDIDOR)}
                     </div>
                     <div class="ranking-detalhe" style="color: ${badgeColor};">
-                        ${item.DS_NOME || '-'} • <strong>${qtdTratados.toLocaleString('pt-BR')}</strong> registros (${percTratado.toFixed(1)}%)
+                        <strong>${qtdTratados.toLocaleString('pt-BR')}</strong> reg. 
+                        (${percTratado.toFixed(1)}%)
+                        ${diasComTratamento > 1 ? ` • ${diasComTratamento} dias` : ''}
                     </div>
                 </div>
                 <span class="ranking-tratados-badge" style="background: ${bgColor}; color: ${badgeColor};">
@@ -2656,9 +2772,10 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
 
         dadosAtuais.forEach(item => {
             const tipo = tiposMedidor[item.ID_TIPO_MEDIDOR];
+            // Tratamento manual
             const qtdTratados = parseInt(item.QTD_TRATADOS_MANUAL) || 0;
             const qtdRegistros = parseInt(item.QTD_REGISTROS) || 1;
-            const percTratados = ((qtdTratados / qtdRegistros) * 100).toFixed(2);
+            const percTratado = (qtdTratados / qtdRegistros) * 100;  // ← CORRETO!
 
             csv += `${item.CD_PONTO_MEDICAO};`;
             csv += `"${item.DS_NOME || ''}";`;
