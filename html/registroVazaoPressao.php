@@ -20,10 +20,13 @@ if (!empty($dataGet) && empty($dataInicioGet) && empty($dataFimGet)) {
 // ========== FIM - Parâmetros GET ==========
 
 header('Content-Type: text/html; charset=UTF-8');
+
 // Verifica permissão
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
+
+// Agora verificar permissão
 exigePermissaoTela('Registro de Vazão e Pressão', ACESSO_LEITURA);
-
-
 
 // Permissão do usuário para este módulo
 $podeEditar = podeEditarTela('Registro de Vazão e Pressão');

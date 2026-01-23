@@ -15,11 +15,16 @@ include_once 'includes/header.inc.php';
 include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
-// exigePermissaoTela('Análise dos Dados', ACESSO_LEITURA);
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
 
-// Verifica permissao de acesso
+// Agora verificar permissão
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
 
-// exigePermissaoTela('DASHBOARD METRICAS IA', ACESSO_LEITURA);
+// Agora verificar permissão
+exigePermissaoTela('Analise Dados', ACESSO_LEITURA);
+$podeEditar = podeEditarTela('Analise Dados');
 
 // Buscar unidades para filtro
 $sqlUnidades = $pdoSIMP->query("

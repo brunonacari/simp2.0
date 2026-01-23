@@ -14,13 +14,16 @@
 // CONSTANTES DE TIPOS DE ACESSO
 // ============================================
 // Correspondem ao campo ID_TIPO_ACESSO da tabela GRUPO_USUARIO_X_FUNCIONALIDADE
-if (!defined('ACESSO_LEITURA')) define('ACESSO_LEITURA', 1);
-if (!defined('ACESSO_ESCRITA')) define('ACESSO_ESCRITA', 2);
+if (!defined('ACESSO_LEITURA'))
+    define('ACESSO_LEITURA', 1);
+if (!defined('ACESSO_ESCRITA'))
+    define('ACESSO_ESCRITA', 2);
 
 // ============================================
 // CONFIGURAÇÕES DE SESSÃO
 // ============================================
-if (!defined('TEMPO_SESSAO')) define('TEMPO_SESSAO', 3600); // 1 hora em segundos
+if (!defined('TEMPO_SESSAO'))
+    define('TEMPO_SESSAO', 3600); // 1 hora em segundos
 
 /**
  * Inicia sessão de forma segura
@@ -75,20 +78,104 @@ function removerAcentos($string)
     // Fallback: substituição manual incluindo caracteres com problema de encoding
     $busca = [
         // UTF-8 padrão
-        'á', 'à', 'ã', 'â', 'ä', 'Á', 'À', 'Ã', 'Â', 'Ä',
-        'é', 'è', 'ê', 'ë', 'É', 'È', 'Ê', 'Ë',
-        'í', 'ì', 'î', 'ï', 'Í', 'Ì', 'Î', 'Ï',
-        'ó', 'ò', 'õ', 'ô', 'ö', 'Ó', 'Ò', 'Õ', 'Ô', 'Ö',
-        'ú', 'ù', 'û', 'ü', 'Ú', 'Ù', 'Û', 'Ü',
-        'ç', 'Ç', 'ñ', 'Ñ'
+        'á',
+        'à',
+        'ã',
+        'â',
+        'ä',
+        'Á',
+        'À',
+        'Ã',
+        'Â',
+        'Ä',
+        'é',
+        'è',
+        'ê',
+        'ë',
+        'É',
+        'È',
+        'Ê',
+        'Ë',
+        'í',
+        'ì',
+        'î',
+        'ï',
+        'Í',
+        'Ì',
+        'Î',
+        'Ï',
+        'ó',
+        'ò',
+        'õ',
+        'ô',
+        'ö',
+        'Ó',
+        'Ò',
+        'Õ',
+        'Ô',
+        'Ö',
+        'ú',
+        'ù',
+        'û',
+        'ü',
+        'Ú',
+        'Ù',
+        'Û',
+        'Ü',
+        'ç',
+        'Ç',
+        'ñ',
+        'Ñ'
     ];
     $substitui = [
-        'a', 'a', 'a', 'a', 'a', 'A', 'A', 'A', 'A', 'A',
-        'e', 'e', 'e', 'e', 'E', 'E', 'E', 'E',
-        'i', 'i', 'i', 'i', 'I', 'I', 'I', 'I',
-        'o', 'o', 'o', 'o', 'o', 'O', 'O', 'O', 'O', 'O',
-        'u', 'u', 'u', 'u', 'U', 'U', 'U', 'U',
-        'c', 'C', 'n', 'N'
+        'a',
+        'a',
+        'a',
+        'a',
+        'a',
+        'A',
+        'A',
+        'A',
+        'A',
+        'A',
+        'e',
+        'e',
+        'e',
+        'e',
+        'E',
+        'E',
+        'E',
+        'E',
+        'i',
+        'i',
+        'i',
+        'i',
+        'I',
+        'I',
+        'I',
+        'I',
+        'o',
+        'o',
+        'o',
+        'o',
+        'o',
+        'O',
+        'O',
+        'O',
+        'O',
+        'O',
+        'u',
+        'u',
+        'u',
+        'u',
+        'U',
+        'U',
+        'U',
+        'U',
+        'c',
+        'C',
+        'n',
+        'N'
     ];
 
     $resultado = str_replace($busca, $substitui, $string);
@@ -149,7 +236,7 @@ function temPermissaoTela($nomeTela, $tipoAcessoMinimo = null)
     if (!isset($_SESSION['permissoes_nome']) || empty($_SESSION['permissoes_nome'])) {
         return true;
     }
-    
+
     $permissao = buscarPermissaoPorNome($nomeTela);
 
     if ($permissao === null) {
@@ -179,7 +266,7 @@ function podeEditarTela($nomeTela)
     if (!isset($_SESSION['permissoes_nome']) || empty($_SESSION['permissoes_nome'])) {
         return true;
     }
-    
+
     return temPermissaoTela($nomeTela, ACESSO_ESCRITA);
 }
 
@@ -221,7 +308,7 @@ function getNivelAcessoTela($nomeTela)
     if (!isset($_SESSION['permissoes_nome']) || empty($_SESSION['permissoes_nome'])) {
         return ACESSO_ESCRITA;
     }
-    
+
     $permissao = buscarPermissaoPorNome($nomeTela);
     return $permissao ? $permissao['acesso'] : null;
 }
@@ -449,4 +536,54 @@ function isAjaxRequest()
 {
     return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
         strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+}
+
+/**
+ * Recarrega as permissões do usuário na sessão
+ * Útil após alterações nas permissões do grupo
+ * 
+ * @return bool
+ */
+function recarregarPermissoesUsuario()
+{
+    global $pdoSIMP;
+
+    if (!isset($_SESSION['cd_grupo']) || !isset($pdoSIMP)) {
+        return false;
+    }
+
+    try {
+        $stmtFunc = $pdoSIMP->prepare("
+            SELECT 
+                F.CD_FUNCIONALIDADE,
+                F.DS_NOME AS DS_FUNCIONALIDADE,
+                GF.ID_TIPO_ACESSO
+            FROM SIMP.dbo.GRUPO_USUARIO_X_FUNCIONALIDADE GF
+            INNER JOIN SIMP.dbo.FUNCIONALIDADE F ON GF.CD_FUNCIONALIDADE = F.CD_FUNCIONALIDADE
+            WHERE GF.CD_GRUPO_USUARIO = :cdGrupo
+        ");
+        $stmtFunc->execute([':cdGrupo' => $_SESSION['cd_grupo']]);
+        $funcionalidades = $stmtFunc->fetchAll(PDO::FETCH_ASSOC);
+
+        // Limpar e recriar arrays de permissões
+        $permissoes = [];
+        $permissoesPorNome = [];
+
+        foreach ($funcionalidades as $func) {
+            $permissoes[$func['CD_FUNCIONALIDADE']] = $func['ID_TIPO_ACESSO'];
+            $permissoesPorNome[$func['DS_FUNCIONALIDADE']] = [
+                'cd' => $func['CD_FUNCIONALIDADE'],
+                'acesso' => $func['ID_TIPO_ACESSO']
+            ];
+        }
+
+        $_SESSION['permissoes'] = $permissoes;
+        $_SESSION['permissoes_nome'] = $permissoesPorNome;
+
+        return true;
+
+    } catch (Exception $e) {
+        error_log('Erro ao recarregar permissões: ' . $e->getMessage());
+        return false;
+    }
 }

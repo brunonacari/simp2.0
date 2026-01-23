@@ -5,6 +5,10 @@ include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Verifica permissao para acessar Ponto de Medicao (busca por nome na tabela FUNCIONALIDADE)
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
+
+// Agora verificar permissão
 exigePermissaoTela('Cadastro de Ponto de Medição', ACESSO_LEITURA);
 
 // Permissao do usuario para este modulo

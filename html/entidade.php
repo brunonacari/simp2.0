@@ -9,6 +9,14 @@ include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Verifica permissão de acesso à tela (mínimo leitura)
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
+
+// Agora verificar permissão
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
+
+// Agora verificar permissão
 exigePermissaoTela('Cadastro de Entidade', ACESSO_LEITURA);
 
 // Permissão do usuário para este módulo

@@ -9,6 +9,18 @@ include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Verifica permissão de acesso à tela
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
+
+// Agora verificar permissão
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
+
+// Agora verificar permissão
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
+
+// Agora verificar permissão
 exigePermissaoTela('CADASTROS ADMINISTRATIVOS', ACESSO_LEITURA);
 
 // Verifica se pode editar (para ocultar/desabilitar botões)

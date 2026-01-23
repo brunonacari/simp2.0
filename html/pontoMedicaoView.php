@@ -4,6 +4,10 @@ include_once 'includes/menu.inc.php';
 include_once 'bd/conexao.php';
 
 // Verifica permissão para visualizar Ponto de Medição (busca por nome na tabela FUNCIONALIDADE)
+// Recarregar permissões do banco (garante que estão atualizadas)
+recarregarPermissoesUsuario();
+
+// Agora verificar permissão
 exigePermissaoTela('Cadastro de Ponto de Medição', ACESSO_LEITURA);
 
 // Permissões do usuário
