@@ -225,6 +225,33 @@ $descartes = [
             </div>
         </div>
 
+        <script>
+            // Declarações antecipadas das funções de modal
+            function abrirModalImportacao() {
+                // Usar window.podeEditar para evitar conflito
+                if (window.podeEditar === false) {
+                    showToast('Você não tem permissão para importar planilhas', 'error');
+                    return;
+                }
+                document.getElementById('modalImportacao').style.display = 'flex';
+                var form = document.getElementById('formImportacao');
+                if (form) form.reset();
+                var resultado = document.getElementById('resultadoImportacao');
+                if (resultado) resultado.style.display = 'none';
+                var preview = document.getElementById('previewDados');
+                if (preview) preview.style.display = 'none';
+                var fileSelected = document.getElementById('fileSelected');
+                if (fileSelected) fileSelected.style.display = 'none';
+                var placeholder = document.querySelector('.file-upload-placeholder');
+                if (placeholder) placeholder.style.display = 'block';
+                window.dadosPlanilha = null;
+            }
+
+            function fecharModalImportacao() {
+                document.getElementById('modalImportacao').style.display = 'none';
+            }
+        </script>
+
         <div class="filters-actions">
             <button type="button" class="btn-buscar" onclick="buscarRegistros()">
                 <ion-icon name="search-outline"></ion-icon>
@@ -362,8 +389,8 @@ $descartes = [
     // ============================================
     // Configurações Globais
     // ============================================
-    const podeEditar = <?= $podeEditar ? 'true' : 'false' ?>;
-
+    window.podeEditar = <?= $podeEditar ? 'true' : 'false' ?>;
+    
     // Tipos de Registro
     const tiposRegistro = <?= json_encode($tiposRegistro) ?>;
 
