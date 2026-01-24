@@ -35,7 +35,7 @@ PARA PUBLICAR EM HOMOLOGAÇÃO
 git checkout staging
 git add .
 git commit -m "XPTO"
-//está integrado no github tb
+//está integrado no github tb 
 git push && git push github
 ```
 PARA SUBIR A APLICAÇÃO EM PRODUÇÃO, APÓS REALIZAR AS ALTERAÇÕES NECESSÁRIAS, BASTA EXECUTAR:
