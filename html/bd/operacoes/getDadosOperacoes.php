@@ -166,11 +166,11 @@ try {
         } else {
             $sqlRegistros = "SELECT 
                                 CONVERT(VARCHAR(10), DT_LEITURA, 120) AS DT_LEITURA,
-                                AVG(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} ELSE 0 END) AS VALOR,
+                                AVG(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} END) AS VALOR,
                                 MIN(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} END) AS VALOR_MIN,
                                 MAX(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} END) AS VALOR_MAX,
                                 SUM(CASE WHEN ID_SITUACAO = 1 THEN 1 ELSE 0 END) AS QTD_REGISTROS,
-                                SUM(CASE WHEN ID_TIPO_REGISTRO = 2 AND ID_TIPO_MEDICAO = 2 THEN 1 ELSE 0 END) AS QTD_TRATADOS
+                                SUM(CASE WHEN ID_SITUACAO = 1 AND ID_TIPO_REGISTRO = 2 AND ID_TIPO_MEDICAO = 2 THEN 1 ELSE 0 END) AS QTD_TRATADOS
                              FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
                              WHERE CD_PONTO_MEDICAO = :cdPonto
                                AND DT_LEITURA >= :dataInicio
@@ -391,11 +391,11 @@ try {
                 } else {
                     $sqlRegistros = "SELECT 
                                         CONVERT(VARCHAR(10), DT_LEITURA, 120) AS DT_LEITURA,
-                                        AVG(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} ELSE 0 END) AS VALOR,
+                                        AVG(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} END) AS VALOR,
                                         MIN(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} END) AS VALOR_MIN,
                                         MAX(CASE WHEN ID_SITUACAO = 1 THEN {$coluna} END) AS VALOR_MAX,
                                         SUM(CASE WHEN ID_SITUACAO = 1 THEN 1 ELSE 0 END) AS QTD_REGISTROS,
-                                        SUM(CASE WHEN ID_TIPO_REGISTRO = 2 AND ID_TIPO_MEDICAO = 2 THEN 1 ELSE 0 END) AS QTD_TRATADOS
+                                        SUM(CASE WHEN ID_SITUACAO = 1 AND ID_TIPO_REGISTRO = 2 AND ID_TIPO_MEDICAO = 2 THEN 1 ELSE 0 END) AS QTD_TRATADOS
                                      FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
                                      WHERE CD_PONTO_MEDICAO = :cdPonto
                                        AND DT_LEITURA >= :dataInicio

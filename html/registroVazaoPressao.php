@@ -1169,25 +1169,32 @@ $descartes = [
             apenas_chaves: 1  // Flag para retornar apenas as chaves
         };
 
-        $.get('bd/registroVazaoPressao/getRegistrosPonto.php', params, function (response) {
-            if (response.success && response.chaves) {
-                response.chaves.forEach(chave => {
-                    if (checked) {
-                        registrosSelecionados.add(chave);
-                    } else {
-                        registrosSelecionados.delete(chave);
-                    }
-                });
+        $.ajax({
+            url: 'bd/registroVazaoPressao/getRegistrosPonto.php',
+            type: 'GET',
+            data: params,
+            dataType: 'json',
+            timeout: 0,
+            success: function (response) {
+                if (response.success && response.chaves) {
+                    response.chaves.forEach(chave => {
+                        if (checked) {
+                            registrosSelecionados.add(chave);
+                        } else {
+                            registrosSelecionados.delete(chave);
+                        }
+                    });
 
-                // Atualizar checkboxes dos registros visíveis
-                document.querySelectorAll(`.checkbox-registro[data-dia="${dataChave}"][data-ponto="${cdPonto}"]`).forEach(cb => {
-                    cb.checked = checked;
-                });
+                    // Atualizar checkboxes dos registros visíveis
+                    document.querySelectorAll(`.checkbox-registro[data-dia="${dataChave}"][data-ponto="${cdPonto}"]`).forEach(cb => {
+                        cb.checked = checked;
+                    });
 
-                atualizarBotoesExclusao();
-                atualizarBarraExclusao();
+                    atualizarBotoesExclusao();
+                    atualizarBarraExclusao();
+                }
             }
-        }, 'json');
+        });
     }
 
     // Selecionar todos os registros de um dia
@@ -1204,28 +1211,35 @@ $descartes = [
             apenas_chaves: 1  // Flag para retornar apenas as chaves
         };
 
-        $.get('bd/registroVazaoPressao/getRegistrosDia.php', params, function (response) {
-            if (response.success && response.chaves) {
-                response.chaves.forEach(chave => {
-                    if (checked) {
-                        registrosSelecionados.add(chave);
-                    } else {
-                        registrosSelecionados.delete(chave);
-                    }
-                });
+        $.ajax({
+            url: 'bd/registroVazaoPressao/getRegistrosDia.php',
+            type: 'GET',
+            data: params,
+            dataType: 'json',
+            timeout: 0,
+            success: function (response) {
+                if (response.success && response.chaves) {
+                    response.chaves.forEach(chave => {
+                        if (checked) {
+                            registrosSelecionados.add(chave);
+                        } else {
+                            registrosSelecionados.delete(chave);
+                        }
+                    });
 
-                // Atualizar checkboxes dos registros e pontos visíveis
-                document.querySelectorAll(`.checkbox-registro[data-dia="${dataChave}"]`).forEach(cb => {
-                    cb.checked = checked;
-                });
-                document.querySelectorAll(`.checkbox-ponto[data-dia="${dataChave}"]`).forEach(cb => {
-                    cb.checked = checked;
-                });
+                    // Atualizar checkboxes dos registros e pontos visíveis
+                    document.querySelectorAll(`.checkbox-registro[data-dia="${dataChave}"]`).forEach(cb => {
+                        cb.checked = checked;
+                    });
+                    document.querySelectorAll(`.checkbox-ponto[data-dia="${dataChave}"]`).forEach(cb => {
+                        cb.checked = checked;
+                    });
 
-                atualizarBotoesExclusao();
-                atualizarBarraExclusao();
+                    atualizarBotoesExclusao();
+                    atualizarBarraExclusao();
+                }
             }
-        }, 'json');
+        });
     }
 
     // Cancelar seleção
@@ -1353,6 +1367,7 @@ $descartes = [
     function executarExclusaoEmMassa(modalId) {
         const chaves = Array.from(registrosSelecionados);
         console.log('Descartando chaves:', chaves);
+        console.log('Total de chaves a enviar:', chaves.length);
 
         // Mostrar loading
         const btnExcluir = document.querySelector('.btn-modal-confirmar');
@@ -1366,8 +1381,16 @@ $descartes = [
             contentType: 'application/json',
             data: JSON.stringify({ chaves: chaves }),
             dataType: 'json',
+            timeout: 0,
             success: function (response) {
-                console.log('Resposta:', response);
+                console.log('Resposta completa:', response);
+                if (response.debug) {
+                    console.log('DEBUG - Chaves recebidas:', response.debug.chaves_recebidas);
+                    console.log('DEBUG - Chaves válidas:', response.debug.chaves_validas);
+                    console.log('DEBUG - Registros encontrados:', response.debug.registros_encontrados);
+                    console.log('DEBUG - Soft delete candidatos:', response.debug.soft_delete_candidatos);
+                    console.log('DEBUG - Hard delete candidatos:', response.debug.hard_delete_candidatos);
+                }
 
                 // Fechar modal
                 const modal = document.getElementById(modalId);
@@ -2205,28 +2228,35 @@ $descartes = [
             apenas_chaves: 1
         };
 
-        $.get('bd/registroVazaoPressao/getRegistrosPontoMedicao.php', params, function (response) {
-            if (response.success && response.chaves) {
-                response.chaves.forEach(chave => {
-                    if (checked) {
-                        registrosSelecionados.add(chave);
-                    } else {
-                        registrosSelecionados.delete(chave);
-                    }
-                });
+        $.ajax({
+            url: 'bd/registroVazaoPressao/getRegistrosPontoMedicao.php',
+            type: 'GET',
+            data: params,
+            dataType: 'json',
+            timeout: 0,
+            success: function (response) {
+                if (response.success && response.chaves) {
+                    response.chaves.forEach(chave => {
+                        if (checked) {
+                            registrosSelecionados.add(chave);
+                        } else {
+                            registrosSelecionados.delete(chave);
+                        }
+                    });
 
-                // Atualizar checkboxes visíveis
-                document.querySelectorAll(`.checkbox-registro[data-ponto="${cdPonto}"]`).forEach(cb => {
-                    cb.checked = checked;
-                });
-                document.querySelectorAll(`.checkbox-dia-ponto[data-ponto="${cdPonto}"]`).forEach(cb => {
-                    cb.checked = checked;
-                });
+                    // Atualizar checkboxes visíveis
+                    document.querySelectorAll(`.checkbox-registro[data-ponto="${cdPonto}"]`).forEach(cb => {
+                        cb.checked = checked;
+                    });
+                    document.querySelectorAll(`.checkbox-dia-ponto[data-ponto="${cdPonto}"]`).forEach(cb => {
+                        cb.checked = checked;
+                    });
 
-                atualizarBotoesExclusao();
-                atualizarBarraExclusao();
+                    atualizarBotoesExclusao();
+                    atualizarBarraExclusao();
+                }
             }
-        }, 'json');
+        });
     }
 
     function selecionarDiaPonto(cdPonto, dataChave, checked) {
@@ -2238,25 +2268,32 @@ $descartes = [
             apenas_chaves: 1
         };
 
-        $.get('bd/registroVazaoPressao/getRegistrosPonto.php', params, function (response) {
-            if (response.success && response.chaves) {
-                response.chaves.forEach(chave => {
-                    if (checked) {
-                        registrosSelecionados.add(chave);
-                    } else {
-                        registrosSelecionados.delete(chave);
-                    }
-                });
+        $.ajax({
+            url: 'bd/registroVazaoPressao/getRegistrosPonto.php',
+            type: 'GET',
+            data: params,
+            dataType: 'json',
+            timeout: 0,
+            success: function (response) {
+                if (response.success && response.chaves) {
+                    response.chaves.forEach(chave => {
+                        if (checked) {
+                            registrosSelecionados.add(chave);
+                        } else {
+                            registrosSelecionados.delete(chave);
+                        }
+                    });
 
-                // Atualizar checkboxes dos registros visíveis
-                document.querySelectorAll(`.checkbox-registro[data-ponto="${cdPonto}"][data-dia="${dataChave}"]`).forEach(cb => {
-                    cb.checked = checked;
-                });
+                    // Atualizar checkboxes dos registros visíveis
+                    document.querySelectorAll(`.checkbox-registro[data-ponto="${cdPonto}"][data-dia="${dataChave}"]`).forEach(cb => {
+                        cb.checked = checked;
+                    });
 
-                atualizarBotoesExclusao();
-                atualizarBarraExclusao();
+                    atualizarBotoesExclusao();
+                    atualizarBarraExclusao();
+                }
             }
-        }, 'json');
+        });
     }
 
     // ============================================
@@ -2313,6 +2350,7 @@ $descartes = [
             contentType: 'application/json',
             data: JSON.stringify({ chaves: chaves }),
             dataType: 'json',
+            timeout: 0,
             success: function (response) {
                 console.log('Resposta descarte:', response);
 

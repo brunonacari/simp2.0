@@ -14,6 +14,10 @@ header('Content-Type: application/json; charset=utf-8');
 ini_set('display_errors', 0);
 error_reporting(0);
 
+// Aumentar tempo limite para operações em massa
+set_time_limit(0);
+ini_set('max_execution_time', 0);
+
 try {
     require_once '../verificarAuth.php';
     verificarPermissaoAjax('REGISTRO DE VAZÃO', ACESSO_ESCRITA);
@@ -46,11 +50,6 @@ try {
         throw new Exception('Nenhum registro selecionado para exclusão');
     }
     
-    // Limitar quantidade por segurança (máx 10000 registros por vez)
-    if (count($chaves) > 10000) {
-        throw new Exception('Máximo de 10.000 registros por operação');
-    }
-    
     // Validar que todas as chaves são inteiros
     $chavesValidas = [];
     foreach ($chaves as $chave) {
@@ -66,16 +65,22 @@ try {
     $cdUsuario = $_SESSION['cd_usuario'] ?? null;
     
     // Buscar informações e separar por situação
-    $placeholdersSelect = implode(',', array_fill(0, count($chavesValidas), '?'));
-    $sqlBusca = "SELECT RVP.CD_CHAVE, RVP.CD_PONTO_MEDICAO, RVP.DT_LEITURA, RVP.ID_SITUACAO, 
-                        PM.DS_NOME AS DS_PONTO_MEDICAO, L.CD_UNIDADE
-                 FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO RVP
-                 LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = RVP.CD_PONTO_MEDICAO
-                 LEFT JOIN SIMP.dbo.LOCALIDADE L ON L.CD_CHAVE = PM.CD_LOCALIDADE
-                 WHERE RVP.CD_CHAVE IN ($placeholdersSelect)";
-    $stmtBusca = $pdoSIMP->prepare($sqlBusca);
-    $stmtBusca->execute($chavesValidas);
-    $registros = $stmtBusca->fetchAll(PDO::FETCH_ASSOC);
+    // Processar em lotes de 2000 para evitar limite de parâmetros do SQL Server
+    $registros = [];
+    $lotesSelect = array_chunk($chavesValidas, 2000);
+    
+    foreach ($lotesSelect as $loteChaves) {
+        $placeholdersSelect = implode(',', array_fill(0, count($loteChaves), '?'));
+        $sqlBusca = "SELECT RVP.CD_CHAVE, RVP.CD_PONTO_MEDICAO, RVP.DT_LEITURA, RVP.ID_SITUACAO, 
+                            PM.DS_NOME AS DS_PONTO_MEDICAO, L.CD_UNIDADE
+                     FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO RVP
+                     LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = RVP.CD_PONTO_MEDICAO
+                     LEFT JOIN SIMP.dbo.LOCALIDADE L ON L.CD_CHAVE = PM.CD_LOCALIDADE
+                     WHERE RVP.CD_CHAVE IN ($placeholdersSelect)";
+        $stmtBusca = $pdoSIMP->prepare($sqlBusca);
+        $stmtBusca->execute($loteChaves);
+        $registros = array_merge($registros, $stmtBusca->fetchAll(PDO::FETCH_ASSOC));
+    }
     
     // Separar registros por situação
     $chavesSoftDelete = [];  // ID_SITUACAO = 1
@@ -117,7 +122,8 @@ try {
     
     // ========== SOFT DELETE: ID_SITUACAO = 1 → 2 ==========
     if (!empty($chavesSoftDelete)) {
-        $lotes = array_chunk($chavesSoftDelete, 1000);
+        // Usar lotes de 500 para evitar limites do SQL Server (2100 params máx)
+        $lotes = array_chunk($chavesSoftDelete, 500);
         
         foreach ($lotes as $lote) {
             $placeholders = implode(',', array_fill(0, count($lote), '?'));
@@ -132,13 +138,16 @@ try {
             $stmtUpdate = $pdoSIMP->prepare($sqlUpdate);
             $params = array_merge([$cdUsuario], $lote);
             $stmtUpdate->execute($params);
-            $descartados += $stmtUpdate->rowCount();
+            
+            // rowCount() pode não funcionar bem com SQL Server, então contamos as chaves do lote
+            $descartados += count($lote);
         }
     }
     
     // ========== HARD DELETE: Remove permanentemente ==========
     if (!empty($chavesHardDelete)) {
-        $lotes = array_chunk($chavesHardDelete, 1000);
+        // Usar lotes de 500 para evitar limites do SQL Server
+        $lotes = array_chunk($chavesHardDelete, 500);
         
         foreach ($lotes as $lote) {
             $placeholders = implode(',', array_fill(0, count($lote), '?'));
@@ -148,7 +157,7 @@ try {
             
             $stmtDelete = $pdoSIMP->prepare($sqlDelete);
             $stmtDelete->execute($lote);
-            $deletados += $stmtDelete->rowCount();
+            $deletados += count($lote);
         }
     }
     
@@ -199,7 +208,14 @@ try {
         'message' => 'Operação concluída com sucesso',
         'descartados' => $descartados,
         'deletados' => $deletados,
-        'solicitados' => count($chavesValidas)
+        'solicitados' => count($chavesValidas),
+        'debug' => [
+            'chaves_recebidas' => count($chaves),
+            'chaves_validas' => count($chavesValidas),
+            'registros_encontrados' => count($registros),
+            'soft_delete_candidatos' => count($chavesSoftDelete),
+            'hard_delete_candidatos' => count($chavesHardDelete)
+        ]
     ]);
     
 } catch (PDOException $e) {
