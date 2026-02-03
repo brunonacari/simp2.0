@@ -1,0 +1,59 @@
+.registry_login:
+  before_script:
+    - >
+      echo "${REGISTRY_PASS}" |
+      docker login ${REGISTRY_HOST}
+      --username ${REGISTRY_USER} --password-stdin
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+      variables:
+        DEPLOY_ENVIRONMENT: "develop"
+    - if: $CI_COMMIT_BRANCH == "staging"
+      variables:
+        DEPLOY_ENVIRONMENT: "staging"
+    - if: $CI_COMMIT_BRANCH == "master"
+      variables:
+        DEPLOY_ENVIRONMENT: "production"
+
+stages:
+  - dockerize
+  - deploy
+
+dockerize:
+  stage: dockerize
+  extends: .registry_login
+  script:
+    - APP_VERSION=$(cat version)
+    - DOCKER_IMAGE_TAG=registry.cesan.com.br/cesan/simp20-php:${APP_VERSION}
+    - echo "DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}" >> docker.env
+    - docker image build -t ${DOCKER_IMAGE_TAG} -f docker/Dockerfile .
+    - docker image push ${DOCKER_IMAGE_TAG}
+  artifacts:
+    reports:
+      dotenv: docker.env
+  tags:
+    - swarm
+
+deploy:
+  stage: deploy
+  extends: .registry_login
+  dependencies:
+    - dockerize
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "staging"
+    - if: $CI_COMMIT_BRANCH == "master"
+      #when: manual
+  script:
+    - >
+      docker --context $DEPLOY_ENVIRONMENT stack deploy \
+        --detach=true \
+        --with-registry-auth -c docker/stack.yml $CI_PROJECT_NAME
+  environment: ${DEPLOY_ENVIRONMENT}
+  tags:
+    - swarm
