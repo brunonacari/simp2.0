@@ -2561,9 +2561,10 @@ $letrasTipoMedidor = [
                 if (d.max !== null && (maxGlobal === null || d.max > maxGlobal)) {
                     maxGlobal = d.max;
                 }
-                // Soma para média diária - apenas se não for tipo 6
+                // Soma para média diária (média ponderada) - apenas se não for tipo 6
+                // Média ponderada: soma(média_hora * qtd_registros) / total_registros
                 if (!isTipoNivel && d.media !== null) {
-                    somaValores += d.media * 60;
+                    somaValores += d.media * d.qtd_registros;
                     totalRegistros += d.qtd_registros;
                 }
                 // Para tipo 6, somar extravasou
@@ -2592,7 +2593,8 @@ $letrasTipoMedidor = [
         `;
         } else {
             // Para outros tipos: Mínima, Média, Máxima
-            const mediaGlobal = somaValores > 0 ? somaValores / 1440 : null;
+            // Média = soma dos valores / total de registros válidos (não 1440 fixo)
+            const mediaGlobal = totalRegistros > 0 ? somaValores / totalRegistros : null;
             resumoContainer.innerHTML = `
             <div class="resumo-item">
                 <span class="resumo-label">Mínima</span>
@@ -4313,7 +4315,7 @@ $letrasTipoMedidor = [
 
             // Usar cálculos do backend (já calculados corretamente)
             const calculos = dados.calculos || {};
-            const mediaDiariaVazao = calculos.media_diaria_vazao || (somaVazaoDia / 1440);
+            const mediaDiariaVazao = calculos.media_diaria_vazao || (totalValidosDia > 0 ? somaVazaoDia / totalValidosDia : 0);
             const mediaDiariaPressao = calculos.media_diaria_pressao || 0;
             const somaTotalVazao = calculos.soma_total_vazao || somaVazaoDia;
             const totalValidos = calculos.total_validos || totalValidosDia;
@@ -4346,9 +4348,10 @@ $letrasTipoMedidor = [
 
             contexto += `\n- Horas com dados válidos: ${calculos.horas_com_dados || dados.dia_atual.length}/24\n`;
             contexto += `- Soma total de vazões (válidos): ${formatNum(somaTotalVazao)} L/s\n`;
+            contexto += `- Total de registros válidos: ${totalValidos}\n`;
             contexto += `\n`;
             contexto += `>>> MÉDIA DIÁRIA DE VAZÃO: ${formatNum(mediaDiariaVazao)} L/s <<<\n`;
-            contexto += `    (Cálculo oficial: ${formatNum(somaTotalVazao)} ÷ 1440 = ${formatNum(mediaDiariaVazao)})\n`;
+            contexto += `    (Cálculo: ${formatNum(somaTotalVazao)} ÷ ${totalValidos} registros = ${formatNum(mediaDiariaVazao)})\n`;
             contexto += `    (Usa APENAS registros válidos - ID_SITUACAO=1)\n`;
             if (mediaDiariaPressao > 0) {
                 contexto += `>>> MÉDIA DIÁRIA DE PRESSÃO: ${formatNum(mediaDiariaPressao)} mca <<<\n`;
