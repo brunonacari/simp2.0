@@ -2502,6 +2502,32 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
             padding: 6px 8px;
         }
     }
+
+    .sinc-btn-acao {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        color: #3b82f6;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .sinc-btn-acao:hover {
+        background: #dbeafe;
+        border-color: #93c5fd;
+        color: #2563eb;
+        transform: scale(1.05);
+    }
+
+    .sinc-btn-acao ion-icon {
+        font-size: 16px;
+    }
 </style>
 
 <div class="page-container">
@@ -4385,13 +4411,13 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                     sincDadosCompletos = resp.dados || [];
                     aplicarFiltrosSinc(); // aplica filtros + renderiza
                 } else {
-                    $('#sincTabelaBody').html('<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:24px;">' + (resp.message || 'Erro ao carregar') + '</td></tr>');
+                    $('#sincTabelaBody').html('<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:24px;">' + (resp.message || 'Erro ao carregar') + '</td></tr>');
                     $('#sincContador').text('Erro');
                 }
             },
             error: function () {
                 btn.removeClass('loading').prop('disabled', false);
-                $('#sincTabelaBody').html('<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:24px;">Erro de conexao com o servidor</td></tr>');
+                $('#sincTabelaBody').html('<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:24px;">Erro de conexao com o servidor</td></tr>');
                 $('#sincContador').text('Erro');
             }
         });
@@ -4513,9 +4539,12 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     /**
      * Renderiza a tabela com os dados filtrados/ordenados
      */
+    /**
+  * Renderiza a tabela com os dados filtrados/ordenados
+  */
     function renderizarTabelaSinc() {
         if (!sincDadosFiltrados || sincDadosFiltrados.length === 0) {
-            $('#sincTabelaBody').html('<tr><td colspan="7" style="text-align:center;color:#64748b;padding:32px;"><ion-icon name="search-outline" style="font-size:24px;display:block;margin-bottom:8px;"></ion-icon>Nenhum ponto encontrado</td></tr>');
+            $('#sincTabelaBody').html('<tr><td colspan="8" style="text-align:center;color:#64748b;padding:32px;"><ion-icon name="search-outline" style="font-size:24px;display:block;margin-bottom:8px;"></ion-icon>Nenhum ponto encontrado</td></tr>');
             $('#sincContador').text('0 pontos');
             return;
         }
@@ -4534,10 +4563,24 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
             const percBarra = dias !== null ? Math.min((dias / 365) * 100, 100) : 100;
 
             let ultLeitura = '<span style="color:#94a3b8">-</span>';
+            let urlOperacoes = '';
+
+            // Se tem última leitura, usar essa data
             if (item.ULTIMA_LEITURA) {
                 const dt = new Date(item.ULTIMA_LEITURA);
-                ultLeitura = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const dataFormatada = dt.toISOString().split('T')[0]; // YYYY-MM-DD
+                const mes = dt.getMonth() + 1;
+                const ano = dt.getFullYear();
+                urlOperacoes = `operacoes.php?abrirValidacao=1&cdPonto=${item.CD_PONTO_MEDICAO}&dataValidacao=${dataFormatada}&mes=${mes}&ano=${ano}`;
+            } else {
+                // Se nunca teve leitura, usar data de hoje
+                const agora = new Date();
+                const dataHoje = agora.toISOString().split('T')[0];
+                const mes = agora.getMonth() + 1;
+                const ano = agora.getFullYear();
+                urlOperacoes = `operacoes.php?abrirValidacao=1&cdPonto=${item.CD_PONTO_MEDICAO}&dataValidacao=${dataHoje}&mes=${mes}&ano=${ano}`;
             }
+
             let dtAtiv = item.DT_ATIVACAO ? new Date(item.DT_ATIVACAO).toLocaleDateString('pt-BR') : '';
 
             // Formatar código do ponto: LOCALIDADE-CDPONTO_PADDED-LETRA-UNIDADE
@@ -4583,6 +4626,11 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
             <td><span style="font-size:12px;">${ultLeitura}</span></td>
             <td><div class="sinc-dias-bar"><span class="sinc-dias-valor" style="color:${corDias}">${dias !== null ? dias : '&#8734;'}</span><div class="sinc-dias-track"><div class="sinc-dias-fill" style="width:${percBarra}%;background:${corDias};"></div></div></div></td>
             <td><span class="sinc-badge ${mapBadge[sit] || ''}">${sit}</span></td>
+            <td style="text-align:center;">
+                <a href="${urlOperacoes}" class="sinc-btn-acao" title="Ver operações do mês">
+                    <ion-icon name="bar-chart-outline"></ion-icon>
+                </a>
+            </td>
         </tr>`;
         });
 
@@ -4845,6 +4893,8 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                                 Dias s/ Leitura <span class="sort-icon">&#9660;</span>
                             </th>
                             <th>Situacao</th>
+                            <th style="width:60px;text-align:center;">Ações</th>
+
                         </tr>
                     </thead>
                     <tbody id="sincTabelaBody">
@@ -4855,6 +4905,7 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                                     <span>Carregando...</span>
                                 </div>
                             </td>
+
                         </tr>
                     </tbody>
                 </table>

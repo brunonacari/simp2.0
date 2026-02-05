@@ -1843,38 +1843,35 @@ if ($isEdicao) {
         };
     }
 
-    // ============================================================
-    // TABELAS LOCAIS (fallback) - Mesmos valores do backend/banco
-    // ============================================================
-
     /**
      * Área Efetiva (Sef) - Equivale a GetDataBySef(DN) no legado
-     * Valores em m². Se não encontrar, calcula: Sef = π × (DN/2000)²
+     * Valores em m² - ÁREA CORRIGIDA (não nominal!)
+     * Se não encontrar, calcula: Sef = π × (DN/2000)² (valor nominal como último recurso)
      */
-   function obterAreaEfetivaLocal(dn) {
+    function obterAreaEfetivaLocal(dn) {
         // TABELA 2 – CORREÇÃO DA ÁREA PELA PROJEÇÃO DA HASTE DO PITOT
         // Coluna: ÁREA CORRIGIDA (m²)
         var tabelaSef = {
-            75:   0.004418,
-            100:  0.007527,
-            125:  0.012506,
-            150:  0.017188,
-            200:  0.030673,
-            250:  0.048105,
-            275:  0.058786,
-            300:  0.069467,
-            350:  0.094749,
-            375:  0.108897,
-            400:  0.123961,
-            450:  0.157103,
-            500:  0.194175,
-            550:  0.235200,
-            600:  0.280088,
-            650:  0.328973,
-            700:  0.381722,
-            750:  0.438424,
-            800:  0.499051,
-            900:  0.632090,
+            75: 0.004418,
+            100: 0.007527,
+            125: 0.012506,
+            150: 0.017188,
+            200: 0.030673,
+            250: 0.048105,
+            275: 0.058786,
+            300: 0.069467,
+            350: 0.094749,
+            375: 0.108897,
+            400: 0.123961,
+            450: 0.157103,
+            500: 0.194175,
+            550: 0.235200,
+            600: 0.280088,
+            650: 0.328973,
+            700: 0.381722,
+            750: 0.438424,
+            800: 0.499051,
+            900: 0.632090,
             1000: 0.780843,
             1050: 0.861125,
             1100: 0.945337,
@@ -1885,45 +1882,78 @@ if ($isEdicao) {
             1800: 2.536370,
             2000: 3.132271
         };
-        
+
         if (tabelaSef[dn] !== undefined) return tabelaSef[dn];
-        
+
         // Fallback: valor nominal (teórico) - apenas se DN não estiver na tabela
         return PI * Math.pow(dn / 2000, 2);
     }
 
+
+    /**
+     * CORREÇÃO: Função obterCorrecaoProjecaoTapLocal() em calculoKPCForm.php
+     * 
+     * Substituir a função existente por esta versão com valores da
+     * TABELA 1 - CORREÇÃO PELA PROJEÇÃO DO TAP
+     */
+
     /**
      * Correção Projeção TAP (Kp)
-     * Legado: se DN >= 301 retorna 1
-     * Senão: GetDataByFiltro(projecao_tap, diametro_nominal, "Kp")
+     * Fonte: TABELA 1 - CORREÇÃO PELA PROJEÇÃO DO TAP
+     * Legado: se DN >= 301 retorna 1.0
+     * Senão: busca na tabela Projeção TAP × Diâmetro Nominal
      */
     function obterCorrecaoProjecaoTapLocal(pt, dn) {
+        // Regra: DN >= 301 retorna 1.0 (não há correção para tubulações grandes)
         if (dn >= 301) return 1.0;
 
+        // TABELA 1 - CORREÇÃO PELA PROJEÇÃO DO TAP
+        // Projeção TAP (mm) → { Diâmetro Nominal (mm) → Kp }
         var tabelaKp = {
-            25: { 50: 0.98, 75: 0.99, 100: 0.995, 150: 0.998, 200: 0.999, 250: 1.0, 300: 1.0 },
-            30: { 50: 0.97, 75: 0.98, 100: 0.99, 150: 0.995, 200: 0.998, 250: 0.999, 300: 1.0 },
-            35: { 50: 0.96, 75: 0.97, 100: 0.98, 150: 0.99, 200: 0.995, 250: 0.998, 300: 1.0 },
-            40: { 50: 0.95, 75: 0.96, 100: 0.97, 150: 0.98, 200: 0.99, 250: 0.995, 300: 1.0 },
-            45: { 50: 0.94, 75: 0.95, 100: 0.96, 150: 0.97, 200: 0.98, 250: 0.99, 300: 1.0 },
-            50: { 50: 0.93, 75: 0.94, 100: 0.95, 150: 0.96, 200: 0.97, 250: 0.98, 300: 1.0 }
+            1: { 100: 0.9965, 150: 0.9984, 200: 0.9992, 250: 0.9995, 300: 0.9996 },
+            2: { 100: 0.9931, 150: 0.9968, 200: 0.9985, 250: 0.9990, 300: 0.9993 },
+            3: { 100: 0.9896, 150: 0.9953, 200: 0.9977, 250: 0.9984, 300: 0.9989 },
+            4: { 100: 0.9862, 150: 0.9937, 200: 0.9969, 250: 0.9979, 300: 0.9986 },
+            5: { 100: 0.9867, 150: 0.9921, 200: 0.9961, 250: 0.9974, 300: 0.9982 },
+            6: { 100: 0.9792, 150: 0.9905, 200: 0.9954, 250: 0.9968, 300: 0.9979 },
+            7: { 100: 0.9758, 150: 0.9889, 200: 0.9946, 250: 0.9963, 300: 0.9975 },
+            8: { 100: 0.9723, 150: 0.9874, 200: 0.9938, 250: 0.9958, 300: 0.9968 },
+            9: { 100: 0.9688, 150: 0.9858, 200: 0.9930, 250: 0.9953, 300: 0.9968 },
+            10: { 100: 0.9654, 150: 0.9842, 200: 0.9923, 250: 0.9947, 300: 0.9964 },
+            11: { 100: 0.9619, 150: 0.9826, 200: 0.9915, 250: 0.9942, 300: 0.9961 },
+            12: { 100: 0.9585, 150: 0.9810, 200: 0.9908, 250: 0.9937, 300: 0.9957 },
+            13: { 100: 0.9550, 150: 0.9795, 200: 0.9900, 250: 0.9931, 300: 0.9954 },
+            14: { 100: 0.9515, 150: 0.9779, 200: 0.9892, 250: 0.9926, 300: 0.9950 },
+            15: { 100: 0.9481, 150: 0.9763, 200: 0.9885, 250: 0.9921, 300: 0.9946 },
+            16: { 100: 0.9446, 150: 0.9747, 200: 0.9877, 250: 0.9915, 300: 0.9943 },
+            17: { 100: 0.9411, 150: 0.9732, 200: 0.9869, 250: 0.9911, 300: 0.9939 },
+            18: { 100: 0.9377, 150: 0.9716, 200: 0.9861, 250: 0.9905, 300: 0.9935 },
+            19: { 100: 0.9342, 150: 0.9700, 200: 0.9854, 250: 0.9900, 300: 0.9932 },
+            20: { 100: 0.9308, 150: 0.9684, 200: 0.9846, 250: 0.9895, 300: 0.9929 }
         };
 
-        // Encontra projeção mais próxima
-        var ptProxima = 25, menorDif = Math.abs(pt - 25);
-        for (var p in tabelaKp) {
-            var dif = Math.abs(pt - parseInt(p));
-            if (dif < menorDif) { menorDif = dif; ptProxima = parseInt(p); }
+        // Arredonda projeção TAP para inteiro mais próximo (1-20)
+        var ptArredondado = Math.round(pt);
+        if (ptArredondado < 1) ptArredondado = 1;
+        if (ptArredondado > 20) ptArredondado = 20;
+
+        // Encontra DN mais próximo na tabela
+        var dnsDisponiveis = [100, 150, 200, 250, 300];
+        var dnProximo = 100;
+        var menorDif = Math.abs(dn - 100);
+
+        for (var i = 0; i < dnsDisponiveis.length; i++) {
+            var dif = Math.abs(dn - dnsDisponiveis[i]);
+            if (dif < menorDif) {
+                menorDif = dif;
+                dnProximo = dnsDisponiveis[i];
+            }
         }
 
-        if (tabelaKp[ptProxima]) {
-            var dnProximo = 50, menorDifDn = Math.abs(dn - 50);
-            for (var d in tabelaKp[ptProxima]) {
-                var difDn = Math.abs(dn - parseInt(d));
-                if (difDn < menorDifDn) { menorDifDn = difDn; dnProximo = parseInt(d); }
-            }
-            return tabelaKp[ptProxima][dnProximo];
+        if (tabelaKp[ptArredondado] && tabelaKp[ptArredondado][dnProximo] !== undefined) {
+            return tabelaKp[ptArredondado][dnProximo];
         }
+
         return 1.0;
     }
 

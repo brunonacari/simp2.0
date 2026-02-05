@@ -83,12 +83,12 @@ function enfileirarReprocessamentoMultiplo($pdo, $datas, $origem = null, $cdUsua
  * @deprecated Use enfileirarReprocessamento()
  */
 function reprocessarMetricasDiarias($pdo, $data) {
-    return enfileirarReprocessamento($pdo, $data, 'LEGACY');
+    return enfileirarReprocessamento($pdo, $data, 'LEGACY_Diaria');
 }
 
 /**
  * @deprecated Use enfileirarReprocessamentoMultiplo()
  */
 function reprocessarMetricasMultiplasDatas($pdo, $datas) {
-    return enfileirarReprocessamentoMultiplo($pdo, $datas, 'LEGACY');
+    return enfileirarReprocessamentoMultiplo($pdo, $datas, 'LEGACY_Multipla_Datas');
 }
