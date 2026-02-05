@@ -2003,6 +2003,505 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         color: #1d4ed8;
         text-decoration: underline;
     }
+
+    /* ============================================
+   Botão "Como funciona?"
+   ============================================ */
+    .btn-regras-dashboard {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        color: white;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .btn-regras-dashboard:hover {
+        background: rgba(255, 255, 255, 0.22);
+        border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .btn-regras-dashboard ion-icon {
+        font-size: 16px;
+    }
+
+    /* ============================================
+   Modal Overlay
+   ============================================ */
+    .modal-regras-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+    }
+
+    .modal-regras-overlay.active {
+        display: flex;
+    }
+
+    /* ============================================
+   Modal Container
+   ============================================ */
+    .modal-regras {
+        background: white;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 820px;
+        max-height: 88vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        animation: modalRegrasIn 0.25s ease;
+    }
+
+    @keyframes modalRegrasIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    /* ============================================
+   Modal Header
+   ============================================ */
+    .modal-regras-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 24px;
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .modal-regras-header-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .modal-regras-header-info ion-icon {
+        font-size: 24px;
+        opacity: 0.9;
+    }
+
+    .modal-regras-header-info h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .modal-regras-header-info p {
+        margin: 2px 0 0;
+        font-size: 12px;
+        opacity: 0.8;
+    }
+
+    .modal-regras-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+
+    .modal-regras-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .modal-regras-close ion-icon {
+        font-size: 20px;
+    }
+
+    /* ============================================
+   Modal Body
+   ============================================ */
+    .modal-regras-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    /* ============================================
+   Fluxo Visual
+   ============================================ */
+    .regras-fluxo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .regras-fluxo-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .regras-fluxo-item.fonte {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .regras-fluxo-item.proc {
+        background: #ede9fe;
+        color: #6d28d9;
+    }
+
+    .regras-fluxo-item.saida {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .regras-fluxo-item ion-icon {
+        font-size: 16px;
+    }
+
+    .regras-fluxo-seta {
+        color: #94a3b8;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    /* ============================================
+   Seções de Regras
+   ============================================ */
+    .regra-secao {
+        margin-bottom: 20px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .regra-secao-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 18px;
+        background: #f8fafc;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s;
+        border-bottom: 1px solid transparent;
+    }
+
+    .regra-secao-header:hover {
+        background: #f1f5f9;
+    }
+
+    .regra-secao.aberta .regra-secao-header {
+        border-bottom-color: #e2e8f0;
+    }
+
+    .regra-secao-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        flex-shrink: 0;
+    }
+
+    .regra-secao-icon ion-icon {
+        font-size: 18px;
+    }
+
+    .regra-secao-info {
+        flex: 1;
+    }
+
+    .regra-secao-info h4 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .regra-secao-info p {
+        margin: 2px 0 0;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .regra-secao-toggle {
+        font-size: 18px;
+        color: #94a3b8;
+        transition: transform 0.2s;
+    }
+
+    .regra-secao.aberta .regra-secao-toggle {
+        transform: rotate(180deg);
+    }
+
+    .regra-secao-body {
+        display: none;
+        padding: 18px;
+    }
+
+    .regra-secao.aberta .regra-secao-body {
+        display: block;
+    }
+
+    /* Cores por seção */
+    .regra-secao-icon.metricas {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+    .regra-secao-icon.historico {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .regra-secao-icon.tendencia {
+        background: #ede9fe;
+        color: #7c3aed;
+    }
+
+    .regra-secao-icon.flags {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .regra-secao-icon.status {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .regra-secao-icon.tratamento {
+        background: #f3e8ff;
+        color: #9333ea;
+    }
+
+    /* ============================================
+   Regra Item (linha de regra)
+   ============================================ */
+    .regra-item {
+        display: flex;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #334155;
+    }
+
+    .regra-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .regra-item-bullet {
+        width: 6px;
+        height: 6px;
+        min-width: 6px;
+        background: #94a3b8;
+        border-radius: 50%;
+        margin-top: 7px;
+    }
+
+    /* Tabela de regras (para flags) */
+    .regra-tabela {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+    .regra-tabela th {
+        background: #f8fafc;
+        padding: 8px 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #475569;
+        border-bottom: 2px solid #e2e8f0;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .regra-tabela td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        vertical-align: top;
+        line-height: 1.5;
+    }
+
+    .regra-tabela tr:last-child td {
+        border-bottom: none;
+    }
+
+    .regra-tabela .tipo-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .regra-tabela .tipo-badge.macro {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .regra-tabela .tipo-badge.reserv {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    /* Destaque de valor/fórmula */
+    .regra-codigo {
+        display: inline;
+        background: #f1f5f9;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-family: 'SF Mono', Monaco, Consolas, monospace;
+        font-size: 12px;
+        color: #7c3aed;
+    }
+
+    /* Status badges dentro do modal */
+    .regra-status-ok {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .regra-status-atencao {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .regra-status-critico {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    /* ============================================
+   Nota de rodapé
+   ============================================ */
+    .regras-nota {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px 16px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 10px;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #1e40af;
+        line-height: 1.6;
+    }
+
+    .regras-nota ion-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    /* ============================================
+   Responsivo
+   ============================================ */
+    @media (max-width: 768px) {
+        .modal-regras {
+            max-height: 95vh;
+            border-radius: 12px;
+        }
+
+        .modal-regras-header {
+            padding: 14px 16px;
+        }
+
+        .modal-regras-header-info h3 {
+            font-size: 14px;
+        }
+
+        .modal-regras-body {
+            padding: 16px;
+        }
+
+        .regras-fluxo {
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .regras-fluxo-seta {
+            transform: rotate(90deg);
+        }
+
+        .regra-tabela {
+            font-size: 11px;
+        }
+
+        .regra-tabela th,
+        .regra-tabela td {
+            padding: 6px 8px;
+        }
+    }
 </style>
 
 <div class="page-container">
@@ -2051,7 +2550,11 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                         <ion-icon name="chevron-forward-outline"></ion-icon>
                     </button>
                 </div>
-
+                <button type="button" class="btn-regras-dashboard" onclick="abrirModalRegras()"
+                    title="Como funciona o Dashboard?">
+                    <ion-icon name="help-circle-outline"></ion-icon>
+                    <span>Como funciona?</span>
+                </button>
                 <!-- Botão Análise IA -->
                 <button type="button" class="btn-analise-ia" id="btnAnaliseIA" onclick="analisarPeriodoIA()">
                     <ion-icon name="sparkles-outline"></ion-icon>
@@ -2404,6 +2907,350 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal -->
+<div class="modal-regras-overlay" id="modalRegras" onclick="if(event.target===this)fecharModalRegras()">
+    <div class="modal-regras">
+        <!-- Header -->
+        <div class="modal-regras-header">
+            <div class="modal-regras-header-info">
+                <ion-icon name="book-outline"></ion-icon>
+                <div>
+                    <h3>Como funciona o Dashboard de Métricas</h3>
+                    <p>Regras de processamento da SP_PROCESSAR_MEDICAO_V2</p>
+                </div>
+            </div>
+            <button class="modal-regras-close" onclick="fecharModalRegras()" title="Fechar">
+                <ion-icon name="close-outline"></ion-icon>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-regras-body">
+
+            <!-- Fluxo visual -->
+            <div class="regras-fluxo">
+                <div class="regras-fluxo-item fonte">
+                    <ion-icon name="server-outline"></ion-icon>
+                    REGISTRO_VAZAO_PRESSAO
+                </div>
+                <ion-icon name="arrow-forward-outline" class="regras-fluxo-seta"></ion-icon>
+                <div class="regras-fluxo-item proc">
+                    <ion-icon name="cog-outline"></ion-icon>
+                    SP_PROCESSAR_MEDICAO_V2
+                </div>
+                <ion-icon name="arrow-forward-outline" class="regras-fluxo-seta"></ion-icon>
+                <div class="regras-fluxo-item saida">
+                    <ion-icon name="analytics-outline"></ion-icon>
+                    IA_METRICAS_DIARIAS
+                </div>
+            </div>
+
+            <!-- SEÇÃO 1: Métricas Básicas -->
+            <div class="regra-secao aberta" onclick="toggleRegraSecao(this)">
+                <div class="regra-secao-header">
+                    <div class="regra-secao-icon metricas">
+                        <ion-icon name="calculator-outline"></ion-icon>
+                    </div>
+                    <div class="regra-secao-info">
+                        <h4>Etapa 1 — Métricas Básicas</h4>
+                        <p>Cálculos de cobertura, média, mínimo, máximo e desvio padrão</p>
+                    </div>
+                    <ion-icon name="chevron-down-outline" class="regra-secao-toggle"></ion-icon>
+                </div>
+                <div class="regra-secao-body">
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Fonte dos dados:</strong> Registros do dia na tabela REGISTRO_VAZAO_PRESSAO com
+                            <span class="regra-codigo">ID_SITUACAO IN (1, 2)</span> — inclui válidos e descartados.
+                        </div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Cobertura esperada:</strong> <span class="regra-codigo">1.440 registros/dia</span>
+                            (1 registro por minuto × 24 horas).</div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Fórmula de média:</strong> Usa <span class="regra-codigo">AVG()</span> sobre o
+                            campo adequado ao tipo de medidor:
+                            <br>• <strong>Macromedidor / Estação / Hidrômetro</strong> (1, 2, 8): <span
+                                class="regra-codigo">VL_VAZAO_EFETIVA</span> ou <span
+                                class="regra-codigo">VL_VAZAO</span>
+                            <br>• <strong>Medidor Pressão</strong> (4): <span class="regra-codigo">VL_PRESSAO</span>
+                            <br>• <strong>Nível Reservatório</strong> (6): <span
+                                class="regra-codigo">VL_RESERVATORIO</span>
+                        </div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Demais cálculos:</strong> MIN, MAX, STDEV (desvio padrão), contagem de zeros,
+                            quantidade de valores distintos e horas com dados.</div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Horas sem dados:</strong> Identifica quais das 24 horas do dia não possuem nenhum
+                            registro.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO 2: Comparação Histórica -->
+            <div class="regra-secao" onclick="toggleRegraSecao(this)">
+                <div class="regra-secao-header">
+                    <div class="regra-secao-icon historico">
+                        <ion-icon name="time-outline"></ion-icon>
+                    </div>
+                    <div class="regra-secao-info">
+                        <h4>Etapa 2 — Comparação Histórica (4 Semanas)</h4>
+                        <p>Compara a média do dia com as 4 semanas anteriores do mesmo dia da semana</p>
+                    </div>
+                    <ion-icon name="chevron-down-outline" class="regra-secao-toggle"></ion-icon>
+                </div>
+                <div class="regra-secao-body">
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Referência:</strong> Calcula a média das últimas 4 semanas, filtrando apenas pelo
+                            <strong>mesmo dia da semana</strong> (ex: se hoje é terça, compara com as 4 últimas terças).
+                        </div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Desvio percentual:</strong> <span class="regra-codigo">((Média_Hoje - Média_Hist) /
+                                Média_Hist) × 100</span>
+                            <br>Resultado positivo = acima do histórico; negativo = abaixo do histórico.
+                        </div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Limitador:</strong> O desvio é limitado a ±9999% para evitar distorções quando a
+                            média histórica é muito pequena.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO 3: Tendência 7 Dias -->
+            <div class="regra-secao" onclick="toggleRegraSecao(this)">
+                <div class="regra-secao-header">
+                    <div class="regra-secao-icon tendencia">
+                        <ion-icon name="trending-up-outline"></ion-icon>
+                    </div>
+                    <div class="regra-secao-info">
+                        <h4>Etapa 3 — Tendência 7 Dias</h4>
+                        <p>Calcula se o ponto está subindo, descendo ou estável</p>
+                    </div>
+                    <ion-icon name="chevron-down-outline" class="regra-secao-toggle"></ion-icon>
+                </div>
+                <div class="regra-secao-body">
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Cálculo:</strong> Variação percentual entre o maior e menor valor da média diária
+                            nos últimos 7 dias.</div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Classificação:</strong>
+                            <br>• Variação <span class="regra-codigo">&gt; +10%</span> → <strong>SUBINDO</strong>
+                            <br>• Variação <span class="regra-codigo">&lt; -10%</span> → <strong>DESCENDO</strong>
+                            <br>• Entre -10% e +10% → <strong>ESTÁVEL</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO 4: Flags de Anomalia -->
+            <div class="regra-secao" onclick="toggleRegraSecao(this)">
+                <div class="regra-secao-header">
+                    <div class="regra-secao-icon flags">
+                        <ion-icon name="flag-outline"></ion-icon>
+                    </div>
+                    <div class="regra-secao-info">
+                        <h4>Etapa 4 — Flags de Anomalia</h4>
+                        <p>4 flags com regras diferenciadas por tipo de medidor</p>
+                    </div>
+                    <ion-icon name="chevron-down-outline" class="regra-secao-toggle"></ion-icon>
+                </div>
+                <div class="regra-secao-body">
+                    <!-- FLAG 1 -->
+                    <p style="font-weight:600;color:#1e293b;margin:0 0 8px;">🔴 Flag 1 — Cobertura Baixa</p>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div>Ativada quando <span class="regra-codigo">QTD_REGISTROS &lt; 720</span> (menos de 50% da
+                            cobertura esperada). Igual para todos os tipos de medidor.</div>
+                    </div>
+
+                    <!-- FLAG 2 -->
+                    <p style="font-weight:600;color:#1e293b;margin:16px 0 8px;">🟡 Flag 2 — Problema no Sensor</p>
+                    <table class="regra-tabela">
+                        <thead>
+                            <tr>
+                                <th style="width:30%">Tipo</th>
+                                <th>Condição para ativar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="tipo-badge macro">Macro / Pressão / Hidrômetro</span></td>
+                                <td>
+                                    • Valores distintos ≤ 3 com ≥ 1000 registros (sensor travado)<br>
+                                    • Mais de 50% dos registros zerados quando histórico &gt; 0.1<br>
+                                    • Desvio padrão &lt; 0.01 com média &gt; 0.1 e ≥ 1000 registros
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="tipo-badge reserv">Reservatório</span></td>
+                                <td>
+                                    • Apenas 1 valor distinto com ≥ 1000 registros<br>
+                                    • Desvio padrão = 0 com ≥ 1000 registros<br>
+                                    • Zeros <strong>não</strong> são problema (reservatório pode estar vazio)
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- FLAG 3 -->
+                    <p style="font-weight:600;color:#1e293b;margin:16px 0 8px;">🟠 Flag 3 — Valor Anômalo</p>
+                    <table class="regra-tabela">
+                        <thead>
+                            <tr>
+                                <th style="width:30%">Tipo</th>
+                                <th>Condição para ativar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="tipo-badge macro">Macro / Pressão / Hidrômetro</span></td>
+                                <td>
+                                    • Valor mínimo negativo<br>
+                                    • Valor máximo acima do limite superior configurado<br>
+                                    • Spike: máximo &gt; 10× a média (pico extremo)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="tipo-badge reserv">Reservatório</span></td>
+                                <td>
+                                    • Valor mínimo negativo (impossível)<br>
+                                    • Valor máximo acima de 100% (ou limite configurado)<br>
+                                    • <strong>Não</strong> aplica detecção de spike
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- FLAG 4 -->
+                    <p style="font-weight:600;color:#1e293b;margin:16px 0 8px;">🔵 Flag 4 — Desvio Histórico
+                        Significativo</p>
+                    <table class="regra-tabela">
+                        <thead>
+                            <tr>
+                                <th style="width:30%">Tipo</th>
+                                <th>Condição para ativar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="tipo-badge macro">Macro / Pressão / Hidrômetro</span></td>
+                                <td>Desvio em relação ao histórico <span class="regra-codigo">&gt; ±30%</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="tipo-badge reserv">Reservatório</span></td>
+                                <td>Desvio em relação ao histórico <span class="regra-codigo">&gt; ±50%</span> (mais
+                                    tolerante — operação pode mudar)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SEÇÃO 5: Status Final -->
+            <div class="regra-secao" onclick="toggleRegraSecao(this)">
+                <div class="regra-secao-header">
+                    <div class="regra-secao-icon status">
+                        <ion-icon name="shield-checkmark-outline"></ion-icon>
+                    </div>
+                    <div class="regra-secao-info">
+                        <h4>Etapa 5 — Status Final</h4>
+                        <p>Classificação do ponto com base nos flags detectados</p>
+                    </div>
+                    <ion-icon name="chevron-down-outline" class="regra-secao-toggle"></ion-icon>
+                </div>
+                <div class="regra-secao-body">
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div>
+                            <span class="regra-status-critico">CRÍTICO</span> — Cobertura baixa <strong>ou</strong>
+                            problema no sensor detectado.
+                        </div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div>
+                            <span class="regra-status-atencao">ATENÇÃO</span> — Valor anômalo <strong>ou</strong> desvio
+                            histórico significativo (sem problemas de cobertura/sensor).
+                        </div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div>
+                            <span class="regra-status-ok">OK</span> — Nenhum flag ativado. Ponto operando normalmente.
+                        </div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Prioridade dos flags:</strong> Cobertura Baixa → Sensor → Valor Anômalo → Desvio
+                            Histórico. O status é definido pelo flag de maior prioridade.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO 6: Tratamento Manual -->
+            <div class="regra-secao" onclick="toggleRegraSecao(this)">
+                <div class="regra-secao-header">
+                    <div class="regra-secao-icon tratamento">
+                        <ion-icon name="construct-outline"></ion-icon>
+                    </div>
+                    <div class="regra-secao-info">
+                        <h4>Etapa 6 — Tratamento Manual</h4>
+                        <p>Rastreamento de registros descartados/restaurados pela operação</p>
+                    </div>
+                    <ion-icon name="chevron-down-outline" class="regra-secao-toggle"></ion-icon>
+                </div>
+                <div class="regra-secao-body">
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Contagem:</strong> Registros com <span class="regra-codigo">ID_SITUACAO = 2</span>
+                            (descartados) são contados como tratamento manual.</div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Atualização automática:</strong> Uma trigger (<span
+                                class="regra-codigo">TR_ATUALIZA_METRICAS_TRATAMENTO</span>) atualiza a contagem
+                            automaticamente quando registros são descartados ou restaurados via interface.</div>
+                    </div>
+                    <div class="regra-item">
+                        <div class="regra-item-bullet"></div>
+                        <div><strong>Impacto no resumo:</strong> Quando há tratamento manual, o resumo textual inclui a
+                            informação de quantos registros foram tratados.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nota -->
+            <div class="regras-nota">
+                <ion-icon name="information-circle-outline"></ion-icon>
+                <div>
+                    <strong>Processamento:</strong> A SP é executada diariamente de forma automática para o dia
+                    anterior.
+                    O dashboard exibe os dados já processados da tabela <span
+                        class="regra-codigo">IA_METRICAS_DIARIAS</span>.
+                    A análise IA utiliza esses mesmos dados para gerar insights e recomendações.
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -3801,6 +4648,46 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
     // ============================================
     $(document).ready(function () {
         carregarSincServidor();
+    });
+
+    /**
+ * Abre o modal de regras do dashboard
+ */
+    function abrirModalRegras() {
+        document.getElementById('modalRegras').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    /**
+     * Fecha o modal de regras do dashboard
+     */
+    function fecharModalRegras() {
+        document.getElementById('modalRegras').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    /**
+     * Toggle de seção (acordeão)
+     */
+    function toggleRegraSecao(el) {
+        // Verifica se o clique foi no header
+        const secao = el.classList.contains('regra-secao') ? el : el.closest('.regra-secao');
+        if (!secao) return;
+
+        // Prevenir toggle se clicou no body
+        if (event.target.closest('.regra-secao-body')) return;
+
+        secao.classList.toggle('aberta');
+    }
+
+    // Fechar com ESC
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('modalRegras');
+            if (modal && modal.classList.contains('active')) {
+                fecharModalRegras();
+            }
+        }
     });
 </script>
 

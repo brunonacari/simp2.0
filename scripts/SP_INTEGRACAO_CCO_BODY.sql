@@ -20,9 +20,9 @@ AS
 SET NOCOUNT ON;
 
 -- Declara constantes
-DECLARE @log_erro							tinyint = 1,
-		@log_alerta							tinyint = 2,
-		@log_aviso							tinyint = 3,
+DECLARE @log_erro							tinyint = 3,
+		@log_informacao 					tinyint = 1,
+		@log_aviso							tinyint = 2,
 		@ID_TIPO_MEDICAO					tinyint = 1;
 
 -- Declara variaveis
@@ -39,7 +39,8 @@ DECLARE @rtn								int,
 -- Inicializa variáveis
 -- Se @now não foi informado, calcula o último instante da hora completa anterior
 SET @now = ISNULL(@now, GETDATE());
-SET @today = DATEADD(MILLISECOND, -3, DATEADD(HOUR, DATEDIFF(HOUR, 0, @now), 0));
+SET @today = DATEADD(HOUR, DATEDIFF(HOUR, 0, @now), 0);
+-- 11:00:xx → 11:00:00.000
 SET @dt_limite_minimo = DATEADD(DAY, -@dias_retroativos, @today);
 SET @DT_EVENTO_MEDICAO = CONVERT(VARCHAR, @now, 20);
 
@@ -119,20 +120,19 @@ BEGIN TRY
 					CD_PONTO_MEDICAO,
 					DS_NOME,
 					OP_PERIODICIDADE_LEITURA,
-					-- Trunca DT_INICIAL para a unidade inferior e soma 1 (exceto tag 5)
-					-- Isso garante timestamps alinhados no Historiador (Cyclic)
+					-- Trunca para o minuto (alinhamento) e soma 1 unidade da periodicidade
 					CASE WHEN OP_PERIODICIDADE_LEITURA = 1 
 						 THEN DATEADD(ss, CASE WHEN CD_TAG <> 5 THEN 1 ELSE 0 END, 
-						      DATEADD(mi, DATEDIFF(mi, 0, DT_INICIAL), 0))        -- trunca para minuto, soma 1 segundo
+						      DATEADD(mi, DATEDIFF(mi, 0, DT_INICIAL), 0))
 						 WHEN OP_PERIODICIDADE_LEITURA = 2 
 						 THEN DATEADD(mi, CASE WHEN CD_TAG <> 5 THEN 1 ELSE 0 END, 
-						      DATEADD(hh, DATEDIFF(hh, 0, DT_INICIAL), 0))        -- trunca para hora, soma 1 minuto
+						      DATEADD(mi, DATEDIFF(mi, 0, DT_INICIAL), 0))
 						 WHEN OP_PERIODICIDADE_LEITURA = 3 
 						 THEN DATEADD(hh, CASE WHEN CD_TAG <> 5 THEN 1 ELSE 0 END, 
-						      DATEADD(dd, DATEDIFF(dd, 0, DT_INICIAL), 0))        -- trunca para dia, soma 1 hora
+						      DATEADD(mi, DATEDIFF(mi, 0, DT_INICIAL), 0))
 						 WHEN OP_PERIODICIDADE_LEITURA = 4 
 						 THEN DATEADD(dd, CASE WHEN CD_TAG <> 5 THEN 1 ELSE 0 END, 
-						      DATEADD(mm, DATEDIFF(mm, 0, DT_INICIAL), 0))        -- trunca para mês, soma 1 dia
+						      DATEADD(mi, DATEDIFF(mi, 0, DT_INICIAL), 0))
 						 ELSE NULL
 					END AS DT_INICIAL,
 					DT_FINAL,
@@ -247,7 +247,7 @@ BEGIN TRY
 			
 			EXEC sp_executesql @sql;
 
-			DELETE FROM #registro_raw WHERE DT_LEITURA > @dtFinal;
+			DELETE FROM #registro_raw WHERE DT_LEITURA >= @dtFinal;
 
 			-- =================================================
 			-- PASSO 2: Truncar para o minuto e pegar 1 por minuto
@@ -390,13 +390,6 @@ BEGIN TRY
 				SET @pontos_com_dados = @pontos_com_dados + 1;
 				SET @registros_inseridos = @registros_inseridos + @rowcount;
 			END
-			ELSE
-			BEGIN
-				INSERT INTO LOG (CD_USUARIO, CD_FUNCIONALIDADE, CD_UNIDADE, DT_LOG, TP_LOG, NM_LOG, DS_LOG, DS_VERSAO, NM_SERVIDOR)
-				VALUES (@cd_usuario, @cd_funcionalidade, @cdUnidade, GETDATE(), @log_alerta, 'Job de Integração do CCO',
-						'Ponto ' + CAST(@cdPontoMedicao AS VARCHAR) + '-' + RTRIM(@dsNome) + ' TAG(' + CAST(@cdTag AS VARCHAR) + '): ' + ISNULL(RTRIM(@dsTag), '(vazio)') + ', sem registros novos.',
-						@ds_versao, CAST(SERVERPROPERTY('MachineName') AS VARCHAR));
-			END
 
 		END TRY
 		BEGIN CATCH
@@ -415,7 +408,7 @@ BEGIN TRY
 
 	-- Log final de resumo
 	INSERT INTO LOG (CD_USUARIO, CD_FUNCIONALIDADE, CD_UNIDADE, DT_LOG, TP_LOG, NM_LOG, DS_LOG, DS_VERSAO, NM_SERVIDOR)
-	VALUES (@cd_usuario, @cd_funcionalidade, NULL, GETDATE(), @log_aviso, 'Job de Integração do CCO',
+	VALUES (@cd_usuario, @cd_funcionalidade, NULL, GETDATE(), @log_informacao, 'Job de Integração do CCO',
 			'Resumo: ' + CAST(@pontos_processados AS VARCHAR) + '/' + CAST(@total_pontos AS VARCHAR) + ' pontos, ' +
 			CAST(@pontos_com_dados AS VARCHAR) + ' com dados, ' + CAST(@registros_inseridos AS VARCHAR) + ' inseridos, ' +
 			CAST(@registros_duplicados AS VARCHAR) + ' duplicados ignorados.',

@@ -1266,7 +1266,7 @@ if ($isEdicao) {
                                     } else {
                                         $posCalc = ($diametroReal / 10) * ($p - 1);
                                     }
-                                ?>
+                                    ?>
                                     <th id="posicao_<?= $p ?>"><?= number_format($posCalc, 2, ',', '.') ?></th>
                                 <?php endfor; ?>
                             </tr>
@@ -1279,7 +1279,7 @@ if ($isEdicao) {
                             }
 
                             for ($leitura = 1; $leitura <= 20; $leitura++):
-                            ?>
+                                ?>
                                 <tr>
                                     <td class="leitura-label">Leitura <?= $leitura ?>:</td>
                                     <?php for ($ponto = 1; $ponto <= 11; $ponto++): ?>
@@ -1412,7 +1412,6 @@ if ($isEdicao) {
 </div>
 
 <script>
-    const PI = Math.PI;
     const isEdicao = <?= $isEdicao ? 'true' : 'false' ?>;
     let graficoVelocidade = null;
 
@@ -1438,14 +1437,14 @@ if ($isEdicao) {
         let debounce = null;
         let idx = -1;
 
-        input.addEventListener('focus', function() {
+        input.addEventListener('focus', function () {
             const cdPonto = document.getElementById('cdPontoMedicao').value;
             if (!cdPonto) {
                 buscarPontosMedicao('');
             }
         });
 
-        input.addEventListener('input', function(e) {
+        input.addEventListener('input', function (e) {
             clearTimeout(debounce);
             idx = -1;
             debounce = setTimeout(() => {
@@ -1454,7 +1453,7 @@ if ($isEdicao) {
             }, 300);
         });
 
-        input.addEventListener('keydown', function(e) {
+        input.addEventListener('keydown', function (e) {
             const items = dropdown.querySelectorAll('.autocomplete-item');
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -1481,7 +1480,7 @@ if ($isEdicao) {
             }
         }
 
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (!input.contains(e.target) && !dropdown.contains(e.target)) {
                 dropdown.classList.remove('active');
             }
@@ -1530,7 +1529,7 @@ if ($isEdicao) {
                     dropdown.innerHTML = html;
 
                     dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
-                        item.addEventListener('click', function() {
+                        item.addEventListener('click', function () {
                             selecionarPontoMedicao(this);
                         });
                     });
@@ -1538,7 +1537,7 @@ if ($isEdicao) {
                     dropdown.innerHTML = '<div class="autocomplete-empty">Nenhum ponto encontrado</div>';
                 }
             })
-            .catch(function() {
+            .catch(function () {
                 dropdown.innerHTML = '<div class="autocomplete-empty">Erro ao buscar</div>';
             });
     }
@@ -1596,13 +1595,13 @@ if ($isEdicao) {
         select.disabled = true;
 
         fetch('bd/pontoMedicao/getLocalidades.php?cd_unidade=' + cdUnidade)
-            .then(function(r) {
+            .then(function (r) {
                 return r.json();
             })
-            .then(function(data) {
+            .then(function (data) {
                 var options = '<option value="">Selecione a Localidade</option>';
                 if (data.success && data.data) {
-                    data.data.forEach(function(l) {
+                    data.data.forEach(function (l) {
                         var selected = (l.CD_CHAVE == cdLocalidadeSelecionada) ? 'selected' : '';
                         options += '<option value="' + l.CD_CHAVE + '" ' + selected + '>' + l.CD_LOCALIDADE + ' - ' + l.DS_NOME + '</option>';
                     });
@@ -1610,7 +1609,7 @@ if ($isEdicao) {
                 select.innerHTML = options;
                 select.disabled = false;
             })
-            .catch(function() {
+            .catch(function () {
                 select.innerHTML = '<option value="">Erro ao carregar</option>';
                 select.disabled = false;
             });
@@ -1680,307 +1679,383 @@ if ($isEdicao) {
     }
 
     // ============================================================
-    // FUNÇÕES DE CÁLCULO KPC - FÓRMULA CORRIGIDA (SISTEMA LEGADO)
+    // FUNÇÕES DE CÁLCULO KPC - ALINHADAS COM SISTEMA LEGADO (CalculoPitometria.cs)
+    // ============================================================
+    // Substitua TODAS as funções de cálculo no calculoKPCForm.php
+    // pelo bloco abaixo (desde calcularMediaPonto até o final do calcular)
     // ============================================================
 
-    /**
-     * Fator de Velocidade - MÉTODO PADRÃO (Digital)
-     * FV = (Σ √médias exceto central) / (10 × √média_central)
-     */
+    var PI = Math.PI;
+
+    // ============================================================
+    // CÁLCULO DAS MÉDIAS - Equivale a CalcularMediasLeituraKpc()
+    // ============================================================
+
+    function calcularMediaPonto(ponto) {
+        var soma = 0, count = 0;
+        for (var l = 1; l <= 20; l++) {
+            var input = document.querySelector('input[data-leitura="' + l + '"][data-ponto="' + ponto + '"]');
+            if (input && input.value !== '' && !isNaN(parseFloat(input.value))) {
+                soma += parseFloat(input.value);
+                count++;
+            }
+        }
+        var mediaInput = document.getElementById('media_' + ponto);
+        if (mediaInput) {
+            mediaInput.value = count > 0 ? (soma / count).toFixed(2) : '';
+        }
+    }
+
+    function obterMediasDeflexoes() {
+        var medias = [];
+        for (var p = 1; p <= 11; p++) {
+            var mediaInput = document.getElementById('media_' + p);
+            var valor = mediaInput ? parseFloat(mediaInput.value) : 0;
+            medias.push(isNaN(valor) ? 0 : valor);
+        }
+        return medias;
+    }
+
+    // ============================================================
+    // FATOR DE VELOCIDADE - MÉTODO PADRÃO (Digital)
+    // Equivale a: CalcularFatorVelocidade() no legado
+    // ============================================================
+    // Legado: soma √(média) de todos os pontos EXCETO o central (índice 5),
+    //         divide por (10 × √(média_central))
+    // Nota: o legado NÃO pula valores <= 0, inclui √(0) = 0 normalmente.
+    //       Aqui replicamos exatamente esse comportamento.
+    // ============================================================
     function calcularFatorVelocidadePadrao(medias) {
-        var indiceCentral = 5; // Ponto 6
+        // medias[0..10] = pontos 1..11, índice 5 = ponto 6 (central)
+        var indiceCentral = 5;
         var mediaCentral = medias[indiceCentral];
 
         if (mediaCentral <= 0) return 0;
 
+        // Legado: soma de j=(count+1)/2 até fim, depois de j=(count+1)/2 - 2 até 0
+        // Isso equivale a somar TODOS exceto indiceCentral
         var somaRaizes = 0;
         for (var i = 0; i < medias.length; i++) {
-            if (i !== indiceCentral && medias[i] > 0) {
-                somaRaizes += Math.sqrt(medias[i]);
+            if (i !== indiceCentral) {
+                // Legado não verifica se > 0, usa direto. √(0) = 0, não afeta soma.
+                // Mas √(negativo) = NaN, então protegemos contra isso.
+                somaRaizes += (medias[i] >= 0) ? Math.sqrt(medias[i]) : 0;
             }
         }
 
         return somaRaizes / (10 * Math.sqrt(mediaCentral));
     }
 
-    /**
-     * Fator de Velocidade - MÉTODO CONVENCIONAL
-     * Usa interpolação com coeficientes específicos
-     */
+    // ============================================================
+    // FATOR DE VELOCIDADE - MÉTODO CONVENCIONAL
+    // Equivale a: CalcularFatorVelocidadeConvencional() no legado
+    // ============================================================
+    // Usa interpolação com coeficientes de Tchebycheff modificados
+    // para 11 posições ajustadas ao método convencional de pitometria
+    // ============================================================
     function calcularFatorVelocidadeConvencional(medias) {
+        // m[0..10] = médias das posições 1 a 11
+        var m = medias;
         var deflexao = new Array(11);
 
-        deflexao[0] = (medias[1] - medias[0]) * 0.2565835 + medias[0];
-        deflexao[1] = (medias[1] - deflexao[0]) * 0.8166999 + medias[0];
-        deflexao[2] = (medias[2] - medias[1]) * 0.4644661 + medias[1];
-        deflexao[3] = (medias[3] - medias[2]) * 0.2613872 + medias[2];
-        deflexao[4] = (medias[4] - medias[3]) * 0.4188612 + medias[3];
-        deflexao[5] = medias[5];
-        deflexao[6] = (medias[6] - medias[7]) * 0.4188612 + medias[7];
-        deflexao[7] = (medias[7] - medias[8]) * 0.2613872 + medias[8];
-        deflexao[8] = (medias[8] - medias[9]) * 0.4644661 + medias[9];
-        deflexao[9] = (medias[9] - medias[10]) * 0.8166999 + medias[10];
-        deflexao[10] = (medias[9] - medias[10]) * 0.2565835 + medias[10];
+        // Interpolações exatas do legado (CalcularFatorVelocidadeConvencional)
+        deflexao[0] = (m[1] - m[0]) * 0.2565835 + m[0];
+        deflexao[1] = (m[1] - deflexao[0]) * 0.8166999 + m[0];
+        deflexao[2] = (m[2] - m[1]) * 0.4644661 + m[1];
+        deflexao[3] = (m[3] - m[2]) * 0.2613872 + m[2];
+        deflexao[4] = (m[4] - m[3]) * 0.4188612 + m[3];
+        deflexao[5] = m[5]; // centro - usado como referência
+        deflexao[6] = (m[6] - m[7]) * 0.4188612 + m[7];
+        deflexao[7] = (m[7] - m[8]) * 0.2613872 + m[8];
+        deflexao[8] = (m[8] - m[9]) * 0.4644661 + m[9];
+        deflexao[9] = (m[9] - m[10]) * 0.8166999 + m[10];
+        deflexao[10] = (m[9] - m[10]) * 0.2565835 + m[10];
 
-        var fv = 0;
+        if (deflexao[5] <= 0) return 0;
+
+        // Legado: soma √(deflexao[i]) para TODOS, depois subtrai √(deflexao[5])
+        // FV = (soma_total - √d[5]) / (10 × √d[5])
+        var somaTotal = 0;
         for (var i = 0; i < deflexao.length; i++) {
-            if (deflexao[i] > 0) fv += Math.sqrt(deflexao[i]);
+            if (deflexao[i] >= 0) {
+                somaTotal += Math.sqrt(deflexao[i]);
+            }
         }
 
-        if (deflexao[5] > 0) {
-            fv -= Math.sqrt(deflexao[5]);
-            fv = fv / (10 * Math.sqrt(deflexao[5]));
-        } else {
-            fv = 0;
-        }
+        somaTotal -= Math.sqrt(deflexao[5]); // remove o central
+        return somaTotal / (10 * Math.sqrt(deflexao[5]));
+    }
 
-        return fv;
+    // ============================================================
+    // CONSTANTES FÍSICAS - Busca no backend (mesmo banco do legado)
+    // ============================================================
+    // O sistema legado usa ConstanteFisicaTabelaTableAdapter para buscar
+    // no banco SQL Server. Nosso backend obterConstantesFisicas.php
+    // consulta a MESMA tabela CONSTANTE_FISICA_TABELA.
+    // ============================================================
+
+    /**
+     * Busca todas as constantes de uma vez no backend.
+     * Retorna Promise com { sef, kp, densidade }
+     * 
+     * Equivale no legado a:
+     *   - GetDataBySef(VL_DIAMETRO_NOMINAL) 
+     *   - GetDataByFiltro(projecao_tap, diametro_nominal, "Kp")
+     *   - GetDataByFiltro(temperatura, null, "Densidade")
+     */
+    function buscarConstantesFisicas(dn, pt, temperatura) {
+        return new Promise(function (resolve, reject) {
+            var url = 'bd/calculoKPC/obterConstantesFisicas.php?tipo=todos' +
+                '&diametro_nominal=' + encodeURIComponent(dn) +
+                '&projecao_tap=' + encodeURIComponent(pt) +
+                '&temperatura=' + encodeURIComponent(temperatura);
+
+            fetch(url)
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        resolve({
+                            sef: parseFloat(data.sef) || 0,
+                            kp: parseFloat(data.kp) || 0,
+                            densidade: parseFloat(data.densidade) || 0
+                        });
+                    } else {
+                        console.warn('Erro ao buscar constantes do backend, usando tabelas locais:', data.error);
+                        resolve(obterConstantesLocais(dn, pt, temperatura));
+                    }
+                })
+                .catch(function (err) {
+                    console.warn('Falha na requisição, usando tabelas locais:', err);
+                    resolve(obterConstantesLocais(dn, pt, temperatura));
+                });
+        });
     }
 
     /**
-     * Área Efetiva (Sef) - busca por Diâmetro Nominal (DN)
-     * Valores da tabela pitométrica padrão (em m²)
+     * Fallback local - só usado se o backend falhar.
+     * Replica as mesmas tabelas do backend PHP.
      */
-    function obterAreaEfetiva(dn) {
-        var tabelaSef = {
-            50: 0.001963,
-            75: 0.004418,
-            100: 0.007854,
-            150: 0.017671,
-            200: 0.031416,
-            250: 0.049087,
-            300: 0.070686,
-            350: 0.096211,
-            400: 0.125664,
-            450: 0.159043,
-            500: 0.196350,
-            600: 0.282743,
-            700: 0.384845,
-            800: 0.502655,
-            900: 0.636173,
-            1000: 0.785398,
-            1100: 0.950332,
-            1200: 1.130973
+    function obterConstantesLocais(dn, pt, temperatura) {
+        return {
+            sef: obterAreaEfetivaLocal(dn),
+            kp: obterCorrecaoProjecaoTapLocal(pt, dn),
+            densidade: obterDensidadeLocal(temperatura)
         };
-        
-        // Se o diâmetro exato existir na tabela, usa o valor da tabela
-        if (tabelaSef[dn] !== undefined) {
-            return tabelaSef[dn];
-        }
-        
-        // Senão, calcula usando fórmula: Sef = π × (DN/2000)²
+    }
+
+    // ============================================================
+    // TABELAS LOCAIS (fallback) - Mesmos valores do backend/banco
+    // ============================================================
+
+    /**
+     * Área Efetiva (Sef) - Equivale a GetDataBySef(DN) no legado
+     * Valores em m². Se não encontrar, calcula: Sef = π × (DN/2000)²
+     */
+    function obterAreaEfetivaLocal(dn) {
+        var tabelaSef = {
+            50: 0.001963, 75: 0.004418, 100: 0.007854, 150: 0.017671,
+            200: 0.031416, 250: 0.049087, 300: 0.070686, 350: 0.096211,
+            400: 0.125664, 450: 0.159043, 500: 0.196350, 600: 0.282743,
+            700: 0.384845, 800: 0.502655, 900: 0.636173, 1000: 0.785398,
+            1100: 0.950332, 1200: 1.130973
+        };
+        if (tabelaSef[dn] !== undefined) return tabelaSef[dn];
         return PI * Math.pow(dn / 2000, 2);
     }
 
     /**
-     * Correção de Projeção TAP (Kp)
-     * Se DN >= 301, retorna 1
+     * Correção Projeção TAP (Kp)
+     * Legado: se DN >= 301 retorna 1
+     * Senão: GetDataByFiltro(projecao_tap, diametro_nominal, "Kp")
      */
-    function obterCorrecaoProjecaoTap(pt, dn) {
+    function obterCorrecaoProjecaoTapLocal(pt, dn) {
         if (dn >= 301) return 1.0;
 
         var tabelaKp = {
-            25: {
-                50: 0.98,
-                75: 0.99,
-                100: 0.995,
-                150: 0.998,
-                200: 0.999,
-                250: 1.0,
-                300: 1.0
-            },
-            30: {
-                50: 0.97,
-                75: 0.98,
-                100: 0.99,
-                150: 0.995,
-                200: 0.998,
-                250: 0.999,
-                300: 1.0
-            },
-            35: {
-                50: 0.96,
-                75: 0.97,
-                100: 0.98,
-                150: 0.99,
-                200: 0.995,
-                250: 0.998,
-                300: 1.0
-            },
-            40: {
-                50: 0.95,
-                75: 0.96,
-                100: 0.97,
-                150: 0.98,
-                200: 0.99,
-                250: 0.995,
-                300: 1.0
-            },
-            45: {
-                50: 0.94,
-                75: 0.95,
-                100: 0.96,
-                150: 0.97,
-                200: 0.98,
-                250: 0.99,
-                300: 1.0
-            },
-            50: {
-                50: 0.93,
-                75: 0.94,
-                100: 0.95,
-                150: 0.96,
-                200: 0.97,
-                250: 0.98,
-                300: 1.0
-            }
+            25: { 50: 0.98, 75: 0.99, 100: 0.995, 150: 0.998, 200: 0.999, 250: 1.0, 300: 1.0 },
+            30: { 50: 0.97, 75: 0.98, 100: 0.99, 150: 0.995, 200: 0.998, 250: 0.999, 300: 1.0 },
+            35: { 50: 0.96, 75: 0.97, 100: 0.98, 150: 0.99, 200: 0.995, 250: 0.998, 300: 1.0 },
+            40: { 50: 0.95, 75: 0.96, 100: 0.97, 150: 0.98, 200: 0.99, 250: 0.995, 300: 1.0 },
+            45: { 50: 0.94, 75: 0.95, 100: 0.96, 150: 0.97, 200: 0.98, 250: 0.99, 300: 1.0 },
+            50: { 50: 0.93, 75: 0.94, 100: 0.95, 150: 0.96, 200: 0.97, 250: 0.98, 300: 1.0 }
         };
 
-        var ptProxima = 25,
-            menorDif = Math.abs(pt - 25);
+        // Encontra projeção mais próxima
+        var ptProxima = 25, menorDif = Math.abs(pt - 25);
         for (var p in tabelaKp) {
             var dif = Math.abs(pt - parseInt(p));
-            if (dif < menorDif) {
-                menorDif = dif;
-                ptProxima = parseInt(p);
-            }
+            if (dif < menorDif) { menorDif = dif; ptProxima = parseInt(p); }
         }
 
         if (tabelaKp[ptProxima]) {
-            var dnProximo = 50;
-            menorDif = Math.abs(dn - 50);
+            var dnProximo = 50, menorDifDn = Math.abs(dn - 50);
             for (var d in tabelaKp[ptProxima]) {
-                var dif = Math.abs(dn - parseInt(d));
-                if (dif < menorDif) {
-                    menorDif = dif;
-                    dnProximo = parseInt(d);
-                }
+                var difDn = Math.abs(dn - parseInt(d));
+                if (difDn < menorDifDn) { menorDifDn = difDn; dnProximo = parseInt(d); }
             }
             return tabelaKp[ptProxima][dnProximo];
         }
-
         return 1.0;
     }
 
     /**
      * Densidade da água por temperatura
+     * 
+     * IMPORTANTE: O banco legado armazena densidade como valor adimensional (~0.997)
+     * ou em kg/m³ (~997). A fórmula legada usa o valor direto do banco:
+     *   Velocidade = (deflexão/1000)^0.4931 × 3.8078 × Densidade
+     * 
+     * Se o banco retorna ~0.997, usamos direto.
+     * Se o banco retorna ~997, o backend PHP já normaliza.
+     * Esta tabela local armazena em kg/m³ e será dividida por 1000 no cálculo.
      */
-    function obterDensidade(temp) {
+    function obterDensidadeLocal(temp) {
         var tabelaDensidade = {
-            0: 999.84,
-            5: 999.96,
-            10: 999.70,
-            15: 999.10,
-            20: 998.20,
-            25: 997.05,
-            30: 995.65,
-            35: 994.03,
-            40: 992.22,
-            45: 990.21,
-            50: 988.03
+            0: 999.84, 5: 999.96, 10: 999.70, 15: 999.10, 20: 998.20,
+            25: 997.05, 30: 995.65, 35: 994.03, 40: 992.22, 45: 990.21, 50: 988.03
         };
 
         if (tabelaDensidade[temp]) return tabelaDensidade[temp];
 
-        var temps = Object.keys(tabelaDensidade).map(Number).sort(function(a, b) {
-            return a - b;
-        });
-        var tempInf = temps[0],
-            tempSup = temps[temps.length - 1];
+        // Interpolação linear (mesmo comportamento do legado)
+        var temps = Object.keys(tabelaDensidade).map(Number).sort(function (a, b) { return a - b; });
+        var tempInf = temps[0], tempSup = temps[temps.length - 1];
 
         for (var i = 0; i < temps.length; i++) {
-            var t = temps[i];
-            if (t <= temp) tempInf = t;
-            if (t >= temp) {
-                tempSup = t;
-                break;
-            }
+            if (temps[i] <= temp) tempInf = temps[i];
+            if (temps[i] >= temp) { tempSup = temps[i]; break; }
         }
 
         if (tempInf !== tempSup) {
             var fator = (temp - tempInf) / (tempSup - tempInf);
             return tabelaDensidade[tempInf] + fator * (tabelaDensidade[tempSup] - tabelaDensidade[tempInf]);
         }
-
-        return 997.05;
+        return tabelaDensidade[tempInf] || 997.05;
     }
 
-    /**
-     * FUNÇÃO PRINCIPAL DE CÁLCULO DO KPC
-     * Fórmula: KPC = FV × CD × CP × AE
-     */
+    // ============================================================
+    // FUNÇÃO PRINCIPAL DE CÁLCULO DO KPC
+    // ============================================================
+    // Equivale a: CalcularKpc() em CalculoPitometria.cs
+    //
+    // Fórmula legada:
+    //   1. Remove linhas de média (CD_ORDEM_LEITURA = 21)
+    //   2. FV = CalcularFatorVelocidade() ou CalcularFatorVelocidadeConvencional()
+    //   3. CD = (DR / DN)²
+    //   4. CP = CalcularProjecaoTap() → se DN >= 301: 1, senão busca tabela "Kp"
+    //   5. AE = CalcularAreaEfetiva() → busca tabela "Sef" por DN
+    //   6. Se CP == 0 → CP = 1
+    //   7. Se AE == 0 → AE = 1   ← CORREÇÃO: faltava no código anterior
+    //   8. KPC = FV × CD × CP × AE
+    //   9. MediaDeflexão = média de VL_DEFLEXAO_MEDIDA onde CD_POSICAO_LEITURA = 6
+    //  10. Densidade = tabela "Densidade" por temperatura
+    //  11. Velocidade = (MediaDeflexão / 1000)^0.4931 × 3.8078 × Densidade
+    //  12. Vazão (L/s) = KPC × Velocidade × 1000
+    // ============================================================
+
     function calcular() {
-        // 1. Calcula as médias de cada ponto
+        // 1. Calcula as médias de cada ponto (equivale a CalcularMediasLeituraKpc)
         for (var p = 1; p <= 11; p++) calcularMediaPonto(p);
 
-        // 2. Obtém os parâmetros
+        // 2. Obtém os parâmetros da tela
         var dn = parseFloat(document.getElementById('vlDiametroNominal').value) || 0;
         var dr = parseFloat(document.getElementById('vlDiametroReal').value) || 0;
         var pt = parseFloat(document.getElementById('vlProjecaoTap').value) || 0;
         var temperatura = parseFloat(document.getElementById('vlTemperatura').value) || 25;
         var metodo = parseInt(document.getElementById('selectMetodo').value) || 1;
 
+        // Validações do legado
         if (dn <= 0 || dr <= 0) {
-            alert('Preencha os parâmetros do cálculo (Diâmetro Nominal e Real)');
+            showToast('Preencha os parâmetros do cálculo (Diâmetro Nominal e Real)', 'erro');
+            return;
+        }
+
+        // Legado: "Favor preencher o campo Diametro com um valor maior do que 50 mm"
+        if (dn < 50) {
+            showToast('O Diâmetro Nominal deve ser maior ou igual a 50 mm', 'erro');
             return;
         }
 
         // 3. Obtém as médias das deflexões
         var medias = obterMediasDeflexoes();
 
-        if (!medias.some(function(m) {
-                return m > 0;
-            })) {
-            alert('Preencha ao menos uma leitura de deflexão');
+        if (!medias.some(function (m) { return m > 0; })) {
+            showToast('Preencha ao menos uma leitura de deflexão', 'erro');
             return;
         }
 
-        // 4. Fator de Velocidade
-        var fv = (metodo === 2) ? calcularFatorVelocidadeConvencional(medias) : calcularFatorVelocidadePadrao(medias);
+        // 4. Fator de Velocidade (depende do método)
+        //    Legado: if(ID_METODO==2) CalcularFatorVelocidadeConvencional else CalcularFatorVelocidade
+        var fv = (metodo === 2)
+            ? calcularFatorVelocidadeConvencional(medias)
+            : calcularFatorVelocidadePadrao(medias);
 
-        // 5. Correção de Diâmetro = (DR / DN)² (AO QUADRADO!)
+        // 5. Correção de Diâmetro = (DR / DN)²
+        //    Legado: Math.Pow(VL_DIAMETRO_REAL / VL_DIAMETRO_NOMINAL, 2)
         var cd = Math.pow(dr / dn, 2);
 
-        // 6. Área Efetiva - busca na tabela por Diâmetro Nominal (DN)
-        var ae = obterAreaEfetiva(dn);
+        // 6-8. Busca constantes no backend (mesma tabela CONSTANTE_FISICA_TABELA do legado)
+        buscarConstantesFisicas(dn, pt, temperatura).then(function (constantes) {
+            var ae = constantes.sef;        // Área Efetiva
+            var cp = constantes.kp;         // Correção Projeção TAP
+            var densidadeBruta = constantes.densidade; // Densidade
 
-        // 7. Correção Projeção TAP
-        var cp = obterCorrecaoProjecaoTap(pt, dn);
-        if (cp === 0) cp = 1;
+            // Legado: se CP == 0 → CP = 1
+            if (cp === 0) cp = 1;
 
-        // 8. Densidade
-        var densidade = obterDensidade(temperatura);
+            // Legado: se AE == 0 → AE = 1  ← CORREÇÃO IMPORTANTE
+            if (ae === 0) ae = 1;
 
-        // 9. KPC = FV × CD × CP × AE
-        var kpc = fv * cd * cp * ae;
+            // 9. KPC = FV × CD × CP × AE
+            var kpc = fv * cd * cp * ae;
 
-        // 10. Velocidade e Vazão
-        var mediaCentral = medias[5];
-        var velocidade = 0;
-        if (mediaCentral > 0 && densidade > 0) {
-            velocidade = Math.pow(mediaCentral / 1000, 0.4931) * 3.8078 * (densidade / 1000);
-        }
-        var vazao = kpc * velocidade * 1000;
+            // 10. Velocidade e Vazão
+            //     Legado usa média do ponto central (CD_POSICAO_LEITURA = 6 → índice 5)
+            var mediaCentral = medias[5]; // posição 6 = centro da tubulação
 
-        // 11. Atualiza campos
-        document.getElementById('vlFatorVelocidade').value = fv.toFixed(10);
-        document.getElementById('vlCorrecaoDiametro').value = cd.toFixed(6);
-        document.getElementById('vlCorrecaoProjecaoTap').value = cp.toFixed(2);
-        document.getElementById('vlAreaEfetiva').value = ae.toFixed(6);
-        document.getElementById('vlKPC').value = kpc.toFixed(10);
-        document.getElementById('vlVazao').value = vazao.toFixed(2);
+            // Legado:
+            //   Densidade vem do banco (GetDataByFiltro com "Densidade")
+            //   Velocidade = (MediaDeflexao / 1000)^0.4931 × 3.8078 × Densidade
+            //
+            // A densidade do banco legado é adimensional (~0.997).
+            // Se o backend retorna valor do banco → usar direto.
+            // Se usa fallback local (kg/m³ ~997) → dividir por 1000.
+            var densidade = densidadeBruta;
+            if (densidade > 10) {
+                // Valor veio em kg/m³ (tabela local), converter para adimensional
+                densidade = densidade / 1000;
+            }
+            // Se veio do banco (~0.997), usa direto
 
-        console.log('Cálculo KPC:', {
-            metodo: metodo === 1 ? 'Padrão' : 'Convencional',
-            dn: dn,
-            dr: dr,
-            pt: pt,
-            fv: fv,
-            cd: cd,
-            cp: cp,
-            ae: ae,
-            kpc: kpc,
-            vazao: vazao
+            var velocidade = 0;
+            if (mediaCentral > 0 && densidade > 0) {
+                // Fórmula exata do legado:
+                // Velocidade = (MediaDeflexao / 1000)^0.4931 × 3.8078 × Densidade
+                velocidade = Math.pow(mediaCentral / 1000, 0.4931) * 3.8078 * densidade;
+            }
+
+            // Legado: VL_VAZAO = KPC × Velocidade × 1000 (converte m³/s → L/s)
+            var vazao = kpc * velocidade * 1000;
+
+            // 11. Atualiza campos na tela
+            document.getElementById('vlFatorVelocidade').value = fv.toFixed(10);
+            document.getElementById('vlCorrecaoDiametro').value = cd.toFixed(6);
+            document.getElementById('vlCorrecaoProjecaoTap').value = cp.toFixed(2);
+            document.getElementById('vlAreaEfetiva').value = ae.toFixed(6);
+            document.getElementById('vlKPC').value = kpc.toFixed(10);
+            document.getElementById('vlVazao').value = vazao.toFixed(2);
+
+            console.log('=== Cálculo KPC (alinhado ao legado) ===', {
+                metodo: metodo === 1 ? 'Digital (Log-Tchebycheff)' : 'Convencional',
+                dn: dn, dr: dr, pt: pt, temperatura: temperatura,
+                fv: fv, cd: cd, cp: cp, ae: ae,
+                kpc: kpc,
+                mediaCentral: mediaCentral,
+                densidadeBruta: densidadeBruta,
+                densidadeUsada: densidade,
+                velocidade: velocidade,
+                vazao: vazao
+            });
         });
     }
 
@@ -2023,7 +2098,7 @@ if ($isEdicao) {
         }
         document.body.style.overflow = 'hidden';
 
-        setTimeout(function() {
+        setTimeout(function () {
             criarGraficoVelocidade(dadosGrafico);
         }, 150);
     }
@@ -2064,10 +2139,10 @@ if ($isEdicao) {
             return;
         }
 
-        var maxPosicao = Math.max.apply(null, dadosGrafico.map(function(d) {
+        var maxPosicao = Math.max.apply(null, dadosGrafico.map(function (d) {
             return d.posicao;
         }));
-        var maxDeflexao = Math.max.apply(null, dadosGrafico.map(function(d) {
+        var maxDeflexao = Math.max.apply(null, dadosGrafico.map(function (d) {
             return d.deflexao;
         }));
         var limiteY = Math.ceil(maxPosicao / 10) * 10 + 10;
@@ -2078,11 +2153,11 @@ if ($isEdicao) {
         }
 
         // Ordenar por posição para exibição correta da curva
-        dadosGrafico.sort(function(a, b) {
+        dadosGrafico.sort(function (a, b) {
             return a.posicao - b.posicao;
         });
 
-        var chartData = dadosGrafico.map(function(d) {
+        var chartData = dadosGrafico.map(function (d) {
             return {
                 x: d.deflexao,
                 y: d.posicao,
@@ -2125,7 +2200,7 @@ if ($isEdicao) {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 var data = context.raw;
                                 return 'Ponto: ' + data.ponto + ' | Posição: ' + data.y.toFixed(2) + ' mm | Deflexão: ' + data.x.toFixed(4) + ' mm';
                             }
@@ -2141,7 +2216,7 @@ if ($isEdicao) {
                             size: 10,
                             weight: 'bold'
                         },
-                        formatter: function(value) {
+                        formatter: function (value) {
                             return value.y.toFixed(0) + ': ' + value.x.toFixed(4);
                         },
                         backgroundColor: 'rgba(255, 255, 255, 0.8)',
@@ -2192,7 +2267,7 @@ if ($isEdicao) {
         console.log('Gráfico criado com sucesso');
     }
 
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             var modal = document.getElementById('modalGraficoOverlay');
             if (modal && modal.classList.contains('ativo')) {
@@ -2205,7 +2280,7 @@ if ($isEdicao) {
     // SUBMIT DO FORMULÁRIO
     // ============================================================
 
-    document.getElementById('formCalculoKPC').addEventListener('submit', function(e) {
+    document.getElementById('formCalculoKPC').addEventListener('submit', function (e) {
         e.preventDefault();
 
         var cdPonto = document.getElementById('cdPontoMedicao').value;
@@ -2280,26 +2355,26 @@ if ($isEdicao) {
         };
 
         fetch('bd/calculoKPC/salvarCalculoKPC.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(dados)
-            })
-            .then(function(r) {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dados)
+        })
+            .then(function (r) {
                 return r.json();
             })
-            .then(function(data) {
+            .then(function (data) {
                 if (data.success) {
                     showToast('Cálculo salvo com sucesso!', 'sucesso');
-                    setTimeout(function() {
+                    setTimeout(function () {
                         window.location.href = 'calculoKPC.php';
                     }, 1500);
                 } else {
                     showToast(data.message || 'Erro ao salvar', 'erro');
                 }
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 console.error(err);
                 showToast('Erro ao salvar', 'erro');
             });
@@ -2316,12 +2391,12 @@ if ($isEdicao) {
         toast.className = 'toast toast-' + tipo;
         toast.innerHTML = '<span>' + msg + '</span>';
         container.appendChild(toast);
-        setTimeout(function() {
+        setTimeout(function () {
             toast.classList.add('show');
         }, 10);
-        setTimeout(function() {
+        setTimeout(function () {
             toast.classList.remove('show');
-            setTimeout(function() {
+            setTimeout(function () {
                 toast.remove();
             }, 300);
         }, 3000);
@@ -2331,7 +2406,7 @@ if ($isEdicao) {
     // INICIALIZAÇÃO
     // ============================================================
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         initAutocomplete();
         toggleCampoConvencional();
 
@@ -2343,12 +2418,12 @@ if ($isEdicao) {
             });
         }
 
-        document.getElementById('selectUnidade').addEventListener('change', function() {
+        document.getElementById('selectUnidade').addEventListener('change', function () {
             carregarLocalidades(this.value);
             limparPontoMedicao();
         });
 
-        document.getElementById('selectLocalidade').addEventListener('change', function() {
+        document.getElementById('selectLocalidade').addEventListener('change', function () {
             limparPontoMedicao();
         });
     });

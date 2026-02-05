@@ -1049,10 +1049,10 @@ $tiposCalculo = [
             <ion-icon name="git-network-outline"></ion-icon>
             Sistema de Água
         </button>
-        <button type="button" class="tab-btn" data-tab="eta">
+        <!-- <button type="button" class="tab-btn" data-tab="eta">
             <ion-icon name="flask-outline"></ion-icon>
             ETA
-        </button>
+        </button> -->
     </div>
 
     <!-- ========================================
