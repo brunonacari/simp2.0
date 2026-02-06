@@ -553,21 +553,67 @@ $letrasTipoMedidor = [
                 <!-- Formulário de validação para Nível Reservatório (tipo 6) -->
                 <div class="validacao-form" id="validacaoFormNivel" style="display: none;">
                     <h4><ion-icon name="water-outline"></ion-icon> Atualizar dados de nível</h4>
-                    <div class="validacao-form-row">
-                        <div class="validacao-form-group">
-                            <label>Horas Selecionadas</label>
-                            <input type="text" id="validacaoHoraSelecionadaNivel" disabled>
-                        </div>
-                        <div class="validacao-form-group">
-                            <label>Min >= 100 Atual</label>
-                            <input type="text" id="validacaoExtravasouAtual" disabled>
-                        </div>
-                        <div class="validacao-form-group">
-                            <label>Minutos >= 100 *</label>
-                            <input type="number" id="validacaoMinutosExtravasou" min="0" max="60" step="1"
-                                placeholder="0 a 60" <?= !$podeEditar ? 'disabled' : '' ?>>
+
+                    <!-- Tabs de modo -->
+                    <div class="validacao-nivel-tabs">
+                        <button type="button" class="validacao-nivel-tab active" data-modo="manual"
+                            onclick="alternarModoNivel('manual')" <?= !$podeEditar ? 'disabled' : '' ?>>
+                            <ion-icon name="create-outline"></ion-icon> Manual
+                        </button>
+                        <button type="button" class="validacao-nivel-tab" data-modo="intervalo"
+                            onclick="alternarModoNivel('intervalo')" <?= !$podeEditar ? 'disabled' : '' ?>>
+                            <ion-icon name="time-outline"></ion-icon> Descarte por Intervalo
+                        </button>
+                    </div>
+
+                    <!-- Modo Manual (existente) -->
+                    <div class="validacao-nivel-modo" id="modoManualNivel">
+                        <div class="validacao-form-row">
+                            <div class="validacao-form-group">
+                                <label>Horas Selecionadas</label>
+                                <input type="text" id="validacaoHoraSelecionadaNivel" disabled>
+                            </div>
+                            <div class="validacao-form-group">
+                                <label>Min >= 100 Atual</label>
+                                <input type="text" id="validacaoExtravasouAtual" disabled>
+                            </div>
+                            <div class="validacao-form-group">
+                                <label>Minutos >= 100 *</label>
+                                <input type="number" id="validacaoMinutosExtravasou" min="0" max="60" step="1"
+                                    placeholder="0 a 60" <?= !$podeEditar ? 'disabled' : '' ?>>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Modo Intervalo (novo) -->
+                    <div class="validacao-nivel-modo" id="modoIntervaloNivel" style="display: none;">
+                        <div class="validacao-form-row">
+                            <div class="validacao-form-group">
+                                <label>Início da Falha *</label>
+                                <input type="time" id="intervaloHoraInicio" <?= !$podeEditar ? 'disabled' : '' ?>
+                                    onchange="calcularDistribuicaoIntervalo()">
+                            </div>
+                            <div class="validacao-form-group">
+                                <label>Fim da Falha *</label>
+                                <input type="time" id="intervaloHoraFim" <?= !$podeEditar ? 'disabled' : '' ?>
+                                    onchange="calcularDistribuicaoIntervalo()">
+                            </div>
+                            <div class="validacao-form-group">
+                                <label>Total de Minutos</label>
+                                <input type="text" id="intervaloTotalMinutos" disabled>
+                            </div>
+                        </div>
+                        <!-- Preview da distribuição -->
+                        <div id="intervaloPreview" style="display: none; margin-top: 10px;">
+                            <label
+                                style="font-weight: 600; font-size: 12px; color: #64748b; margin-bottom: 6px; display: block;">
+                                <ion-icon name="list-outline"></ion-icon> Distribuição por hora:
+                            </label>
+                            <div id="intervaloPreviewConteudo" class="intervalo-preview-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Motivo e Observação (comum aos dois modos) -->
                     <div class="validacao-form-row" style="margin-top: 12px;">
                         <div class="validacao-form-group">
                             <label>Motivo *</label>
@@ -2460,6 +2506,16 @@ $letrasTipoMedidor = [
         ocultarControleHistoriador();
         habilitarEdicaoValidacao(); // Restaurar estado de edição
 
+        // Resetar modo intervalo
+        window.distribuicaoIntervalo = null;
+        const modoIntervaloEl = document.getElementById('modoIntervaloNivel');
+        if (modoIntervaloEl) modoIntervaloEl.style.display = 'none';
+        const modoManualEl = document.getElementById('modoManualNivel');
+        if (modoManualEl) modoManualEl.style.display = 'block';
+        document.querySelectorAll('.validacao-nivel-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.modo === 'manual');
+        });
+
         // Destruir gráfico
         if (validacaoGrafico) {
             validacaoGrafico.destroy();
@@ -3755,15 +3811,24 @@ $letrasTipoMedidor = [
         }
 
         if (isTipoNivel) {
-            // Validação para tipo 6 (Nível Reservatório)
-            const minutosExtravasou = document.getElementById('validacaoMinutosExtravasou').value;
             const motivo = document.querySelector('input[name="validacaoMotivo"]:checked');
+            const modoIntervalo = document.getElementById('modoIntervaloNivel')?.style.display !== 'none';
 
-            btn.disabled = minutosExtravasou === '' ||
-                isNaN(parseInt(minutosExtravasou)) ||
-                parseInt(minutosExtravasou) < 0 ||
-                parseInt(minutosExtravasou) > 60 ||
-                !motivo;
+            if (modoIntervalo) {
+                // Modo Intervalo: precisa de hora início, hora fim e motivo
+                const horaInicio = document.getElementById('intervaloHoraInicio').value;
+                const horaFim = document.getElementById('intervaloHoraFim').value;
+                btn.disabled = !horaInicio || !horaFim || !motivo || !window.distribuicaoIntervalo || window.distribuicaoIntervalo.length === 0;
+            } else {
+                // Modo Manual: lógica original
+                const minutosExtravasou = document.getElementById('validacaoMinutosExtravasou').value;
+                btn.disabled = validacaoHorasSelecionadas.length === 0 ||
+                    minutosExtravasou === '' ||
+                    isNaN(parseInt(minutosExtravasou)) ||
+                    parseInt(minutosExtravasou) < 0 ||
+                    parseInt(minutosExtravasou) > 60 ||
+                    !motivo;
+            }
         } else {
             // Validação padrão
             const novoValor = document.getElementById('validacaoNovoValor').value;
@@ -3774,6 +3839,8 @@ $letrasTipoMedidor = [
     // Listeners para habilitar/desabilitar botão
     document.getElementById('validacaoNovoValor')?.addEventListener('input', atualizarBotaoValidar);
     document.getElementById('validacaoMinutosExtravasou')?.addEventListener('input', atualizarBotaoValidar);
+    document.getElementById('intervaloHoraInicio')?.addEventListener('change', atualizarBotaoValidar);
+    document.getElementById('intervaloHoraFim')?.addEventListener('change', atualizarBotaoValidar);
     document.querySelectorAll('input[name="validacaoMotivo"]').forEach(radio => {
         radio.addEventListener('change', atualizarBotaoValidar);
     });
@@ -3799,13 +3866,7 @@ $letrasTipoMedidor = [
 
         if (isTipoNivel) {
             // Validação para tipo 6 (Nível Reservatório)
-            const minutosExtravasou = parseInt(document.getElementById('validacaoMinutosExtravasou').value);
             const motivoEl = document.querySelector('input[name="validacaoMotivo"]:checked');
-
-            if (isNaN(minutosExtravasou) || minutosExtravasou < 0 || minutosExtravasou > 60) {
-                showToast('Minutos >= 100 deve ser entre 0 e 60', 'erro');
-                return;
-            }
 
             if (!motivoEl) {
                 showToast('Selecione o motivo (Falha ou Extravasou)', 'erro');
@@ -3815,33 +3876,64 @@ $letrasTipoMedidor = [
             const motivo = parseInt(motivoEl.value);
             const motivoTexto = motivo === 1 ? 'Falha' : 'Extravasou';
             const observacao = document.getElementById('validacaoObservacaoNivel').value.trim();
+            const modoIntervalo = document.getElementById('modoIntervaloNivel')?.style.display !== 'none';
 
-            payload.minutosExtravasou = minutosExtravasou;
             payload.motivo = motivo;
             payload.observacao = observacao;
 
-            // Confirmação
-            const totalNovosRegistros = validacaoHorasSelecionadas.length * 60;
-            if (!confirm(`Confirma a validação?\n\nHoras: ${horasTexto}\nMinutos >= 100: ${minutosExtravasou} por hora\nMotivo: ${motivoTexto}\n\nEsta ação irá:\n- Descartar registros existentes nas horas selecionadas\n- Criar ${totalNovosRegistros} novos registros (60 por hora) com Nível=100%\n- Distribuir NR_EXTRAVASOU=1 aleatoriamente em ${minutosExtravasou} registros por hora`)) {
-                return;
-            }
-        } else {
-            // Validação padrão
-            const novoValor = parseFloat(document.getElementById('validacaoNovoValor').value);
-            if (isNaN(novoValor)) {
-                showToast('Informe um valor válido', 'erro');
-                return;
-            }
+            if (modoIntervalo) {
+                // Modo Intervalo: usar distribuição calculada
+                if (!window.distribuicaoIntervalo || window.distribuicaoIntervalo.length === 0) {
+                    showToast('Informe o intervalo de início e fim', 'erro');
+                    return;
+                }
 
-            const observacao = document.getElementById('validacaoObservacao').value.trim();
+                const horaInicio = document.getElementById('intervaloHoraInicio').value;
+                const horaFim = document.getElementById('intervaloHoraFim').value;
 
-            payload.novoValor = novoValor;
-            payload.observacao = observacao;
+                // Montar distribuição por hora para o backend
+                const minutosDistribuidos = {};
+                window.distribuicaoIntervalo.forEach(d => {
+                    minutosDistribuidos[d.hora] = {
+                        minutos: d.minutos,
+                        minutoInicio: d.minutoInicio,
+                        minutoFim: d.minutoFim
+                    };
+                });
 
-            // Confirmação
-            const totalRegistros = validacaoHorasSelecionadas.length * 60;
-            if (!confirm(`Confirma a validação?\n\nHoras: ${horasTexto}\nNovo valor: ${formatarNumero(novoValor)} ${validacaoUnidadeAtual}\n\nEsta ação irá:\n- Inativar registros existentes nas horas selecionadas\n- Criar ${totalRegistros} novos registros (60 por hora)`)) {
-                return;
+                // Sobrescrever horas com as do intervalo
+                payload.horas = window.distribuicaoIntervalo.map(d => d.hora);
+                payload.modoIntervalo = true;
+                payload.minutosDistribuidos = minutosDistribuidos;
+                payload.intervaloInicio = horaInicio;
+                payload.intervaloFim = horaFim;
+
+                // Montar texto de confirmação
+                const totalMin = window.distribuicaoIntervalo.reduce((acc, d) => acc + d.minutos, 0);
+                const totalNovosRegistros = payload.horas.length * 60;
+                let detalheDistribuicao = window.distribuicaoIntervalo.map(d => {
+                    const hFmt = String(d.hora).padStart(2, '0');
+                    return `  ${hFmt}:00 → ${d.minutos} min (${hFmt}:${String(d.minutoInicio).padStart(2, '0')} a ${hFmt}:${String(d.minutoFim).padStart(2, '0')})`;
+                }).join('\n');
+
+                if (!confirm(`Confirma o descarte por intervalo?\n\nPeríodo: ${horaInicio} às ${horaFim} (${totalMin} minutos)\nMotivo: ${motivoTexto}\n\nDistribuição:\n${detalheDistribuicao}\n\nEsta ação irá:\n- Descartar registros existentes nas horas afetadas\n- Criar ${totalNovosRegistros} novos registros (60 por hora) com Nível=100%\n- Marcar NR_EXTRAVASOU=1 nos minutos exatos do intervalo`)) {
+                    return;
+                }
+            } else {
+                // Modo Manual: lógica original
+                const minutosExtravasou = parseInt(document.getElementById('validacaoMinutosExtravasou').value);
+
+                if (isNaN(minutosExtravasou) || minutosExtravasou < 0 || minutosExtravasou > 60) {
+                    showToast('Minutos >= 100 deve ser entre 0 e 60', 'erro');
+                    return;
+                }
+
+                payload.minutosExtravasou = minutosExtravasou;
+
+                const totalNovosRegistros = validacaoHorasSelecionadas.length * 60;
+                if (!confirm(`Confirma a validação?\n\nHoras: ${horasTexto}\nMinutos >= 100: ${minutosExtravasou} por hora\nMotivo: ${motivoTexto}\n\nEsta ação irá:\n- Descartar registros existentes nas horas selecionadas\n- Criar ${totalNovosRegistros} novos registros (60 por hora) com Nível=100%\n- Distribuir NR_EXTRAVASOU=1 aleatoriamente em ${minutosExtravasou} registros por hora`)) {
+                    return;
+                }
             }
         }
 
@@ -3873,10 +3965,26 @@ $letrasTipoMedidor = [
                     document.getElementById('validacaoFormNivel').style.display = 'none';
 
                     // Limpar campos
+                    // Limpar campos
                     if (isTipoNivel) {
                         document.getElementById('validacaoMinutosExtravasou').value = '';
                         document.getElementById('validacaoObservacaoNivel').value = '';
                         document.querySelectorAll('input[name="validacaoMotivo"]').forEach(r => r.checked = false);
+
+                        // Limpar campos do modo intervalo
+                        document.getElementById('intervaloHoraInicio').value = '';
+                        document.getElementById('intervaloHoraFim').value = '';
+                        document.getElementById('intervaloTotalMinutos').value = '';
+                        document.getElementById('intervaloPreview').style.display = 'none';
+                        document.getElementById('intervaloPreviewConteudo').innerHTML = '';
+                        window.distribuicaoIntervalo = null;
+
+                        // Voltar para aba Manual
+                        document.getElementById('modoIntervaloNivel').style.display = 'none';
+                        document.getElementById('modoManualNivel').style.display = 'block';
+                        document.querySelectorAll('.validacao-nivel-tab').forEach(tab => {
+                            tab.classList.toggle('active', tab.dataset.modo === 'manual');
+                        });
                     } else {
                         document.getElementById('validacaoNovoValor').value = '';
                         document.getElementById('validacaoObservacao').value = '';
@@ -3901,7 +4009,175 @@ $letrasTipoMedidor = [
             });
     }
 
-    // ==================== ANàâLISE COM IA ====================
+    // ==================== DESCARTE POR INTERVALO (NÍVEL RESERVATÓRIO) ====================
+
+    // Armazena a distribuição calculada para o intervalo
+    window.distribuicaoIntervalo = null;
+
+    /**
+     * Alterna entre modo Manual e modo Intervalo no formulário de nível
+     */
+    function alternarModoNivel(modo) {
+        const modoManual = document.getElementById('modoManualNivel');
+        const modoIntervalo = document.getElementById('modoIntervaloNivel');
+        const tabs = document.querySelectorAll('.validacao-nivel-tab');
+
+        tabs.forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.modo === modo);
+        });
+
+        if (modo === 'intervalo') {
+            modoManual.style.display = 'none';
+            modoIntervalo.style.display = 'block';
+            // Limpar seleção manual de horas
+            // (o intervalo vai auto-selecionar)
+        } else {
+            modoManual.style.display = 'block';
+            modoIntervalo.style.display = 'none';
+            window.distribuicaoIntervalo = null;
+            document.getElementById('intervaloHoraInicio').value = '';
+            document.getElementById('intervaloHoraFim').value = '';
+            document.getElementById('intervaloTotalMinutos').value = '';
+            document.getElementById('intervaloPreview').style.display = 'none';
+        }
+
+        atualizarBotaoValidar();
+    }
+
+    /**
+     * Calcula a distribuição de minutos por hora com base no intervalo informado
+     * 
+     * Exemplo: 10:30 às 11:30
+     *   - Hora 10: minuto 30 ao 59 = 30 minutos
+     *   - Hora 11: minuto 0 ao 29 = 30 minutos
+     */
+    function calcularDistribuicaoIntervalo() {
+        const inputInicio = document.getElementById('intervaloHoraInicio').value;
+        const inputFim = document.getElementById('intervaloHoraFim').value;
+        const previewContainer = document.getElementById('intervaloPreview');
+        const previewConteudo = document.getElementById('intervaloPreviewConteudo');
+        const totalDisplay = document.getElementById('intervaloTotalMinutos');
+
+        // Limpar estado anterior
+        window.distribuicaoIntervalo = null;
+        previewContainer.style.display = 'none';
+        totalDisplay.value = '';
+
+        if (!inputInicio || !inputFim) {
+            atualizarBotaoValidar();
+            return;
+        }
+
+        // Parsear horas
+        const [horaIni, minIni] = inputInicio.split(':').map(Number);
+        const [horaFim, minFim] = inputFim.split(':').map(Number);
+
+        // Converter para minutos absolutos do dia
+        const inicioMinutos = horaIni * 60 + minIni;
+        const fimMinutos = horaFim * 60 + minFim;
+
+        if (fimMinutos <= inicioMinutos) {
+            totalDisplay.value = 'Fim deve ser após início';
+            showToast('O horário de fim deve ser posterior ao de início', 'aviso');
+            atualizarBotaoValidar();
+            return;
+        }
+
+        const totalMin = fimMinutos - inicioMinutos;
+        totalDisplay.value = totalMin + ' min';
+
+        // Calcular distribuição por hora
+        const distribuicao = [];
+
+        for (let h = horaIni; h <= horaFim && h <= 23; h++) {
+            // Início dentro desta hora
+            let minInicioDentro = (h === horaIni) ? minIni : 0;
+            // Fim dentro desta hora
+            let minFimDentro = (h === horaFim) ? minFim : 60;
+
+            // Se horaFim com minFim=0, essa hora não tem minutos
+            if (h === horaFim && minFim === 0) {
+                continue;
+            }
+
+            const minutosNestaHora = minFimDentro - minInicioDentro;
+
+            if (minutosNestaHora > 0) {
+                distribuicao.push({
+                    hora: h,
+                    minutos: minutosNestaHora,
+                    minutoInicio: minInicioDentro,
+                    minutoFim: minFimDentro - 1  // inclusive
+                });
+            }
+        }
+
+        if (distribuicao.length === 0) {
+            totalDisplay.value = 'Intervalo inválido';
+            atualizarBotaoValidar();
+            return;
+        }
+
+        // Salvar globalmente
+        window.distribuicaoIntervalo = distribuicao;
+
+        // Auto-selecionar as horas na tabela
+        autoSelecionarHorasIntervalo(distribuicao);
+
+        // Renderizar preview
+        previewConteudo.innerHTML = distribuicao.map(d => {
+            const horaFmt = String(d.hora).padStart(2, '0');
+            const minIniF = String(d.minutoInicio).padStart(2, '0');
+            const minFimF = String(d.minutoFim).padStart(2, '0');
+            return `<div class="intervalo-preview-item">
+                <span class="hora-label">${horaFmt}:00</span>
+                <span class="minutos-label">${d.minutos} min</span>
+                <span class="minutos-intervalo">(${horaFmt}:${minIniF} → ${horaFmt}:${minFimF})</span>
+            </div>`;
+        }).join('');
+
+        previewContainer.style.display = 'block';
+        atualizarBotaoValidar();
+    }
+
+    /**
+     * Auto-seleciona as horas na tabela de validação com base na distribuição
+     */
+    function autoSelecionarHorasIntervalo(distribuicao) {
+        // Limpar seleção atual
+        validacaoHorasSelecionadas = [];
+
+        // Desmarcar todos os checkboxes
+        document.querySelectorAll('#validacaoTabelaBody tr').forEach(tr => {
+            tr.classList.remove('selecionada');
+            const cb = tr.querySelector('.hora-checkbox');
+            if (cb) cb.checked = false;
+        });
+
+        // Selecionar as horas do intervalo
+        distribuicao.forEach(d => {
+            validacaoHorasSelecionadas.push(d.hora);
+
+            const tr = document.querySelector(`#validacaoTabelaBody tr[data-hora="${d.hora}"]`);
+            if (tr) {
+                tr.classList.add('selecionada');
+                const cb = tr.querySelector('.hora-checkbox');
+                if (cb) cb.checked = true;
+            }
+        });
+
+        validacaoHorasSelecionadas.sort((a, b) => a - b);
+        atualizarCheckboxTodos();
+
+        // Atualizar display de horas no formulário
+        const horasTexto = validacaoHorasSelecionadas.map(h =>
+            String(h).padStart(2, '0') + ':00'
+        ).join(', ');
+        const display = document.getElementById('validacaoHoraSelecionadaNivel');
+        if (display) display.value = horasTexto + ` (${validacaoHorasSelecionadas.length} horas)`;
+    }
+
+    // ==================== ANÁLISE COM IA ====================
 
     // ==================== CHAT COM IA ====================
 

@@ -3723,6 +3723,7 @@ select#selectAno,
 /* ===== MOBILE - CORREÇÕES ESPECÍFICAS ===== */
 
 @media (max-width: 768px) {
+
     /* Container principal não pode cortar nada */
     .operacoes-container {
         overflow: visible !important;
@@ -3748,27 +3749,27 @@ select#selectAno,
     }
 
     /* Primeiro form-group (Tipo de Unidade) */
-    .filtros-grid > .form-group:nth-child(1) {
+    .filtros-grid>.form-group:nth-child(1) {
         z-index: 50 !important;
     }
 
     /* Segundo form-group (Unidade Operacional) */
-    .filtros-grid > .form-group:nth-child(2) {
+    .filtros-grid>.form-group:nth-child(2) {
         z-index: 40 !important;
     }
 
     /* Terceiro form-group (Ponto de Medição) */
-    .filtros-grid > .form-group:nth-child(3) {
+    .filtros-grid>.form-group:nth-child(3) {
         z-index: 30 !important;
     }
 
     /* Quarto form-group (Ano) */
-    .filtros-grid > .form-group:nth-child(4) {
+    .filtros-grid>.form-group:nth-child(4) {
         z-index: 20 !important;
     }
 
     /* Quinto form-group (Mês) */
-    .filtros-grid > .form-group:nth-child(5) {
+    .filtros-grid>.form-group:nth-child(5) {
         z-index: 10 !important;
     }
 
@@ -3794,7 +3795,7 @@ select#selectAno,
     }
 
     /* ===== AUTOCOMPLETE PONTO DE MEDIÇÃO - MOBILE ===== */
-    
+
     .autocomplete-container {
         position: relative !important;
     }
@@ -3856,6 +3857,7 @@ select#selectAno,
 /* Análise Inteligente abaixo do gráfico e médias */
 
 @media (max-width: 768px) {
+
     /* Modal de validação ocupa tela toda */
     .modal-validacao {
         width: 100% !important;
@@ -4050,9 +4052,110 @@ input#inputDataFim {
     .filtros-grid.modo-datas {
         grid-template-columns: 1fr !important;
     }
-    
+
     #grupoDataInicio input,
     #grupoDataFim input {
         font-size: 16px !important;
+    }
+}
+
+/* ===== TABS MODO NÍVEL RESERVATÓRIO ===== */
+.validacao-nivel-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 3px;
+}
+
+.validacao-nivel-tab {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.validacao-nivel-tab:hover {
+    color: #334155;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.validacao-nivel-tab.active {
+    background: white;
+    color: #3b82f6;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+}
+
+.validacao-nivel-tab:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.validacao-nivel-tab ion-icon {
+    font-size: 14px;
+}
+
+/* Preview da distribuição */
+.intervalo-preview-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.intervalo-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #1e40af;
+}
+
+.intervalo-preview-item .hora-label {
+    font-weight: 600;
+}
+
+.intervalo-preview-item .minutos-label {
+    background: #3b82f6;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.intervalo-preview-item .minutos-intervalo {
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .validacao-nivel-tabs {
+        gap: 2px;
+    }
+
+    .validacao-nivel-tab {
+        font-size: 11px;
+        padding: 7px 10px;
+    }
+
+    .intervalo-preview-grid {
+        flex-direction: column;
     }
 }
