@@ -1342,7 +1342,7 @@ if ($isEdicao) {
                         <label class="form-label">Correção Projeção TAP</label>
                         <input type="text" name="vl_correcao_projecao_tap" id="vlCorrecaoProjecaoTap"
                             class="form-control resultado" readonly
-                            value="<?= $isEdicao ? number_format($calculoKPC['VL_CORRECAO_PROJECAO_TAP'], 2, '.', '') : '' ?>">
+                            value="<?= $isEdicao ? number_format($calculoKPC['VL_CORRECAO_PROJECAO_TAP'], 4, '.', '') : '' ?>">
                     </div>
                     <div class="form-group col-2">
                         <label class="form-label">Área Efetiva (m²)</label>
@@ -1844,15 +1844,10 @@ if ($isEdicao) {
     }
 
     /**
-     * Área Efetiva (Sef) - Equivale a GetDataBySef(DN) no legado
-     * Valores em m² - ÁREA CORRIGIDA (não nominal!)
-     * Se não encontrar, calcula: Sef = π × (DN/2000)² (valor nominal como último recurso)
-     */
-    /**
-     * Área Efetiva (Sef) - Equivale a GetDataBySef(DN) no legado
-     * Valores em m² - ÁREA CORRIGIDA (não nominal!)
-     * Se não encontrar, calcula: Sef = π × (DN/2000)² (valor nominal como último recurso)
-     */
+      * Área Efetiva (Sef) - Equivale a GetDataBySef(DN) no legado
+      * Valores em m² - ÁREA CORRIGIDA (não nominal!)
+      * Se não encontrar, calcula: Sef = π × (DN/2000)² (valor nominal como último recurso)
+      */
     function obterAreaEfetivaLocal(dn) {
         // TABELA 2 – CORREÇÃO DA ÁREA PELA PROJEÇÃO DA HASTE DO PITOT
         // Coluna: ÁREA CORRIGIDA (m²) - 4 casas decimais
@@ -2432,7 +2427,7 @@ if ($isEdicao) {
                     showToast('Cálculo salvo com sucesso!', 'sucesso');
                     setTimeout(function () {
                         window.location.href = 'calculoKPC.php';
-                    }, 1500);
+                    }, 200);
                 } else {
                     showToast(data.message || 'Erro ao salvar', 'erro');
                 }
@@ -2490,6 +2485,11 @@ if ($isEdicao) {
             limparPontoMedicao();
         });
     });
+
+    function parseFloatBR(valor) {
+        if (!valor) return 0;
+        return parseFloat(String(valor).replace(/\./g, '').replace(',', '.')) || 0;
+    }
 </script>
 
 <?php include_once 'includes/footer.inc.php'; ?>

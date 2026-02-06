@@ -576,7 +576,7 @@ $isAtivo = $calculoKPC['ID_SITUACAO'] == 1;
                 <div class="info-item">
                     <span class="info-label"><ion-icon name="git-merge-outline"></ion-icon> Correção Projeção TAP</span>
                     <span
-                        class="info-value mono"><?= number_format($calculoKPC['VL_CORRECAO_PROJECAO_TAP'], 2, '.', '') ?></span>
+                        class="info-value mono"><?= number_format($calculoKPC['VL_CORRECAO_PROJECAO_TAP'], 4, '.', '') ?></span>
                 </div>
                 <div class="info-item">
                     <span class="info-label"><ion-icon name="scan-outline"></ion-icon> Área Efetiva</span>
