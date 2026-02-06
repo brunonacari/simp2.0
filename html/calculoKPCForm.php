@@ -1848,39 +1848,44 @@ if ($isEdicao) {
      * Valores em m² - ÁREA CORRIGIDA (não nominal!)
      * Se não encontrar, calcula: Sef = π × (DN/2000)² (valor nominal como último recurso)
      */
+    /**
+     * Área Efetiva (Sef) - Equivale a GetDataBySef(DN) no legado
+     * Valores em m² - ÁREA CORRIGIDA (não nominal!)
+     * Se não encontrar, calcula: Sef = π × (DN/2000)² (valor nominal como último recurso)
+     */
     function obterAreaEfetivaLocal(dn) {
         // TABELA 2 – CORREÇÃO DA ÁREA PELA PROJEÇÃO DA HASTE DO PITOT
-        // Coluna: ÁREA CORRIGIDA (m²)
+        // Coluna: ÁREA CORRIGIDA (m²) - 4 casas decimais
         var tabelaSef = {
-            75: 0.004418,
-            100: 0.007527,
-            125: 0.012506,
-            150: 0.017188,
-            200: 0.030673,
-            250: 0.048105,
-            275: 0.058786,
-            300: 0.069467,
-            350: 0.094749,
-            375: 0.108897,
-            400: 0.123961,
-            450: 0.157103,
-            500: 0.194175,
-            550: 0.235200,
-            600: 0.280088,
-            650: 0.328973,
-            700: 0.381722,
-            750: 0.438424,
-            800: 0.499051,
-            900: 0.632090,
-            1000: 0.780843,
-            1050: 0.861125,
-            1100: 0.945337,
-            1200: 1.125461,
-            1250: 1.221438,
-            1500: 1.760212,
-            1750: 2.397151,
-            1800: 2.536370,
-            2000: 3.132271
+            75: 0.0044,
+            100: 0.0075,
+            125: 0.0125,
+            150: 0.0172,
+            200: 0.0307,
+            250: 0.0481,
+            275: 0.0588,
+            300: 0.0695,
+            350: 0.0947,
+            375: 0.1089,
+            400: 0.1240,
+            450: 0.1571,
+            500: 0.1942,
+            550: 0.2352,
+            600: 0.2801,
+            650: 0.3290,
+            700: 0.3817,
+            750: 0.4384,
+            800: 0.4991,
+            900: 0.6321,
+            1000: 0.7808,
+            1050: 0.8611,
+            1100: 0.9453,
+            1200: 1.1255,
+            1250: 1.2214,
+            1500: 1.7602,
+            1750: 2.3972,
+            1800: 2.5364,
+            2000: 3.1323
         };
 
         if (tabelaSef[dn] !== undefined) return tabelaSef[dn];
@@ -1888,7 +1893,6 @@ if ($isEdicao) {
         // Fallback: valor nominal (teórico) - apenas se DN não estiver na tabela
         return PI * Math.pow(dn / 2000, 2);
     }
-
 
     /**
      * CORREÇÃO: Função obterCorrecaoProjecaoTapLocal() em calculoKPCForm.php
@@ -2099,7 +2103,7 @@ if ($isEdicao) {
             // 11. Atualiza campos na tela
             document.getElementById('vlFatorVelocidade').value = fv.toFixed(10);
             document.getElementById('vlCorrecaoDiametro').value = cd.toFixed(6);
-            document.getElementById('vlCorrecaoProjecaoTap').value = cp.toFixed(2);
+            document.getElementById('vlCorrecaoProjecaoTap').value = cp.toFixed(4);
             document.getElementById('vlAreaEfetiva').value = ae.toFixed(6);
             document.getElementById('vlKPC').value = kpc.toFixed(10);
             document.getElementById('vlVazao').value = vazao.toFixed(2);

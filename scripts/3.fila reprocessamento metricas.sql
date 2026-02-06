@@ -96,12 +96,13 @@ BEGIN
     DECLARE @ERROS INT = 0;
     
     -- Cursor para processar itens pendentes (mais antigos primeiro)
-    DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
-        SELECT TOP (@MAX_ITENS) ID, DT_REFERENCIA
-        FROM [dbo].[FILA_REPROCESSAMENTO_METRICAS]
-        WHERE ID_STATUS = 0                      -- Pendente
-          AND NR_TENTATIVAS < @MAX_TENTATIVAS    -- Não excedeu tentativas
-        ORDER BY DT_SOLICITACAO ASC;
+   DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
+    SELECT TOP (@MAX_ITENS) ID, DT_REFERENCIA
+    FROM [dbo].[FILA_REPROCESSAMENTO_METRICAS]
+    WHERE ID_STATUS = 0
+      AND NR_TENTATIVAS < @MAX_TENTATIVAS
+      AND DT_REFERENCIA < CAST(GETDATE() AS DATE)  -- nunca processar dia atual
+    ORDER BY DT_SOLICITACAO ASC;
     
     OPEN cur;
     FETCH NEXT FROM cur INTO @ID, @DT_REFERENCIA;

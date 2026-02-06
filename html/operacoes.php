@@ -4575,7 +4575,7 @@ $letrasTipoMedidor = [
             let resumoHtml = '<div class="ia-valores-aplicar">';
             resumoHtml += '<strong>Valores a serem aplicados:</strong><br>';
             valoresParaAplicar.forEach(v => {
-                resumoHtml += `â€¢ ${String(v.hora).padStart(2, '0')}:00 â†’ <strong>${v.valor.toFixed(2)} L/s</strong><br>`;
+                resumoHtml += `→ ${String(v.hora).padStart(2, '0')}:00 → <strong>${v.valor.toFixed(2)} L/s</strong><br>`;
             });
             resumoHtml += '<br><button class="btn-aplicar-valores-ia" onclick="aplicarValoresIA()">✓ Confirmar e Aplicar</button>';
             resumoHtml += ' <button class="btn-cancelar-valores-ia" onclick="cancelarValoresIA()">✗ Cancelar</button>';
