@@ -4567,11 +4567,19 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
 
             // Se tem última leitura, usar essa data
             if (item.ULTIMA_LEITURA) {
-                const dt = new Date(item.ULTIMA_LEITURA);
-                const dataFormatada = dt.toISOString().split('T')[0]; // YYYY-MM-DD
-                const mes = dt.getMonth() + 1;
-                const ano = dt.getFullYear();
-                urlOperacoes = `operacoes.php?abrirValidacao=1&cdPonto=${item.CD_PONTO_MEDICAO}&dataValidacao=${dataFormatada}&mes=${mes}&ano=${ano}`;
+                // Converter formato SQL Server para ISO: "2018-11-04 00:00:01.787" → "2018-11-04T00:00:01"
+                const dataStr = item.ULTIMA_LEITURA.split('.')[0].replace(' ', 'T');
+                const dt = new Date(dataStr);
+
+                if (!isNaN(dt.getTime())) {
+                    const dataFormatada = dt.toISOString().split('T')[0]; // YYYY-MM-DD
+                    const mes = dt.getMonth() + 1;
+                    const ano = dt.getFullYear();
+                    urlOperacoes = `operacoes.php?abrirValidacao=1&cdPonto=${item.CD_PONTO_MEDICAO}&dataValidacao=${dataFormatada}&mes=${mes}&ano=${ano}`;
+
+                    // Formatar para exibição na coluna
+                    ultLeitura = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                }
             } else {
                 // Se nunca teve leitura, usar data de hoje
                 const agora = new Date();
