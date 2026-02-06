@@ -12,7 +12,7 @@ exigePermissaoTela('Cadastro de Ponto de Medição', ACESSO_ESCRITA);
 include_once 'includes/menu.inc.php';
 
 // Verifica se é edição
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $isEdicao = $id > 0;
 $pontoMedicao = null;
 
@@ -34,7 +34,7 @@ if ($isEdicao) {
     $stmt = $pdoSIMP->prepare($sql);
     $stmt->execute([':id' => $id]);
     $pontoMedicao = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if (!$pontoMedicao) {
         $_SESSION['msg'] = 'Ponto de medição não encontrado.';
         $_SESSION['msg_tipo'] = 'erro';
@@ -51,7 +51,7 @@ $unidades = $sqlUnidades->fetchAll(PDO::FETCH_ASSOC);
 // Também inclui o usuário responsável atual mesmo que esteja com status diferente
 $sqlUsuariosBase = "SELECT CD_USUARIO, DS_NOME, DS_MATRICULA FROM SIMP.dbo.USUARIO WHERE OP_BLOQUEADO = 2";
 if ($isEdicao && !empty($pontoMedicao['CD_USUARIO_RESPONSAVEL'])) {
-    $sqlUsuariosBase .= " OR CD_USUARIO = " . (int)$pontoMedicao['CD_USUARIO_RESPONSAVEL'];
+    $sqlUsuariosBase .= " OR CD_USUARIO = " . (int) $pontoMedicao['CD_USUARIO_RESPONSAVEL'];
 }
 $sqlUsuariosBase .= " ORDER BY DS_NOME";
 $sqlUsuarios = $pdoSIMP->query($sqlUsuariosBase);
@@ -133,10 +133,18 @@ $tiposInstalacao = [
         display: flex;
         flex-direction: column;
     }
-    
-    .page-container > .page-header { order: 1; }
-    .page-container > #formPontoMedicao { order: 2; }
-    .page-container > #tabsContainer { order: 3; }
+
+    .page-container>.page-header {
+        order: 1;
+    }
+
+    .page-container>#formPontoMedicao {
+        order: 2;
+    }
+
+    .page-container>#tabsContainer {
+        order: 3;
+    }
 
     /* ============================================
        Page Header
@@ -253,15 +261,20 @@ $tiposInstalacao = [
         padding: 16px 20px;
         overflow: hidden;
     }
-    
+
     /* Form também como flex */
     #formPontoMedicao {
         display: flex;
         flex-direction: column;
     }
-    
-    #formPontoMedicao > .form-card { order: 1; }
-    #formPontoMedicao > #secaoObservacoes { order: 2; }
+
+    #formPontoMedicao>.form-card {
+        order: 1;
+    }
+
+    #formPontoMedicao>#secaoObservacoes {
+        order: 2;
+    }
 
     /* ============================================
        Form Grid - Sistema de Grid Robusto
@@ -283,12 +296,29 @@ $tiposInstalacao = [
     }
 
     /* Colunas baseadas em porcentagem */
-    .col-12 { width: 100%; }
-    .col-8 { width: 66.666667%; }
-    .col-6 { width: 50%; }
-    .col-4 { width: 33.333333%; }
-    .col-3 { width: 25%; }
-    .col-2 { width: 16.666667%; }
+    .col-12 {
+        width: 100%;
+    }
+
+    .col-8 {
+        width: 66.666667%;
+    }
+
+    .col-6 {
+        width: 50%;
+    }
+
+    .col-4 {
+        width: 33.333333%;
+    }
+
+    .col-3 {
+        width: 25%;
+    }
+
+    .col-2 {
+        width: 16.666667%;
+    }
 
     /* ============================================
        Form Controls
@@ -409,7 +439,7 @@ $tiposInstalacao = [
         width: 100% !important;
         max-width: 100%;
     }
-    
+
     .select2-container--default .select2-selection--single {
         height: 36px;
         padding: 4px 12px;
@@ -581,15 +611,31 @@ $tiposInstalacao = [
        Responsive
        ============================================ */
     @media (max-width: 1200px) {
-        .col-3 { width: 33.333333%; }
-        .col-2 { width: 25%; }
+        .col-3 {
+            width: 33.333333%;
+        }
+
+        .col-2 {
+            width: 25%;
+        }
     }
 
     @media (max-width: 992px) {
-        .col-3 { width: 50%; }
-        .col-4 { width: 50%; }
-        .col-8 { width: 100%; }
-        .col-2 { width: 33.333333%; }
+        .col-3 {
+            width: 50%;
+        }
+
+        .col-4 {
+            width: 50%;
+        }
+
+        .col-8 {
+            width: 100%;
+        }
+
+        .col-2 {
+            width: 33.333333%;
+        }
     }
 
     @media (max-width: 768px) {
@@ -643,7 +689,11 @@ $tiposInstalacao = [
             padding: 0 4px;
         }
 
-        .col-2, .col-3, .col-4, .col-6, .col-8 {
+        .col-2,
+        .col-3,
+        .col-4,
+        .col-6,
+        .col-8 {
             width: 100%;
         }
 
@@ -663,37 +713,43 @@ $tiposInstalacao = [
         flex-wrap: wrap;
         margin: 0 -8px 12px -8px;
     }
-    
+
     #camposEquipamento .form-group {
         padding: 0 8px;
         box-sizing: border-box;
     }
-    
-    #camposEquipamento .col-4 { width: 33.333333%; }
-    #camposEquipamento .col-3 { width: 25%; }
-    
+
+    #camposEquipamento .col-4 {
+        width: 33.333333%;
+    }
+
+    #camposEquipamento .col-3 {
+        width: 25%;
+    }
+
     @media (max-width: 992px) {
+
         #camposEquipamento .col-4,
         #camposEquipamento .col-3 {
             width: 50%;
         }
     }
-    
+
     @media (max-width: 768px) {
         #camposEquipamento .form-row {
             margin: 0 -4px 10px -4px;
         }
-        
+
         #camposEquipamento .form-group {
             padding: 0 4px;
         }
-        
+
         #camposEquipamento .col-4,
         #camposEquipamento .col-3 {
             width: 100%;
         }
     }
-    
+
     #camposEquipamento .form-control {
         width: 100%;
         box-sizing: border-box;
@@ -723,11 +779,11 @@ $tiposInstalacao = [
     }
 
     .tabs-header::-webkit-scrollbar-track {
-        background: rgba(255,255,255,0.1);
+        background: rgba(255, 255, 255, 0.1);
     }
 
     .tabs-header::-webkit-scrollbar-thumb {
-        background: rgba(255,255,255,0.3);
+        background: rgba(255, 255, 255, 0.3);
         border-radius: 2px;
     }
 
@@ -1067,7 +1123,7 @@ $tiposInstalacao = [
         white-space: nowrap;
     }
 
-    .radio-item-inline input[type="radio"]:checked + .radio-label-inline {
+    .radio-item-inline input[type="radio"]:checked+.radio-label-inline {
         background: white;
         color: #1e293b;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -1111,8 +1167,10 @@ $tiposInstalacao = [
                 <ion-icon name="information-circle-outline"></ion-icon>
                 <h2>Identificação</h2>
                 <?php if ($isEdicao): ?>
-                    <span class="status-badge <?= empty($pontoMedicao['DT_DESATIVACAO']) ? 'ativo' : 'inativo' ?>" style="margin-left: auto;">
-                        <ion-icon name="<?= empty($pontoMedicao['DT_DESATIVACAO']) ? 'checkmark-circle' : 'close-circle' ?>"></ion-icon>
+                    <span class="status-badge <?= empty($pontoMedicao['DT_DESATIVACAO']) ? 'ativo' : 'inativo' ?>"
+                        style="margin-left: auto;">
+                        <ion-icon
+                            name="<?= empty($pontoMedicao['DT_DESATIVACAO']) ? 'checkmark-circle' : 'close-circle' ?>"></ion-icon>
                         <?= empty($pontoMedicao['DT_DESATIVACAO']) ? 'Ativo' : 'Inativo' ?>
                     </span>
                 <?php endif; ?>
@@ -1128,8 +1186,7 @@ $tiposInstalacao = [
                         <select id="selectUnidade" name="cd_unidade" class="form-control select2" required>
                             <option value="">Selecione a Unidade</option>
                             <?php foreach ($unidades as $unidade): ?>
-                                <option value="<?= $unidade['CD_UNIDADE'] ?>" 
-                                    <?= ($isEdicao && $pontoMedicao['CD_UNIDADE'] == $unidade['CD_UNIDADE']) ? 'selected' : '' ?>>
+                                <option value="<?= $unidade['CD_UNIDADE'] ?>" <?= ($isEdicao && $pontoMedicao['CD_UNIDADE'] == $unidade['CD_UNIDADE']) ? 'selected' : '' ?>>
                                     <?= $unidade['CD_CODIGO'] . ' - ' . $unidade['DS_NOME'] ?>
                                 </option>
                             <?php endforeach; ?>
@@ -1142,7 +1199,8 @@ $tiposInstalacao = [
                             <ion-icon name="location-outline"></ion-icon>
                             Localidade <span class="required">*</span>
                         </label>
-                        <select id="selectLocalidade" name="cd_localidade" class="form-control select2" required <?= !$isEdicao ? 'disabled' : '' ?>>
+                        <select id="selectLocalidade" name="cd_localidade" class="form-control select2" required
+                            <?= !$isEdicao ? 'disabled' : '' ?>>
                             <?php if ($isEdicao): ?>
                                 <option value="<?= $pontoMedicao['CD_LOCALIDADE'] ?>" selected>
                                     <?= $pontoMedicao['CD_LOCALIDADE_CODIGO'] . ' - ' . $pontoMedicao['DS_LOCALIDADE'] ?>
@@ -1179,8 +1237,7 @@ $tiposInstalacao = [
                         <select id="selectTipoMedidor" name="id_tipo_medidor" class="form-control select2" required>
                             <option value="">Selecione o Tipo</option>
                             <?php foreach ($tiposMedidor as $tipo): ?>
-                                <option value="<?= $tipo['value'] ?>"
-                                    <?= ($isEdicao && $pontoMedicao['ID_TIPO_MEDIDOR'] == $tipo['value']) ? 'selected' : '' ?>>
+                                <option value="<?= $tipo['value'] ?>" <?= ($isEdicao && $pontoMedicao['ID_TIPO_MEDIDOR'] == $tipo['value']) ? 'selected' : '' ?>>
                                     <?= $tipo['text'] ?>
                                 </option>
                             <?php endforeach; ?>
@@ -1193,9 +1250,9 @@ $tiposInstalacao = [
                             <ion-icon name="text-outline"></ion-icon>
                             Nome <span class="required">*</span>
                         </label>
-                        <input type="text" name="ds_nome" class="form-control" 
-                               value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_NOME']) : '' ?>"
-                               placeholder="Digite o nome do ponto de medição" maxlength="100" required>
+                        <input type="text" name="ds_nome" class="form-control"
+                            value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_NOME']) : '' ?>"
+                            placeholder="Digite o nome do ponto de medição" maxlength="100" required>
                     </div>
                 </div>
 
@@ -1206,8 +1263,8 @@ $tiposInstalacao = [
                             <ion-icon name="map-outline"></ion-icon>
                             Localização
                         </label>
-                        <textarea name="ds_localizacao" class="form-control" 
-                                  placeholder="Descreva a localização física do ponto de medição (endereço, coordenadas, referências)"><?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_LOCALIZACAO']) : '' ?></textarea>
+                        <textarea name="ds_localizacao" class="form-control"
+                            placeholder="Descreva a localização física do ponto de medição (endereço, coordenadas, referências)"><?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_LOCALIZACAO']) : '' ?></textarea>
                     </div>
                 </div>
 
@@ -1220,9 +1277,10 @@ $tiposInstalacao = [
                         </label>
                         <div class="input-with-action">
                             <input type="text" name="coordenadas" id="inputCoordenadas" class="form-control"
-                                   value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['COORDENADAS'] ?? '') : '' ?>"
-                                   placeholder="Ex: -20.315789, -40.312456">
-                            <button type="button" class="btn-map" onclick="abrirMapaCoordenadas()" title="Abrir no Google Maps">
+                                value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['COORDENADAS'] ?? '') : '' ?>"
+                                placeholder="Ex: -20.315789, -40.312456">
+                            <button type="button" class="btn-map" onclick="abrirMapaCoordenadas()"
+                                title="Abrir no Google Maps">
                                 <ion-icon name="map-outline"></ion-icon>
                             </button>
                         </div>
@@ -1248,8 +1306,7 @@ $tiposInstalacao = [
                         <select name="id_tipo_leitura" class="form-control select2" required>
                             <option value="">Selecione</option>
                             <?php foreach ($tiposLeitura as $tipo): ?>
-                                <option value="<?= $tipo['value'] ?>"
-                                    <?= ($isEdicao && $pontoMedicao['ID_TIPO_LEITURA'] == $tipo['value']) ? 'selected' : '' ?>>
+                                <option value="<?= $tipo['value'] ?>" <?= ($isEdicao && $pontoMedicao['ID_TIPO_LEITURA'] == $tipo['value']) ? 'selected' : '' ?>>
                                     <?= $tipo['text'] ?>
                                 </option>
                             <?php endforeach; ?>
@@ -1265,8 +1322,7 @@ $tiposInstalacao = [
                         <select name="op_periodicidade_leitura" class="form-control select2">
                             <option value="">Selecione</option>
                             <?php foreach ($periodicidades as $p): ?>
-                                <option value="<?= $p['value'] ?>"
-                                    <?= ($isEdicao && $pontoMedicao['OP_PERIODICIDADE_LEITURA'] == $p['value']) ? 'selected' : '' ?>>
+                                <option value="<?= $p['value'] ?>" <?= ($isEdicao && $pontoMedicao['OP_PERIODICIDADE_LEITURA'] == $p['value']) ? 'selected' : '' ?>>
                                     <?= $p['text'] ?>
                                 </option>
                             <?php endforeach; ?>
@@ -1279,11 +1335,11 @@ $tiposInstalacao = [
                             <ion-icon name="person-outline"></ion-icon>
                             Responsável <span class="required">*</span>
                         </label>
-                        <select id="selectResponsavel" name="cd_usuario_responsavel" class="form-control select2" required>
+                        <select id="selectResponsavel" name="cd_usuario_responsavel" class="form-control select2"
+                            required>
                             <option value="">Selecione</option>
                             <?php foreach ($usuarios as $usuario): ?>
-                                <option value="<?= $usuario['CD_USUARIO'] ?>"
-                                    <?= ($isEdicao && $pontoMedicao['CD_USUARIO_RESPONSAVEL'] == $usuario['CD_USUARIO']) ? 'selected' : '' ?>>
+                                <option value="<?= $usuario['CD_USUARIO'] ?>" <?= ($isEdicao && $pontoMedicao['CD_USUARIO_RESPONSAVEL'] == $usuario['CD_USUARIO']) ? 'selected' : '' ?>>
                                     <?= $usuario['DS_MATRICULA'] . ' - ' . $usuario['DS_NOME'] ?>
                                 </option>
                             <?php endforeach; ?>
@@ -1299,8 +1355,7 @@ $tiposInstalacao = [
                         <select name="tipo_instalacao" class="form-control select2">
                             <option value="">Selecione</option>
                             <?php foreach ($tiposInstalacao as $tipo): ?>
-                                <option value="<?= $tipo['value'] ?>"
-                                    <?= ($isEdicao && $pontoMedicao['TIPO_INSTALACAO'] == $tipo['value']) ? 'selected' : '' ?>>
+                                <option value="<?= $tipo['value'] ?>" <?= ($isEdicao && $pontoMedicao['TIPO_INSTALACAO'] == $tipo['value']) ? 'selected' : '' ?>>
                                     <?= $tipo['text'] ?>
                                 </option>
                             <?php endforeach; ?>
@@ -1316,7 +1371,7 @@ $tiposInstalacao = [
                             Data de Ativação
                         </label>
                         <input type="datetime-local" name="dt_ativacao" class="form-control"
-                               value="<?= $isEdicao && $pontoMedicao['DT_ATIVACAO'] ? date('Y-m-d\TH:i', strtotime($pontoMedicao['DT_ATIVACAO'])) : '' ?>">
+                            value="<?= $isEdicao && $pontoMedicao['DT_ATIVACAO'] ? date('Y-m-d\TH:i', strtotime($pontoMedicao['DT_ATIVACAO'])) : '' ?>">
                     </div>
 
                     <!-- Data de Desativação -->
@@ -1326,7 +1381,7 @@ $tiposInstalacao = [
                             Data de Desativação
                         </label>
                         <input type="datetime-local" name="dt_desativacao" class="form-control"
-                               value="<?= $isEdicao && $pontoMedicao['DT_DESATIVACAO'] ? date('Y-m-d\TH:i', strtotime($pontoMedicao['DT_DESATIVACAO'])) : '' ?>">
+                            value="<?= $isEdicao && $pontoMedicao['DT_DESATIVACAO'] ? date('Y-m-d\TH:i', strtotime($pontoMedicao['DT_DESATIVACAO'])) : '' ?>">
                     </div>
 
                     <!-- Quantidade Ligações -->
@@ -1336,8 +1391,7 @@ $tiposInstalacao = [
                             Qtd. Ligações
                         </label>
                         <input type="number" name="vl_quantidade_ligacoes" class="form-control" min="0"
-                               value="<?= $isEdicao ? $pontoMedicao['VL_QUANTIDADE_LIGACOES'] : '' ?>"
-                               placeholder="0">
+                            value="<?= $isEdicao ? $pontoMedicao['VL_QUANTIDADE_LIGACOES'] : '' ?>" placeholder="0">
                     </div>
 
                     <!-- Quantidade Economias -->
@@ -1347,8 +1401,7 @@ $tiposInstalacao = [
                             Qtd. Economias
                         </label>
                         <input type="number" name="vl_quantidade_economias" class="form-control" min="0"
-                               value="<?= $isEdicao ? $pontoMedicao['VL_QUANTIDADE_ECONOMIAS'] : '' ?>"
-                               placeholder="0">
+                            value="<?= $isEdicao ? $pontoMedicao['VL_QUANTIDADE_ECONOMIAS'] : '' ?>" placeholder="0">
                     </div>
                 </div>
             </div>
@@ -1362,85 +1415,83 @@ $tiposInstalacao = [
             </div>
             <div class="form-card-body">
                 <div class="form-row">
-                    <!-- Tag Vazão -->
-                    <div class="form-group col-4">
+                    <!-- Tag Vazão (Macromedidor=1, Est. Pitométrica=2, Hidrômetro=8) -->
+                    <div class="form-group col-4" id="groupTagVazao">
                         <label class="form-label">
                             <ion-icon name="water-outline"></ion-icon>
                             Tag Vazão
                         </label>
                         <input type="text" name="ds_tag_vazao" class="form-control"
-                               value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_VAZAO']) : '' ?>"
-                               placeholder="Ex: CP004_TM192_17_MED">
+                            value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_VAZAO']) : '' ?>"
+                            placeholder="Ex: CP004_TM192_17_MED">
                     </div>
 
-                    <!-- Tag Pressão -->
-                    <div class="form-group col-4">
+                    <!-- Tag Pressão (Medidor Pressão=4) -->
+                    <div class="form-group col-4" id="groupTagPressao">
                         <label class="form-label">
                             <ion-icon name="speedometer-outline"></ion-icon>
                             Tag Pressão
                         </label>
                         <input type="text" name="ds_tag_pressao" class="form-control"
-                               value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_PRESSAO']) : '' ?>"
-                               placeholder="Tag de pressão">
+                            value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_PRESSAO']) : '' ?>"
+                            placeholder="Tag de pressão">
                     </div>
 
-                    <!-- Tag Volume -->
-                    <div class="form-group col-4">
+                    <!-- Tag Volume (sem tipo associado atualmente, oculto) -->
+                    <div class="form-group col-4" id="groupTagVolume" style="display:none;">
                         <label class="form-label">
                             <ion-icon name="cube-outline"></ion-icon>
                             Tag Volume
                         </label>
                         <input type="text" name="ds_tag_volume" class="form-control"
-                               value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_VOLUME']) : '' ?>"
-                               placeholder="Tag de volume">
+                            value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_VOLUME']) : '' ?>"
+                            placeholder="Tag de volume">
                     </div>
-                </div>
 
-                <div class="form-row">
-                    <!-- Tag Nível Reservatório -->
-                    <div class="form-group col-4">
+                    <!-- Tag Nível Reservatório (Nível Reservatório=6) -->
+                    <div class="form-group col-4" id="groupTagReservatorio">
                         <label class="form-label">
                             <ion-icon name="analytics-outline"></ion-icon>
                             Tag Nível Reservatório
                         </label>
                         <input type="text" name="ds_tag_reservatorio" class="form-control"
-                               value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_RESERVATORIO']) : '' ?>"
-                               placeholder="Tag de nível do reservatório">
+                            value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_RESERVATORIO']) : '' ?>"
+                            placeholder="Tag de nível do reservatório">
                     </div>
 
-                    <!-- Tag Temperatura Água -->
+                    <!-- Tag Temperatura Água (visível para todos) -->
                     <div class="form-group col-4">
                         <label class="form-label">
                             <ion-icon name="thermometer-outline"></ion-icon>
                             Tag Temperatura da Água
                         </label>
                         <input type="text" name="ds_tag_temp_agua" class="form-control"
-                               value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_TEMP_AGUA']) : '' ?>"
-                               placeholder="Tag de temperatura da água">
+                            value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_TEMP_AGUA']) : '' ?>"
+                            placeholder="Tag de temperatura da água">
                     </div>
 
-                    <!-- Tag Temperatura Ambiente -->
+                    <!-- Tag Temperatura Ambiente (visível para todos) -->
                     <div class="form-group col-4">
                         <label class="form-label">
                             <ion-icon name="sunny-outline"></ion-icon>
                             Tag Temperatura do Ambiente
                         </label>
                         <input type="text" name="ds_tag_temp_ambiente" class="form-control"
-                               value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_TEMP_AMBIENTE']) : '' ?>"
-                               placeholder="Tag de temperatura ambiente">
+                            value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_TAG_TEMP_AMBIENTE']) : '' ?>"
+                            placeholder="Tag de temperatura ambiente">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <!-- Local Instalação SAP -->
-                    <div class="form-group col-6">
+                    <div class="form-group col-12">
                         <label class="form-label">
                             <ion-icon name="business-outline"></ion-icon>
                             Local Instalação SAP
                         </label>
                         <input type="text" name="loc_inst_sap" class="form-control"
-                               value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['LOC_INST_SAP'] ?? '') : '' ?>"
-                               placeholder="Local de instalação no SAP">
+                            value="<?= $isEdicao ? htmlspecialchars($pontoMedicao['LOC_INST_SAP'] ?? '') : '' ?>"
+                            placeholder="Local de instalação no SAP">
                     </div>
                 </div>
             </div>
@@ -1461,8 +1512,8 @@ $tiposInstalacao = [
                             Fator Correção Vazão
                         </label>
                         <input type="number" step="0.0001" name="vl_fator_correcao_vazao" class="form-control"
-                               value="<?= $isEdicao ? $pontoMedicao['VL_FATOR_CORRECAO_VAZAO'] : '' ?>"
-                               placeholder="Ex: 1.0000">
+                            value="<?= $isEdicao ? $pontoMedicao['VL_FATOR_CORRECAO_VAZAO'] : '' ?>"
+                            placeholder="Ex: 1.0000">
                     </div>
 
                     <!-- Limite Inferior -->
@@ -1472,8 +1523,8 @@ $tiposInstalacao = [
                             Limite Inferior Vazão (l/s) ou Pressão (mca)
                         </label>
                         <input type="number" step="0.01" name="vl_limite_inferior_vazao" class="form-control"
-                               value="<?= $isEdicao ? $pontoMedicao['VL_LIMITE_INFERIOR_VAZAO'] : '' ?>"
-                               placeholder="0.00">
+                            value="<?= $isEdicao ? $pontoMedicao['VL_LIMITE_INFERIOR_VAZAO'] : '' ?>"
+                            placeholder="0.00">
                     </div>
 
                     <!-- Limite Superior -->
@@ -1483,8 +1534,8 @@ $tiposInstalacao = [
                             Limite Superior Vazão (l/s) ou Pressão (mca)
                         </label>
                         <input type="number" step="0.01" name="vl_limite_superior_vazao" class="form-control"
-                               value="<?= $isEdicao ? $pontoMedicao['VL_LIMITE_SUPERIOR_VAZAO'] : '' ?>"
-                               placeholder="0.00">
+                            value="<?= $isEdicao ? $pontoMedicao['VL_LIMITE_SUPERIOR_VAZAO'] : '' ?>"
+                            placeholder="0.00">
                     </div>
                 </div>
             </div>
@@ -1504,23 +1555,24 @@ $tiposInstalacao = [
                             Observações Gerais
                         </label>
                         <textarea name="ds_observacao" class="form-control" rows="4"
-                                  placeholder="Digite observações adicionais sobre este ponto de medição"><?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_OBSERVACAO']) : '' ?></textarea>
+                            placeholder="Digite observações adicionais sobre este ponto de medição"><?= $isEdicao ? htmlspecialchars($pontoMedicao['DS_OBSERVACAO']) : '' ?></textarea>
                     </div>
                 </div>
 
                 <?php if ($isEdicao && $pontoMedicao['DT_ULTIMA_ATUALIZACAO']): ?>
-                <div class="form-divider"></div>
-                <div class="form-row">
-                    <div class="form-group col-12">
-                        <small style="color: #94a3b8; font-size: 12px;">
-                            <ion-icon name="time-outline" style="vertical-align: middle;"></ion-icon>
-                            Última atualização: <?= date('d/m/Y H:i', strtotime($pontoMedicao['DT_ULTIMA_ATUALIZACAO'])) ?>
-                            <?php if ($pontoMedicao['DS_USUARIO_ATUALIZACAO']): ?>
-                                por <?= htmlspecialchars($pontoMedicao['DS_USUARIO_ATUALIZACAO']) ?>
-                            <?php endif; ?>
-                        </small>
+                    <div class="form-divider"></div>
+                    <div class="form-row">
+                        <div class="form-group col-12">
+                            <small style="color: #94a3b8; font-size: 12px;">
+                                <ion-icon name="time-outline" style="vertical-align: middle;"></ion-icon>
+                                Última atualização:
+                                <?= date('d/m/Y H:i', strtotime($pontoMedicao['DT_ULTIMA_ATUALIZACAO'])) ?>
+                                <?php if ($pontoMedicao['DS_USUARIO_ATUALIZACAO']): ?>
+                                    por <?= htmlspecialchars($pontoMedicao['DS_USUARIO_ATUALIZACAO']) ?>
+                                <?php endif; ?>
+                            </small>
+                        </div>
                     </div>
-                </div>
                 <?php endif; ?>
             </div>
 
@@ -1531,10 +1583,10 @@ $tiposInstalacao = [
                     Cancelar
                 </a>
                 <?php if ($isEdicao): ?>
-                <button type="button" class="btn btn-danger" onclick="confirmarExclusao()">
-                    <ion-icon name="trash-outline"></ion-icon>
-                    Desativar
-                </button>
+                    <button type="button" class="btn btn-danger" onclick="confirmarExclusao()">
+                        <ion-icon name="trash-outline"></ion-icon>
+                        Desativar
+                    </button>
                 <?php endif; ?>
                 <button type="submit" class="btn btn-primary" id="btnSalvar">
                     <ion-icon name="save-outline"></ion-icon>
@@ -1545,149 +1597,150 @@ $tiposInstalacao = [
     </form>
 
     <?php if ($isEdicao): ?>
-    <!-- Container de Abas: Equipamento e Meta Mensal -->
-    <div class="tabs-container" id="tabsContainer" style="display: none;">
-        <div class="tabs-header">
-            <button type="button" class="tab-btn active" data-tab="equipamento" id="tabEquipamento">
-                <ion-icon name="hardware-chip-outline"></ion-icon>
-                <span class="tab-text">Dados do Equipamento</span>
-            </button>
-            <button type="button" class="tab-btn" data-tab="metas" id="tabMetas">
-                <ion-icon name="flag-outline"></ion-icon>
-                <span class="tab-text">Meta Mensal</span>
-                <span class="tab-badge" id="badgeMetas">0</span>
-            </button>
-        </div>
-        <div class="tabs-content">
-            <!-- Aba: Dados do Equipamento -->
-            <div class="tab-pane active" id="paneEquipamento">
-                <input type="hidden" name="equip_cd_chave" id="equipCdChave">
-                <div id="camposEquipamento">
-                    <!-- Campos gerados dinamicamente pelo JavaScript -->
-                </div>
-                <div class="form-actions" style="border-top: 1px solid #e2e8f0; margin-top: 20px; padding-top: 20px;">
-                    <button type="button" class="btn btn-primary" onclick="salvarEquipamento()" id="btnSalvarEquip">
-                        <ion-icon name="save-outline"></ion-icon>
-                        Salvar Dados do Equipamento
-                    </button>
-                </div>
-            </div>
-
-            <!-- Aba: Meta Mensal -->
-            <div class="tab-pane" id="paneMetas">
-                <div class="meta-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-                    <!-- Filtro por ano -->
-                    <div class="meta-filtro" style="margin-bottom: 0;">
-                        <label class="form-label" style="margin-bottom: 0;">
-                            <ion-icon name="calendar-outline"></ion-icon>
-                            Filtrar Ano:
-                        </label>
-                        <select id="filtroAnoMeta" class="form-control" style="width: 120px;">
-                            <option value="">Todos</option>
-                            <?php for ($ano = date('Y') + 1; $ano >= date('Y') - 5; $ano--): ?>
-                                <option value="<?= $ano ?>" <?= $ano == date('Y') ? 'selected' : '' ?>><?= $ano ?></option>
-                            <?php endfor; ?>
-                        </select>
-                    </div>
-                    <button type="button" class="btn btn-primary" onclick="abrirModalMeta()">
-                        <ion-icon name="add-outline"></ion-icon>
-                        Nova Meta
-                    </button>
-                </div>
-
-                <!-- Tabela de metas -->
-                <div class="table-container-meta">
-                    <table class="data-table-meta">
-                        <thead id="theadMetas">
-                            <!-- Cabeçalho dinâmico -->
-                        </thead>
-                        <tbody id="tabelaMetas">
-                            <tr>
-                                <td colspan="4">
-                                    <div class="empty-state-mini">
-                                        <ion-icon name="hourglass-outline"></ion-icon>
-                                        Carregando metas...
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Meta Mensal -->
-    <div class="modal-overlay" id="modalMeta">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalMetaTitulo">Nova Meta</h3>
-                <button type="button" class="modal-close" onclick="fecharModalMeta()">
-                    <ion-icon name="close-outline"></ion-icon>
+        <!-- Container de Abas: Equipamento e Meta Mensal -->
+        <div class="tabs-container" id="tabsContainer" style="display: none;">
+            <div class="tabs-header">
+                <button type="button" class="tab-btn active" data-tab="equipamento" id="tabEquipamento">
+                    <ion-icon name="hardware-chip-outline"></ion-icon>
+                    <span class="tab-text">Dados do Equipamento</span>
+                </button>
+                <button type="button" class="tab-btn" data-tab="metas" id="tabMetas">
+                    <ion-icon name="flag-outline"></ion-icon>
+                    <span class="tab-text">Meta Mensal</span>
+                    <span class="tab-badge" id="badgeMetas">0</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <form id="formMeta">
-                    <input type="hidden" name="cd_chave" id="metaCdChave">
-                    <input type="hidden" name="cd_ponto_medicao" value="<?= $id ?>">
-                    <input type="hidden" name="id_tipo_medidor" id="metaTipoMedidor">
+            <div class="tabs-content">
+                <!-- Aba: Dados do Equipamento -->
+                <div class="tab-pane active" id="paneEquipamento">
+                    <input type="hidden" name="equip_cd_chave" id="equipCdChave">
+                    <div id="camposEquipamento">
+                        <!-- Campos gerados dinamicamente pelo JavaScript -->
+                    </div>
+                    <div class="form-actions" style="border-top: 1px solid #e2e8f0; margin-top: 20px; padding-top: 20px;">
+                        <button type="button" class="btn btn-primary" onclick="salvarEquipamento()" id="btnSalvarEquip">
+                            <ion-icon name="save-outline"></ion-icon>
+                            Salvar Dados do Equipamento
+                        </button>
+                    </div>
+                </div>
 
-                    <div class="form-row">
-                        <div class="form-group col-6">
-                            <label class="form-label">
+                <!-- Aba: Meta Mensal -->
+                <div class="tab-pane" id="paneMetas">
+                    <div class="meta-header"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                        <!-- Filtro por ano -->
+                        <div class="meta-filtro" style="margin-bottom: 0;">
+                            <label class="form-label" style="margin-bottom: 0;">
                                 <ion-icon name="calendar-outline"></ion-icon>
-                                Ano <span class="required">*</span>
+                                Filtrar Ano:
                             </label>
-                            <select name="ano_meta" id="metaAno" class="form-control" required>
+                            <select id="filtroAnoMeta" class="form-control" style="width: 120px;">
+                                <option value="">Todos</option>
                                 <?php for ($ano = date('Y') + 1; $ano >= date('Y') - 5; $ano--): ?>
                                     <option value="<?= $ano ?>" <?= $ano == date('Y') ? 'selected' : '' ?>><?= $ano ?></option>
                                 <?php endfor; ?>
                             </select>
                         </div>
-                        <div class="form-group col-6">
-                            <label class="form-label">
-                                <ion-icon name="calendar-number-outline"></ion-icon>
-                                Mês
-                            </label>
-                            <select name="mes_meta" id="metaMes" class="form-control">
-                                <option value="">Ano Inteiro</option>
-                                <option value="1">Janeiro</option>
-                                <option value="2">Fevereiro</option>
-                                <option value="3">Março</option>
-                                <option value="4">Abril</option>
-                                <option value="5">Maio</option>
-                                <option value="6">Junho</option>
-                                <option value="7">Julho</option>
-                                <option value="8">Agosto</option>
-                                <option value="9">Setembro</option>
-                                <option value="10">Outubro</option>
-                                <option value="11">Novembro</option>
-                                <option value="12">Dezembro</option>
-                            </select>
-                        </div>
+                        <button type="button" class="btn btn-primary" onclick="abrirModalMeta()">
+                            <ion-icon name="add-outline"></ion-icon>
+                            Nova Meta
+                        </button>
                     </div>
 
-                    <!-- Campos dinâmicos por tipo de medidor -->
-                    <div id="camposMetaDinamicos"></div>
-
-                    <div class="aviso-ano-inteiro" id="avisoAnoInteiro" style="display: none;">
-                        <ion-icon name="information-circle-outline"></ion-icon>
-                        <span>A meta será aplicada para todos os 12 meses do ano selecionado.</span>
+                    <!-- Tabela de metas -->
+                    <div class="table-container-meta">
+                        <table class="data-table-meta">
+                            <thead id="theadMetas">
+                                <!-- Cabeçalho dinâmico -->
+                            </thead>
+                            <tbody id="tabelaMetas">
+                                <tr>
+                                    <td colspan="4">
+                                        <div class="empty-state-mini">
+                                            <ion-icon name="hourglass-outline"></ion-icon>
+                                            Carregando metas...
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="fecharModalMeta()">
-                    <ion-icon name="close-outline"></ion-icon>
-                    Cancelar
-                </button>
-                <button type="button" class="btn btn-primary" onclick="salvarMeta()" id="btnSalvarMeta">
-                    <ion-icon name="save-outline"></ion-icon>
-                    Salvar Meta
-                </button>
+                </div>
             </div>
         </div>
-    </div>
+
+        <!-- Modal Meta Mensal -->
+        <div class="modal-overlay" id="modalMeta">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalMetaTitulo">Nova Meta</h3>
+                    <button type="button" class="modal-close" onclick="fecharModalMeta()">
+                        <ion-icon name="close-outline"></ion-icon>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formMeta">
+                        <input type="hidden" name="cd_chave" id="metaCdChave">
+                        <input type="hidden" name="cd_ponto_medicao" value="<?= $id ?>">
+                        <input type="hidden" name="id_tipo_medidor" id="metaTipoMedidor">
+
+                        <div class="form-row">
+                            <div class="form-group col-6">
+                                <label class="form-label">
+                                    <ion-icon name="calendar-outline"></ion-icon>
+                                    Ano <span class="required">*</span>
+                                </label>
+                                <select name="ano_meta" id="metaAno" class="form-control" required>
+                                    <?php for ($ano = date('Y') + 1; $ano >= date('Y') - 5; $ano--): ?>
+                                        <option value="<?= $ano ?>" <?= $ano == date('Y') ? 'selected' : '' ?>><?= $ano ?></option>
+                                    <?php endfor; ?>
+                                </select>
+                            </div>
+                            <div class="form-group col-6">
+                                <label class="form-label">
+                                    <ion-icon name="calendar-number-outline"></ion-icon>
+                                    Mês
+                                </label>
+                                <select name="mes_meta" id="metaMes" class="form-control">
+                                    <option value="">Ano Inteiro</option>
+                                    <option value="1">Janeiro</option>
+                                    <option value="2">Fevereiro</option>
+                                    <option value="3">Março</option>
+                                    <option value="4">Abril</option>
+                                    <option value="5">Maio</option>
+                                    <option value="6">Junho</option>
+                                    <option value="7">Julho</option>
+                                    <option value="8">Agosto</option>
+                                    <option value="9">Setembro</option>
+                                    <option value="10">Outubro</option>
+                                    <option value="11">Novembro</option>
+                                    <option value="12">Dezembro</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Campos dinâmicos por tipo de medidor -->
+                        <div id="camposMetaDinamicos"></div>
+
+                        <div class="aviso-ano-inteiro" id="avisoAnoInteiro" style="display: none;">
+                            <ion-icon name="information-circle-outline"></ion-icon>
+                            <span>A meta será aplicada para todos os 12 meses do ano selecionado.</span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModalMeta()">
+                        <ion-icon name="close-outline"></ion-icon>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="salvarMeta()" id="btnSalvarMeta">
+                        <ion-icon name="save-outline"></ion-icon>
+                        Salvar Meta
+                    </button>
+                </div>
+            </div>
+        </div>
     <?php endif; ?>
 </div>
 
@@ -1702,7 +1755,7 @@ $tiposInstalacao = [
     // Funções para gerar opções
     function getTipoReservatorioOptions() {
         let options = '<option value="">Selecione...</option>';
-        tiposReservatorioJS.forEach(function(item) {
+        tiposReservatorioJS.forEach(function (item) {
             options += `<option value="${item.CD_CHAVE}">${item.NOME}</option>`;
         });
         return options;
@@ -1710,7 +1763,7 @@ $tiposInstalacao = [
 
     function getTipoFluidoRadios() {
         let radios = '';
-        tiposFluidoJS.forEach(function(item, index) {
+        tiposFluidoJS.forEach(function (item, index) {
             const checked = index === 0 ? 'checked' : '';
             radios += `
                 <label class="radio-item-inline">
@@ -1722,29 +1775,65 @@ $tiposInstalacao = [
         return radios;
     }
 
-    $(document).ready(function() {
+    // ============================================
+    // Controle de Visibilidade dos Campos TAG
+    // ============================================
+    // Mapeamento: Tipo de Medidor → Campo TAG correspondente
+    const tagPorTipoMedidor = {
+        1: 'ds_tag_vazao',       // Macromedidor
+        2: 'ds_tag_vazao',       // Estação Pitométrica
+        4: 'ds_tag_pressao',     // Medidor Pressão
+        6: 'ds_tag_reservatorio', // Nível Reservatório
+        8: 'ds_tag_vazao'        // Hidrômetro
+    };
+
+    const camposTagPrincipais = ['ds_tag_vazao', 'ds_tag_pressao', 'ds_tag_volume', 'ds_tag_reservatorio'];
+
+    function atualizarTagsVisiveis(tipo) {
+        tipo = parseInt(tipo) || 0;
+        const tagAtiva = tagPorTipoMedidor[tipo] || null;
+
+        camposTagPrincipais.forEach(function (nomeTag) {
+            const input = document.querySelector('input[name="' + nomeTag + '"]');
+            if (!input) return;
+            const formGroup = input.closest('.form-group');
+            if (!formGroup) return;
+
+            if (tagAtiva === nomeTag) {
+                formGroup.style.display = '';
+            } else {
+                formGroup.style.display = 'none';
+                input.value = ''; // Limpa o valor do campo oculto
+            }
+        });
+    }
+
+    $(document).ready(function () {
         // Inicializa Select2
         $('.select2').select2({
             width: '100%',
-            placeholder: function() {
+            placeholder: function () {
                 return $(this).data('placeholder') || 'Selecione...';
             }
         });
 
+        // Aplicar visibilidade das TAGs ao carregar
+        atualizarTagsVisiveis($('#selectTipoMedidor').val());
+
         <?php if ($isEdicao): ?>
-        // Força os valores dos Select2 após inicializar
-        $('#selectTipoMedidor').val('<?= $pontoMedicao['ID_TIPO_MEDIDOR'] ?>').trigger('change');
-        $('#selectResponsavel').val('<?= $pontoMedicao['CD_USUARIO_RESPONSAVEL'] ?>').trigger('change');
-        $('select[name="id_tipo_leitura"]').val('<?= $pontoMedicao['ID_TIPO_LEITURA'] ?>').trigger('change');
-        $('select[name="op_periodicidade_leitura"]').val('<?= $pontoMedicao['OP_PERIODICIDADE_LEITURA'] ?>').trigger('change');
-        $('select[name="tipo_instalacao"]').val('<?= $pontoMedicao['TIPO_INSTALACAO'] ?>').trigger('change');
+            // Força os valores dos Select2 após inicializar
+            $('#selectTipoMedidor').val('<?= $pontoMedicao['ID_TIPO_MEDIDOR'] ?>').trigger('change');
+            $('#selectResponsavel').val('<?= $pontoMedicao['CD_USUARIO_RESPONSAVEL'] ?>').trigger('change');
+            $('select[name="id_tipo_leitura"]').val('<?= $pontoMedicao['ID_TIPO_LEITURA'] ?>').trigger('change');
+            $('select[name="op_periodicidade_leitura"]').val('<?= $pontoMedicao['OP_PERIODICIDADE_LEITURA'] ?>').trigger('change');
+            $('select[name="tipo_instalacao"]').val('<?= $pontoMedicao['TIPO_INSTALACAO'] ?>').trigger('change');
         <?php endif; ?>
 
         // Event: Mudança de Unidade - Carrega Localidades
-        $('#selectUnidade').on('change', function() {
+        $('#selectUnidade').on('change', function () {
             const cdUnidade = $(this).val();
             const selectLocalidade = $('#selectLocalidade');
-            
+
             if (!cdUnidade) {
                 selectLocalidade.prop('disabled', true);
                 selectLocalidade.html('<option value="">Selecione a Unidade primeiro</option>');
@@ -1760,20 +1849,20 @@ $tiposInstalacao = [
                 type: 'GET',
                 data: { cd_unidade: cdUnidade },
                 dataType: 'json',
-                success: function(response) {
+                success: function (response) {
                     let options = '<option value="">Selecione a Localidade</option>';
-                    
+
                     if (response.success && response.data.length > 0) {
-                        response.data.forEach(function(item) {
+                        response.data.forEach(function (item) {
                             options += `<option value="${item.CD_CHAVE}">${item.CD_LOCALIDADE} - ${item.DS_NOME}</option>`;
                         });
                     }
-                    
+
                     selectLocalidade.html(options);
                     selectLocalidade.prop('disabled', false);
                     selectLocalidade.trigger('change');
                 },
-                error: function() {
+                error: function () {
                     selectLocalidade.html('<option value="">Erro ao carregar</option>');
                     showToast('Erro ao carregar localidades', 'erro');
                 }
@@ -1781,9 +1870,9 @@ $tiposInstalacao = [
         });
 
         // Submit do formulário
-        $('#formPontoMedicao').on('submit', function(e) {
+        $('#formPontoMedicao').on('submit', function (e) {
             e.preventDefault();
-            
+
             const btnSalvar = $('#btnSalvar');
             btnSalvar.prop('disabled', true).html('<ion-icon name="hourglass-outline"></ion-icon> Salvando...');
 
@@ -1792,10 +1881,10 @@ $tiposInstalacao = [
                 type: 'POST',
                 data: $(this).serialize(),
                 dataType: 'json',
-                success: function(response) {
+                success: function (response) {
                     if (response.success) {
                         showToast(response.message, 'sucesso');
-                        setTimeout(function() {
+                        setTimeout(function () {
                             window.location.href = 'pontoMedicao.php';
                         }, 1500);
                     } else {
@@ -1803,7 +1892,7 @@ $tiposInstalacao = [
                         btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar');
                     }
                 },
-                error: function(xhr, status, error) {
+                error: function (xhr, status, error) {
                     showToast('Erro ao comunicar com o servidor', 'erro');
                     btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar');
                 }
@@ -1814,7 +1903,7 @@ $tiposInstalacao = [
     // Função para abrir mapa com coordenadas do input
     function abrirMapaCoordenadas() {
         const coordenadas = $('#inputCoordenadas').val();
-        
+
         if (!coordenadas || coordenadas.trim() === '') {
             showToast('Informe as coordenadas primeiro', 'aviso');
             return;
@@ -1822,10 +1911,10 @@ $tiposInstalacao = [
 
         // Limpa espaços e formata coordenadas
         let coords = coordenadas.trim();
-        
+
         // Remove espaços extras e padroniza separadores
         coords = coords.replace(/\s+/g, '').replace(/;/g, ',');
-        
+
         // Extrai latitude e longitude
         const partes = coords.split(',');
         if (partes.length < 2) {
@@ -1860,17 +1949,17 @@ $tiposInstalacao = [
                 type: 'POST',
                 data: { cd_ponto_medicao: <?= $id ?> },
                 dataType: 'json',
-                success: function(response) {
+                success: function (response) {
                     if (response.success) {
                         showToast(response.message, 'sucesso');
-                        setTimeout(function() {
+                        setTimeout(function () {
                             window.location.href = 'pontoMedicao.php';
                         }, 1500);
                     } else {
                         showToast(response.message || 'Erro ao desativar', 'erro');
                     }
                 },
-                error: function() {
+                error: function () {
                     showToast('Erro ao comunicar com o servidor', 'erro');
                 }
             });
@@ -1878,89 +1967,89 @@ $tiposInstalacao = [
     }
 
     <?php if ($isEdicao): ?>
-    // ============================================
-    // Dados do Equipamento - CRUD Dinâmico
-    // ============================================
-    let equipamentoData = null;
-    
-    const tiposMedidorNomes = {
-        1: 'Macromedidor',
-        2: 'Estação Pitométrica',
-        4: 'Medidor de Pressão',
-        6: 'Nível Reservatório',
-        8: 'Hidrômetro'
-    };
+        // ============================================
+        // Dados do Equipamento - CRUD Dinâmico
+        // ============================================
+        let equipamentoData = null;
 
-    // Lista de tipos de medidor (para select CD_TIPO_MEDIDOR)
-    let tiposMedidorEquipLista = [];
+        const tiposMedidorNomes = {
+            1: 'Macromedidor',
+            2: 'Estação Pitométrica',
+            4: 'Medidor de Pressão',
+            6: 'Nível Reservatório',
+            8: 'Hidrômetro'
+        };
 
-    // Carrega tipos de medidor de equipamento ao iniciar
-    function carregarTiposMedidorEquip() {
-        $.ajax({
-            url: 'bd/pontoMedicao/getTiposMedidorEquipamento.php',
-            type: 'GET',
-            dataType: 'json',
-            async: false, // Síncrono para garantir que carrega antes de montar o form
-            success: function(response) {
-                if (response.success && response.data) {
-                    tiposMedidorEquipLista = response.data;
+        // Lista de tipos de medidor (para select CD_TIPO_MEDIDOR)
+        let tiposMedidorEquipLista = [];
+
+        // Carrega tipos de medidor de equipamento ao iniciar
+        function carregarTiposMedidorEquip() {
+            $.ajax({
+                url: 'bd/pontoMedicao/getTiposMedidorEquipamento.php',
+                type: 'GET',
+                dataType: 'json',
+                async: false, // Síncrono para garantir que carrega antes de montar o form
+                success: function (response) {
+                    if (response.success && response.data) {
+                        tiposMedidorEquipLista = response.data;
+                    }
                 }
+            });
+        }
+        carregarTiposMedidorEquip();
+
+        // Gera options HTML para select de tipo medidor
+        function getTipoMedidorOptions() {
+            let options = '<option value="">Selecione o tipo...</option>';
+            tiposMedidorEquipLista.forEach(t => {
+                options += `<option value="${t.CD_CHAVE}">${t.DS_NOME}</option>`;
+            });
+            return options;
+        }
+
+        function atualizarSecaoEquipamento(tipo) {
+            const tabsContainer = $('#tabsContainer');
+
+            if (tipo && tipo > 0) {
+                tabsContainer.slideDown();
+                atualizarCamposEquipamento(tipo);
+                carregarEquipamento(tipo);
+            } else {
+                tabsContainer.slideUp();
+                equipamentoData = null;
             }
-        });
-    }
-    carregarTiposMedidorEquip();
-
-    // Gera options HTML para select de tipo medidor
-    function getTipoMedidorOptions() {
-        let options = '<option value="">Selecione o tipo...</option>';
-        tiposMedidorEquipLista.forEach(t => {
-            options += `<option value="${t.CD_CHAVE}">${t.DS_NOME}</option>`;
-        });
-        return options;
-    }
-
-    function atualizarSecaoEquipamento(tipo) {
-        const tabsContainer = $('#tabsContainer');
-        
-        if (tipo && tipo > 0) {
-            tabsContainer.slideDown();
-            atualizarCamposEquipamento(tipo);
-            carregarEquipamento(tipo);
-        } else {
-            tabsContainer.slideUp();
-            equipamentoData = null;
         }
-    }
 
-    function atualizarCamposEquipamento(tipo) {
-        let html = '';
-        
-        switch (tipo) {
-            case 1: // Macromedidor
-                html = camposMacromedidor();
-                break;
-            case 2: // Estação Pitométrica
-                html = camposEstacaoPitometrica();
-                break;
-            case 4: // Medidor Pressão
-                html = camposMedidorPressao();
-                break;
-            case 6: // Nível Reservatório
-                html = camposNivelReservatorio();
-                break;
-            case 8: // Hidrômetro
-                html = camposHidrometro();
-                break;
-            default:
-                html = '<p class="text-muted">Tipo de equipamento não suportado</p>';
+        function atualizarCamposEquipamento(tipo) {
+            let html = '';
+
+            switch (tipo) {
+                case 1: // Macromedidor
+                    html = camposMacromedidor();
+                    break;
+                case 2: // Estação Pitométrica
+                    html = camposEstacaoPitometrica();
+                    break;
+                case 4: // Medidor Pressão
+                    html = camposMedidorPressao();
+                    break;
+                case 6: // Nível Reservatório
+                    html = camposNivelReservatorio();
+                    break;
+                case 8: // Hidrômetro
+                    html = camposHidrometro();
+                    break;
+                default:
+                    html = '<p class="text-muted">Tipo de equipamento não suportado</p>';
+            }
+
+            $('#camposEquipamento').html(html);
         }
-        
-        $('#camposEquipamento').html(html);
-    }
 
-    function inputField(name, label, icon, type = 'text', placeholder = '', colSize = 4, step = '') {
-        const stepAttr = step ? `step="${step}"` : '';
-        return `
+        function inputField(name, label, icon, type = 'text', placeholder = '', colSize = 4, step = '') {
+            const stepAttr = step ? `step="${step}"` : '';
+            return `
             <div class="form-group col-${colSize}">
                 <label class="form-label">
                     <ion-icon name="${icon}"></ion-icon>
@@ -1970,14 +2059,14 @@ $tiposInstalacao = [
                        placeholder="${placeholder}" ${stepAttr}>
             </div>
         `;
-    }
+        }
 
-    function selectField(name, label, icon, options, colSize = 4) {
-        let optionsHtml = '<option value="">Selecione...</option>';
-        options.forEach(opt => {
-            optionsHtml += `<option value="${opt.value}">${opt.text}</option>`;
-        });
-        return `
+        function selectField(name, label, icon, options, colSize = 4) {
+            let optionsHtml = '<option value="">Selecione...</option>';
+            options.forEach(opt => {
+                optionsHtml += `<option value="${opt.value}">${opt.text}</option>`;
+            });
+            return `
             <div class="form-group col-${colSize}">
                 <label class="form-label">
                     <ion-icon name="${icon}"></ion-icon>
@@ -1988,10 +2077,10 @@ $tiposInstalacao = [
                 </select>
             </div>
         `;
-    }
+        }
 
-    function camposMacromedidor() {
-        return `
+        function camposMacromedidor() {
+            return `
             <div class="form-row">
                 <div class="form-group col-4">
                     <label class="form-label">
@@ -2040,10 +2129,10 @@ $tiposInstalacao = [
                 ${inputField('prot_comun', 'Protocolo de Comunicação', 'radio-outline', 'text', 'Ex: Modbus, HART')}
             </div>
         `;
-    }
+        }
 
-    function camposEstacaoPitometrica() {
-        return `
+        function camposEstacaoPitometrica() {
+            return `
             <div class="form-row">
                 ${inputField('vl_cota_geografica', 'Cota Geográfica', 'location-outline', 'number', '0.00', 4, '0.01')}
                 ${inputField('vl_diametro', 'Diâmetro (mm)', 'resize-outline', 'number', '0.00', 4, '0.01')}
@@ -2058,10 +2147,10 @@ $tiposInstalacao = [
                 ${inputField('tp_periodicidade_levantamento', 'Periodicidade Levantamento', 'time-outline', 'text', 'Periodicidade', 4)}
             </div>
         `;
-    }
+        }
 
-    function camposMedidorPressao() {
-        return `
+        function camposMedidorPressao() {
+            return `
             <div class="form-row">
                 ${inputField('ds_matricula_usuario', 'Matrícula Usuário', 'person-outline', 'text', 'Matrícula')}
                 ${inputField('ds_numero_serie_equipamento', 'Nº Série Equipamento', 'barcode-outline', 'text', 'Número de série')}
@@ -2074,9 +2163,9 @@ $tiposInstalacao = [
             </div>
             <div class="form-row">
                 ${selectField('op_telemetria', 'Telemetria', 'radio-outline', [
-                    {value: '1', text: 'Sim'},
-                    {value: '0', text: 'Não'}
-                ])}
+            { value: '1', text: 'Sim' },
+            { value: '0', text: 'Não' }
+        ])}
                 ${inputField('dt_instalacao', 'Data Instalação', 'calendar-outline', 'date')}
                 ${inputField('ds_coordenadas', 'Coordenadas', 'navigate-outline', 'text', 'Lat, Long')}
             </div>
@@ -2084,10 +2173,10 @@ $tiposInstalacao = [
                 ${inputField('ds_endereco', 'Endereço', 'location-outline', 'text', 'Endereço completo', 12)}
             </div>
         `;
-    }
+        }
 
-    function camposNivelReservatorio() {
-        return `
+        function camposNivelReservatorio() {
+            return `
             <div class="form-row">
                 <div class="form-group col-4">
                     <label class="form-label">
@@ -2150,10 +2239,10 @@ $tiposInstalacao = [
                 </div>
             </div>
         `;
-    }
+        }
 
-    function camposHidrometro() {
-        return `
+        function camposHidrometro() {
+            return `
             <div class="form-row">
                 ${inputField('ds_matricula_usuario', 'Matrícula Usuário', 'person-outline', 'text', 'Matrícula')}
                 ${inputField('ds_numero_serie_equipamento', 'Nº Série Equipamento', 'barcode-outline', 'text', 'Número de série')}
@@ -2174,204 +2263,205 @@ $tiposInstalacao = [
                 ${inputField('ds_endereco', 'Endereço', 'location-outline', 'text', 'Endereço completo', 8)}
             </div>
         `;
-    }
+        }
 
-    function carregarEquipamento(tipo) {
-        $.ajax({
-            url: 'bd/pontoMedicao/getDadosMedidor.php',
-            type: 'GET',
-            data: { 
-                cd_ponto_medicao: <?= $id ?>,
-                id_tipo_medidor: tipo
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success && response.data) {
-                    equipamentoData = response.data;
-                    preencherCamposEquipamento(response.data);
-                } else {
-                    equipamentoData = null;
-                    $('#equipCdChave').val('');
-                }
-            },
-            error: function() {
-                showToast('Erro ao carregar dados do equipamento', 'erro');
-            }
-        });
-    }
-
-    function preencherCamposEquipamento(dados) {
-        $('#equipCdChave').val(dados.CD_CHAVE || '');
-        
-        // Preenche todos os campos que existirem
-        Object.keys(dados).forEach(function(key) {
-            const fieldName = key.toLowerCase();
-            const $field = $(`#equip_${fieldName}`);
-            
-            if ($field.length) {
-                let valor = dados[key];
-                
-                // Formata datas
-                if (fieldName.startsWith('dt_') && valor) {
-                    valor = valor.split('T')[0]; // Remove parte de hora se existir
-                    valor = valor.split(' ')[0]; // Remove hora se formato SQL Server
-                }
-                
-                $field.val(valor);
-            }
-            
-            // Trata radio buttons (ID_PRODUTO / tipo de fluido)
-            if (fieldName === 'id_produto') {
-                $(`input[name="id_produto"][value="${dados[key] || ''}"]`).prop('checked', true);
-            }
-        });
-    }
-
-    function salvarEquipamento() {
-        const btnSalvar = $('#btnSalvarEquip');
-        btnSalvar.prop('disabled', true).html('<ion-icon name="hourglass-outline"></ion-icon> Salvando...');
-
-        // Coleta todos os campos do equipamento
-        const formData = {
-            cd_chave: $('#equipCdChave').val(),
-            cd_ponto_medicao: <?= $id ?>,
-            id_tipo_medidor: tipoMedidor
-        };
-
-        // Adiciona todos os campos com prefixo equip_
-        $('#camposEquipamento input:not([type="radio"]), #camposEquipamento select').each(function() {
-            const name = $(this).attr('name');
-            if (name) {
-                formData[name] = $(this).val();
-            }
-        });
-
-        // Adiciona radio buttons (pega apenas o selecionado)
-        $('#camposEquipamento input[type="radio"]:checked').each(function() {
-            const name = $(this).attr('name');
-            if (name) {
-                formData[name] = $(this).val();
-            }
-        });
-
-        $.ajax({
-            url: 'bd/pontoMedicao/salvarDadosMedidor.php',
-            type: 'POST',
-            data: formData,
-            dataType: 'json',
-            success: function(response) {
-                btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar Dados do Equipamento');
-                
-                if (response.success) {
-                    showToast(response.message, 'sucesso');
-                    if (response.cd_chave) {
-                        $('#equipCdChave').val(response.cd_chave);
+        function carregarEquipamento(tipo) {
+            $.ajax({
+                url: 'bd/pontoMedicao/getDadosMedidor.php',
+                type: 'GET',
+                data: {
+                    cd_ponto_medicao: <?= $id ?>,
+                    id_tipo_medidor: tipo
+                },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success && response.data) {
+                        equipamentoData = response.data;
+                        preencherCamposEquipamento(response.data);
+                    } else {
+                        equipamentoData = null;
+                        $('#equipCdChave').val('');
                     }
-                } else {
-                    showToast(response.message || 'Erro ao salvar', 'erro');
+                },
+                error: function () {
+                    showToast('Erro ao carregar dados do equipamento', 'erro');
                 }
-            },
-            error: function(xhr, status, error) {
-                btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar Dados do Equipamento');
-                showToast('Erro ao comunicar com o servidor', 'erro');
-            }
-        });
-    }
+            });
+        }
 
-    // ============================================
-    // Meta Mensal - CRUD Dinâmico
-    // ============================================
-    let tipoMedidor = <?= $pontoMedicao['ID_TIPO_MEDIDOR'] ?? 0 ?>;
-    const mesesNomes = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    let metasData = [];
+        function preencherCamposEquipamento(dados) {
+            $('#equipCdChave').val(dados.CD_CHAVE || '');
 
-    // Carregar metas ao iniciar
-    $(document).ready(function() {
-        // Verifica se tipo de medidor é válido
-        atualizarSecaoMetas(tipoMedidor);
-        atualizarSecaoEquipamento(tipoMedidor);
+            // Preenche todos os campos que existirem
+            Object.keys(dados).forEach(function (key) {
+                const fieldName = key.toLowerCase();
+                const $field = $(`#equip_${fieldName}`);
 
-        // Filtro por ano
-        $('#filtroAnoMeta').on('change', function() {
-            renderizarTabelaMetas();
-        });
+                if ($field.length) {
+                    let valor = dados[key];
 
-        // Mostrar aviso quando não selecionar mês
-        $('#metaMes').on('change', function() {
-            const aviso = $('#avisoAnoInteiro');
-            if ($(this).val() === '') {
-                aviso.slideDown();
-            } else {
-                aviso.slideUp();
-            }
-        });
+                    // Formata datas
+                    if (fieldName.startsWith('dt_') && valor) {
+                        valor = valor.split('T')[0]; // Remove parte de hora se existir
+                        valor = valor.split(' ')[0]; // Remove hora se formato SQL Server
+                    }
 
-        // Evento: Mudança de Tipo de Medidor
-        $('#selectTipoMedidor').on('change', function() {
-            tipoMedidor = parseInt($(this).val()) || 0;
+                    $field.val(valor);
+                }
+
+                // Trata radio buttons (ID_PRODUTO / tipo de fluido)
+                if (fieldName === 'id_produto') {
+                    $(`input[name="id_produto"][value="${dados[key] || ''}"]`).prop('checked', true);
+                }
+            });
+        }
+
+        function salvarEquipamento() {
+            const btnSalvar = $('#btnSalvarEquip');
+            btnSalvar.prop('disabled', true).html('<ion-icon name="hourglass-outline"></ion-icon> Salvando...');
+
+            // Coleta todos os campos do equipamento
+            const formData = {
+                cd_chave: $('#equipCdChave').val(),
+                cd_ponto_medicao: <?= $id ?>,
+                id_tipo_medidor: tipoMedidor
+            };
+
+            // Adiciona todos os campos com prefixo equip_
+            $('#camposEquipamento input:not([type="radio"]), #camposEquipamento select').each(function () {
+                const name = $(this).attr('name');
+                if (name) {
+                    formData[name] = $(this).val();
+                }
+            });
+
+            // Adiciona radio buttons (pega apenas o selecionado)
+            $('#camposEquipamento input[type="radio"]:checked').each(function () {
+                const name = $(this).attr('name');
+                if (name) {
+                    formData[name] = $(this).val();
+                }
+            });
+
+            $.ajax({
+                url: 'bd/pontoMedicao/salvarDadosMedidor.php',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function (response) {
+                    btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar Dados do Equipamento');
+
+                    if (response.success) {
+                        showToast(response.message, 'sucesso');
+                        if (response.cd_chave) {
+                            $('#equipCdChave').val(response.cd_chave);
+                        }
+                    } else {
+                        showToast(response.message || 'Erro ao salvar', 'erro');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar Dados do Equipamento');
+                    showToast('Erro ao comunicar com o servidor', 'erro');
+                }
+            });
+        }
+
+        // ============================================
+        // Meta Mensal - CRUD Dinâmico
+        // ============================================
+        let tipoMedidor = <?= $pontoMedicao['ID_TIPO_MEDIDOR'] ?? 0 ?>;
+        const mesesNomes = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        let metasData = [];
+
+        // Carregar metas ao iniciar
+        $(document).ready(function () {
+            // Verifica se tipo de medidor é válido
             atualizarSecaoMetas(tipoMedidor);
             atualizarSecaoEquipamento(tipoMedidor);
+
+            // Filtro por ano
+            $('#filtroAnoMeta').on('change', function () {
+                renderizarTabelaMetas();
+            });
+
+            // Mostrar aviso quando não selecionar mês
+            $('#metaMes').on('change', function () {
+                const aviso = $('#avisoAnoInteiro');
+                if ($(this).val() === '') {
+                    aviso.slideDown();
+                } else {
+                    aviso.slideUp();
+                }
+            });
+
+            // Evento: Mudança de Tipo de Medidor
+            $('#selectTipoMedidor').on('change', function () {
+                tipoMedidor = parseInt($(this).val()) || 0;
+                atualizarSecaoMetas(tipoMedidor);
+                atualizarSecaoEquipamento(tipoMedidor);
+                atualizarTagsVisiveis(tipoMedidor);
+            });
         });
-    });
 
-    // Handler para navegação entre abas
-    $('.tab-btn').on('click', function() {
-        const tabId = $(this).data('tab');
-        
-        // Atualiza botões
-        $('.tab-btn').removeClass('active');
-        $(this).addClass('active');
-        
-        // Atualiza painéis
-        $('.tab-pane').removeClass('active');
-        $('#pane' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).addClass('active');
-    });
+        // Handler para navegação entre abas
+        $('.tab-btn').on('click', function () {
+            const tabId = $(this).data('tab');
 
-    function atualizarSecaoMetas(tipo) {
-        // Atualiza a aba de metas mesmo sem mostrar/esconder
-        if (tipo > 0) {
-            atualizarCabecalhoTabela(tipo);
-            atualizarCamposModal(tipo);
-            $('#metaTipoMedidor').val(tipo);
-            carregarMetas();
-        } else {
-            metasData = [];
-            atualizarBadgeMetas();
+            // Atualiza botões
+            $('.tab-btn').removeClass('active');
+            $(this).addClass('active');
+
+            // Atualiza painéis
+            $('.tab-pane').removeClass('active');
+            $('#pane' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).addClass('active');
+        });
+
+        function atualizarSecaoMetas(tipo) {
+            // Atualiza a aba de metas mesmo sem mostrar/esconder
+            if (tipo > 0) {
+                atualizarCabecalhoTabela(tipo);
+                atualizarCamposModal(tipo);
+                $('#metaTipoMedidor').val(tipo);
+                carregarMetas();
+            } else {
+                metasData = [];
+                atualizarBadgeMetas();
+            }
         }
-    }
-    
-    function atualizarBadgeMetas() {
-        $('#badgeMetas').text(metasData.length);
-    }
 
-    function atualizarCabecalhoTabela(tipo) {
-        let html = '<tr><th style="width: 80px;">Ano</th><th style="width: 80px;">Mês</th>';
-        
-        if (tipo == 1 || tipo == 2 || tipo == 8) {
-            // Macromedidor, Estação Pitométrica, Hidrômetro
-            html += '<th>Meta L/S</th>';
-        } else if (tipo == 4) {
-            // Medidor Pressão
-            html += '<th>Pressão Alta (mca)</th><th>Pressão Baixa (mca)</th>';
-        } else if (tipo == 6) {
-            // Nível Reservatório
-            html += '<th>Nível Extrav. %</th><th>Nível Alto</th><th>Nível Baixo</th>';
-        } else {
-            // Padrão
-            html += '<th>Meta L/S</th>';
+        function atualizarBadgeMetas() {
+            $('#badgeMetas').text(metasData.length);
         }
-        
-        html += '<th style="width: 100px;">Ações</th></tr>';
-        $('#theadMetas').html(html);
-    }
 
-    function atualizarCamposModal(tipo) {
-        let html = '';
-        
-        if (tipo == 1 || tipo == 2 || tipo == 8) {
-            // Macromedidor, Estação Pitométrica, Hidrômetro
-            html = `
+        function atualizarCabecalhoTabela(tipo) {
+            let html = '<tr><th style="width: 80px;">Ano</th><th style="width: 80px;">Mês</th>';
+
+            if (tipo == 1 || tipo == 2 || tipo == 8) {
+                // Macromedidor, Estação Pitométrica, Hidrômetro
+                html += '<th>Meta L/S</th>';
+            } else if (tipo == 4) {
+                // Medidor Pressão
+                html += '<th>Pressão Alta (mca)</th><th>Pressão Baixa (mca)</th>';
+            } else if (tipo == 6) {
+                // Nível Reservatório
+                html += '<th>Nível Extrav. %</th><th>Nível Alto</th><th>Nível Baixo</th>';
+            } else {
+                // Padrão
+                html += '<th>Meta L/S</th>';
+            }
+
+            html += '<th style="width: 100px;">Ações</th></tr>';
+            $('#theadMetas').html(html);
+        }
+
+        function atualizarCamposModal(tipo) {
+            let html = '';
+
+            if (tipo == 1 || tipo == 2 || tipo == 8) {
+                // Macromedidor, Estação Pitométrica, Hidrômetro
+                html = `
                 <div class="form-row">
                     <div class="form-group col-12">
                         <label class="form-label">
@@ -2383,8 +2473,8 @@ $tiposInstalacao = [
                     </div>
                 </div>
             `;
-        } else if (tipo == 4) {
-            html = `
+            } else if (tipo == 4) {
+                html = `
                 <div class="form-row">
                     <div class="form-group col-6">
                         <label class="form-label">
@@ -2404,8 +2494,8 @@ $tiposInstalacao = [
                     </div>
                 </div>
             `;
-        } else if (tipo == 6) {
-            html = `
+            } else if (tipo == 6) {
+                html = `
                 <div class="form-row">
                     <div class="form-group col-12">
                         <label class="form-label">
@@ -2435,9 +2525,9 @@ $tiposInstalacao = [
                     </div>
                 </div>
             `;
-        } else {
-            // Padrão - Meta L/S
-            html = `
+            } else {
+                // Padrão - Meta L/S
+                html = `
                 <div class="form-row">
                     <div class="form-group col-12">
                         <label class="form-label">
@@ -2449,46 +2539,46 @@ $tiposInstalacao = [
                     </div>
                 </div>
             `;
-        }
-        
-        $('#camposMetaDinamicos').html(html);
-    }
-
-    function carregarMetas() {
-        $.ajax({
-            url: 'bd/pontoMedicao/getMetasMensais.php',
-            type: 'GET',
-            data: { cd_ponto_medicao: <?= $id ?> },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    // Carrega todas as metas do ponto de medição
-                    metasData = response.data;
-                    renderizarTabelaMetas();
-                    atualizarBadgeMetas();
-                } else {
-                    showToast('Erro ao carregar metas', 'erro');
-                }
-            },
-            error: function() {
-                showToast('Erro ao comunicar com o servidor', 'erro');
             }
-        });
-    }
 
-    function renderizarTabelaMetas() {
-        const filtroAno = $('#filtroAnoMeta').val();
-        const tbody = $('#tabelaMetas');
-        
-        // Filtra por ano se selecionado
-        let dadosFiltrados = metasData;
-        if (filtroAno) {
-            dadosFiltrados = metasData.filter(m => m.ANO_META == filtroAno);
+            $('#camposMetaDinamicos').html(html);
         }
 
-        if (dadosFiltrados.length === 0) {
-            const colspan = (tipoMedidor == 1 || tipoMedidor == 2 || tipoMedidor == 8) ? 4 : (tipoMedidor == 4 ? 5 : 6);
-            tbody.html(`
+        function carregarMetas() {
+            $.ajax({
+                url: 'bd/pontoMedicao/getMetasMensais.php',
+                type: 'GET',
+                data: { cd_ponto_medicao: <?= $id ?> },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        // Carrega todas as metas do ponto de medição
+                        metasData = response.data;
+                        renderizarTabelaMetas();
+                        atualizarBadgeMetas();
+                    } else {
+                        showToast('Erro ao carregar metas', 'erro');
+                    }
+                },
+                error: function () {
+                    showToast('Erro ao comunicar com o servidor', 'erro');
+                }
+            });
+        }
+
+        function renderizarTabelaMetas() {
+            const filtroAno = $('#filtroAnoMeta').val();
+            const tbody = $('#tabelaMetas');
+
+            // Filtra por ano se selecionado
+            let dadosFiltrados = metasData;
+            if (filtroAno) {
+                dadosFiltrados = metasData.filter(m => m.ANO_META == filtroAno);
+            }
+
+            if (dadosFiltrados.length === 0) {
+                const colspan = (tipoMedidor == 1 || tipoMedidor == 2 || tipoMedidor == 8) ? 4 : (tipoMedidor == 4 ? 5 : 6);
+                tbody.html(`
                 <tr>
                     <td colspan="${colspan}">
                         <div class="empty-state-mini">
@@ -2498,30 +2588,30 @@ $tiposInstalacao = [
                     </td>
                 </tr>
             `);
-            return;
-        }
-
-        let html = '';
-        dadosFiltrados.forEach(meta => {
-            html += '<tr>';
-            html += `<td>${meta.ANO_META}</td>`;
-            html += `<td><span class="mes-nome">${mesesNomes[meta.MES_META] || '-'}</span></td>`;
-            
-            if (tipoMedidor == 1 || tipoMedidor == 2 || tipoMedidor == 8) {
-                html += `<td>${formatNumber(meta.VL_META_L_S)}</td>`;
-            } else if (tipoMedidor == 4) {
-                html += `<td>${formatNumber(meta.VL_META_PRESSAO_ALTA)}</td>`;
-                html += `<td>${formatNumber(meta.VL_META_PRESSAO_BAIXA)}</td>`;
-            } else if (tipoMedidor == 6) {
-                html += `<td>${formatNumber(meta.VL_META_NIVEL_RESERVATORIO)}</td>`;
-                html += `<td>${formatNumber(meta.VL_META_RESERVATORIO_ALTA)}</td>`;
-                html += `<td>${formatNumber(meta.VL_META_RESERVATORIO_BAIXA)}</td>`;
-            } else {
-                // Padrão
-                html += `<td>${formatNumber(meta.VL_META_L_S)}</td>`;
+                return;
             }
 
-            html += `
+            let html = '';
+            dadosFiltrados.forEach(meta => {
+                html += '<tr>';
+                html += `<td>${meta.ANO_META}</td>`;
+                html += `<td><span class="mes-nome">${mesesNomes[meta.MES_META] || '-'}</span></td>`;
+
+                if (tipoMedidor == 1 || tipoMedidor == 2 || tipoMedidor == 8) {
+                    html += `<td>${formatNumber(meta.VL_META_L_S)}</td>`;
+                } else if (tipoMedidor == 4) {
+                    html += `<td>${formatNumber(meta.VL_META_PRESSAO_ALTA)}</td>`;
+                    html += `<td>${formatNumber(meta.VL_META_PRESSAO_BAIXA)}</td>`;
+                } else if (tipoMedidor == 6) {
+                    html += `<td>${formatNumber(meta.VL_META_NIVEL_RESERVATORIO)}</td>`;
+                    html += `<td>${formatNumber(meta.VL_META_RESERVATORIO_ALTA)}</td>`;
+                    html += `<td>${formatNumber(meta.VL_META_RESERVATORIO_BAIXA)}</td>`;
+                } else {
+                    // Padrão
+                    html += `<td>${formatNumber(meta.VL_META_L_S)}</td>`;
+                }
+
+                html += `
                 <td>
                     <button type="button" class="btn-action" onclick="editarMeta(${meta.CD_CHAVE})" title="Editar">
                         <ion-icon name="create-outline"></ion-icon>
@@ -2531,142 +2621,142 @@ $tiposInstalacao = [
                     </button>
                 </td>
             `;
-            html += '</tr>';
-        });
+                html += '</tr>';
+            });
 
-        tbody.html(html);
-    }
-
-    function formatNumber(value) {
-        if (value === null || value === undefined || value === '') return '-';
-        return parseFloat(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    function abrirModalMeta() {
-        // Limpa o formulário
-        $('#formMeta')[0].reset();
-        $('#metaCdChave').val('');
-        $('#metaTipoMedidor').val(tipoMedidor);
-        $('#metaAno').val(new Date().getFullYear());
-        $('#metaMes').val('');
-        $('#avisoAnoInteiro').show();
-        $('#modalMetaTitulo').text('Nova Meta');
-        $('#modalMeta').addClass('active');
-    }
-
-    function fecharModalMeta() {
-        $('#modalMeta').removeClass('active');
-    }
-
-    function editarMeta(cdChave) {
-        const meta = metasData.find(m => m.CD_CHAVE == cdChave);
-        if (!meta) return;
-
-        $('#metaCdChave').val(meta.CD_CHAVE);
-        $('#metaTipoMedidor').val(tipoMedidor);
-        $('#metaAno').val(meta.ANO_META);
-        $('#metaMes').val(meta.MES_META || '');
-        $('#avisoAnoInteiro').toggle(meta.MES_META === null || meta.MES_META === '');
-
-        if (tipoMedidor == 1 || tipoMedidor == 2 || tipoMedidor == 8) {
-            $('#metaLS').val(meta.VL_META_L_S);
-        } else if (tipoMedidor == 4) {
-            $('#metaPressaoAlta').val(meta.VL_META_PRESSAO_ALTA);
-            $('#metaPressaoBaixa').val(meta.VL_META_PRESSAO_BAIXA);
-        } else if (tipoMedidor == 6) {
-            $('#metaNivelReservatorio').val(meta.VL_META_NIVEL_RESERVATORIO);
-            $('#metaReservatorioAlta').val(meta.VL_META_RESERVATORIO_ALTA);
-            $('#metaReservatorioBaixa').val(meta.VL_META_RESERVATORIO_BAIXA);
-        } else {
-            // Padrão
-            $('#metaLS').val(meta.VL_META_L_S);
+            tbody.html(html);
         }
 
-        $('#modalMetaTitulo').text('Editar Meta');
-        $('#modalMeta').addClass('active');
-    }
-
-    function salvarMeta() {
-        const form = $('#formMeta');
-        const btnSalvar = $('#btnSalvarMeta');
-        
-        // Validação básica
-        const ano = $('#metaAno').val();
-        if (!ano) {
-            showToast('Selecione o ano', 'erro');
-            return;
+        function formatNumber(value) {
+            if (value === null || value === undefined || value === '') return '-';
+            return parseFloat(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        // Confirmação se for ano inteiro
-        const mes = $('#metaMes').val();
-        if (!mes) {
-            if (!confirm('A meta será aplicada para todos os 12 meses do ano ' + ano + '. Deseja continuar?')) {
+        function abrirModalMeta() {
+            // Limpa o formulário
+            $('#formMeta')[0].reset();
+            $('#metaCdChave').val('');
+            $('#metaTipoMedidor').val(tipoMedidor);
+            $('#metaAno').val(new Date().getFullYear());
+            $('#metaMes').val('');
+            $('#avisoAnoInteiro').show();
+            $('#modalMetaTitulo').text('Nova Meta');
+            $('#modalMeta').addClass('active');
+        }
+
+        function fecharModalMeta() {
+            $('#modalMeta').removeClass('active');
+        }
+
+        function editarMeta(cdChave) {
+            const meta = metasData.find(m => m.CD_CHAVE == cdChave);
+            if (!meta) return;
+
+            $('#metaCdChave').val(meta.CD_CHAVE);
+            $('#metaTipoMedidor').val(tipoMedidor);
+            $('#metaAno').val(meta.ANO_META);
+            $('#metaMes').val(meta.MES_META || '');
+            $('#avisoAnoInteiro').toggle(meta.MES_META === null || meta.MES_META === '');
+
+            if (tipoMedidor == 1 || tipoMedidor == 2 || tipoMedidor == 8) {
+                $('#metaLS').val(meta.VL_META_L_S);
+            } else if (tipoMedidor == 4) {
+                $('#metaPressaoAlta').val(meta.VL_META_PRESSAO_ALTA);
+                $('#metaPressaoBaixa').val(meta.VL_META_PRESSAO_BAIXA);
+            } else if (tipoMedidor == 6) {
+                $('#metaNivelReservatorio').val(meta.VL_META_NIVEL_RESERVATORIO);
+                $('#metaReservatorioAlta').val(meta.VL_META_RESERVATORIO_ALTA);
+                $('#metaReservatorioBaixa').val(meta.VL_META_RESERVATORIO_BAIXA);
+            } else {
+                // Padrão
+                $('#metaLS').val(meta.VL_META_L_S);
+            }
+
+            $('#modalMetaTitulo').text('Editar Meta');
+            $('#modalMeta').addClass('active');
+        }
+
+        function salvarMeta() {
+            const form = $('#formMeta');
+            const btnSalvar = $('#btnSalvarMeta');
+
+            // Validação básica
+            const ano = $('#metaAno').val();
+            if (!ano) {
+                showToast('Selecione o ano', 'erro');
                 return;
             }
+
+            // Confirmação se for ano inteiro
+            const mes = $('#metaMes').val();
+            if (!mes) {
+                if (!confirm('A meta será aplicada para todos os 12 meses do ano ' + ano + '. Deseja continuar?')) {
+                    return;
+                }
+            }
+
+            btnSalvar.prop('disabled', true).html('<ion-icon name="hourglass-outline"></ion-icon> Salvando...');
+
+            $.ajax({
+                url: 'bd/pontoMedicao/salvarMetaMensal.php',
+                type: 'POST',
+                data: form.serialize(),
+                dataType: 'json',
+                success: function (response) {
+                    btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar Meta');
+
+                    if (response.success) {
+                        showToast(response.message, 'sucesso');
+                        fecharModalMeta();
+                        carregarMetas();
+                    } else {
+                        showToast(response.message || 'Erro ao salvar', 'erro');
+                    }
+                },
+                error: function () {
+                    btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar Meta');
+                    showToast('Erro ao comunicar com o servidor', 'erro');
+                }
+            });
         }
 
-        btnSalvar.prop('disabled', true).html('<ion-icon name="hourglass-outline"></ion-icon> Salvando...');
+        function excluirMeta(cdChave) {
+            if (!confirm('Tem certeza que deseja excluir esta meta?')) {
+                return;
+            }
 
-        $.ajax({
-            url: 'bd/pontoMedicao/salvarMetaMensal.php',
-            type: 'POST',
-            data: form.serialize(),
-            dataType: 'json',
-            success: function(response) {
-                btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar Meta');
-                
-                if (response.success) {
-                    showToast(response.message, 'sucesso');
-                    fecharModalMeta();
-                    carregarMetas();
-                } else {
-                    showToast(response.message || 'Erro ao salvar', 'erro');
+            $.ajax({
+                url: 'bd/pontoMedicao/excluirMetaMensal.php',
+                type: 'POST',
+                data: { cd_chave: cdChave },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        showToast(response.message, 'sucesso');
+                        carregarMetas();
+                    } else {
+                        showToast(response.message || 'Erro ao excluir', 'erro');
+                    }
+                },
+                error: function () {
+                    showToast('Erro ao comunicar com o servidor', 'erro');
                 }
-            },
-            error: function() {
-                btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar Meta');
-                showToast('Erro ao comunicar com o servidor', 'erro');
+            });
+        }
+
+        // Fechar modal ao clicar fora
+        $('#modalMeta').on('click', function (e) {
+            if (e.target === this) {
+                fecharModalMeta();
             }
         });
-    }
 
-    function excluirMeta(cdChave) {
-        if (!confirm('Tem certeza que deseja excluir esta meta?')) {
-            return;
-        }
-
-        $.ajax({
-            url: 'bd/pontoMedicao/excluirMetaMensal.php',
-            type: 'POST',
-            data: { cd_chave: cdChave },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    showToast(response.message, 'sucesso');
-                    carregarMetas();
-                } else {
-                    showToast(response.message || 'Erro ao excluir', 'erro');
-                }
-            },
-            error: function() {
-                showToast('Erro ao comunicar com o servidor', 'erro');
+        // Fechar modal com ESC
+        $(document).on('keydown', function (e) {
+            if (e.key === 'Escape' && $('#modalMeta').hasClass('active')) {
+                fecharModalMeta();
             }
         });
-    }
-
-    // Fechar modal ao clicar fora
-    $('#modalMeta').on('click', function(e) {
-        if (e.target === this) {
-            fecharModalMeta();
-        }
-    });
-
-    // Fechar modal com ESC
-    $(document).on('keydown', function(e) {
-        if (e.key === 'Escape' && $('#modalMeta').hasClass('active')) {
-            fecharModalMeta();
-        }
-    });
     <?php endif; ?>
 </script>
 

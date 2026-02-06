@@ -59,7 +59,7 @@ $tiposFluido = [
 ];
 
 // Verifica se foi passado o ID
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 if ($id <= 0) {
     $_SESSION['msg'] = 'Ponto de medição não informado.';
@@ -143,7 +143,9 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
     /* ============================================
        Reset e Box Sizing
        ============================================ */
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
         box-sizing: border-box;
     }
 
@@ -587,11 +589,11 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
     }
 
     .tabs-header::-webkit-scrollbar-track {
-        background: rgba(255,255,255,0.1);
+        background: rgba(255, 255, 255, 0.1);
     }
 
     .tabs-header::-webkit-scrollbar-thumb {
-        background: rgba(255,255,255,0.3);
+        background: rgba(255, 255, 255, 0.3);
         border-radius: 2px;
     }
 
@@ -872,10 +874,10 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
                     Voltar
                 </a>
                 <?php if ($podeEditar): ?>
-                <a href="pontoMedicaoForm.php?id=<?= $id ?>" class="btn-header primary">
-                    <ion-icon name="create-outline"></ion-icon>
-                    Editar
-                </a>
+                    <a href="pontoMedicaoForm.php?id=<?= $id ?>" class="btn-header primary">
+                        <ion-icon name="create-outline"></ion-icon>
+                        Editar
+                    </a>
                 <?php endif; ?>
             </div>
         </div>
@@ -929,11 +931,21 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
                         $tipoMedidor = $pm['ID_TIPO_MEDIDOR'];
                         $classeTipo = '';
                         switch ($tipoMedidor) {
-                            case 1: $classeTipo = 'macromedidor'; break;
-                            case 2: $classeTipo = 'estacao'; break;
-                            case 4: $classeTipo = 'pressao'; break;
-                            case 8: $classeTipo = 'hidrometro'; break;
-                            case 6: $classeTipo = 'reservatorio'; break;
+                            case 1:
+                                $classeTipo = 'macromedidor';
+                                break;
+                            case 2:
+                                $classeTipo = 'estacao';
+                                break;
+                            case 4:
+                                $classeTipo = 'pressao';
+                                break;
+                            case 8:
+                                $classeTipo = 'hidrometro';
+                                break;
+                            case 6:
+                                $classeTipo = 'reservatorio';
+                                break;
                         }
                         ?>
                         <span class="type-badge <?= $classeTipo ?>">
@@ -968,11 +980,14 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
                         Coordenadas
                     </span>
                     <div class="view-value-with-action <?= empty($pm['COORDENADAS']) ? 'empty' : '' ?>">
-                        <span class="value-text"><?= !empty($pm['COORDENADAS']) ? htmlspecialchars($pm['COORDENADAS']) : 'Não informado' ?></span>
+                        <span
+                            class="value-text"><?= !empty($pm['COORDENADAS']) ? htmlspecialchars($pm['COORDENADAS']) : 'Não informado' ?></span>
                         <?php if (!empty($pm['COORDENADAS'])): ?>
-                        <button type="button" class="btn-map" onclick="abrirMapa('<?= htmlspecialchars($pm['COORDENADAS']) ?>')" title="Abrir no Google Maps">
-                            <ion-icon name="map-outline"></ion-icon>
-                        </button>
+                            <button type="button" class="btn-map"
+                                onclick="abrirMapa('<?= htmlspecialchars($pm['COORDENADAS']) ?>')"
+                                title="Abrir no Google Maps">
+                                <ion-icon name="map-outline"></ion-icon>
+                            </button>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -1081,65 +1096,70 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
         </div>
         <div class="view-card-body">
             <div class="view-grid">
-                <div class="view-item">
-                    <span class="view-label">
-                        <ion-icon name="water-outline"></ion-icon>
-                        Tag Vazão
-                    </span>
-                    <div class="view-value <?= empty($pm['DS_TAG_VAZAO']) ? 'empty' : 'codigo' ?>">
-                        <?= !empty($pm['DS_TAG_VAZAO']) ? htmlspecialchars($pm['DS_TAG_VAZAO']) : 'Não informado' ?>
-                    </div>
-                </div>
+                <?php
+                // Determinar qual TAG principal exibir baseado no Tipo de Medidor
+                // 1,2,8 → Vazão | 4 → Pressão | 6 → Reservatório
+                $tipoMedidor = (int) ($pm['ID_TIPO_MEDIDOR'] ?? 0);
+                $tagPrincipalLabel = null;
+                $tagPrincipalValor = null;
+                $tagPrincipalIcon = null;
 
-                <div class="view-item">
-                    <span class="view-label">
-                        <ion-icon name="speedometer-outline"></ion-icon>
-                        Tag Pressão
-                    </span>
-                    <div class="view-value <?= empty($pm['DS_TAG_PRESSAO']) ? 'empty' : 'codigo' ?>">
-                        <?= !empty($pm['DS_TAG_PRESSAO']) ? htmlspecialchars($pm['DS_TAG_PRESSAO']) : 'Não informado' ?>
-                    </div>
-                </div>
+                switch ($tipoMedidor) {
+                    case 1: // Macromedidor
+                    case 2: // Estação Pitométrica
+                    case 8: // Hidrômetro
+                        $tagPrincipalLabel = 'Tag Vazão';
+                        $tagPrincipalValor = $pm['DS_TAG_VAZAO'] ?? null;
+                        $tagPrincipalIcon = 'water-outline';
+                        break;
+                    case 4: // Medidor Pressão
+                        $tagPrincipalLabel = 'Tag Pressão';
+                        $tagPrincipalValor = $pm['DS_TAG_PRESSAO'] ?? null;
+                        $tagPrincipalIcon = 'speedometer-outline';
+                        break;
+                    case 6: // Nível Reservatório
+                        $tagPrincipalLabel = 'Tag Nível Reservatório';
+                        $tagPrincipalValor = $pm['DS_TAG_RESERVATORIO'] ?? null;
+                        $tagPrincipalIcon = 'analytics-outline';
+                        break;
+                }
+                ?>
 
-                <div class="view-item">
-                    <span class="view-label">
-                        <ion-icon name="cube-outline"></ion-icon>
-                        Tag Volume
-                    </span>
-                    <div class="view-value <?= empty($pm['DS_TAG_VOLUME']) ? 'empty' : 'codigo' ?>">
-                        <?= !empty($pm['DS_TAG_VOLUME']) ? htmlspecialchars($pm['DS_TAG_VOLUME']) : 'Não informado' ?>
+                <?php if ($tagPrincipalLabel): ?>
+                    <div class="view-item">
+                        <span class="view-label">
+                            <ion-icon name="<?= $tagPrincipalIcon ?>"></ion-icon>
+                            <?= $tagPrincipalLabel ?>
+                        </span>
+                        <div class="view-value <?= empty($tagPrincipalValor) ? 'empty' : 'codigo' ?>">
+                            <?= !empty($tagPrincipalValor) ? htmlspecialchars($tagPrincipalValor) : 'Não informado' ?>
+                        </div>
                     </div>
-                </div>
+                <?php endif; ?>
 
-                <div class="view-item">
-                    <span class="view-label">
-                        <ion-icon name="analytics-outline"></ion-icon>
-                        Tag Nível Reservatório
-                    </span>
-                    <div class="view-value <?= empty($pm['DS_TAG_RESERVATORIO']) ? 'empty' : 'codigo' ?>">
-                        <?= !empty($pm['DS_TAG_RESERVATORIO']) ? htmlspecialchars($pm['DS_TAG_RESERVATORIO']) : 'Não informado' ?>
+                <?php if (!empty($pm['DS_TAG_TEMP_AGUA'])): ?>
+                    <div class="view-item">
+                        <span class="view-label">
+                            <ion-icon name="thermometer-outline"></ion-icon>
+                            Tag Temperatura da Água
+                        </span>
+                        <div class="view-value codigo">
+                            <?= htmlspecialchars($pm['DS_TAG_TEMP_AGUA']) ?>
+                        </div>
                     </div>
-                </div>
+                <?php endif; ?>
 
-                <div class="view-item">
-                    <span class="view-label">
-                        <ion-icon name="thermometer-outline"></ion-icon>
-                        Tag Temperatura da Água
-                    </span>
-                    <div class="view-value <?= empty($pm['DS_TAG_TEMP_AGUA']) ? 'empty' : 'codigo' ?>">
-                        <?= !empty($pm['DS_TAG_TEMP_AGUA']) ? htmlspecialchars($pm['DS_TAG_TEMP_AGUA']) : 'Não informado' ?>
+                <?php if (!empty($pm['DS_TAG_TEMP_AMBIENTE'])): ?>
+                    <div class="view-item">
+                        <span class="view-label">
+                            <ion-icon name="sunny-outline"></ion-icon>
+                            Tag Temperatura do Ambiente
+                        </span>
+                        <div class="view-value codigo">
+                            <?= htmlspecialchars($pm['DS_TAG_TEMP_AMBIENTE']) ?>
+                        </div>
                     </div>
-                </div>
-
-                <div class="view-item">
-                    <span class="view-label">
-                        <ion-icon name="sunny-outline"></ion-icon>
-                        Tag Temperatura do Ambiente
-                    </span>
-                    <div class="view-value <?= empty($pm['DS_TAG_TEMP_AMBIENTE']) ? 'empty' : 'codigo' ?>">
-                        <?= !empty($pm['DS_TAG_TEMP_AMBIENTE']) ? htmlspecialchars($pm['DS_TAG_TEMP_AMBIENTE']) : 'Não informado' ?>
-                    </div>
-                </div>
+                <?php endif; ?>
 
                 <div class="view-item">
                     <span class="view-label">
@@ -1214,16 +1234,16 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
                 </div>
 
                 <?php if (!empty($pm['DT_ULTIMA_ATUALIZACAO'])): ?>
-                <div class="view-divider"></div>
-                <div class="view-item full-width">
-                    <small style="color: #94a3b8; font-size: 12px;">
-                        <ion-icon name="time-outline" style="vertical-align: middle;"></ion-icon>
-                        Última atualização: <?= date('d/m/Y H:i', strtotime($pm['DT_ULTIMA_ATUALIZACAO'])) ?>
-                        <?php if (!empty($pm['DS_USUARIO_ATUALIZACAO'])): ?>
-                            por <?= htmlspecialchars($pm['DS_USUARIO_ATUALIZACAO']) ?>
-                        <?php endif; ?>
-                    </small>
-                </div>
+                    <div class="view-divider"></div>
+                    <div class="view-item full-width">
+                        <small style="color: #94a3b8; font-size: 12px;">
+                            <ion-icon name="time-outline" style="vertical-align: middle;"></ion-icon>
+                            Última atualização: <?= date('d/m/Y H:i', strtotime($pm['DT_ULTIMA_ATUALIZACAO'])) ?>
+                            <?php if (!empty($pm['DS_USUARIO_ATUALIZACAO'])): ?>
+                                por <?= htmlspecialchars($pm['DS_USUARIO_ATUALIZACAO']) ?>
+                            <?php endif; ?>
+                        </small>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
@@ -1263,7 +1283,8 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
                         <ion-icon name="calendar-outline"></ion-icon>
                         Filtrar Ano:
                     </label>
-                    <select id="filtroAnoMetaView" class="form-control" style="width: 120px;" onchange="renderizarTabelaMetas()">
+                    <select id="filtroAnoMetaView" class="form-control" style="width: 120px;"
+                        onchange="renderizarTabelaMetas()">
                         <option value="">Todos</option>
                         <?php for ($ano = date('Y') + 1; $ano >= date('Y') - 5; $ano--): ?>
                             <option value="<?= $ano ?>" <?= $ano == date('Y') ? 'selected' : '' ?>><?= $ano ?></option>
@@ -1323,10 +1344,10 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
 
         // Limpa espaços e formata coordenadas
         let coords = coordenadas.trim();
-        
+
         // Remove espaços extras e padroniza separadores
         coords = coords.replace(/\s+/g, '').replace(/;/g, ',');
-        
+
         // Extrai latitude e longitude
         const partes = coords.split(',');
         if (partes.length < 2) {
@@ -1346,7 +1367,7 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
         const url = `https://www.google.com/maps?q=${lat},${lng}&z=17`;
         window.open(url, '_blank');
     }
-    
+
     const tiposMedidorNomes = {
         1: 'Macromedidor',
         2: 'Estação Pitométrica',
@@ -1366,13 +1387,13 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
 
     let metasData = [];
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Carrega tipos de medidor de equipamento primeiro, depois carrega o resto
         $.ajax({
             url: 'bd/pontoMedicao/getTiposMedidorEquipamento.php',
             type: 'GET',
             dataType: 'json',
-            success: function(response) {
+            success: function (response) {
                 if (response.success && response.data) {
                     response.data.forEach(t => {
                         tiposMedidorEquipNomes[t.CD_CHAVE] = t.DS_NOME;
@@ -1381,22 +1402,22 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
                 // Agora carrega os dados do equipamento
                 carregarEquipamento();
             },
-            error: function() {
+            error: function () {
                 // Mesmo com erro, tenta carregar equipamento
                 carregarEquipamento();
             }
         });
-        
+
         carregarMetas();
-        
+
         // Handler para navegação entre abas
-        $('.tab-btn').on('click', function() {
+        $('.tab-btn').on('click', function () {
             const tabId = $(this).data('tab');
-            
+
             // Atualiza botões
             $('.tab-btn').removeClass('active');
             $(this).addClass('active');
-            
+
             // Atualiza painéis
             $('.tab-pane').removeClass('active');
             if (tabId === 'equipamento') {
@@ -1413,7 +1434,7 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
             type: 'GET',
             data: { cd_ponto_medicao: cdPontoMedicaoEquip },
             dataType: 'json',
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     metasData = response.data;
                     renderizarTabelaMetas();
@@ -1426,16 +1447,16 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
     function renderizarTabelaMetas() {
         const tbody = $('#tabelaMetas');
         const filtroAno = $('#filtroAnoMetaView').val();
-        
+
         // Filtra por ano se selecionado
         let dadosFiltrados = metasData;
         if (filtroAno) {
             dadosFiltrados = metasData.filter(m => m.ANO_META == filtroAno);
         }
-        
+
         // Atualiza badge com total (não filtrado)
         $('#badgeMetasView').text(metasData.length);
-        
+
         if (dadosFiltrados.length === 0) {
             tbody.html(`
                 <tr>
@@ -1450,15 +1471,15 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
             return;
         }
 
-        const meses = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-        
+        const meses = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
         let html = '';
         dadosFiltrados.forEach(meta => {
             html += '<tr>';
             html += `<td>${meta.ANO_META}</td>`;
             html += `<td>${meses[meta.MES_META] || 'Ano Inteiro'}</td>`;
-            
+
             if (tipoMedidorEquip == 4) {
                 html += `<td>${formatarNumero(meta.VL_META_PRESSAO_ALTA)}</td>`;
                 html += `<td>${formatarNumero(meta.VL_META_PRESSAO_BAIXA)}</td>`;
@@ -1469,13 +1490,13 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
             } else {
                 html += `<td>${formatarNumero(meta.VL_META_L_S)}</td>`;
             }
-            
+
             html += '</tr>';
         });
-        
+
         tbody.html(html);
     }
-    
+
     function formatarNumero(value) {
         if (value === null || value === undefined || value === '') return '-';
         return parseFloat(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1485,12 +1506,12 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
         $.ajax({
             url: 'bd/pontoMedicao/getDadosMedidor.php',
             type: 'GET',
-            data: { 
+            data: {
                 cd_ponto_medicao: cdPontoMedicaoEquip,
                 id_tipo_medidor: tipoMedidorEquip
             },
             dataType: 'json',
-            success: function(response) {
+            success: function (response) {
                 if (response.success && response.data) {
                     renderizarEquipamento(response.data, tipoMedidorEquip);
                 } else {
@@ -1504,7 +1525,7 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
                     `);
                 }
             },
-            error: function() {
+            error: function () {
                 $('#conteudoEquipamentoView').html(`
                     <div class="view-item full-width">
                         <div class="empty-state-mini">
@@ -1519,7 +1540,7 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
 
     function renderizarEquipamento(dados, tipo) {
         let html = '';
-        
+
         switch (tipo) {
             case 1: // Macromedidor
                 html = renderMacromedidor(dados);
@@ -1539,7 +1560,7 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
             default:
                 html = '<div class="view-item full-width"><div class="empty-state-mini">Tipo de equipamento não suportado</div></div>';
         }
-        
+
         $('#conteudoEquipamentoView').html(html);
     }
 
@@ -1547,7 +1568,7 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
         const isEmpty = !value || value === '' || value === null;
         const displayValue = isEmpty ? 'Não informado' : value;
         const classes = isEmpty ? 'empty' : (isCode ? 'codigo' : '');
-        
+
         return `
             <div class="view-item">
                 <span class="view-label">

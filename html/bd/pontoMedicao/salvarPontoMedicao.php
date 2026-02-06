@@ -9,7 +9,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 // Capturar erros e warnings para incluir na resposta
 $phpErrors = [];
-set_error_handler(function($errno, $errstr, $errfile, $errline) use (&$phpErrors) {
+set_error_handler(function ($errno, $errstr, $errfile, $errline) use (&$phpErrors) {
     $phpErrors[] = "[$errno] $errstr em $errfile:$errline";
     return true;
 });
@@ -31,19 +31,19 @@ try {
     }
 
     // Captura parâmetros
-    $cdPontoMedicao = isset($_POST['cd_ponto_medicao']) && $_POST['cd_ponto_medicao'] !== '' ? (int)$_POST['cd_ponto_medicao'] : null;
-    $cdLocalidade = isset($_POST['cd_localidade']) && $_POST['cd_localidade'] !== '' ? (int)$_POST['cd_localidade'] : null;
-    $idTipoMedidor = isset($_POST['id_tipo_medidor']) && $_POST['id_tipo_medidor'] !== '' ? (int)$_POST['id_tipo_medidor'] : null;
+    $cdPontoMedicao = isset($_POST['cd_ponto_medicao']) && $_POST['cd_ponto_medicao'] !== '' ? (int) $_POST['cd_ponto_medicao'] : null;
+    $cdLocalidade = isset($_POST['cd_localidade']) && $_POST['cd_localidade'] !== '' ? (int) $_POST['cd_localidade'] : null;
+    $idTipoMedidor = isset($_POST['id_tipo_medidor']) && $_POST['id_tipo_medidor'] !== '' ? (int) $_POST['id_tipo_medidor'] : null;
     $dsNome = isset($_POST['ds_nome']) ? mb_substr(trim($_POST['ds_nome']), 0, 100) : '';
     $dsLocalizacao = isset($_POST['ds_localizacao']) ? mb_substr(trim($_POST['ds_localizacao']), 0, 200) : null;
-    $idTipoLeitura = isset($_POST['id_tipo_leitura']) && $_POST['id_tipo_leitura'] !== '' ? (int)$_POST['id_tipo_leitura'] : null;
-    $opPeriodicidadeLeitura = isset($_POST['op_periodicidade_leitura']) && $_POST['op_periodicidade_leitura'] !== '' ? (int)$_POST['op_periodicidade_leitura'] : null;
-    $cdUsuarioResponsavel = isset($_POST['cd_usuario_responsavel']) && $_POST['cd_usuario_responsavel'] !== '' ? (int)$_POST['cd_usuario_responsavel'] : null;
-    $tipoInstalacao = isset($_POST['tipo_instalacao']) && $_POST['tipo_instalacao'] !== '' ? (int)$_POST['tipo_instalacao'] : null;
+    $idTipoLeitura = isset($_POST['id_tipo_leitura']) && $_POST['id_tipo_leitura'] !== '' ? (int) $_POST['id_tipo_leitura'] : null;
+    $opPeriodicidadeLeitura = isset($_POST['op_periodicidade_leitura']) && $_POST['op_periodicidade_leitura'] !== '' ? (int) $_POST['op_periodicidade_leitura'] : null;
+    $cdUsuarioResponsavel = isset($_POST['cd_usuario_responsavel']) && $_POST['cd_usuario_responsavel'] !== '' ? (int) $_POST['cd_usuario_responsavel'] : null;
+    $tipoInstalacao = isset($_POST['tipo_instalacao']) && $_POST['tipo_instalacao'] !== '' ? (int) $_POST['tipo_instalacao'] : null;
     $dtAtivacao = isset($_POST['dt_ativacao']) && $_POST['dt_ativacao'] !== '' ? $_POST['dt_ativacao'] : null;
     $dtDesativacao = isset($_POST['dt_desativacao']) && $_POST['dt_desativacao'] !== '' ? $_POST['dt_desativacao'] : null;
-    $vlQuantidadeLigacoes = isset($_POST['vl_quantidade_ligacoes']) && $_POST['vl_quantidade_ligacoes'] !== '' ? (float)$_POST['vl_quantidade_ligacoes'] : null;
-    $vlQuantidadeEconomias = isset($_POST['vl_quantidade_economias']) && $_POST['vl_quantidade_economias'] !== '' ? (float)$_POST['vl_quantidade_economias'] : null;
+    $vlQuantidadeLigacoes = isset($_POST['vl_quantidade_ligacoes']) && $_POST['vl_quantidade_ligacoes'] !== '' ? (float) $_POST['vl_quantidade_ligacoes'] : null;
+    $vlQuantidadeEconomias = isset($_POST['vl_quantidade_economias']) && $_POST['vl_quantidade_economias'] !== '' ? (float) $_POST['vl_quantidade_economias'] : null;
     $dsTagVazao = isset($_POST['ds_tag_vazao']) ? mb_substr(trim($_POST['ds_tag_vazao']), 0, 25) : null;
     $dsTagPressao = isset($_POST['ds_tag_pressao']) ? mb_substr(trim($_POST['ds_tag_pressao']), 0, 25) : null;
     $dsTagVolume = isset($_POST['ds_tag_volume']) ? mb_substr(trim($_POST['ds_tag_volume']), 0, 25) : null;
@@ -52,10 +52,40 @@ try {
     $dsTagTempAmbiente = isset($_POST['ds_tag_temp_ambiente']) ? mb_substr(trim($_POST['ds_tag_temp_ambiente']), 0, 25) : null;
     $coordenadas = isset($_POST['coordenadas']) ? mb_substr(trim($_POST['coordenadas']), 0, 100) : null;
     $locInstSap = isset($_POST['loc_inst_sap']) ? mb_substr(trim($_POST['loc_inst_sap']), 0, 100) : null;
-    $vlFatorCorrecaoVazao = isset($_POST['vl_fator_correcao_vazao']) && $_POST['vl_fator_correcao_vazao'] !== '' ? (float)$_POST['vl_fator_correcao_vazao'] : null;
-    $vlLimiteInferiorVazao = isset($_POST['vl_limite_inferior_vazao']) && $_POST['vl_limite_inferior_vazao'] !== '' ? (float)$_POST['vl_limite_inferior_vazao'] : null;
-    $vlLimiteSuperiorVazao = isset($_POST['vl_limite_superior_vazao']) && $_POST['vl_limite_superior_vazao'] !== '' ? (float)$_POST['vl_limite_superior_vazao'] : null;
+    $vlFatorCorrecaoVazao = isset($_POST['vl_fator_correcao_vazao']) && $_POST['vl_fator_correcao_vazao'] !== '' ? (float) $_POST['vl_fator_correcao_vazao'] : null;
+    $vlLimiteInferiorVazao = isset($_POST['vl_limite_inferior_vazao']) && $_POST['vl_limite_inferior_vazao'] !== '' ? (float) $_POST['vl_limite_inferior_vazao'] : null;
+    $vlLimiteSuperiorVazao = isset($_POST['vl_limite_superior_vazao']) && $_POST['vl_limite_superior_vazao'] !== '' ? (float) $_POST['vl_limite_superior_vazao'] : null;
     $dsObservacao = isset($_POST['ds_observacao']) ? mb_substr(trim($_POST['ds_observacao']), 0, 200) : null;
+
+    // Garantir que apenas a TAG correspondente ao Tipo de Medidor seja salva.
+    // As demais TAGs são setadas como NULL para manter consistência.
+    // Mapeamento: 1,2,8 → vazão | 4 → pressão | 6 → reservatório
+    switch ((int) $idTipoMedidor) {
+        case 1: // Macromedidor
+        case 2: // Estação Pitométrica
+        case 8: // Hidrômetro
+            $dsTagPressao = null;
+            $dsTagVolume = null;
+            $dsTagReservatorio = null;
+            break;
+        case 4: // Medidor Pressão
+            $dsTagVazao = null;
+            $dsTagVolume = null;
+            $dsTagReservatorio = null;
+            break;
+        case 6: // Nível Reservatório
+            $dsTagVazao = null;
+            $dsTagPressao = null;
+            $dsTagVolume = null;
+            break;
+        default:
+            // Tipo desconhecido: limpa todas as TAGs principais
+            $dsTagVazao = null;
+            $dsTagPressao = null;
+            $dsTagVolume = null;
+            $dsTagReservatorio = null;
+            break;
+    }
 
     // Validações obrigatórias
     if (empty($cdLocalidade)) {
@@ -79,7 +109,7 @@ try {
     }
 
     // Usuário da sessão para auditoria
-    $cdUsuarioAtualizacao = isset($_SESSION['cd_usuario']) ? (int)$_SESSION['cd_usuario'] : null;
+    $cdUsuarioAtualizacao = isset($_SESSION['cd_usuario']) ? (int) $_SESSION['cd_usuario'] : null;
     $dtAtualizacao = date('Y-m-d H:i:s');
 
     // Converter datas para formato SQL Server
@@ -101,9 +131,10 @@ try {
         $stmtUnidade->execute([':cdLocalidade' => $cdLocalidade]);
         $rowUnidade = $stmtUnidade->fetch(PDO::FETCH_ASSOC);
         if ($rowUnidade) {
-            $cdUnidadeLog = (int)$rowUnidade['CD_UNIDADE'];
+            $cdUnidadeLog = (int) $rowUnidade['CD_UNIDADE'];
         }
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+    }
 
     if ($isEdicao) {
         // Buscar dados anteriores para log de alteração
@@ -113,7 +144,8 @@ try {
             $stmtAnt = $pdoSIMP->prepare($sqlAnt);
             $stmtAnt->execute([':id' => $cdPontoMedicao]);
             $dadosAnteriores = $stmtAnt->fetch(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {}
+        } catch (Exception $e) {
+        }
 
         // UPDATE
         $sql = "UPDATE SIMP.dbo.PONTO_MEDICAO SET
@@ -265,7 +297,7 @@ try {
                 )";
 
         $stmt = $pdoSIMP->prepare($sql);
-        
+
         $insertParams = [
             ':cd_localidade' => $cdLocalidade,
             ':id_tipo_medidor' => $idTipoMedidor,
@@ -294,13 +326,13 @@ try {
             ':cd_usuario_atualizacao' => $cdUsuarioAtualizacao,
             ':dt_atualizacao' => $dtAtualizacao
         ];
-        
+
         $stmt->execute($insertParams);
 
         // Pegar o ID inserido usando SCOPE_IDENTITY() (SQL Server)
         $stmtId = $pdoSIMP->query("SELECT SCOPE_IDENTITY() AS ID");
         $cdPontoMedicao = $stmtId->fetch(PDO::FETCH_ASSOC)['ID'];
-        
+
         $mensagem = 'Ponto de medição cadastrado com sucesso!';
 
         // Registrar log de INSERT (isolado para não afetar a operação principal)
@@ -327,20 +359,21 @@ try {
         'message' => $mensagem,
         'cd_ponto_medicao' => $cdPontoMedicao
     ];
-    
+
     // Incluir warnings PHP se houver (para debug)
     if (!empty($phpErrors)) {
         $response['warnings'] = $phpErrors;
     }
-    
+
     echo json_encode($response);
 
 } catch (PDOException $e) {
     // Registrar log de erro
     try {
         registrarLogErro('Cadastro de Ponto de Medição', $isEdicao ? 'UPDATE' : 'INSERT', $e->getMessage(), ['cd_ponto_medicao' => $cdPontoMedicao ?? null, 'ds_nome' => $dsNome ?? null]);
-    } catch (Exception $logEx) {}
-    
+    } catch (Exception $logEx) {
+    }
+
     $response = [
         'success' => false,
         'message' => 'Erro ao salvar: ' . $e->getMessage(),
@@ -357,8 +390,9 @@ try {
     // Registrar log de erro
     try {
         registrarLogErro('Cadastro de Ponto de Medição', $isEdicao ? 'UPDATE' : 'INSERT', $e->getMessage(), ['cd_ponto_medicao' => $cdPontoMedicao ?? null]);
-    } catch (Exception $logEx) {}
-    
+    } catch (Exception $logEx) {
+    }
+
     $response = [
         'success' => false,
         'message' => $e->getMessage()
