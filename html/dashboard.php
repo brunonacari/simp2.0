@@ -840,6 +840,8 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
        ============================================ */
     .tabela-container {
         overflow-x: auto;
+        max-height: 500px;
+        overflow-y: auto;
     }
 
     .tabela-metricas {
@@ -848,16 +850,20 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
         font-size: 13px;
     }
 
-    .tabela-metricas th {
+    .tabela-metricas thead {
+        position: sticky;
+        top: 0;
+        z-index: 1;
         background: #f8fafc;
+    }
+
+    .tabela-metricas th {
         padding: 12px 16px;
         text-align: left;
         font-weight: 600;
         color: #475569;
         border-bottom: 2px solid #e2e8f0;
         white-space: nowrap;
-        position: sticky;
-        top: 0;
     }
 
     .tabela-metricas td {

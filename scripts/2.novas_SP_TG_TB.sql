@@ -618,9 +618,7 @@ PRINT '';
 -- -- -- -- ============================================================
 
 -- PRINT 'Populando historico de IA_METRICAS_DIARIAS...';
-DECLARE @DIAS_PROCESSAR INT = 1;
-
--- -- Tabela temporaria com as datas que possuem dados
+DECLARE @DIAS_PROCESSAR INT = 10;
 
 DECLARE @DatasComDados TABLE (DT_LEITURA DATE);
 
@@ -629,11 +627,10 @@ SELECT DISTINCT TOP (@DIAS_PROCESSAR)
     CAST(DT_LEITURA AS DATE) AS DT_LEITURA
 FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
 WHERE ID_SITUACAO IN (1, 2)
+  AND CAST(DT_LEITURA AS DATE) < CAST(GETDATE() AS DATE)  -- exclui dia atual
 ORDER BY CAST(DT_LEITURA AS DATE) DESC;
 
--- Processar cada data (da mais antiga para a mais recente)
 DECLARE @DATA DATE;
-
 DECLARE cur CURSOR FOR 
     SELECT DT_LEITURA FROM @DatasComDados ORDER BY DT_LEITURA ASC;
 

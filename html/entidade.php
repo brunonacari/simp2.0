@@ -1947,7 +1947,7 @@ try {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
                     saveExpandedState();
-                    setTimeout(() => location.reload(), 500);
+                    setTimeout(() => location.reload(), 200);
                 } else {
                     showToast(response.message || 'Erro ao salvar', 'erro');
                 }
@@ -1971,7 +1971,7 @@ try {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
                     saveExpandedState();
-                    setTimeout(() => location.reload(), 500);
+                    setTimeout(() => location.reload(), 200);
                 } else {
                     showToast(response.message || 'Erro ao alterar status', 'erro');
                 }
@@ -2016,7 +2016,7 @@ try {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
                     saveExpandedState();
-                    setTimeout(() => location.reload(), 500);
+                    setTimeout(() => location.reload(), 200);
                 } else {
                     showToast(response.message || 'Erro ao salvar', 'erro');
                 }
@@ -2067,7 +2067,7 @@ try {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
                     saveExpandedState();
-                    setTimeout(() => location.reload(), 500);
+                    setTimeout(() => location.reload(), 200);
                 } else {
                     showToast(response.message || 'Erro ao salvar', 'erro');
                 }
@@ -2107,7 +2107,7 @@ try {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
                     saveExpandedState();
-                    setTimeout(() => location.reload(), 500);
+                    setTimeout(() => location.reload(), 200);
                 } else {
                     showToast(response.message || 'Erro ao excluir', 'erro');
                 }
@@ -2152,7 +2152,7 @@ try {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
                     saveExpandedState();
-                    setTimeout(() => location.reload(), 500);
+                    setTimeout(() => location.reload(), 200);
                 } else {
                     showToast(response.message || 'Erro ao excluir', 'erro');
                 }

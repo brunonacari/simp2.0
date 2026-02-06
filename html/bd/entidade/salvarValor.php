@@ -52,12 +52,11 @@ try {
                     OP_EXPORTOU_SIGAO = 2
                 WHERE CD_CHAVE = :cd";
         $stmt = $pdoSIMP->prepare($sql);
-        $stmt->execute([
-            ':nome' => $nome,
-            ':idExterno' => $idExterno,
-            ':fluxo' => $fluxo,
-            ':cd' => $cd
-        ]);
+        $stmt->bindValue(':nome', $nome, PDO::PARAM_STR);
+        $stmt->bindValue(':idExterno', $idExterno, PDO::PARAM_STR);
+        $stmt->bindValue(':fluxo', $fluxo, PDO::PARAM_INT);
+        $stmt->bindValue(':cd', $cd, PDO::PARAM_INT);
+        $stmt->execute();
 
         // Log (isolado)
         try {
@@ -82,12 +81,11 @@ try {
                 (CD_ENTIDADE_TIPO, DS_NOME, CD_ENTIDADE_VALOR_ID, ID_FLUXO, OP_ENVIAR_DADOS_SIGAO, OP_EXPORTOU_SIGAO) 
                 VALUES (:cdTipo, :nome, :idExterno, :fluxo, 2, 2)";
         $stmt = $pdoSIMP->prepare($sql);
-        $stmt->execute([
-            ':cdTipo' => $cdTipo,
-            ':nome' => $nome,
-            ':idExterno' => $idExterno,
-            ':fluxo' => $fluxo
-        ]);
+        $stmt->bindValue(':cdTipo', $cdTipo, PDO::PARAM_INT);
+        $stmt->bindValue(':nome', $nome, PDO::PARAM_STR);
+        $stmt->bindValue(':idExterno', $idExterno, PDO::PARAM_STR);
+        $stmt->bindValue(':fluxo', $fluxo, PDO::PARAM_INT);
+        $stmt->execute();
 
         // Log (isolado)
         try {
