@@ -376,7 +376,7 @@
     white-space: nowrap;
 }
 
-.radio-item input[type="radio"]:checked + .radio-label {
+.radio-item input[type="radio"]:checked+.radio-label {
     background: white;
     color: #1e293b;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -540,27 +540,32 @@
 }
 
 /* Badges Tipo Medidor */
-.badge-tipo-1 { /* Macromedidor */
+.badge-tipo-1 {
+    /* Macromedidor */
     background: #dcfce7;
     color: #15803d;
 }
 
-.badge-tipo-2 { /* Estação Pitométrica */
+.badge-tipo-2 {
+    /* Estação Pitométrica */
     background: #fef3c7;
     color: #92400e;
 }
 
-.badge-tipo-4 { /* Medidor Pressão */
+.badge-tipo-4 {
+    /* Medidor Pressão */
     background: #fee2e2;
     color: #b91c1c;
 }
 
-.badge-tipo-6 { /* Nível Reservatório */
+.badge-tipo-6 {
+    /* Nível Reservatório */
     background: #cffafe;
     color: #0e7490;
 }
 
-.badge-tipo-8 { /* Hidrômetro */
+.badge-tipo-8 {
+    /* Hidrômetro */
     background: #e0e7ff;
     color: #4338ca;
 }
@@ -572,22 +577,26 @@
 }
 
 /* Badges Tipo Leitura */
-.badge-leitura-2 { /* Manual */
+.badge-leitura-2 {
+    /* Manual */
     background: #fef3c7;
     color: #92400e;
 }
 
-.badge-leitura-4 { /* Planilha */
+.badge-leitura-4 {
+    /* Planilha */
     background: #dbeafe;
     color: #1d4ed8;
 }
 
-.badge-leitura-6 { /* Integração CesanLims */
+.badge-leitura-6 {
+    /* Integração CesanLims */
     background: #f3e8ff;
     color: #7c3aed;
 }
 
-.badge-leitura-8 { /* Integração CCO */
+.badge-leitura-8 {
+    /* Integração CCO */
     background: #ccfbf1;
     color: #0d9488;
 }
@@ -719,7 +728,9 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* ============================================
@@ -821,6 +832,7 @@
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -1070,4 +1082,63 @@
     .btn-action ion-icon {
         font-size: 14px;
     }
+}
+
+/* ============================================
+   Badges de Sincronização (dias sem dados)
+   ============================================ */
+.badge-sinc-ok {
+    background: rgba(34, 197, 94, 0.12);
+    color: #15803d;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.badge-sinc-ok ion-icon {
+    font-size: 13px;
+    color: #22c55e;
+}
+
+.badge-sinc-atencao {
+    background: rgba(249, 115, 22, 0.12);
+    color: #c2410c;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.badge-sinc-atencao ion-icon {
+    font-size: 13px;
+    color: #f97316;
+}
+
+.badge-sinc-alerta {
+    background: rgba(234, 179, 8, 0.15);
+    color: #a16207;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.badge-sinc-alerta ion-icon {
+    font-size: 13px;
+    color: #eab308;
+}
+
+.badge-sinc-critico {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.badge-sinc-critico ion-icon {
+    font-size: 13px;
+    color: #ef4444;
 }

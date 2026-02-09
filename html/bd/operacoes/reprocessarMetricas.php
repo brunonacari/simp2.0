@@ -90,5 +90,5 @@ function reprocessarMetricasDiarias($pdo, $data) {
  * @deprecated Use enfileirarReprocessamentoMultiplo()
  */
 function reprocessarMetricasMultiplasDatas($pdo, $datas) {
-    return enfileirarReprocessamentoMultiplo($pdo, $datas, 'LEGACY_Multipla_Datas');
+    return enfileirarReprocessamentoMultiplo($pdo, $datas, 'LEGACY_Multiplas_Datas');
 }

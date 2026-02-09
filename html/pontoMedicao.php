@@ -221,6 +221,9 @@ $tiposLeitura = [
                             Tipo Medidor <ion-icon name="swap-vertical-outline"></ion-icon>
                         </th>
                         <th>Tipo Leitura</th>
+                        <th class="sortable" data-column="DIAS_SEM_SINCRONIZAR">
+                            Sinc. <ion-icon name="swap-vertical-outline"></ion-icon>
+                        </th>
                         <th class="sortable" data-column="OP_SITUACAO">
                             Status <ion-icon name="swap-vertical-outline"></ion-icon>
                         </th>
@@ -229,7 +232,7 @@ $tiposLeitura = [
                 </thead>
                 <tbody id="tabelaResultados">
                     <tr>
-                        <td colspan="9">
+                        <td colspan="10">
                             <div class="empty-state">
                                 <div class="empty-state-icon">
                                     <ion-icon name="filter-outline"></ion-icon>
@@ -626,6 +629,32 @@ $tiposLeitura = [
             const tipoMedidorClass = item.ID_TIPO_MEDIDOR ? `badge-tipo-${item.ID_TIPO_MEDIDOR}` : 'badge-tipo';
             const tipoLeituraClass = item.ID_TIPO_LEITURA ? `badge-leitura-${item.ID_TIPO_LEITURA}` : 'badge-leitura';
 
+            // Coluna de sincronização: dias sem receber dados do historiador
+            let sincHtml = '-';
+            if (item.TEM_TAG_INTEGRACAO == 1) {
+                if (item.DIAS_SEM_SINCRONIZAR !== null && item.DIAS_SEM_SINCRONIZAR !== undefined) {
+                    const dias = parseInt(item.DIAS_SEM_SINCRONIZAR);
+                    let sincClass = 'badge-sinc-ok';       // verde: até 1 dia
+                    let sincIcon = 'checkmark-circle-outline';
+                    if (dias > 7) {
+                        sincClass = 'badge-sinc-critico';   // vermelho: mais de 7 dias
+                        sincIcon = 'alert-circle-outline';
+                    } else if (dias > 3) {
+                        sincClass = 'badge-sinc-alerta';    // amarelo: 4-7 dias
+                        sincIcon = 'warning-outline';
+                    } else if (dias > 1) {
+                        sincClass = 'badge-sinc-atencao';   // laranja: 2-3 dias
+                        sincIcon = 'time-outline';
+                    }
+                    const dtUltima = item.DT_ULTIMA_LEITURA ? new Date(item.DT_ULTIMA_LEITURA).toLocaleDateString('pt-BR') : '';
+                    const titulo = dtUltima ? `Última leitura: ${dtUltima} (${dias} dia${dias !== 1 ? 's' : ''})` : `${dias} dia${dias !== 1 ? 's' : ''} sem dados`;
+                    sincHtml = `<span class="badge ${sincClass}" title="${titulo}"><ion-icon name="${sincIcon}"></ion-icon> ${dias}d</span>`;
+                } else {
+                    // Tem tag mas nunca sincronizou
+                    sincHtml = `<span class="badge badge-sinc-critico" title="Nunca sincronizado"><ion-icon name="close-circle-outline"></ion-icon> Nunca</span>`;
+                }
+            }
+
             html += `
                 <tr>
                     <td class="truncate" title="${item.DS_UNIDADE || ''}">${item.DS_UNIDADE || '-'}</td>
@@ -635,6 +664,7 @@ $tiposLeitura = [
                     <td class="code">${item.CODIGO_TAG || '-'}</td>
                     <td><span class="badge ${tipoMedidorClass}">${item.DS_TIPO_MEDIDOR || '-'}</span></td>
                     <td><span class="badge ${tipoLeituraClass}">${item.DS_TIPO_LEITURA || '-'}</span></td>
+                    <td>${sincHtml}</td>
                     <td><span class="badge ${statusClass}">${statusText}</span></td>
                     <td>
                         <div class="table-actions">

@@ -8,7 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 // Capturar erros
 $errors = [];
-set_error_handler(function($errno, $errstr, $errfile, $errline) use (&$errors) {
+set_error_handler(function ($errno, $errstr, $errfile, $errline) use (&$errors) {
     $errors[] = "[$errno] $errstr em $errfile:$errline";
     return true;
 });
@@ -22,28 +22,28 @@ try {
     verificarPermissaoAjax('CADASTRO DE PONTO', ACESSO_LEITURA);
 
     include_once '../conexao.php';
-    
+
     if (!isset($pdoSIMP)) {
         throw new Exception('Conexao com banco de dados nao estabelecida');
     }
 
     // Captura parametros
-    $cdUnidade = isset($_GET['cd_unidade']) && $_GET['cd_unidade'] !== '' ? (int)$_GET['cd_unidade'] : null;
-    $cdLocalidade = isset($_GET['cd_localidade']) && $_GET['cd_localidade'] !== '' ? (int)$_GET['cd_localidade'] : null;
-    $cdPontoMedicao = isset($_GET['cd_ponto_medicao']) && $_GET['cd_ponto_medicao'] !== '' ? (int)$_GET['cd_ponto_medicao'] : null;
-    $tipoMedidor = isset($_GET['tipo_medidor']) && $_GET['tipo_medidor'] !== '' ? (int)$_GET['tipo_medidor'] : null;
-    $tipoLeitura = isset($_GET['tipo_leitura']) && $_GET['tipo_leitura'] !== '' ? (int)$_GET['tipo_leitura'] : null;
+    $cdUnidade = isset($_GET['cd_unidade']) && $_GET['cd_unidade'] !== '' ? (int) $_GET['cd_unidade'] : null;
+    $cdLocalidade = isset($_GET['cd_localidade']) && $_GET['cd_localidade'] !== '' ? (int) $_GET['cd_localidade'] : null;
+    $cdPontoMedicao = isset($_GET['cd_ponto_medicao']) && $_GET['cd_ponto_medicao'] !== '' ? (int) $_GET['cd_ponto_medicao'] : null;
+    $tipoMedidor = isset($_GET['tipo_medidor']) && $_GET['tipo_medidor'] !== '' ? (int) $_GET['tipo_medidor'] : null;
+    $tipoLeitura = isset($_GET['tipo_leitura']) && $_GET['tipo_leitura'] !== '' ? (int) $_GET['tipo_leitura'] : null;
     $status = isset($_GET['status']) ? trim($_GET['status']) : '';
     $busca = isset($_GET['busca']) ? trim($_GET['busca']) : '';
-    
+
     // Paginacao
-    $pagina = isset($_GET['pagina']) && $_GET['pagina'] !== '' ? (int)$_GET['pagina'] : 1;
+    $pagina = isset($_GET['pagina']) && $_GET['pagina'] !== '' ? (int) $_GET['pagina'] : 1;
     $porPagina = 20;
     $offset = ($pagina - 1) * $porPagina;
 
     // Verifica se pelo menos um filtro foi preenchido
     $temFiltro = ($cdUnidade !== null || $cdLocalidade !== null || $cdPontoMedicao !== null ||
-                  $tipoMedidor !== null || $tipoLeitura !== null || $status !== '' || $busca !== '');
+        $tipoMedidor !== null || $tipoLeitura !== null || $status !== '' || $busca !== '');
 
     if (!$temFiltro) {
         echo json_encode([
@@ -136,7 +136,7 @@ try {
     $resultCount = $stmtCount->fetch(PDO::FETCH_ASSOC);
     $totalRegistros = $resultCount['total'] ?? 0;
     $totalPaginas = $totalRegistros > 0 ? ceil($totalRegistros / $porPagina) : 0;
-    
+
     if ($totalRegistros == 0) {
         echo json_encode([
             'success' => true,
@@ -151,6 +151,7 @@ try {
     }
 
     // Query principal com paginacao
+    // Inclui subquery para calcular dias sem sincronização (MAX(DT_LEITURA) do REGISTRO_VAZAO_PRESSAO)
     $sql = "SELECT 
                 PM.CD_PONTO_MEDICAO,
                 PM.CD_LOCALIDADE,
@@ -178,10 +179,32 @@ try {
                 L.DS_NOME AS DS_LOCALIDADE,
                 L.CD_UNIDADE,
                 U.DS_NOME AS DS_UNIDADE,
-                U.CD_CODIGO AS CD_UNIDADE_CODIGO
+                U.CD_CODIGO AS CD_UNIDADE_CODIGO,
+                -- Campos de sincronização: dias sem receber dados do historiador
+                RVP_SYNC.DT_ULTIMA_LEITURA,
+                CASE 
+                    WHEN (PM.DS_TAG_VAZAO IS NOT NULL OR PM.DS_TAG_PRESSAO IS NOT NULL 
+                          OR PM.DS_TAG_TEMP_AGUA IS NOT NULL OR PM.DS_TAG_TEMP_AMBIENTE IS NOT NULL 
+                          OR PM.DS_TAG_VOLUME IS NOT NULL OR PM.DS_TAG_RESERVATORIO IS NOT NULL)
+                         AND RVP_SYNC.DT_ULTIMA_LEITURA IS NOT NULL
+                    THEN DATEDIFF(DAY, RVP_SYNC.DT_ULTIMA_LEITURA, GETDATE())
+                    ELSE NULL
+                END AS DIAS_SEM_SINCRONIZAR,
+                CASE 
+                    WHEN PM.DS_TAG_VAZAO IS NOT NULL OR PM.DS_TAG_PRESSAO IS NOT NULL 
+                         OR PM.DS_TAG_TEMP_AGUA IS NOT NULL OR PM.DS_TAG_TEMP_AMBIENTE IS NOT NULL 
+                         OR PM.DS_TAG_VOLUME IS NOT NULL OR PM.DS_TAG_RESERVATORIO IS NOT NULL
+                    THEN 1 ELSE 0
+                END AS TEM_TAG_INTEGRACAO
             FROM SIMP.dbo.PONTO_MEDICAO PM
             LEFT JOIN SIMP.dbo.LOCALIDADE L ON PM.CD_LOCALIDADE = L.CD_CHAVE
             LEFT JOIN SIMP.dbo.UNIDADE U ON L.CD_UNIDADE = U.CD_UNIDADE
+            LEFT JOIN (
+                SELECT CD_PONTO_MEDICAO, MAX(DT_LEITURA) AS DT_ULTIMA_LEITURA
+                FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
+                WHERE ID_SITUACAO = 1
+                GROUP BY CD_PONTO_MEDICAO
+            ) RVP_SYNC ON PM.CD_PONTO_MEDICAO = RVP_SYNC.CD_PONTO_MEDICAO
             $whereClause
             ORDER BY PM.DS_NOME
             OFFSET $offset ROWS FETCH NEXT $porPagina ROWS ONLY";
@@ -194,9 +217,15 @@ try {
     $dadosProcessados = [];
     foreach ($pontosMedicao as $pm) {
         $codigoTag = '';
-        $tagsFields = ['DS_TAG_VAZAO', 'DS_TAG_PRESSAO', 'DS_TAG_TEMP_AGUA', 
-                       'DS_TAG_TEMP_AMBIENTE', 'DS_TAG_RESERVATORIO', 'DS_TAG_VOLUME'];
-        
+        $tagsFields = [
+            'DS_TAG_VAZAO',
+            'DS_TAG_PRESSAO',
+            'DS_TAG_TEMP_AGUA',
+            'DS_TAG_TEMP_AMBIENTE',
+            'DS_TAG_RESERVATORIO',
+            'DS_TAG_VOLUME'
+        ];
+
         foreach ($tagsFields as $field) {
             if (!empty($pm[$field])) {
                 $codigoTag = $pm[$field];
@@ -215,10 +244,10 @@ try {
         $letraTipo = $letrasTipoMedidor[$pm['ID_TIPO_MEDIDOR']] ?? 'X';
 
         // Codigo formatado: LOCALIDADE-CD_PONTO-LETRA-CD_UNIDADE
-        $codigoFormatado = $pm['CD_LOCALIDADE_CODIGO'] . '-' . 
-                           str_pad($pm['CD_PONTO_MEDICAO'], 6, '0', STR_PAD_LEFT) . '-' . 
-                           $letraTipo . '-' . 
-                           $pm['CD_UNIDADE'];
+        $codigoFormatado = $pm['CD_LOCALIDADE_CODIGO'] . '-' .
+            str_pad($pm['CD_PONTO_MEDICAO'], 6, '0', STR_PAD_LEFT) . '-' .
+            $letraTipo . '-' .
+            $pm['CD_UNIDADE'];
 
         // Tipo de Medidor por extenso
         $tiposMedidor = [
@@ -260,6 +289,9 @@ try {
             'DT_ATIVACAO' => $pm['DT_ATIVACAO'],
             'DT_DESATIVACAO' => $pm['DT_DESATIVACAO'],
             'OP_SITUACAO' => $opSituacao,
+            'DT_ULTIMA_LEITURA' => $pm['DT_ULTIMA_LEITURA'] ?? null,
+            'DIAS_SEM_SINCRONIZAR' => $pm['DIAS_SEM_SINCRONIZAR'] ?? null,
+            'TEM_TAG_INTEGRACAO' => (int)($pm['TEM_TAG_INTEGRACAO'] ?? 0),
             'CODIGO_TAG' => $codigoTag
         ];
     }

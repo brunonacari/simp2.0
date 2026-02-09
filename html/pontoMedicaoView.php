@@ -68,7 +68,7 @@ if ($id <= 0) {
     exit;
 }
 
-// Busca os dados do ponto de medição
+// Busca os dados do ponto de medição incluindo informações de sincronização
 $sql = "SELECT 
             PM.*,
             L.CD_LOCALIDADE AS CD_LOCALIDADE_CODIGO,
@@ -78,12 +78,33 @@ $sql = "SELECT
             U.CD_CODIGO AS CD_UNIDADE_CODIGO,
             UR.DS_NOME AS DS_RESPONSAVEL,
             UR.DS_MATRICULA AS DS_MATRICULA_RESPONSAVEL,
-            UA.DS_NOME AS DS_USUARIO_ATUALIZACAO
+            UA.DS_NOME AS DS_USUARIO_ATUALIZACAO,
+            RVP_SYNC.DT_ULTIMA_LEITURA,
+            CASE 
+                WHEN (PM.DS_TAG_VAZAO IS NOT NULL OR PM.DS_TAG_PRESSAO IS NOT NULL 
+                      OR PM.DS_TAG_TEMP_AGUA IS NOT NULL OR PM.DS_TAG_TEMP_AMBIENTE IS NOT NULL 
+                      OR PM.DS_TAG_VOLUME IS NOT NULL OR PM.DS_TAG_RESERVATORIO IS NOT NULL)
+                     AND RVP_SYNC.DT_ULTIMA_LEITURA IS NOT NULL
+                THEN DATEDIFF(DAY, RVP_SYNC.DT_ULTIMA_LEITURA, GETDATE())
+                ELSE NULL
+            END AS DIAS_SEM_SINCRONIZAR,
+            CASE 
+                WHEN PM.DS_TAG_VAZAO IS NOT NULL OR PM.DS_TAG_PRESSAO IS NOT NULL 
+                     OR PM.DS_TAG_TEMP_AGUA IS NOT NULL OR PM.DS_TAG_TEMP_AMBIENTE IS NOT NULL 
+                     OR PM.DS_TAG_VOLUME IS NOT NULL OR PM.DS_TAG_RESERVATORIO IS NOT NULL
+                THEN 1 ELSE 0
+            END AS TEM_TAG_INTEGRACAO
         FROM SIMP.dbo.PONTO_MEDICAO PM
         INNER JOIN SIMP.dbo.LOCALIDADE L ON PM.CD_LOCALIDADE = L.CD_CHAVE
         INNER JOIN SIMP.dbo.UNIDADE U ON L.CD_UNIDADE = U.CD_UNIDADE
         LEFT JOIN SIMP.dbo.USUARIO UR ON PM.CD_USUARIO_RESPONSAVEL = UR.CD_USUARIO
         LEFT JOIN SIMP.dbo.USUARIO UA ON PM.CD_USUARIO_ULTIMA_ATUALIZACAO = UA.CD_USUARIO
+        LEFT JOIN (
+            SELECT CD_PONTO_MEDICAO, MAX(DT_LEITURA) AS DT_ULTIMA_LEITURA
+            FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO
+            WHERE ID_SITUACAO = 1
+            GROUP BY CD_PONTO_MEDICAO
+        ) RVP_SYNC ON PM.CD_PONTO_MEDICAO = RVP_SYNC.CD_PONTO_MEDICAO
         WHERE PM.CD_PONTO_MEDICAO = :id";
 
 $stmt = $pdoSIMP->prepare($sql);
@@ -434,6 +455,26 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
     }
 
     .status-badge.inativo {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .status-badge.badge-sinc-ok {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .status-badge.badge-sinc-atencao {
+        background: #fed7aa;
+        color: #c2410c;
+    }
+
+    .status-badge.badge-sinc-alerta {
+        background: #fef3c7;
+        color: #a16207;
+    }
+
+    .status-badge.badge-sinc-critico {
         background: #fee2e2;
         color: #b91c1c;
     }
@@ -865,6 +906,41 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
                             <ion-icon name="<?= $isAtivo ? 'checkmark-circle' : 'close-circle' ?>"></ion-icon>
                             <?= $isAtivo ? 'Ativo' : 'Inativo' ?>
                         </span>
+                        <?php 
+                        // Badge de sincronização - só mostra se tem tag de integração
+                        if (!empty($pm['TEM_TAG_INTEGRACAO']) && $pm['TEM_TAG_INTEGRACAO'] == 1): 
+                            if ($pm['DIAS_SEM_SINCRONIZAR'] !== null):
+                                $dias = (int)$pm['DIAS_SEM_SINCRONIZAR'];
+                                $sincClass = 'badge-sinc-ok';
+                                $sincIcon = 'checkmark-circle-outline';
+                                if ($dias > 7) {
+                                    $sincClass = 'badge-sinc-critico';
+                                    $sincIcon = 'alert-circle-outline';
+                                } elseif ($dias > 3) {
+                                    $sincClass = 'badge-sinc-alerta';
+                                    $sincIcon = 'warning-outline';
+                                } elseif ($dias > 1) {
+                                    $sincClass = 'badge-sinc-atencao';
+                                    $sincIcon = 'time-outline';
+                                }
+                                $dtUltima = !empty($pm['DT_ULTIMA_LEITURA']) ? date('d/m/Y', strtotime($pm['DT_ULTIMA_LEITURA'])) : '';
+                                $titulo = $dtUltima ? "Última leitura: {$dtUltima} ({$dias} dia" . ($dias !== 1 ? 's' : '') . ")" : "{$dias} dia" . ($dias !== 1 ? 's' : '') . " sem dados";
+                        ?>
+                            <span class="status-badge <?= $sincClass ?>" title="<?= $titulo ?>">
+                                <ion-icon name="<?= $sincIcon ?>"></ion-icon>
+                                <?= $dias ?>d
+                            </span>
+                        <?php 
+                            else:
+                        ?>
+                            <span class="status-badge badge-sinc-critico" title="Nunca sincronizado">
+                                <ion-icon name="close-circle-outline"></ion-icon>
+                                Nunca
+                            </span>
+                        <?php 
+                            endif;
+                        endif;
+                        ?>
                     </p>
                 </div>
             </div>
