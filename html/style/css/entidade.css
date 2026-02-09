@@ -233,8 +233,8 @@
     .header-actions .btn-action {
         width: 30px;
         height: 30px;
-        background: #f1f5f9;
-        color: #475569;
+        background: rgba(255, 255, 255, 0.25);
+        color: #ffffff;
         border: none;
         border-radius: 6px;
         display: flex;
@@ -245,32 +245,48 @@
     }
 
     .header-actions .btn-action:hover {
-        background: #e2e8f0;
-        color: #1e293b;
+        background: rgba(255, 255, 255, 0.35);
+        color: #ffffff;
+    }
+
+    .header-actions .btn-action.delete {
+        background: rgba(239, 68, 68, 0.6);
+        color: #ffffff;
     }
 
     .header-actions .btn-action.delete:hover {
         background: #ef4444;
+        color: #ffffff;
+    }
+
+    .header-actions .btn-action.restore {
+        background: rgba(34, 197, 94, 0.6);
+        color: #ffffff;
     }
 
     .header-actions .btn-action.restore:hover {
         background: #22c55e;
+        color: #ffffff;
     }
 
     .header-actions .btn-action.add {
-        background: rgba(34, 197, 94, 0.3);
+        background: rgba(34, 197, 94, 0.6);
+        color: #ffffff;
     }
 
     .header-actions .btn-action.add:hover {
         background: #22c55e;
+        color: #ffffff;
     }
 
     .header-actions .btn-action.chart {
-        background: rgba(59, 130, 246, 0.3);
+        background: rgba(168, 85, 247, 0.6);
+        color: #ffffff;
     }
 
     .header-actions .btn-action.chart:hover {
-        background: #3b82f6;
+        background: #a855f7;
+        color: #ffffff;
     }
 
     .header-actions .btn-action ion-icon {
@@ -644,23 +660,23 @@
     }
 
     .item-row-right .btn-action.chart {
-        background: #dbeafe;
-        color: #3b82f6;
+        background: #e9d5ff;
+        color: #a855f7;
     }
 
     .item-row-right .btn-action.chart:hover {
-        background: #3b82f6;
+        background: #a855f7;
         color: #ffffff;
     }
 
     .item-row-right .btn-action.view {
-        background: #f0fdf4;
-        color: #16a34a;
+        background: #fef3c7;
+        color: #f59e0b;
         text-decoration: none;
     }
 
     .item-row-right .btn-action.view:hover {
-        background: #16a34a;
+        background: #f59e0b;
         color: #ffffff;
     }
 

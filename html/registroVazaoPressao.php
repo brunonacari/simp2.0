@@ -742,6 +742,19 @@ $descartes = [
             descarte: document.querySelector('input[name="filtroDescarte"]:checked').value
         };
 
+        // Validar: pelo menos um dos filtros principais deve estar preenchido
+        if (!filtros.cd_unidade && !filtros.cd_localidade && !filtros.cd_ponto_medicao) {
+            showToast('Para realizar a busca, preencha pelo menos um dos filtros: Unidade, Localidade ou Ponto de Medição', 'warning');
+            return;
+        }
+
+        // Alertar se apenas a unidade estiver preenchida (pode trazer muito volume de dados)
+        if (filtros.cd_unidade && !filtros.cd_localidade && !filtros.cd_ponto_medicao) {
+            if (!confirm('A consulta apenas por Unidade pode trazer um grande volume de dados e demorar para ser processada.\n\nDeseja continuar mesmo assim?')) {
+                return;
+            }
+        }
+
         // Armazenar filtros para uso posterior (carregamento sob demanda)
         filtrosAtuais = filtros;
 
