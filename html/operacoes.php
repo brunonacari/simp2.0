@@ -437,7 +437,7 @@ $letrasTipoMedidor = [
                         <input type="checkbox" id="chkValoresSugeridos" checked
                             onchange="toggleLinhaGrafico('sugeridos')">
                         <span class="controle-cor sugeridos"></span>
-                        <span class="controle-label">Valores Sugeridos</span>
+                        <span class="controle-label">Histórico + Tendência</span>
                     </label>
                     <label class="grafico-controle-item" id="controleValoresExcluidos" style="display:none;">
                         <input type="checkbox" id="chkValoresExcluidos" checked
@@ -755,7 +755,7 @@ $letrasTipoMedidor = [
 
                 <!-- Error Bars -->
                 <div class="ajuda-dataset-card">
-                    <div class="ajuda-dataset-icone" style="background:#dc2626; opacity:0.4;"></div>
+                    <div class="ajuda-dataset-icone" style="background:#000;"></div>
                     <div class="ajuda-dataset-info">
                         <strong>Barras de Erro (min/max)</strong>
                         <p>Barras verticais que mostram a faixa entre o valor <em>mínimo</em> e <em>máximo</em>
@@ -763,17 +763,6 @@ $letrasTipoMedidor = [
                             dentro de cada hora. Quanto maior a barra, maior a variação dos registros naquela hora —
                             pode
                             indicar instabilidade ou oscilação do medidor.</p>
-                    </div>
-                </div>
-
-                <!-- Valores Sugeridos (Histórico) -->
-                <div class="ajuda-dataset-card">
-                    <div class="ajuda-dataset-icone" style="background:#16a34a;"></div>
-                    <div class="ajuda-dataset-info">
-                        <strong>Valores Sugeridos (Histórico + Tendência)</strong>
-                        <p>Estimativa calculada pela IA com base na <em>média histórica</em> das últimas semanas
-                            (mesmo dia da semana) ajustada por um <em>fator de tendência</em> do dia atual. Se o dia
-                            está 10% acima do padrão, o valor sugerido é ajustado em +10%. Linha tracejada verde.</p>
                     </div>
                 </div>
 
@@ -823,8 +812,7 @@ $letrasTipoMedidor = [
                     <div class="ajuda-dataset-icone" style="background:#16a34a;"></div>
                     <div class="ajuda-dataset-info">
                         <strong><ion-icon name="analytics-outline"
-                                style="vertical-align:middle;font-size:14px;"></ion-icon> Histórico + Tendência
-                            (IA)</strong>
+                                style="vertical-align:middle;font-size:14px;"></ion-icon> Histórico + Tendência</strong>
                         <p>Calcula a média das últimas semanas válidas (mesmo dia da semana, mínimo 4 semanas com 50+
                             registros)
                             e ajusta pelo <em>fator de tendência</em> do dia atual. Fórmula:
@@ -850,7 +838,7 @@ $letrasTipoMedidor = [
 
                 <!-- Tendência da Rede -->
                 <div class="ajuda-dataset-card">
-                    <div class="ajuda-dataset-icone" style="background:#14b8a6;"></div>
+                    <div class="ajuda-dataset-icone" style="background:#06B6D4;"></div>
                     <div class="ajuda-dataset-info">
                         <strong><ion-icon name="git-network-outline"
                                 style="vertical-align:middle;font-size:14px;"></ion-icon> Tendência da Rede</strong>
