@@ -4511,3 +4511,77 @@ input#inputDataFim {
         font-size: 11px;
     }
 }
+
+/* ============================================
+   SEPARADOR + BOTÃO TOGGLE ESTIMATIVAS DE REDE
+   ============================================ */
+
+/* Separador vertical entre controles padrão e estimativas */
+.grafico-controles-separador {
+    width: 1px;
+    height: 20px;
+    background: #cbd5e1;
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+/* Botão toggle das estimativas */
+.btn-toggle-estimativas {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid #8b5cf6;
+    background: linear-gradient(135deg, #ede9fe 0%, #e0e7ff 100%);
+    color: #6d28d9;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-toggle-estimativas ion-icon {
+    font-size: 14px;
+}
+
+.btn-toggle-estimativas:hover {
+    background: linear-gradient(135deg, #ddd6fe 0%, #c7d2fe 100%);
+    border-color: #7c3aed;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(139, 92, 246, 0.25);
+}
+
+/* Estado inativo (estimativas ocultas) */
+.btn-toggle-estimativas.inativo {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #94a3b8;
+}
+
+.btn-toggle-estimativas.inativo:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    color: #64748b;
+    box-shadow: none;
+    transform: none;
+}
+
+.btn-toggle-estimativas.inativo span {
+    text-decoration: line-through;
+}
+
+/* Mobile: botão em nova linha */
+@media (max-width: 768px) {
+    .grafico-controles-separador {
+        display: none !important;
+    }
+
+    .btn-toggle-estimativas {
+        width: 100%;
+        justify-content: center;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+}
