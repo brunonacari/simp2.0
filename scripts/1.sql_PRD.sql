@@ -336,4 +336,116 @@ GO
 
 PRINT 'CD_PONTO_MEDICAO alterado para NULL em todas as tabelas de equipamento.';
 
+-- =============================================================================================================================
+-- =============================================================================================================================
+
+
+ALTER TABLE SIMP.dbo.ESTACAO_PITOMETRICA ADD DS_TAG VARCHAR(50) NULL;
+ALTER TABLE SIMP.dbo.MEDIDOR_PRESSAO ADD DS_TAG VARCHAR(50) NULL;
+ALTER TABLE SIMP.dbo.HIDROMETRO ADD DS_TAG VARCHAR(50) NULL;
+ALTER TABLE SIMP.dbo.MACROMEDIDOR ALTER COLUMN DS_TAG VARCHAR(50) NULL;
+ALTER TABLE SIMP.dbo.NIVEL_RESERVATORIO ALTER COLUMN DS_TAG VARCHAR(50) NULL;
+
+
+-- =============================================================================================================================
+-- =============================================================================================================================
+
+
+-- ============================================
+-- SIMP - Script de Migração de TAGs
+-- Replica TAGs do PONTO_MEDICAO para as tabelas de instrumentos
+-- 
+-- Mapeamento:
+--   Tipo 1 (Macromedidor):        DS_TAG_VAZAO        → MACROMEDIDOR.DS_TAG
+--   Tipo 2 (Est. Pitométrica):    DS_TAG_VAZAO        → ESTACAO_PITOMETRICA.DS_TAG
+--   Tipo 4 (Medidor Pressão):     DS_TAG_PRESSAO      → MEDIDOR_PRESSAO.DS_TAG
+--   Tipo 6 (Nível Reservatório):  DS_TAG_RESERVATORIO  → NIVEL_RESERVATORIO.DS_TAG
+--   Tipo 8 (Hidrômetro):          DS_TAG_VAZAO        → HIDROMETRO.DS_TAG
+--
+-- Executar em SIMP
+-- ============================================
+
+BEGIN TRANSACTION;
+
+-- 1) Macromedidor ← DS_TAG_VAZAO
+UPDATE M
+SET M.DS_TAG = PM.DS_TAG_VAZAO
+FROM SIMP.dbo.MACROMEDIDOR M
+INNER JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = M.CD_PONTO_MEDICAO
+WHERE PM.DS_TAG_VAZAO IS NOT NULL
+  AND PM.ID_TIPO_MEDIDOR = 1
+  AND (M.DS_TAG IS NULL OR M.DS_TAG = '');
+
+PRINT 'Macromedidor: ' + CAST(@@ROWCOUNT AS VARCHAR) + ' registros atualizados';
+
+-- 2) Estação Pitométrica ← DS_TAG_VAZAO
+UPDATE M
+SET M.DS_TAG = PM.DS_TAG_VAZAO
+FROM SIMP.dbo.ESTACAO_PITOMETRICA M
+INNER JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = M.CD_PONTO_MEDICAO
+WHERE PM.DS_TAG_VAZAO IS NOT NULL
+  AND PM.ID_TIPO_MEDIDOR = 2
+  AND (M.DS_TAG IS NULL OR M.DS_TAG = '');
+
+PRINT 'Estação Pitométrica: ' + CAST(@@ROWCOUNT AS VARCHAR) + ' registros atualizados';
+
+-- 3) Medidor Pressão ← DS_TAG_PRESSAO
+UPDATE M
+SET M.DS_TAG = PM.DS_TAG_PRESSAO
+FROM SIMP.dbo.MEDIDOR_PRESSAO M
+INNER JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = M.CD_PONTO_MEDICAO
+WHERE PM.DS_TAG_PRESSAO IS NOT NULL
+  AND PM.ID_TIPO_MEDIDOR = 4
+  AND (M.DS_TAG IS NULL OR M.DS_TAG = '');
+
+PRINT 'Medidor Pressão: ' + CAST(@@ROWCOUNT AS VARCHAR) + ' registros atualizados';
+
+-- 4) Nível Reservatório ← DS_TAG_RESERVATORIO
+UPDATE M
+SET M.DS_TAG = PM.DS_TAG_RESERVATORIO
+FROM SIMP.dbo.NIVEL_RESERVATORIO M
+INNER JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = M.CD_PONTO_MEDICAO
+WHERE PM.DS_TAG_RESERVATORIO IS NOT NULL
+  AND PM.ID_TIPO_MEDIDOR = 6
+  AND (M.DS_TAG IS NULL OR M.DS_TAG = '');
+
+PRINT 'Nível Reservatório: ' + CAST(@@ROWCOUNT AS VARCHAR) + ' registros atualizados';
+
+-- 5) Hidrômetro ← DS_TAG_VAZAO
+UPDATE M
+SET M.DS_TAG = PM.DS_TAG_VAZAO
+FROM SIMP.dbo.HIDROMETRO M
+INNER JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = M.CD_PONTO_MEDICAO
+WHERE PM.DS_TAG_VAZAO IS NOT NULL
+  AND PM.ID_TIPO_MEDIDOR = 8
+  AND (M.DS_TAG IS NULL OR M.DS_TAG = '');
+
+PRINT 'Hidrômetro: ' + CAST(@@ROWCOUNT AS VARCHAR) + ' registros atualizados';
+
+-- ============================================
+-- Verificação: comparar antes de commitar
+-- ============================================
+SELECT 'MACROMEDIDOR' AS TABELA, COUNT(*) AS COM_TAG
+FROM SIMP.dbo.MACROMEDIDOR WHERE DS_TAG IS NOT NULL AND DS_TAG <> ''
+UNION ALL
+SELECT 'ESTACAO_PITOMETRICA', COUNT(*)
+FROM SIMP.dbo.ESTACAO_PITOMETRICA WHERE DS_TAG IS NOT NULL AND DS_TAG <> ''
+UNION ALL
+SELECT 'MEDIDOR_PRESSAO', COUNT(*)
+FROM SIMP.dbo.MEDIDOR_PRESSAO WHERE DS_TAG IS NOT NULL AND DS_TAG <> ''
+UNION ALL
+SELECT 'NIVEL_RESERVATORIO', COUNT(*)
+FROM SIMP.dbo.NIVEL_RESERVATORIO WHERE DS_TAG IS NOT NULL AND DS_TAG <> ''
+UNION ALL
+SELECT 'HIDROMETRO', COUNT(*)
+FROM SIMP.dbo.HIDROMETRO WHERE DS_TAG IS NOT NULL AND DS_TAG <> '';
+
+-- Se tudo OK:
+COMMIT;
+-- Se algo errado:
+-- ROLLBACK;
+
+
+
+
 

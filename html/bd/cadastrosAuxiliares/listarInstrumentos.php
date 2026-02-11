@@ -46,6 +46,7 @@ try {
                     ISNULL(M.DS_MODELO,'') COLLATE Latin1_General_CI_AS AS COL2,
                     ISNULL(M.DS_SERIE,'') COLLATE Latin1_General_CI_AS AS COL3,
                     ISNULL(CAST(M.VL_DIAMETRO AS VARCHAR),'') AS COL4,
+                    ISNULL(M.DS_TAG,'') COLLATE Latin1_General_CI_AS AS DS_TAG,
                     PM.DS_NOME COLLATE Latin1_General_CI_AS AS DS_PONTO_VINCULADO
              FROM SIMP.dbo.MACROMEDIDOR M
              LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = M.CD_PONTO_MEDICAO",
@@ -56,6 +57,7 @@ try {
                     ISNULL(M.DS_SISTEMA,'') COLLATE Latin1_General_CI_AS AS COL2,
                     ISNULL(M.DS_REVESTIMENTO,'') COLLATE Latin1_General_CI_AS AS COL3,
                     ISNULL(CAST(M.VL_DIAMETRO AS VARCHAR),'') AS COL4,
+                    ISNULL(M.DS_TAG,'') COLLATE Latin1_General_CI_AS AS DS_TAG,
                     PM.DS_NOME COLLATE Latin1_General_CI_AS AS DS_PONTO_VINCULADO
              FROM SIMP.dbo.ESTACAO_PITOMETRICA M
              LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = M.CD_PONTO_MEDICAO",
@@ -66,6 +68,7 @@ try {
                     ISNULL(M.DS_NUMERO_SERIE_EQUIPAMENTO,'') COLLATE Latin1_General_CI_AS AS COL2,
                     ISNULL(M.DS_MATERIAL,'') COLLATE Latin1_General_CI_AS AS COL3,
                     ISNULL(CAST(M.VL_DIAMETRO AS VARCHAR),'') AS COL4,
+                    ISNULL(M.DS_TAG,'') COLLATE Latin1_General_CI_AS AS DS_TAG,
                     PM.DS_NOME COLLATE Latin1_General_CI_AS AS DS_PONTO_VINCULADO
              FROM SIMP.dbo.MEDIDOR_PRESSAO M
              LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = M.CD_PONTO_MEDICAO",
@@ -76,6 +79,7 @@ try {
                     ISNULL(M.DS_MODELO,'') COLLATE Latin1_General_CI_AS AS COL2,
                     ISNULL(M.DS_SERIE,'') COLLATE Latin1_General_CI_AS AS COL3,
                     ISNULL(CAST(M.VL_VOLUME_TOTAL AS VARCHAR),'') AS COL4,
+                    ISNULL(M.DS_TAG,'') COLLATE Latin1_General_CI_AS AS DS_TAG,
                     PM.DS_NOME COLLATE Latin1_General_CI_AS AS DS_PONTO_VINCULADO
              FROM SIMP.dbo.NIVEL_RESERVATORIO M
              LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = M.CD_PONTO_MEDICAO",
@@ -86,6 +90,7 @@ try {
                     ISNULL(M.DS_NUMERO_SERIE_EQUIPAMENTO,'') COLLATE Latin1_General_CI_AS AS COL2,
                     ISNULL(M.DS_MATERIAL,'') COLLATE Latin1_General_CI_AS AS COL3,
                     ISNULL(CAST(M.VL_DIAMETRO AS VARCHAR),'') AS COL4,
+                    ISNULL(M.DS_TAG,'') COLLATE Latin1_General_CI_AS AS DS_TAG,
                     PM.DS_NOME COLLATE Latin1_General_CI_AS AS DS_PONTO_VINCULADO
              FROM SIMP.dbo.HIDROMETRO M
              LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = M.CD_PONTO_MEDICAO"
@@ -99,9 +104,10 @@ try {
             $whereUnion .= " AND (CAST(T.CD_CHAVE AS VARCHAR) LIKE :b1
                 OR CAST(ISNULL(T.CD_PONTO_MEDICAO,0) AS VARCHAR) LIKE :b2
                 OR T.COL1 LIKE :b3 OR T.COL2 LIKE :b4 OR T.COL3 LIKE :b5
-                OR ISNULL(T.DS_PONTO_VINCULADO,'') LIKE :b6
-                OR T.DS_TIPO LIKE :b7)";
-            for ($i = 1; $i <= 7; $i++) {
+                OR T.DS_TAG LIKE :b6
+                OR ISNULL(T.DS_PONTO_VINCULADO,'') LIKE :b7
+                OR T.DS_TIPO LIKE :b8)";
+            for ($i = 1; $i <= 8; $i++) {
                 $paramsUnion[":b{$i}"] = $buscaLike;
             }
         }
@@ -124,7 +130,7 @@ try {
         $totalPaginas = ceil($total / $porPagina);
 
         // Ordenação
-        $colPermUnion = ['CD_CHAVE', 'ID_TIPO_MEDIDOR', 'DS_TIPO', 'COL1', 'COL2', 'COL3', 'COL4', 'CD_PONTO_MEDICAO', 'DS_PONTO_VINCULADO'];
+        $colPermUnion = ['CD_CHAVE','ID_TIPO_MEDIDOR','DS_TIPO','COL1','COL2','COL3','COL4','DS_TAG','CD_PONTO_MEDICAO','DS_PONTO_VINCULADO'];
         $ordCol = in_array($ordenarPor, $colPermUnion) ? "T.{$ordenarPor}" : "T.CD_CHAVE";
         $ordDir = (isset($ordenarDir) && $ordenarDir === 'ASC') ? 'ASC' : 'DESC';
 
@@ -178,13 +184,14 @@ try {
                 'tabela' => 'ESTACAO_PITOMETRICA',
                 'campos' => "M.CD_CHAVE, M.CD_PONTO_MEDICAO, M.VL_COTA_GEOGRAFICA, M.VL_DIAMETRO,
                              M.VL_DIAMETRO_REDE, M.DS_LINHA, M.DS_SISTEMA, M.DS_REVESTIMENTO,
-                             M.TP_PERIODICIDADE_LEVANTAMENTO",
+                             M.TP_PERIODICIDADE_LEVANTAMENTO, M.DS_TAG",
                 'campoBusca' => "(CAST(M.CD_CHAVE AS VARCHAR) LIKE :b1 
                     OR CAST(ISNULL(M.CD_PONTO_MEDICAO,0) AS VARCHAR) LIKE :b2
                     OR ISNULL(M.DS_LINHA,'') LIKE :b3 
                     OR ISNULL(M.DS_SISTEMA,'') LIKE :b4 
                     OR ISNULL(M.DS_REVESTIMENTO,'') LIKE :b5
-                    OR ISNULL(PM.DS_NOME,'') LIKE :b6)"
+                    OR ISNULL(M.DS_TAG,'') LIKE :b6
+                    OR ISNULL(PM.DS_NOME,'') LIKE :b7)"
             ];
             break;
 
@@ -194,13 +201,14 @@ try {
                 'campos' => "M.CD_CHAVE, M.CD_PONTO_MEDICAO, M.DS_MATRICULA_USUARIO, 
                              M.DS_NUMERO_SERIE_EQUIPAMENTO, M.VL_DIAMETRO, M.VL_DIAMETRO_REDE,
                              M.DS_MATERIAL, M.DS_COTA, M.OP_TELEMETRIA, M.DS_ENDERECO,
-                             M.DT_INSTALACAO, M.DS_COORDENADAS",
+                             M.DT_INSTALACAO, M.DS_COORDENADAS, M.DS_TAG",
                 'campoBusca' => "(CAST(M.CD_CHAVE AS VARCHAR) LIKE :b1 
                     OR CAST(ISNULL(M.CD_PONTO_MEDICAO,0) AS VARCHAR) LIKE :b2
                     OR ISNULL(M.DS_NUMERO_SERIE_EQUIPAMENTO,'') LIKE :b3 
                     OR ISNULL(M.DS_MATERIAL,'') LIKE :b4 
                     OR ISNULL(M.DS_ENDERECO,'') LIKE :b5
-                    OR ISNULL(PM.DS_NOME,'') LIKE :b6)"
+                    OR ISNULL(M.DS_TAG,'') LIKE :b6
+                    OR ISNULL(PM.DS_NOME,'') LIKE :b7)"
             ];
             break;
 
@@ -232,13 +240,14 @@ try {
                              M.DS_NUMERO_SERIE_EQUIPAMENTO, M.VL_DIAMETRO, M.VL_DIAMETRO_REDE,
                              M.DS_MATERIAL, M.DS_COTA, M.DS_ENDERECO, M.DT_INSTALACAO,
                              M.DS_COORDENADAS, M.ID_TEMPO_OPERACAO, M.VL_LEITURA_LIMITE,
-                             M.VL_MULTIPLICADOR",
+                             M.VL_MULTIPLICADOR, M.DS_TAG",
                 'campoBusca' => "(CAST(M.CD_CHAVE AS VARCHAR) LIKE :b1 
                     OR CAST(ISNULL(M.CD_PONTO_MEDICAO,0) AS VARCHAR) LIKE :b2
                     OR ISNULL(M.DS_NUMERO_SERIE_EQUIPAMENTO,'') LIKE :b3 
                     OR ISNULL(M.DS_MATRICULA_USUARIO,'') LIKE :b4 
                     OR ISNULL(M.DS_MATERIAL,'') LIKE :b5
-                    OR ISNULL(PM.DS_NOME,'') LIKE :b6)"
+                    OR ISNULL(M.DS_TAG,'') LIKE :b6
+                    OR ISNULL(PM.DS_NOME,'') LIKE :b7)"
             ];
             break;
 

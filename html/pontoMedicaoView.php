@@ -906,11 +906,11 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
                             <ion-icon name="<?= $isAtivo ? 'checkmark-circle' : 'close-circle' ?>"></ion-icon>
                             <?= $isAtivo ? 'Ativo' : 'Inativo' ?>
                         </span>
-                        <?php 
+                        <?php
                         // Badge de sincronização - só mostra se tem tag de integração
-                        if (!empty($pm['TEM_TAG_INTEGRACAO']) && $pm['TEM_TAG_INTEGRACAO'] == 1): 
+                        if (!empty($pm['TEM_TAG_INTEGRACAO']) && $pm['TEM_TAG_INTEGRACAO'] == 1):
                             if ($pm['DIAS_SEM_SINCRONIZAR'] !== null):
-                                $dias = (int)$pm['DIAS_SEM_SINCRONIZAR'];
+                                $dias = (int) $pm['DIAS_SEM_SINCRONIZAR'];
                                 $sincClass = 'badge-sinc-ok';
                                 $sincIcon = 'checkmark-circle-outline';
                                 if ($dias > 7) {
@@ -925,19 +925,19 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
                                 }
                                 $dtUltima = !empty($pm['DT_ULTIMA_LEITURA']) ? date('d/m/Y', strtotime($pm['DT_ULTIMA_LEITURA'])) : '';
                                 $titulo = $dtUltima ? "Última leitura: {$dtUltima} ({$dias} dia" . ($dias !== 1 ? 's' : '') . ")" : "{$dias} dia" . ($dias !== 1 ? 's' : '') . " sem dados";
-                        ?>
-                            <span class="status-badge <?= $sincClass ?>" title="<?= $titulo ?>">
-                                <ion-icon name="<?= $sincIcon ?>"></ion-icon>
-                                <?= $dias ?>d
-                            </span>
-                        <?php 
+                                ?>
+                                <span class="status-badge <?= $sincClass ?>" title="<?= $titulo ?>">
+                                    <ion-icon name="<?= $sincIcon ?>"></ion-icon>
+                                    <?= $dias ?>d
+                                </span>
+                            <?php
                             else:
-                        ?>
-                            <span class="status-badge badge-sinc-critico" title="Nunca sincronizado">
-                                <ion-icon name="close-circle-outline"></ion-icon>
-                                Nunca
-                            </span>
-                        <?php 
+                                ?>
+                                <span class="status-badge badge-sinc-critico" title="Nunca sincronizado">
+                                    <ion-icon name="close-circle-outline"></ion-icon>
+                                    Nunca
+                                </span>
+                            <?php
                             endif;
                         endif;
                         ?>
@@ -1170,7 +1170,8 @@ $dsObservacao = isset($pm['DS_OBSERVACAO']) ? trim($pm['DS_OBSERVACAO']) : '';
     </div>
 
     <!-- Tags de Integração -->
-    <div class="view-card">
+    <!-- Tags de Integração (oculto - gerenciado via Instrumentos) -->
+    <div class="view-card" style="display:none;">
         <div class="view-card-header">
             <ion-icon name="pricetag-outline"></ion-icon>
             <h2>Tags de Integração</h2>

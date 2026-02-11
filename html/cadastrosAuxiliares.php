@@ -699,6 +699,10 @@ $tiposCalculo = [
                                 Diâmetro <ion-icon name="swap-vertical-outline"
                                     style="font-size:12px;vertical-align:middle;color:#94a3b8;"></ion-icon>
                             </th>
+                            <th style="cursor:pointer;" onclick="ordenarInstrumentos('DS_TAG')" id="thInstrTag">
+                                TAG <ion-icon name="swap-vertical-outline"
+                                    style="font-size:12px;vertical-align:middle;color:#94a3b8;"></ion-icon>
+                            </th>
                             <th style="width: 200px; cursor:pointer;"
                                 onclick="ordenarInstrumentos('DS_PONTO_VINCULADO')">
                                 Ponto Vinculado <ion-icon name="swap-vertical-outline"
@@ -2319,9 +2323,11 @@ $tiposCalculo = [
             document.getElementById('thInstrCol2').textContent = 'Coluna 2';
             document.getElementById('thInstrCol3').textContent = 'Coluna 3';
             document.getElementById('thInstrCol4').textContent = 'Coluna 4';
+            document.getElementById('thInstrTag').style.display = '';
             document.getElementById('thInstrTipo').style.display = '';
         } else {
             document.getElementById('thInstrTipo').style.display = 'none';
+            document.getElementById('thInstrTag').style.display = '';
         }
 
         var vinculo = document.getElementById('filtroInstrumentoVinculo').value;
@@ -2370,6 +2376,18 @@ $tiposCalculo = [
 
                         // Badge de tipo (só no modo Todos)
                         var tipoCol = isTodos ? '<td><span style="font-size:11px;color:#0369a1;background:#e0f2fe;padding:3px 8px;border-radius:6px;white-space:nowrap;">' + item.DS_TIPO + '</span></td>' : '';
+
+                        var tagValue = '';
+                        if (isTodos) {
+                            tagValue = item.DS_TAG && item.DS_TAG !== ''
+                                ? '<span style="font-family:monospace;font-size:11px;color:#475569;">' + item.DS_TAG + '</span>'
+                                : '<span style="color:#94a3b8;">-</span>';
+                        } else {
+                            tagValue = item.DS_TAG
+                                ? '<span style="font-family:monospace;font-size:11px;color:#475569;">' + item.DS_TAG + '</span>'
+                                : '<span style="color:#94a3b8;">-</span>';
+                        }
+
                         // Badge de vínculo
                         const vinculoBadge = item.CD_PONTO_MEDICAO
                             ? `<a href="pontoMedicaoView.php?id=${item.CD_PONTO_MEDICAO}" class="link-ponto-vinculado" title="Ver ponto de medição">${item.DS_PONTO_VINCULADO || 'Ponto'} <span style="color:#64748b;">(${item.CD_PONTO_MEDICAO})</span></a>`
@@ -2383,6 +2401,7 @@ $tiposCalculo = [
                                 <td>${cols.col2}</td>
                                 <td>${cols.col3}</td>
                                 <td>${cols.col4}</td>
+                                <td>${tagValue}</td>
                                 <td>${vinculoBadge}</td>
                                 <td>
                                     <div class="table-actions">
@@ -2400,7 +2419,7 @@ $tiposCalculo = [
                         `;
                     });
                 } else {
-                    var totalCols = isTodos ? 8 : 7;
+                    var totalCols = isTodos ? 9 : 8;
                     html = `<tr><td colspan="${totalCols}">
                         <div class="empty-state">
                             <div class="empty-state-icon"><ion-icon name="hardware-chip-outline"></ion-icon></div>
@@ -2608,11 +2627,11 @@ $tiposCalculo = [
         switch (tipo) {
             case 1: // Macromedidor
                 html = `
+                    ${instrInput('ds_tag', 'Tag', 'pricetag-outline', 'text', 'Tag de identificação', '33.33%')}
                     ${instrSelect('cd_tipo_medidor_equip', 'Tipo de Medidor', 'speedometer-outline', tiposMedidorEquip, '33.33%')}
                     ${instrInput('ds_marca', 'Marca', 'pricetag-outline', 'text', 'Ex: CONAUT', '33.33%')}
                     ${instrInput('ds_modelo', 'Modelo', 'cube-outline', 'text', 'Ex: OPTIFLUX KC2000', '33.33%')}
                     ${instrInput('ds_serie', 'Série', 'barcode-outline', 'text', 'Número de série', '33.33%')}
-                    ${instrInput('ds_tag', 'Tag', 'pricetag-outline', 'text', 'Tag de identificação', '33.33%')}
                     ${instrInput('dt_fabricacao', 'Data Fabricação', 'calendar-outline', 'date', '', '33.33%')}
                     ${instrInput('ds_patrimonio_primario', 'Patrimônio Primário', 'document-outline', 'text', '', '33.33%')}
                     ${instrInput('ds_patrimonio_secundario', 'Patrimônio Secundário', 'document-outline', 'text', '', '33.33%')}
@@ -2638,6 +2657,7 @@ $tiposCalculo = [
 
             case 2: // Estação Pitométrica
                 html = `
+                    ${instrInput('ds_tag', 'TAG', 'pricetag-outline', 'text', 'Ex: CP004_TM192_17_MED', '33.33%')}
                     ${instrInput('vl_cota_geografica', 'Cota (m)', 'location-outline', 'number', '0.00', '33.33%', '0.01')}
                     ${instrInput('ds_sistema', 'Sistema', 'apps-outline', 'text', 'Sistema', '33.33%')}
                     ${instrInput('vl_diametro', 'Diâmetro do Trecho (mm)', 'resize-outline', 'number', '0.00', '33.33%', '0.01')}
@@ -2650,6 +2670,7 @@ $tiposCalculo = [
 
             case 4: // Medidor Pressão
                 html = `
+                    ${instrInput('ds_tag', 'TAG', 'pricetag-outline', 'text', 'Ex: CP004_TM192_17_MED', '33.33%')}
                     ${instrInput('ds_matricula_usuario', 'Matrícula Usuário', 'person-outline', 'text', '', '33.33%')}
                     ${instrInput('vl_diametro', 'Diâmetro (mm)', 'resize-outline', 'number', '0.00', '33.33%', '0.01')}
                     ${instrInput('ds_numero_serie_equipamento', 'Nº Série Equipamento', 'barcode-outline', 'text', '', '33.33%')}
@@ -2667,6 +2688,7 @@ $tiposCalculo = [
 
             case 6: // Nível Reservatório
                 html = `
+                    ${instrInput('ds_tag', 'Tag', 'pricetag-outline', 'text', '', '33.33%')}
                     ${instrSelect('cd_tipo_medidor_equip', 'Tipo de Medidor', 'speedometer-outline', tiposMedidorEquip, '33.33%')}
                     ${instrInput('ds_marca', 'Marca', 'pricetag-outline', 'text', '', '33.33%')}
                     ${instrInput('dt_fabricacao', 'Data Fabricação', 'calendar-outline', 'date', '', '33.33%')}
@@ -2674,7 +2696,6 @@ $tiposCalculo = [
                     ${instrInput('dt_instalacao', 'Data Instalação', 'calendar-outline', 'date', '', '33.33%')}
                     ${instrInput('ds_serie', 'Série', 'barcode-outline', 'text', '', '33.33%')}
                     ${instrInput('ds_patrimonio_primario', 'Patrimônio Primário', 'document-outline', 'text', '', '33.33%')}
-                    ${instrInput('ds_tag', 'Tag', 'pricetag-outline', 'text', '', '33.33%')}
                     ${instrInput('ds_patrimonio_secundario', 'Patrimônio Secundário', 'document-outline', 'text', '', '33.33%')}
                     ${instrSelect('cd_tipo_reservatorio', 'Reservatório', 'home-outline', tiposReservatorio, '33.33%')}
                     ${instrInput('cota_extravasamento_m', 'Cota Extrav. (m)', 'arrow-up-outline', 'number', '0.00', '33.33%', '0.01')}
@@ -2693,6 +2714,7 @@ $tiposCalculo = [
 
             case 8: // Hidrômetro
                 html = `
+                    ${instrInput('ds_tag', 'TAG', 'pricetag-outline', 'text', 'Ex: CP004_TM192_17_MED', '33.33%')}
                     ${instrInput('ds_matricula_usuario', 'Matrícula Usuário', 'person-outline', 'text', '', '33.33%')}
                     ${instrInput('vl_diametro', 'Diâmetro (mm)', 'resize-outline', 'number', '0.00', '33.33%', '0.01')}
                     ${instrInput('ds_numero_serie_equipamento', 'Nº Série Equipamento', 'barcode-outline', 'text', '', '33.33%')}
@@ -2705,6 +2727,7 @@ $tiposCalculo = [
                     ${instrInput('ds_material', 'Material', 'construct-outline', 'text', '', '33.33%')}
                     ${instrInput('vl_multiplicador', 'Multiplicador', 'calculator-outline', 'number', '0.0000', '33.33%', '0.0001')}
                     ${instrInput('ds_endereco', 'Endereço', 'location-outline', 'text', 'Endereço completo', '100%')}
+                    
                 `;
                 break;
         }

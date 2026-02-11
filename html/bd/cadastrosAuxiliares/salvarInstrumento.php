@@ -76,6 +76,61 @@ try {
     $tabela = '';
     $campos = [];
 
+    /**
+     * Sincroniza a TAG do instrumento com a tabela PONTO_MEDICAO.
+     * Mapeia DS_TAG do instrumento para a coluna correta conforme tipo.
+     * Tipo 1,2,8 → DS_TAG_VAZAO | Tipo 4 → DS_TAG_PRESSAO | Tipo 6 → DS_TAG_RESERVATORIO
+     * 
+     * @param PDO $pdo Conexão PDO
+     * @param int $tipo Tipo do medidor
+     * @param string|null $tag Valor da tag
+     * @param int $cdChave CD_CHAVE do instrumento
+     */
+    function sincronizarTagPonto($pdo, $tipo, $tag, $cdChave)
+    {
+        // Mapeamento tipo → coluna TAG no PONTO_MEDICAO
+        $mapaTag = [
+            1 => 'DS_TAG_VAZAO',
+            2 => 'DS_TAG_VAZAO',
+            4 => 'DS_TAG_PRESSAO',
+            6 => 'DS_TAG_RESERVATORIO',
+            8 => 'DS_TAG_VAZAO'
+        ];
+
+        $colunaTag = $mapaTag[$tipo] ?? null;
+        if (!$colunaTag)
+            return;
+
+        // Busca tabela do instrumento
+        $tabelas = [
+            1 => 'MACROMEDIDOR',
+            2 => 'ESTACAO_PITOMETRICA',
+            4 => 'MEDIDOR_PRESSAO',
+            6 => 'NIVEL_RESERVATORIO',
+            8 => 'HIDROMETRO'
+        ];
+        $tabela = $tabelas[$tipo] ?? null;
+        if (!$tabela)
+            return;
+
+        // Busca CD_PONTO_MEDICAO vinculado ao instrumento
+        $sqlPonto = "SELECT CD_PONTO_MEDICAO FROM SIMP.dbo.{$tabela} WHERE CD_CHAVE = ?";
+        $stmtPonto = $pdo->prepare($sqlPonto);
+        $stmtPonto->execute([$cdChave]);
+        $row = $stmtPonto->fetch(PDO::FETCH_ASSOC);
+
+        if ($row && !empty($row['CD_PONTO_MEDICAO'])) {
+            $cdPonto = (int) $row['CD_PONTO_MEDICAO'];
+            if ($tag === null || $tag === '') {
+                $sqlUpd = "UPDATE SIMP.dbo.PONTO_MEDICAO SET {$colunaTag} = NULL WHERE CD_PONTO_MEDICAO = ?";
+                $pdo->prepare($sqlUpd)->execute([$cdPonto]);
+            } else {
+                $sqlUpd = "UPDATE SIMP.dbo.PONTO_MEDICAO SET {$colunaTag} = ? WHERE CD_PONTO_MEDICAO = ?";
+                $pdo->prepare($sqlUpd)->execute([$tag, $cdPonto]);
+            }
+        }
+    }
+
     switch ($idTipoMedidor) {
         case 1: // Macromedidor
             $tabela = 'MACROMEDIDOR';
@@ -118,6 +173,7 @@ try {
                 'DS_SISTEMA' => getVal('ds_sistema'),
                 'DS_REVESTIMENTO' => getVal('ds_revestimento'),
                 'TP_PERIODICIDADE_LEVANTAMENTO' => getVal('tp_periodicidade_levantamento'),
+                'DS_TAG' => getVal('ds_tag'),
             ];
             break;
 
@@ -134,6 +190,7 @@ try {
                 'DS_ENDERECO' => getVal('ds_endereco'),
                 'DT_INSTALACAO' => fmtDate('dt_instalacao'),
                 'DS_COORDENADAS' => getVal('ds_coordenadas'),
+                'DS_TAG' => getVal('ds_tag'),
             ];
             break;
 
@@ -179,6 +236,7 @@ try {
                 'ID_TEMPO_OPERACAO' => getVal('id_tempo_operacao'),
                 'VL_LEITURA_LIMITE' => getVal('vl_leitura_limite'),
                 'VL_MULTIPLICADOR' => getVal('vl_multiplicador'),
+                'DS_TAG' => getVal('ds_tag'),
             ];
             break;
 
@@ -273,6 +331,10 @@ try {
             }
         }
 
+        // Sincroniza TAG com PONTO_MEDICAO (se vinculado)
+        $tagVal = getVal('ds_tag');
+        sincronizarTagPonto($pdoSIMP, $idTipoMedidor, $tagVal, $cdChave);
+
         echo json_encode([
             'success' => true,
             'message' => 'Instrumento atualizado com sucesso!',
@@ -296,7 +358,8 @@ try {
 
         // Remove campos NULL para INSERT (campos opcionais não informados)
         $camposInsert = array_filter($campos, function ($v) {
-            return $v !== null; });
+            return $v !== null;
+        });
         $colunas = implode(', ', array_keys($camposInsert));
         $placeholders = implode(', ', array_fill(0, count($camposInsert), '?'));
         $valores = array_values($camposInsert);
@@ -321,6 +384,12 @@ try {
                 registrarLogInsert('Cadastros Auxiliares', 'Instrumento (' . $tabela . ')', $novoId, 'CD:' . $novoId, $camposInsert);
             } catch (Exception $e) {
             }
+        }
+
+        // Sincroniza TAG com PONTO_MEDICAO (se vinculado)
+        $tagVal = getVal('ds_tag');
+        if ($novoId) {
+            sincronizarTagPonto($pdoSIMP, $idTipoMedidor, $tagVal, $novoId);
         }
 
         echo json_encode([

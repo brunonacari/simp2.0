@@ -1675,8 +1675,8 @@ $tiposInstalacao = [
             </div>
         </div>
 
-        <!-- Tags de Integração -->
-        <div class="form-card">
+        <!-- Tags de Integração (oculto - gerenciado via Instrumentos) -->
+        <div class="form-card" style="display:none;">
             <div class="form-card-header">
                 <ion-icon name="pricetag-outline"></ion-icon>
                 <h2>Tags de Integração</h2>
@@ -2761,6 +2761,7 @@ $tiposInstalacao = [
                 ${viewItem('Sistema', d.DS_SISTEMA, 'apps-outline')}
                 ${viewItem('Revestimento', d.DS_REVESTIMENTO, 'layers-outline')}
                 ${viewItem('Periodicidade Levantamento', d.TP_PERIODICIDADE_LEVANTAMENTO, 'time-outline')}
+                ${viewItem('TAG', d.DS_TAG, 'pricetag-outline', true)}
             `;
         }
 
@@ -2779,6 +2780,7 @@ $tiposInstalacao = [
                 ${viewItem('Endereço', d.DS_ENDERECO, 'location-outline')}
                 ${viewItem('Data Instalação', formatDateView(d.DT_INSTALACAO), 'calendar-outline')}
                 ${viewItem('Coordenadas', d.DS_COORDENADAS, 'navigate-outline', true)}
+                ${viewItem('TAG', d.DS_TAG, 'pricetag-outline', true)}
             `;
         }
 
@@ -2832,7 +2834,9 @@ $tiposInstalacao = [
                 ${viewItem('Coordenadas', d.DS_COORDENADAS, 'navigate-outline', true)}
                 ${viewItem('Leitura Limite', formatNumView(d.VL_LEITURA_LIMITE), 'speedometer-outline')}
                 ${viewItem('Multiplicador', formatNumView(d.VL_MULTIPLICADOR, 4), 'calculator-outline')}
+                ${viewItem('TAG', d.DS_TAG, 'pricetag-outline', true)}
             `;
+            
         }
 
         // ============================================
@@ -2865,8 +2869,62 @@ $tiposInstalacao = [
             });
 
             // Evento: Mudança de Tipo de Medidor
+            // Guarda o tipo anterior para possível reversão
+            var tipoMedidorAnterior = tipoMedidor;
             $('#selectTipoMedidor').on('change', function () {
-                tipoMedidor = parseInt($(this).val()) || 0;
+                var tipoNovo = parseInt($(this).val()) || 0;
+
+                // Se está em edição e há instrumento vinculado, avisa o usuário
+                <?php if ($isEdicao): ?>
+                    if (equipamentoData && equipamentoData.CD_CHAVE && tipoNovo !== tipoMedidorAnterior) {
+                        var confirmou = confirm(
+                            'ATENÇÃO: Existe um instrumento vinculado a este ponto de medição (CD: ' + equipamentoData.CD_CHAVE + ').\n\n' +
+                            'Alterar o Tipo de Medidor irá DESVINCULAR o instrumento atual, ' +
+                            'pois o tipo não será mais compatível.\n\n' +
+                            'Deseja continuar?'
+                        );
+
+                        if (!confirmou) {
+                            // Reverte para o tipo anterior
+                            $(this).val(tipoMedidorAnterior).trigger('change.select2');
+                            return;
+                        }
+
+                        // Desvincula o instrumento
+                        $.ajax({
+                            url: 'bd/pontoMedicao/desvincularInstrumento.php',
+                            type: 'POST',
+                            data: {
+                                cd_chave: equipamentoData.CD_CHAVE,
+                                cd_ponto_medicao: <?= $pontoMedicao['CD_PONTO_MEDICAO'] ?? 0 ?>,
+                                id_tipo_medidor: tipoMedidorAnterior
+                            },
+                            dataType: 'json',
+                            async: false,
+                            success: function (resp) {
+                                if (resp.success) {
+                                    showToast('Instrumento desvinculado do ponto de medição', 'aviso');
+                                    equipamentoData = null;
+                                    exibirSeletorInstrumento();
+                                } else {
+                                    showToast(resp.message || 'Erro ao desvincular', 'erro');
+                                    // Reverte
+                                    $('#selectTipoMedidor').val(tipoMedidorAnterior).trigger('change.select2');
+                                    return;
+                                }
+                            },
+                            error: function () {
+                                showToast('Erro ao comunicar com o servidor', 'erro');
+                                $('#selectTipoMedidor').val(tipoMedidorAnterior).trigger('change.select2');
+                                return;
+                            }
+                        });
+                    }
+                <?php endif; ?>
+
+                // Atualiza tipo e seções
+                tipoMedidorAnterior = tipoNovo;
+                tipoMedidor = tipoNovo;
                 atualizarSecaoMetas(tipoMedidor);
                 atualizarSecaoEquipamento(tipoMedidor);
                 atualizarTagsVisiveis(tipoMedidor);
