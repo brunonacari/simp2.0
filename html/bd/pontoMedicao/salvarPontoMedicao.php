@@ -59,6 +59,29 @@ try {
 
     // Garantir que apenas a TAG correspondente ao Tipo de Medidor seja salva.
     // As demais TAGs são setadas como NULL para manter consistência.
+
+    // ============================================
+    // Limpa TAGs não correspondentes ao tipo selecionado.
+    // Um ponto de medição jamais pode ter mais de uma TAG.
+    // Tipo 1,2,8 → DS_TAG_VAZAO | Tipo 4 → DS_TAG_PRESSAO | Tipo 6 → DS_TAG_RESERVATORIO
+    // ============================================
+    $tagPorTipo = [
+        1 => 'ds_tag_vazao',
+        2 => 'ds_tag_vazao',
+        4 => 'ds_tag_pressao',
+        6 => 'ds_tag_reservatorio',
+        8 => 'ds_tag_vazao'
+    ];
+
+    $tagAtiva = $tagPorTipo[$idTipoMedidor] ?? null;
+    $todasTags = ['ds_tag_vazao', 'ds_tag_pressao', 'ds_tag_volume', 'ds_tag_reservatorio', 'ds_tag_temp_agua', 'ds_tag_temp_ambiente'];
+
+    foreach ($todasTags as $tagVar) {
+        if ($tagVar !== $tagAtiva) {
+            $$tagVar = null; // Força NULL nas tags não correspondentes ao tipo
+        }
+    }
+    
     // Mapeamento: 1,2,8 → vazão | 4 → pressão | 6 → reservatório
     switch ((int) $idTipoMedidor) {
         case 1: // Macromedidor

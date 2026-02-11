@@ -23,9 +23,9 @@ try {
     // ============================================
     // Validação dos parâmetros
     // ============================================
-    $cdChave = isset($_POST['cd_chave']) && $_POST['cd_chave'] !== '' ? (int)$_POST['cd_chave'] : null;
-    $cdPontoMedicao = isset($_POST['cd_ponto_medicao']) && $_POST['cd_ponto_medicao'] !== '' ? (int)$_POST['cd_ponto_medicao'] : null;
-    $idTipoMedidor = isset($_POST['id_tipo_medidor']) && $_POST['id_tipo_medidor'] !== '' ? (int)$_POST['id_tipo_medidor'] : null;
+    $cdChave = isset($_POST['cd_chave']) && $_POST['cd_chave'] !== '' ? (int) $_POST['cd_chave'] : null;
+    $cdPontoMedicao = isset($_POST['cd_ponto_medicao']) && $_POST['cd_ponto_medicao'] !== '' ? (int) $_POST['cd_ponto_medicao'] : null;
+    $idTipoMedidor = isset($_POST['id_tipo_medidor']) && $_POST['id_tipo_medidor'] !== '' ? (int) $_POST['id_tipo_medidor'] : null;
 
     if (empty($cdChave)) {
         throw new Exception('Instrumento não informado');
@@ -78,6 +78,24 @@ try {
 
     if ($stmtDesvincula->rowCount() === 0) {
         throw new Exception('Não foi possível desvincular o instrumento');
+    }
+
+    // ============================================
+    // Limpa TAGs correspondentes no ponto de medição
+    // Um ponto desvinculado não deve manter a TAG do instrumento
+    // ============================================
+    $mapaTag = [
+        1 => 'DS_TAG_VAZAO',
+        2 => 'DS_TAG_VAZAO',
+        4 => 'DS_TAG_PRESSAO',
+        6 => 'DS_TAG_RESERVATORIO',
+        8 => 'DS_TAG_VAZAO'
+    ];
+
+    $colunaTag = $mapaTag[$idTipoMedidor] ?? null;
+    if ($colunaTag) {
+        $sqlLimpaTag = "UPDATE SIMP.dbo.PONTO_MEDICAO SET {$colunaTag} = NULL WHERE CD_PONTO_MEDICAO = ?";
+        $pdoSIMP->prepare($sqlLimpaTag)->execute([$cdPontoMedicao]);
     }
 
     echo json_encode([

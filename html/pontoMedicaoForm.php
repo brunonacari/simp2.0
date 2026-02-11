@@ -2204,17 +2204,23 @@ $tiposInstalacao = [
                     if (response.success) {
                         showToast(response.message, 'sucesso');
                         setTimeout(function () {
+                            <?php if ($isEdicao): ?>
+                                    // Em edição: recarrega a mesma página para refletir alterações
+                                    window.location.href = 'pontoMedicaoForm.php?id=<?= $id ?>';
+                            <?php else: ?>
+                            // Novo cadastro: redireciona para a lista
                             window.location.href = 'pontoMedicao.php';
+                            <?php endif; ?>
                         }, 1500);
-                    } else {
-                        showToast(response.message || 'Erro ao salvar', 'erro');
-                        btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar');
-                    }
+        } else {
+            showToast(response.message || 'Erro ao salvar', 'erro');
+        btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar');
+    }
                 },
-                error: function (xhr, status, error) {
-                    showToast('Erro ao comunicar com o servidor', 'erro');
-                    btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar');
-                }
+        error: function (xhr, status, error) {
+            showToast('Erro ao comunicar com o servidor', 'erro');
+            btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar');
+        }
             });
         });
     });
@@ -2836,7 +2842,7 @@ $tiposInstalacao = [
                 ${viewItem('Multiplicador', formatNumView(d.VL_MULTIPLICADOR, 4), 'calculator-outline')}
                 ${viewItem('TAG', d.DS_TAG, 'pricetag-outline', true)}
             `;
-            
+
         }
 
         // ============================================
@@ -2925,8 +2931,48 @@ $tiposInstalacao = [
                 // Atualiza tipo e seções
                 tipoMedidorAnterior = tipoNovo;
                 tipoMedidor = tipoNovo;
+
+                // Limpa TAGs não correspondentes ao novo tipo no banco
+                <?php if ($isEdicao): ?>
+                    var tagPorTipo = { 1: 'ds_tag_vazao', 2: 'ds_tag_vazao', 4: 'ds_tag_pressao', 6: 'ds_tag_reservatorio', 8: 'ds_tag_vazao' };
+                    var todasTags = ['ds_tag_vazao', 'ds_tag_pressao', 'ds_tag_volume', 'ds_tag_reservatorio', 'ds_tag_temp_agua', 'ds_tag_temp_ambiente'];
+                    var tagAtiva = tagPorTipo[tipoNovo] || null;
+                    var dadosLimpeza = {
+                        cd_ponto_medicao: <?= $pontoMedicao['CD_PONTO_MEDICAO'] ?? 0 ?>
+                    };
+                    todasTags.forEach(function (tag) {
+                        if (tag !== tagAtiva) {
+                            dadosLimpeza[tag] = '';
+                            // Limpa o input no formulário também
+                            var input = document.querySelector('input[name="' + tag + '"]');
+                            if (input) input.value = '';
+                        }
+                    });
+                    $.post('bd/pontoMedicao/limparTagsPonto.php', dadosLimpeza, function (resp) {
+                        if (resp.success) {
+                            showToast('TAGs incompatíveis removidas', 'info');
+                        }
+                    }, 'json');
+                <?php endif; ?>
+
                 atualizarSecaoMetas(tipoMedidor);
-                atualizarSecaoEquipamento(tipoMedidor);
+
+                // Não carrega equipamento do novo tipo até salvar o ponto
+                // (banco ainda tem o tipo antigo, causaria inconsistência)
+                equipamentoData = null;
+                $('#instrumentoVinculado').hide();
+                $('#seletorInstrumento').hide();
+                $('#emptyStateInstrumento').hide();
+                $('#conteudoEquipamentoView').html(
+                    '<div style="text-align:center;padding:24px;color:#f59e0b;">' +
+                    '<ion-icon name="warning-outline" style="font-size:32px;"></ion-icon>' +
+                    '<p style="margin-top:8px;font-size:13px;color:#92400e;">' +
+                    '<strong>Salve o ponto de medição</strong> para gerenciar instrumentos com o novo tipo.' +
+                    '</p>' +
+                    '</div>'
+                );
+                $('#instrumentoVinculado').show();
+
                 atualizarTagsVisiveis(tipoMedidor);
             });
         });

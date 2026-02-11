@@ -24,9 +24,9 @@ try {
     // ============================================
     // Validação dos parâmetros
     // ============================================
-    $cdChave = isset($_POST['cd_chave']) && $_POST['cd_chave'] !== '' ? (int)$_POST['cd_chave'] : null;
-    $cdPontoMedicao = isset($_POST['cd_ponto_medicao']) && $_POST['cd_ponto_medicao'] !== '' ? (int)$_POST['cd_ponto_medicao'] : null;
-    $idTipoMedidor = isset($_POST['id_tipo_medidor']) && $_POST['id_tipo_medidor'] !== '' ? (int)$_POST['id_tipo_medidor'] : null;
+    $cdChave = isset($_POST['cd_chave']) && $_POST['cd_chave'] !== '' ? (int) $_POST['cd_chave'] : null;
+    $cdPontoMedicao = isset($_POST['cd_ponto_medicao']) && $_POST['cd_ponto_medicao'] !== '' ? (int) $_POST['cd_ponto_medicao'] : null;
+    $idTipoMedidor = isset($_POST['id_tipo_medidor']) && $_POST['id_tipo_medidor'] !== '' ? (int) $_POST['id_tipo_medidor'] : null;
 
     if (empty($cdChave)) {
         throw new Exception('Instrumento não informado');
@@ -99,6 +99,33 @@ try {
     $msg = 'Instrumento vinculado com sucesso!';
     if ($desvinculados > 0) {
         $msg .= ' (' . $desvinculados . ' instrumento(s) anterior(es) desvinculado(s))';
+    }
+
+    // ============================================
+    // Sincroniza TAG do instrumento com o ponto de medição
+    // Tipo 1,2,8 → DS_TAG_VAZAO | 4 → DS_TAG_PRESSAO | 6 → DS_TAG_RESERVATORIO
+    // ============================================
+    $mapaTag = [
+        1 => 'DS_TAG_VAZAO',
+        2 => 'DS_TAG_VAZAO',
+        4 => 'DS_TAG_PRESSAO',
+        6 => 'DS_TAG_RESERVATORIO',
+        8 => 'DS_TAG_VAZAO'
+    ];
+
+    $colunaTag = $mapaTag[$idTipoMedidor] ?? null;
+    if ($colunaTag) {
+        // Busca DS_TAG do instrumento
+        $sqlTag = "SELECT DS_TAG FROM SIMP.dbo.{$tabela} WHERE CD_CHAVE = ?";
+        $stmtTag = $pdoSIMP->prepare($sqlTag);
+        $stmtTag->execute([$cdChave]);
+        $tagRow = $stmtTag->fetch(PDO::FETCH_ASSOC);
+        $tagValor = ($tagRow && !empty($tagRow['DS_TAG'])) ? $tagRow['DS_TAG'] : null;
+
+        if ($tagValor) {
+            $sqlUpdTag = "UPDATE SIMP.dbo.PONTO_MEDICAO SET {$colunaTag} = ? WHERE CD_PONTO_MEDICAO = ?";
+            $pdoSIMP->prepare($sqlUpdTag)->execute([$tagValor, $cdPontoMedicao]);
+        }
     }
 
     echo json_encode([

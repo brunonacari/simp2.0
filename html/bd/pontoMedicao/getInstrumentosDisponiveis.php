@@ -21,8 +21,8 @@ header('Content-Type: application/json; charset=utf-8');
 try {
     include_once '../conexao.php';
 
-    $idTipoMedidor = isset($_GET['id_tipo_medidor']) && $_GET['id_tipo_medidor'] !== '' ? (int)$_GET['id_tipo_medidor'] : null;
-    $cdPontoMedicao = isset($_GET['cd_ponto_medicao']) && $_GET['cd_ponto_medicao'] !== '' ? (int)$_GET['cd_ponto_medicao'] : null;
+    $idTipoMedidor = isset($_GET['id_tipo_medidor']) && $_GET['id_tipo_medidor'] !== '' ? (int) $_GET['id_tipo_medidor'] : null;
+    $cdPontoMedicao = isset($_GET['cd_ponto_medicao']) && $_GET['cd_ponto_medicao'] !== '' ? (int) $_GET['cd_ponto_medicao'] : null;
     $busca = isset($_GET['busca']) ? trim($_GET['busca']) : '';
 
     if (empty($idTipoMedidor)) {
@@ -122,7 +122,7 @@ try {
     // Monta a query: instrumentos livres OU já vinculados ao ponto atual
     // ============================================
     $params = [];
-    $whereClause = "(M.CD_PONTO_MEDICAO IS NULL";
+    $whereClause = "(M.CD_PONTO_MEDICAO IS NULL OR M.CD_PONTO_MEDICAO = 0";
 
     if ($cdPontoMedicao) {
         $whereClause .= " OR M.CD_PONTO_MEDICAO = :cd_ponto_medicao";
@@ -172,17 +172,17 @@ try {
         }
 
         $resultado[] = [
-            'cd_chave'          => (int)$inst['CD_CHAVE'],
-            'descricao'         => $label,
-            'cd_ponto_vinculado' => $inst['CD_PONTO_MEDICAO'] ? (int)$inst['CD_PONTO_MEDICAO'] : null,
+            'cd_chave' => (int) $inst['CD_CHAVE'],
+            'descricao' => $label,
+            'cd_ponto_vinculado' => $inst['CD_PONTO_MEDICAO'] ? (int) $inst['CD_PONTO_MEDICAO'] : null,
             'ds_ponto_vinculado' => $inst['DS_PONTO_VINCULADO']
         ];
     }
 
     echo json_encode([
         'success' => true,
-        'data'    => $resultado,
-        'total'   => count($resultado)
+        'data' => $resultado,
+        'total' => count($resultado)
     ]);
 
 } catch (Exception $e) {
