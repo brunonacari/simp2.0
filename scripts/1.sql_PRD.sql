@@ -306,10 +306,34 @@ CREATE TABLE SIMP.dbo.ENTIDADE_VALOR_FAVORITO (
 CREATE INDEX IX_FAVORITO_USUARIO ON SIMP.dbo.ENTIDADE_VALOR_FAVORITO(CD_USUARIO);
 
 
+-- =============================================================================================================================
+-- =============================================================================================================================
+
 
 use SIMP
 ALTER TABLE SIMP.dbo.REGISTRO_VAZAO_PRESSAO
 DISABLE TRIGGER TG_INSERT_UPDATE_REGISTRO_VAZAO_PRESSAO;
 
+
+-- =============================================================================================================================
+-- =============================================================================================================================
+
+
+ALTER TABLE SIMP.dbo.MACROMEDIDOR ALTER COLUMN CD_PONTO_MEDICAO INT NULL;
+GO
+
+ALTER TABLE SIMP.dbo.ESTACAO_PITOMETRICA ALTER COLUMN CD_PONTO_MEDICAO INT NULL;
+GO
+
+ALTER TABLE SIMP.dbo.MEDIDOR_PRESSAO ALTER COLUMN CD_PONTO_MEDICAO INT NULL;
+GO
+
+ALTER TABLE SIMP.dbo.NIVEL_RESERVATORIO ALTER COLUMN CD_PONTO_MEDICAO INT NULL;
+GO
+
+ALTER TABLE SIMP.dbo.HIDROMETRO ALTER COLUMN CD_PONTO_MEDICAO INT NULL;
+GO
+
+PRINT 'CD_PONTO_MEDICAO alterado para NULL em todas as tabelas de equipamento.';
 
 

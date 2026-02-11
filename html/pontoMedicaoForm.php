@@ -16,6 +16,26 @@ $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $isEdicao = $id > 0;
 $pontoMedicao = null;
 
+
+// Tipos de Reservatório (para renderizar Nível Reservatório no JS)
+$tiposReservatorio = [];
+try {
+    $sqlTR = $pdoSIMP->query("SELECT CD_CHAVE, NOME FROM SIMP.dbo.TIPO_RESERVATORIO ORDER BY NOME");
+    while ($tr = $sqlTR->fetch(PDO::FETCH_ASSOC)) {
+        $tiposReservatorio[$tr['CD_CHAVE']] = $tr['NOME'];
+    }
+} catch (Exception $e) {
+}
+
+// Tipos de Fluido
+$tiposFluido = [
+    '' => 'Indiferente',
+    '1' => 'Água Tratada',
+    '3' => 'Água Bruta',
+    '2' => 'Esgoto'
+];
+
+
 // Se for edição, busca os dados
 if ($isEdicao) {
     $sql = "SELECT 
@@ -1173,6 +1193,174 @@ $tiposInstalacao = [
     .radio-item-inline:hover .radio-label-inline {
         color: #1e293b;
     }
+
+    /* ============================================
+       View Grid - Exibição de dados do instrumento vinculado
+       Seletores específicos para evitar conflito com CSS existente
+       ============================================ */
+    #paneEquipamento .view-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 16px !important;
+    }
+
+    #paneEquipamento .view-item {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+    }
+
+    #paneEquipamento .view-item.full-width {
+        grid-column: 1 / -1 !important;
+    }
+
+    #paneEquipamento .view-label {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        color: #64748b !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+    }
+
+    #paneEquipamento .view-label ion-icon {
+        font-size: 12px !important;
+        color: #94a3b8 !important;
+    }
+
+    #paneEquipamento .view-value {
+        font-size: 12px !important;
+        color: #1e293b !important;
+        font-weight: 500 !important;
+        padding: 8px 12px !important;
+        background: #f8fafc !important;
+        border-radius: 8px !important;
+        border: 1px solid #e2e8f0 !important;
+        min-height: 36px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    #paneEquipamento .view-value.empty {
+        color: #94a3b8 !important;
+        font-style: italic !important;
+        font-weight: 400 !important;
+    }
+
+    #paneEquipamento .view-value.codigo {
+        font-family: 'SF Mono', Monaco, monospace !important;
+        background: #eff6ff !important;
+        border-color: #bfdbfe !important;
+        color: #1e40af !important;
+    }
+
+    /* ============================================
+       Instrumento Vinculado - Header com status
+       ============================================ */
+    .instrumento-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 16px !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+    }
+
+    .instrumento-header h4 {
+        margin: 0 !important;
+        color: #334155 !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    .instrumento-header h4 ion-icon {
+        color: #22c55e !important;
+        font-size: 18px !important;
+    }
+
+    /* Botão desvincular */
+    .btn-danger-outline {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        padding: 8px 16px !important;
+        background: transparent !important;
+        color: #ef4444 !important;
+        border: 1px solid #fca5a5 !important;
+        border-radius: 8px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .btn-danger-outline:hover {
+        background: #fef2f2 !important;
+        border-color: #ef4444 !important;
+    }
+
+    .btn-danger-outline ion-icon {
+        font-size: 14px !important;
+    }
+
+    /* Seletor de instrumento */
+    .seletor-instrumento {
+        margin-bottom: 16px;
+    }
+
+    .seletor-instrumento .form-row {
+        align-items: flex-end;
+    }
+
+    /* Empty state */
+    .empty-state-instrumento {
+        text-align: center;
+        padding: 30px 20px;
+        color: #94a3b8;
+    }
+
+    .empty-state-instrumento ion-icon {
+        font-size: 40px;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .empty-state-instrumento p {
+        margin: 0;
+        font-size: 13px;
+    }
+
+    /* Responsivo */
+    @media (max-width: 992px) {
+        #paneEquipamento .view-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+    }
+
+    @media (max-width: 576px) {
+        #paneEquipamento .view-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        .instrumento-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+        }
+
+        .seletor-instrumento .form-row {
+            flex-direction: column;
+        }
+
+        .seletor-instrumento .form-row .form-group {
+            width: 100% !important;
+            margin-bottom: 8px;
+        }
+    }
 </style>
 
 <div class="page-container">
@@ -1187,11 +1375,11 @@ $tiposInstalacao = [
                     <h1><?= $isEdicao ? 'Editar Ponto de Medição' : 'Novo Ponto de Medição' ?></h1>
                     <p class="page-header-subtitle">
                         <?= $isEdicao ? 'Atualize as informações do ponto de medição' : 'Cadastre um novo ponto de medição no sistema' ?>
-                        <?php 
+                        <?php
                         // Badge de sincronização - só mostra na edição e se tem tag de integração
-                        if ($isEdicao && !empty($pontoMedicao['TEM_TAG_INTEGRACAO']) && $pontoMedicao['TEM_TAG_INTEGRACAO'] == 1): 
+                        if ($isEdicao && !empty($pontoMedicao['TEM_TAG_INTEGRACAO']) && $pontoMedicao['TEM_TAG_INTEGRACAO'] == 1):
                             if ($pontoMedicao['DIAS_SEM_SINCRONIZAR'] !== null):
-                                $dias = (int)$pontoMedicao['DIAS_SEM_SINCRONIZAR'];
+                                $dias = (int) $pontoMedicao['DIAS_SEM_SINCRONIZAR'];
                                 $sincClass = 'badge-sinc-ok';
                                 $sincIcon = 'checkmark-circle-outline';
                                 if ($dias > 7) {
@@ -1206,19 +1394,20 @@ $tiposInstalacao = [
                                 }
                                 $dtUltima = !empty($pontoMedicao['DT_ULTIMA_LEITURA']) ? date('d/m/Y', strtotime($pontoMedicao['DT_ULTIMA_LEITURA'])) : '';
                                 $titulo = $dtUltima ? "Última leitura: {$dtUltima} ({$dias} dia" . ($dias !== 1 ? 's' : '') . ")" : "{$dias} dia" . ($dias !== 1 ? 's' : '') . " sem dados";
-                        ?>
-                            <span class="status-badge <?= $sincClass ?>" title="<?= $titulo ?>" style="margin-left: 12px;">
-                                <ion-icon name="<?= $sincIcon ?>"></ion-icon>
-                                <?= $dias ?>d
-                            </span>
-                        <?php 
+                                ?>
+                                <span class="status-badge <?= $sincClass ?>" title="<?= $titulo ?>" style="margin-left: 12px;">
+                                    <ion-icon name="<?= $sincIcon ?>"></ion-icon>
+                                    <?= $dias ?>d
+                                </span>
+                                <?php
                             else:
-                        ?>
-                            <span class="status-badge badge-sinc-critico" title="Nunca sincronizado" style="margin-left: 12px;">
-                                <ion-icon name="close-circle-outline"></ion-icon>
-                                Nunca
-                            </span>
-                        <?php 
+                                ?>
+                                <span class="status-badge badge-sinc-critico" title="Nunca sincronizado"
+                                    style="margin-left: 12px;">
+                                    <ion-icon name="close-circle-outline"></ion-icon>
+                                    Nunca
+                                </span>
+                                <?php
                             endif;
                         endif;
                         ?>
@@ -1689,15 +1878,57 @@ $tiposInstalacao = [
             <div class="tabs-content">
                 <!-- Aba: Dados do Equipamento -->
                 <div class="tab-pane active" id="paneEquipamento">
-                    <input type="hidden" name="equip_cd_chave" id="equipCdChave">
-                    <div id="camposEquipamento">
-                        <!-- Campos gerados dinamicamente pelo JavaScript -->
+                    <!-- Hidden: guarda CD_CHAVE do instrumento vinculado -->
+                    <input type="hidden" id="equipCdChave" value="">
+
+                    <!-- Seletor de Instrumento (visível quando não há vínculo) -->
+                    <div id="seletorInstrumento" class="seletor-instrumento">
+                        <div class="form-row">
+                            <div class="form-group" style="width: 80%;">
+                                <label class="form-label">
+                                    <ion-icon name="search-outline"></ion-icon>
+                                    Selecionar Instrumento
+                                </label>
+                                <select id="selectInstrumento" class="form-control" style="width: 100%;">
+                                    <option value="">Pesquise e selecione um instrumento...</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="width: 20%; display: flex; align-items: flex-end;">
+                                <button type="button" class="btn btn-primary" onclick="vincularInstrumentoAction()"
+                                    id="btnVincular" style="width: 100%;">
+                                    <ion-icon name="link-outline"></ion-icon>
+                                    Vincular
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-actions" style="border-top: 1px solid #e2e8f0; margin-top: 20px; padding-top: 20px;">
-                        <button type="button" class="btn btn-primary" onclick="salvarEquipamento()" id="btnSalvarEquip">
-                            <ion-icon name="save-outline"></ion-icon>
-                            Salvar Dados do Equipamento
-                        </button>
+
+                    <!-- Dados do Instrumento Vinculado (modo VIEW) -->
+                    <div id="instrumentoVinculado" style="display: none;">
+                        <div class="instrumento-header">
+                            <h4>
+                                <ion-icon name="checkmark-circle"></ion-icon>
+                                Instrumento Vinculado <span id="labelCdChaveVinculado"
+                                    style="font-weight: 400; color: #64748b; font-size: 12px;"></span>
+                            </h4>
+                            <button type="button" class="btn-danger-outline" onclick="desvincularInstrumentoAction()"
+                                id="btnDesvincular">
+                                <ion-icon name="trash-outline"></ion-icon>
+                                Desvincular
+                            </button>
+                        </div>
+                        <div id="conteudoEquipamentoView" class="view-grid">
+                            <!-- Renderizado dinamicamente pelo JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div id="emptyStateInstrumento" style="display: none;">
+                        <div class="empty-state-instrumento">
+                            <ion-icon name="hardware-chip-outline"></ion-icon>
+                            <p>Nenhum instrumento vinculado a este ponto de medição.</p>
+                            <p style="font-size: 11px; margin-top: 4px;">Use o campo acima para pesquisar e vincular.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -2044,10 +2275,16 @@ $tiposInstalacao = [
 
     <?php if ($isEdicao): ?>
         // ============================================
-        // Dados do Equipamento - CRUD Dinâmico
+        // Dados do Equipamento - Seleção de Instrumento
         // ============================================
+        // Variável que guarda os dados do instrumento vinculado
         let equipamentoData = null;
+        // Referência ao Select2 do instrumento
+        let select2Instrumento = null;
 
+        /**
+         * Nomes dos tipos de medidor (para referência no JS)
+         */
         const tiposMedidorNomes = {
             1: 'Macromedidor',
             2: 'Estação Pitométrica',
@@ -2056,292 +2293,154 @@ $tiposInstalacao = [
             8: 'Hidrômetro'
         };
 
-        // Lista de tipos de medidor (para select CD_TIPO_MEDIDOR)
+        // Lista de tipos de medidor de equipamento (tabela TIPO_MEDIDOR)
         let tiposMedidorEquipLista = [];
+        let tiposMedidorEquipNomes = {};
 
-        // Carrega tipos de medidor de equipamento ao iniciar
+        /**
+         * Carrega tipos de medidor de equipamento ao iniciar
+         * (necessário para renderizar dados de Nível Reservatório e Macromedidor)
+         */
         function carregarTiposMedidorEquip() {
             $.ajax({
                 url: 'bd/pontoMedicao/getTiposMedidorEquipamento.php',
                 type: 'GET',
                 dataType: 'json',
-                async: false, // Síncrono para garantir que carrega antes de montar o form
+                async: false,
                 success: function (response) {
                     if (response.success && response.data) {
                         tiposMedidorEquipLista = response.data;
+                        response.data.forEach(t => {
+                            tiposMedidorEquipNomes[t.CD_CHAVE] = t.DS_NOME;
+                        });
                     }
                 }
             });
         }
         carregarTiposMedidorEquip();
 
-        // Gera options HTML para select de tipo medidor
-        function getTipoMedidorOptions() {
-            let options = '<option value="">Selecione o tipo...</option>';
-            tiposMedidorEquipLista.forEach(t => {
-                options += `<option value="${t.CD_CHAVE}">${t.DS_NOME}</option>`;
-            });
-            return options;
-        }
+        // Mapeamento de tipos de reservatório (carregado do PHP)
+        const tiposReservatorioNomes = <?= json_encode($tiposReservatorio ?? []) ?>;
 
+        // Mapeamento de tipos de fluido
+        const tiposFluidoNomes = <?= json_encode($tiposFluido ?? [
+            '' => 'Indiferente',
+            '1' => 'Água Tratada',
+            '3' => 'Água Bruta',
+            '2' => 'Esgoto'
+        ]) ?>;
+
+        /**
+         * Atualiza a seção de equipamento quando o tipo de medidor muda.
+         * Inicializa o Select2 e carrega o instrumento vinculado (se existir).
+         */
         function atualizarSecaoEquipamento(tipo) {
             const tabsContainer = $('#tabsContainer');
 
             if (tipo && tipo > 0) {
                 tabsContainer.slideDown();
-                atualizarCamposEquipamento(tipo);
-                carregarEquipamento(tipo);
+                inicializarSeletorInstrumento(tipo);
+                carregarInstrumentoVinculado(tipo);
             } else {
                 tabsContainer.slideUp();
                 equipamentoData = null;
             }
         }
 
-        function atualizarCamposEquipamento(tipo) {
-            let html = '';
-
-            switch (tipo) {
-                case 1: // Macromedidor
-                    html = camposMacromedidor();
-                    break;
-                case 2: // Estação Pitométrica
-                    html = camposEstacaoPitometrica();
-                    break;
-                case 4: // Medidor Pressão
-                    html = camposMedidorPressao();
-                    break;
-                case 6: // Nível Reservatório
-                    html = camposNivelReservatorio();
-                    break;
-                case 8: // Hidrômetro
-                    html = camposHidrometro();
-                    break;
-                default:
-                    html = '<p class="text-muted">Tipo de equipamento não suportado</p>';
+        /**
+         * Inicializa o Select2 para busca de instrumentos do tipo selecionado.
+         * Destrói instância anterior se existir.
+         * @param {int} tipo - ID do tipo de medidor
+         */
+        function inicializarSeletorInstrumento(tipo) {
+            // Destrói Select2 anterior se existir
+            if (select2Instrumento) {
+                try { $('#selectInstrumento').select2('destroy'); } catch (e) { }
+                select2Instrumento = null;
             }
 
-            $('#camposEquipamento').html(html);
-        }
+            // Limpa o select
+            $('#selectInstrumento').html('<option value="">Pesquise e selecione um instrumento...</option>');
 
-        function inputField(name, label, icon, type = 'text', placeholder = '', colSize = 4, step = '') {
-            const stepAttr = step ? `step="${step}"` : '';
-            return `
-            <div class="form-group col-${colSize}">
-                <label class="form-label">
-                    <ion-icon name="${icon}"></ion-icon>
-                    ${label}
-                </label>
-                <input type="${type}" name="${name}" id="equip_${name}" class="form-control" 
-                       placeholder="${placeholder}" ${stepAttr}>
-            </div>
-        `;
-        }
+            // Inicializa Select2 com busca AJAX
+            select2Instrumento = $('#selectInstrumento').select2({
+                placeholder: 'Pesquise por código, marca, modelo, série...',
+                allowClear: true,
+                minimumInputLength: 0,
+                language: {
+                    inputTooShort: function () { return 'Digite para pesquisar...'; },
+                    noResults: function () { return 'Nenhum instrumento encontrado'; },
+                    searching: function () { return 'Buscando...'; },
+                    removeAllItems: function () { return 'Remover todos'; }
+                },
+                ajax: {
+                    url: 'bd/pontoMedicao/getInstrumentosDisponiveis.php',
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        return {
+                            id_tipo_medidor: tipo,
+                            cd_ponto_medicao: <?= $id ?>,
+                            busca: params.term || ''
+                        };
+                    },
+                    processResults: function (response) {
+                        if (!response.success) return { results: [] };
 
-        function selectField(name, label, icon, options, colSize = 4) {
-            let optionsHtml = '<option value="">Selecione...</option>';
-            options.forEach(opt => {
-                optionsHtml += `<option value="${opt.value}">${opt.text}</option>`;
+                        return {
+                            results: response.data.map(function (item) {
+                                return {
+                                    id: item.cd_chave,
+                                    text: item.descricao,
+                                    cd_ponto_vinculado: item.cd_ponto_vinculado
+                                };
+                            })
+                        };
+                    },
+                    cache: true
+                },
+                width: '100%'
             });
-            return `
-            <div class="form-group col-${colSize}">
-                <label class="form-label">
-                    <ion-icon name="${icon}"></ion-icon>
-                    ${label}
-                </label>
-                <select name="${name}" id="equip_${name}" class="form-control">
-                    ${optionsHtml}
-                </select>
-            </div>
-        `;
+
+            // Carrega a lista inicial (sem busca) para mostrar opções ao abrir
+            carregarListaInicial(tipo);
         }
 
-        function camposMacromedidor() {
-            return `
-            <div class="form-row">
-                <div class="form-group col-4">
-                    <label class="form-label">
-                        <ion-icon name="settings-outline"></ion-icon>
-                        Tipo de Medidor <span class="required">*</span>
-                    </label>
-                    <select name="cd_tipo_medidor_equip" id="equip_cd_tipo_medidor" class="form-control" required>
-                        ${getTipoMedidorOptions()}
-                    </select>
-                </div>
-                ${inputField('ds_marca', 'Marca', 'pricetag-outline', 'text', 'Ex: Siemens')}
-                ${inputField('ds_modelo', 'Modelo', 'cube-outline', 'text', 'Ex: MAG5100W')}
-            </div>
-            <div class="form-row">
-                ${inputField('ds_serie', 'Série', 'barcode-outline', 'text', 'Número de série')}
-                ${inputField('ds_tag', 'Tag', 'pricetag-outline', 'text', 'Tag de identificação')}
-                ${inputField('dt_fabricacao', 'Data Fabricação', 'calendar-outline', 'date')}
-            </div>
-            <div class="form-row">
-                ${inputField('ds_patrimonio_primario', 'Patrimônio Primário', 'document-outline', 'text', 'Código patrimônio')}
-                ${inputField('ds_patrimonio_secundario', 'Patrimônio Secundário', 'document-outline', 'text', 'Código secundário')}
-                ${inputField('vl_diametro', 'Diâmetro (mm)', 'resize-outline', 'number', '0.00', 4, '0.01')}
-            </div>
-            <div class="form-row">
-                ${inputField('vl_diametro_rede', 'Diâmetro Rede (mm)', 'git-branch-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('ds_revestimento', 'Revestimento', 'layers-outline', 'text', 'Tipo de revestimento')}
-                ${inputField('vl_perda_carga_fabricante', 'Perda Carga Fabricante', 'trending-down-outline', 'number', '0.0000', 4, '0.0001')}
-            </div>
-            <div class="form-row">
-                ${inputField('vl_capacidade_nominal', 'Capacidade Nominal', 'speedometer-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('vl_k_fabricante', 'K Fabricante', 'calculator-outline', 'number', '0.0000', 4, '0.0001')}
-                ${inputField('vl_vazao_esperada', 'Vazão Esperada', 'water-outline', 'number', '0.00', 4, '0.01')}
-            </div>
-            <div class="form-row">
-                ${inputField('vl_pressao_maxima', 'Pressão Máxima', 'arrow-up-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('ds_tipo_flange', 'Tipo Flange', 'ellipse-outline', 'text', 'Tipo do flange')}
-                ${inputField('ds_altura_soleira', 'Altura Soleira', 'resize-outline', 'text', 'Altura da soleira')}
-            </div>
-            <div class="form-row">
-                ${inputField('ds_natureza_parede', 'Natureza Parede', 'square-outline', 'text', 'Natureza da parede')}
-                ${inputField('ds_largura_relativa', 'Largura Relativa', 'resize-outline', 'text', 'Largura relativa')}
-                ${inputField('ds_largura_garganta', 'Largura Garganta', 'resize-outline', 'text', 'Largura garganta')}
-            </div>
-            <div class="form-row">
-                ${inputField('vl_cota', 'Cota', 'analytics-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('prot_comun', 'Protocolo de Comunicação', 'radio-outline', 'text', 'Ex: Modbus, HART')}
-            </div>
-        `;
+        /**
+         * Pré-carrega a lista de instrumentos disponíveis
+         * para que apareçam ao clicar no dropdown sem precisar digitar.
+         * @param {int} tipo - ID do tipo de medidor
+         */
+        function carregarListaInicial(tipo) {
+            $.ajax({
+                url: 'bd/pontoMedicao/getInstrumentosDisponiveis.php',
+                type: 'GET',
+                data: {
+                    id_tipo_medidor: tipo,
+                    cd_ponto_medicao: <?= $id ?>,
+                    busca: ''
+                },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success && response.data.length > 0) {
+                        // Adiciona as opções ao select para ficarem disponíveis
+                        response.data.forEach(function (item) {
+                            if ($('#selectInstrumento').find('option[value="' + item.cd_chave + '"]').length === 0) {
+                                var option = new Option(item.descricao, item.cd_chave, false, false);
+                                $('#selectInstrumento').append(option);
+                            }
+                        });
+                    }
+                }
+            });
         }
 
-        function camposEstacaoPitometrica() {
-            return `
-            <div class="form-row">
-                ${inputField('vl_cota_geografica', 'Cota Geográfica', 'location-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('vl_diametro', 'Diâmetro (mm)', 'resize-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('vl_diametro_rede', 'Diâmetro Rede (mm)', 'git-branch-outline', 'number', '0.00', 4, '0.01')}
-            </div>
-            <div class="form-row">
-                ${inputField('ds_linha', 'Linha', 'git-commit-outline', 'text', 'Identificação da linha')}
-                ${inputField('ds_sistema', 'Sistema', 'apps-outline', 'text', 'Sistema')}
-                ${inputField('ds_revestimento', 'Revestimento', 'layers-outline', 'text', 'Tipo de revestimento')}
-            </div>
-            <div class="form-row">
-                ${inputField('tp_periodicidade_levantamento', 'Periodicidade Levantamento', 'time-outline', 'text', 'Periodicidade', 4)}
-            </div>
-        `;
-        }
-
-        function camposMedidorPressao() {
-            return `
-            <div class="form-row">
-                ${inputField('ds_matricula_usuario', 'Matrícula Usuário', 'person-outline', 'text', 'Matrícula')}
-                ${inputField('ds_numero_serie_equipamento', 'Nº Série Equipamento', 'barcode-outline', 'text', 'Número de série')}
-                ${inputField('vl_diametro', 'Diâmetro (mm)', 'resize-outline', 'number', '0.00', 4, '0.01')}
-            </div>
-            <div class="form-row">
-                ${inputField('vl_diametro_rede', 'Diâmetro Rede (mm)', 'git-branch-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('ds_material', 'Material', 'construct-outline', 'text', 'Material')}
-                ${inputField('ds_cota', 'Cota', 'analytics-outline', 'text', 'Cota')}
-            </div>
-            <div class="form-row">
-                ${selectField('op_telemetria', 'Telemetria', 'radio-outline', [
-            { value: '1', text: 'Sim' },
-            { value: '0', text: 'Não' }
-        ])}
-                ${inputField('dt_instalacao', 'Data Instalação', 'calendar-outline', 'date')}
-                ${inputField('ds_coordenadas', 'Coordenadas', 'navigate-outline', 'text', 'Lat, Long')}
-            </div>
-            <div class="form-row">
-                ${inputField('ds_endereco', 'Endereço', 'location-outline', 'text', 'Endereço completo', 12)}
-            </div>
-        `;
-        }
-
-        function camposNivelReservatorio() {
-            return `
-            <div class="form-row">
-                <div class="form-group col-4">
-                    <label class="form-label">
-                        <ion-icon name="settings-outline"></ion-icon>
-                        Tipo de Medidor <span class="required">*</span>
-                    </label>
-                    <select name="cd_tipo_medidor_equip" id="equip_cd_tipo_medidor" class="form-control" required>
-                        ${getTipoMedidorOptions()}
-                    </select>
-                </div>
-                <div class="form-group col-4">
-                    <label class="form-label">
-                        <ion-icon name="server-outline"></ion-icon>
-                        Tipo de Reservatório
-                    </label>
-                    <select name="cd_tipo_reservatorio" id="equip_cd_tipo_reservatorio" class="form-control">
-                        ${getTipoReservatorioOptions()}
-                    </select>
-                </div>
-                ${inputField('ds_marca', 'Marca', 'pricetag-outline', 'text', 'Ex: Vega')}
-            </div>
-            <div class="form-row">
-                ${inputField('ds_modelo', 'Modelo', 'cube-outline', 'text', 'Modelo')}
-                ${inputField('ds_serie', 'Série', 'barcode-outline', 'text', 'Número de série')}
-                ${inputField('ds_tag', 'Tag', 'pricetag-outline', 'text', 'Tag de identificação')}
-            </div>
-            <div class="form-row">
-                ${inputField('dt_fabricacao', 'Data Fabricação', 'calendar-outline', 'date')}
-                ${inputField('dt_instalacao', 'Data Instalação', 'calendar-outline', 'date')}
-                ${inputField('ds_patrimonio_primario', 'Patrimônio Primário', 'document-outline', 'text', 'Código patrimônio')}
-            </div>
-            <div class="form-row">
-                ${inputField('ds_patrimonio_secundario', 'Patrimônio Secundário', 'document-outline', 'text', 'Código secundário')}
-                ${inputField('ds_altura_maxima', 'Altura Máxima (m)', 'resize-outline', 'text', 'Altura máxima')}
-                ${inputField('vl_na', 'NA', 'water-outline', 'number', '0.00', 4, '0.01')}
-            </div>
-            <div class="form-row">
-                ${inputField('vl_cota', 'Cota', 'analytics-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('cota_extravasamento_m', 'Cota Extravasamento (m)', 'arrow-up-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('cota_extravasamento_p', 'Cota Extravasamento (%)', 'arrow-up-outline', 'number', '0.00', 4, '0.01')}
-            </div>
-            <div class="form-row">
-                ${inputField('vl_volume_total', 'Volume Total (m³)', 'cube-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('vl_volume_camara_a', 'Volume Câmara A (m³)', 'cube-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('vl_volume_camara_b', 'Volume Câmara B (m³)', 'cube-outline', 'number', '0.00', 4, '0.01')}
-            </div>
-            <div class="form-row">
-                ${inputField('vl_pressao_maxima_succao', 'Pressão Máx. Sucção', 'arrow-down-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('vl_pressao_maxima_recalque', 'Pressão Máx. Recalque', 'arrow-up-outline', 'number', '0.00', 4, '0.01')}
-            </div>
-            <div class="form-row">
-                <div class="form-group col-12">
-                    <label class="form-label">
-                        <ion-icon name="water-outline"></ion-icon>
-                        Tipo de Fluido
-                    </label>
-                    <div class="radio-group-inline">
-                        ${getTipoFluidoRadios()}
-                    </div>
-                </div>
-            </div>
-        `;
-        }
-
-        function camposHidrometro() {
-            return `
-            <div class="form-row">
-                ${inputField('ds_matricula_usuario', 'Matrícula Usuário', 'person-outline', 'text', 'Matrícula')}
-                ${inputField('ds_numero_serie_equipamento', 'Nº Série Equipamento', 'barcode-outline', 'text', 'Número de série')}
-                ${inputField('vl_diametro', 'Diâmetro (mm)', 'resize-outline', 'number', '0.00', 4, '0.01')}
-            </div>
-            <div class="form-row">
-                ${inputField('vl_diametro_rede', 'Diâmetro Rede (mm)', 'git-branch-outline', 'number', '0.00', 4, '0.01')}
-                ${inputField('ds_material', 'Material', 'construct-outline', 'text', 'Material')}
-                ${inputField('ds_cota', 'Cota', 'analytics-outline', 'text', 'Cota')}
-            </div>
-            <div class="form-row">
-                ${inputField('dt_instalacao', 'Data Instalação', 'calendar-outline', 'date')}
-                ${inputField('ds_coordenadas', 'Coordenadas', 'navigate-outline', 'text', 'Lat, Long')}
-                ${inputField('vl_leitura_limite', 'Leitura Limite', 'speedometer-outline', 'number', '0.00', 4, '0.01')}
-            </div>
-            <div class="form-row">
-                ${inputField('vl_multiplicador', 'Multiplicador', 'calculator-outline', 'number', '0.0000', 4, '0.0001')}
-                ${inputField('ds_endereco', 'Endereço', 'location-outline', 'text', 'Endereço completo', 8)}
-            </div>
-        `;
-        }
-
-        function carregarEquipamento(tipo) {
+        /**
+         * Carrega o instrumento já vinculado ao ponto (se existir).
+         * Usa o endpoint getDadosMedidor.php existente.
+         * @param {int} tipo - ID do tipo de medidor
+         */
+        function carregarInstrumentoVinculado(tipo) {
             $.ajax({
                 url: 'bd/pontoMedicao/getDadosMedidor.php',
                 type: 'GET',
@@ -2352,95 +2451,361 @@ $tiposInstalacao = [
                 dataType: 'json',
                 success: function (response) {
                     if (response.success && response.data) {
+                        // Há instrumento vinculado: exibe em modo VIEW
                         equipamentoData = response.data;
-                        preencherCamposEquipamento(response.data);
+                        exibirInstrumentoVinculado(response.data, tipo);
                     } else {
+                        // Sem instrumento vinculado: exibe seletor
                         equipamentoData = null;
-                        $('#equipCdChave').val('');
+                        exibirSeletorInstrumento();
                     }
                 },
                 error: function () {
+                    equipamentoData = null;
+                    exibirSeletorInstrumento();
                     showToast('Erro ao carregar dados do equipamento', 'erro');
                 }
             });
         }
 
-        function preencherCamposEquipamento(dados) {
+        /**
+         * Exibe o instrumento vinculado em modo VIEW (somente leitura).
+         * Esconde o seletor e mostra os dados renderizados.
+         * @param {object} dados - Dados do instrumento
+         * @param {int} tipo - ID do tipo de medidor
+         */
+        function exibirInstrumentoVinculado(dados, tipo) {
+            // Guarda o CD_CHAVE
             $('#equipCdChave').val(dados.CD_CHAVE || '');
+            $('#labelCdChaveVinculado').text('(CD: ' + dados.CD_CHAVE + ')');
 
-            // Preenche todos os campos que existirem
-            Object.keys(dados).forEach(function (key) {
-                const fieldName = key.toLowerCase();
-                const $field = $(`#equip_${fieldName}`);
+            // Renderiza os dados no view-grid
+            renderizarEquipamentoView(dados, tipo);
 
-                if ($field.length) {
-                    let valor = dados[key];
+            // Alterna visibilidade: esconde seletor, mostra dados
+            $('#seletorInstrumento').hide();
+            $('#emptyStateInstrumento').hide();
+            $('#instrumentoVinculado').show();
+        }
 
-                    // Formata datas
-                    if (fieldName.startsWith('dt_') && valor) {
-                        valor = valor.split('T')[0]; // Remove parte de hora se existir
-                        valor = valor.split(' ')[0]; // Remove hora se formato SQL Server
+        /**
+         * Exibe o seletor de instrumentos (quando não há vínculo).
+         * Esconde os dados e mostra o dropdown + empty state.
+         */
+        function exibirSeletorInstrumento() {
+            $('#equipCdChave').val('');
+            $('#instrumentoVinculado').hide();
+            $('#seletorInstrumento').show();
+            $('#emptyStateInstrumento').show();
+
+            // Limpa seleção do Select2
+            try { $('#selectInstrumento').val(null).trigger('change'); } catch (e) { }
+        }
+
+        // ============================================
+        // Ações: Vincular / Desvincular
+        // ============================================
+
+        /**
+         * Ação de vincular o instrumento selecionado no dropdown ao ponto.
+         * Valida seleção, envia POST e recarrega dados.
+         */
+        function vincularInstrumentoAction() {
+            const cdChave = $('#selectInstrumento').val();
+            const tipoMedidor = <?= $pontoMedicao['ID_TIPO_MEDIDOR'] ?? 0 ?>;
+
+            if (!cdChave) {
+                showToast('Selecione um instrumento antes de vincular', 'aviso');
+                return;
+            }
+
+            if (!tipoMedidor) {
+                showToast('Tipo de medidor não definido', 'erro');
+                return;
+            }
+
+            // Confirmação
+            if (!confirm('Deseja vincular este instrumento ao ponto de medição?')) {
+                return;
+            }
+
+            const btnVincular = $('#btnVincular');
+            btnVincular.prop('disabled', true).html('<ion-icon name="hourglass-outline"></ion-icon> Vinculando...');
+
+            $.ajax({
+                url: 'bd/pontoMedicao/vincularInstrumento.php',
+                type: 'POST',
+                data: {
+                    cd_chave: cdChave,
+                    cd_ponto_medicao: <?= $id ?>,
+                    id_tipo_medidor: tipoMedidor
+                },
+                dataType: 'json',
+                success: function (response) {
+                    btnVincular.prop('disabled', false).html('<ion-icon name="link-outline"></ion-icon> Vincular');
+
+                    if (response.success) {
+                        showToast(response.message, 'sucesso');
+                        // Recarrega os dados do instrumento vinculado
+                        carregarInstrumentoVinculado(tipoMedidor);
+                    } else {
+                        showToast(response.message || 'Erro ao vincular', 'erro');
                     }
-
-                    $field.val(valor);
-                }
-
-                // Trata radio buttons (ID_PRODUTO / tipo de fluido)
-                if (fieldName === 'id_produto') {
-                    $(`input[name="id_produto"][value="${dados[key] || ''}"]`).prop('checked', true);
+                },
+                error: function () {
+                    btnVincular.prop('disabled', false).html('<ion-icon name="link-outline"></ion-icon> Vincular');
+                    showToast('Erro ao comunicar com o servidor', 'erro');
                 }
             });
         }
 
-        function salvarEquipamento() {
-            const btnSalvar = $('#btnSalvarEquip');
-            btnSalvar.prop('disabled', true).html('<ion-icon name="hourglass-outline"></ion-icon> Salvando...');
+        /**
+         * Ação de desvincular o instrumento do ponto de medição.
+         * Confirmação obrigatória, envia POST e retorna ao seletor.
+         */
+        function desvincularInstrumentoAction() {
+            const cdChave = $('#equipCdChave').val();
+            const tipoMedidor = <?= $pontoMedicao['ID_TIPO_MEDIDOR'] ?? 0 ?>;
 
-            // Coleta todos os campos do equipamento
-            const formData = {
-                cd_chave: $('#equipCdChave').val(),
-                cd_ponto_medicao: <?= $id ?>,
-                id_tipo_medidor: tipoMedidor
-            };
+            if (!cdChave) {
+                showToast('Nenhum instrumento vinculado', 'aviso');
+                return;
+            }
 
-            // Adiciona todos os campos com prefixo equip_
-            $('#camposEquipamento input:not([type="radio"]), #camposEquipamento select').each(function () {
-                const name = $(this).attr('name');
-                if (name) {
-                    formData[name] = $(this).val();
-                }
-            });
+            if (!confirm('Tem certeza que deseja desvincular este instrumento do ponto de medição?\n\nO instrumento não será excluído, apenas ficará disponível para vinculação em outro ponto.')) {
+                return;
+            }
 
-            // Adiciona radio buttons (pega apenas o selecionado)
-            $('#camposEquipamento input[type="radio"]:checked').each(function () {
-                const name = $(this).attr('name');
-                if (name) {
-                    formData[name] = $(this).val();
-                }
-            });
+            const btnDesvincular = $('#btnDesvincular');
+            btnDesvincular.prop('disabled', true).html('<ion-icon name="hourglass-outline"></ion-icon> Desvinculando...');
 
             $.ajax({
-                url: 'bd/pontoMedicao/salvarDadosMedidor.php',
+                url: 'bd/pontoMedicao/desvincularInstrumento.php',
                 type: 'POST',
-                data: formData,
+                data: {
+                    cd_chave: cdChave,
+                    cd_ponto_medicao: <?= $id ?>,
+                    id_tipo_medidor: tipoMedidor
+                },
                 dataType: 'json',
                 success: function (response) {
-                    btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar Dados do Equipamento');
+                    btnDesvincular.prop('disabled', false).html('<ion-icon name="trash-outline"></ion-icon> Desvincular');
 
                     if (response.success) {
                         showToast(response.message, 'sucesso');
-                        if (response.cd_chave) {
-                            $('#equipCdChave').val(response.cd_chave);
-                        }
+                        equipamentoData = null;
+                        // Retorna ao modo seletor
+                        exibirSeletorInstrumento();
+                        // Recarrega lista do Select2
+                        carregarListaInicial(tipoMedidor);
                     } else {
-                        showToast(response.message || 'Erro ao salvar', 'erro');
+                        showToast(response.message || 'Erro ao desvincular', 'erro');
                     }
                 },
-                error: function (xhr, status, error) {
-                    btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar Dados do Equipamento');
+                error: function () {
+                    btnDesvincular.prop('disabled', false).html('<ion-icon name="trash-outline"></ion-icon> Desvincular');
                     showToast('Erro ao comunicar com o servidor', 'erro');
                 }
             });
+        }
+
+        // ============================================
+        // Renderização VIEW (somente leitura)
+        // Reutiliza o mesmo padrão do pontoMedicaoView.php
+        // ============================================
+
+        /**
+         * Helper para criar item de visualização
+         * @param {string} label - Rótulo do campo
+         * @param {*} value - Valor do campo
+         * @param {string} icon - Nome do ícone Ionicons
+         * @param {boolean} isCode - Se true, usa estilo monospace
+         * @returns {string} HTML do view-item
+         */
+        function viewItem(label, value, icon, isCode = false) {
+            const isEmpty = !value || value === '' || value === null;
+            const displayValue = isEmpty ? 'Não informado' : value;
+            const classes = isEmpty ? 'empty' : (isCode ? 'codigo' : '');
+
+            return `
+                <div class="view-item">
+                    <span class="view-label">
+                        <ion-icon name="${icon}"></ion-icon>
+                        ${label}
+                    </span>
+                    <div class="view-value ${classes}">${displayValue}</div>
+                </div>
+            `;
+        }
+
+        /**
+         * Formata data ISO para pt-BR (dd/mm/yyyy)
+         */
+        function formatDateView(dateStr) {
+            if (!dateStr) return null;
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return null;
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        /**
+         * Formata número com casas decimais no padrão pt-BR
+         */
+        function formatNumView(value, decimals = 2) {
+            if (value === null || value === undefined || value === '') return null;
+            return parseFloat(value).toLocaleString('pt-BR', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        /**
+         * Renderiza os dados do equipamento no container view-grid
+         * conforme o tipo de medidor.
+         * @param {object} dados - Dados do instrumento
+         * @param {int} tipo - ID do tipo de medidor
+         */
+        function renderizarEquipamentoView(dados, tipo) {
+            let html = '';
+
+            switch (tipo) {
+                case 1:
+                    html = renderMacromedidorView(dados);
+                    break;
+                case 2:
+                    html = renderEstacaoPitometricaView(dados);
+                    break;
+                case 4:
+                    html = renderMedidorPressaoView(dados);
+                    break;
+                case 6:
+                    html = renderNivelReservatorioView(dados);
+                    break;
+                case 8:
+                    html = renderHidrometroView(dados);
+                    break;
+                default:
+                    html = '<div class="view-item full-width"><div class="empty-state-instrumento"><ion-icon name="alert-circle-outline"></ion-icon><p>Tipo de equipamento não suportado</p></div></div>';
+            }
+
+            $('#conteudoEquipamentoView').html(html);
+        }
+
+        /**
+         * Renderiza dados de Macromedidor em modo VIEW
+         */
+        function renderMacromedidorView(d) {
+            return `
+                ${viewItem('Tipo de Medidor', tiposMedidorEquipNomes[d.CD_TIPO_MEDIDOR] || '-', 'settings-outline')}
+                ${viewItem('Marca', d.DS_MARCA, 'pricetag-outline')}
+                ${viewItem('Modelo', d.DS_MODELO, 'cube-outline')}
+                ${viewItem('Série', d.DS_SERIE, 'barcode-outline', true)}
+                ${viewItem('Tag', d.DS_TAG, 'pricetag-outline', true)}
+                ${viewItem('Data Fabricação', formatDateView(d.DT_FABRICACAO), 'calendar-outline')}
+                ${viewItem('Patrimônio Primário', d.DS_PATRIMONIO_PRIMARIO, 'document-outline')}
+                ${viewItem('Patrimônio Secundário', d.DS_PATRIMONIO_SECUNDARIO, 'document-outline')}
+                ${viewItem('Diâmetro (mm)', formatNumView(d.VL_DIAMETRO), 'resize-outline')}
+                ${viewItem('Diâmetro Rede (mm)', formatNumView(d.VL_DIAMETRO_REDE), 'git-branch-outline')}
+                ${viewItem('Revestimento', d.DS_REVESTIMENTO, 'layers-outline')}
+                ${viewItem('Perda Carga Fabricante', formatNumView(d.VL_PERDA_CARGA_FABRICANTE, 4), 'trending-down-outline')}
+                ${viewItem('Capacidade Nominal', formatNumView(d.VL_CAPACIDADE_NOMINAL), 'speedometer-outline')}
+                ${viewItem('K Fabricante', formatNumView(d.VL_K_FABRICANTE, 4), 'calculator-outline')}
+                ${viewItem('Vazão Esperada', formatNumView(d.VL_VAZAO_ESPERADA), 'water-outline')}
+                ${viewItem('Pressão Máxima', formatNumView(d.VL_PRESSAO_MAXIMA), 'arrow-up-outline')}
+                ${viewItem('Tipo Flange', d.DS_TIPO_FLANGE, 'ellipse-outline')}
+                ${viewItem('Altura Soleira', d.DS_ALTURA_SOLEIRA, 'resize-outline')}
+                ${viewItem('Natureza Parede', d.DS_NATUREZA_PAREDE, 'square-outline')}
+                ${viewItem('Largura Relativa', d.DS_LARGURA_RELATIVA, 'resize-outline')}
+                ${viewItem('Largura Garganta', d.DS_LARGURA_GARGANTA, 'resize-outline')}
+                ${viewItem('Cota', formatNumView(d.VL_COTA), 'analytics-outline')}
+                ${viewItem('Protocolo de Comunicação', d.PROT_COMUN, 'radio-outline')}
+            `;
+        }
+
+        /**
+         * Renderiza dados de Estação Pitométrica em modo VIEW
+         */
+        function renderEstacaoPitometricaView(d) {
+            return `
+                ${viewItem('Cota Geográfica', formatNumView(d.VL_COTA_GEOGRAFICA), 'location-outline')}
+                ${viewItem('Diâmetro (mm)', formatNumView(d.VL_DIAMETRO), 'resize-outline')}
+                ${viewItem('Diâmetro Rede (mm)', formatNumView(d.VL_DIAMETRO_REDE), 'git-branch-outline')}
+                ${viewItem('Linha', d.DS_LINHA, 'git-commit-outline')}
+                ${viewItem('Sistema', d.DS_SISTEMA, 'apps-outline')}
+                ${viewItem('Revestimento', d.DS_REVESTIMENTO, 'layers-outline')}
+                ${viewItem('Periodicidade Levantamento', d.TP_PERIODICIDADE_LEVANTAMENTO, 'time-outline')}
+            `;
+        }
+
+        /**
+         * Renderiza dados de Medidor de Pressão em modo VIEW
+         */
+        function renderMedidorPressaoView(d) {
+            return `
+                ${viewItem('Matrícula Usuário', d.DS_MATRICULA_USUARIO, 'person-outline')}
+                ${viewItem('Nº Série Equipamento', d.DS_NUMERO_SERIE_EQUIPAMENTO, 'barcode-outline', true)}
+                ${viewItem('Diâmetro (mm)', formatNumView(d.VL_DIAMETRO), 'resize-outline')}
+                ${viewItem('Diâmetro Rede (mm)', formatNumView(d.VL_DIAMETRO_REDE), 'git-branch-outline')}
+                ${viewItem('Material', d.DS_MATERIAL, 'construct-outline')}
+                ${viewItem('Cota', d.DS_COTA, 'analytics-outline')}
+                ${viewItem('Telemetria', d.OP_TELEMETRIA == 1 ? 'Sim' : (d.OP_TELEMETRIA == 0 ? 'Não' : null), 'radio-outline')}
+                ${viewItem('Endereço', d.DS_ENDERECO, 'location-outline')}
+                ${viewItem('Data Instalação', formatDateView(d.DT_INSTALACAO), 'calendar-outline')}
+                ${viewItem('Coordenadas', d.DS_COORDENADAS, 'navigate-outline', true)}
+            `;
+        }
+
+        /**
+         * Renderiza dados de Nível Reservatório em modo VIEW
+         */
+        function renderNivelReservatorioView(d) {
+            const tipoReservatorioNome = d.CD_TIPO_RESERVATORIO ? (tiposReservatorioNomes[d.CD_TIPO_RESERVATORIO] || '-') : null;
+            const tipoFluidoNome = d.ID_PRODUTO !== null && d.ID_PRODUTO !== undefined
+                ? (tiposFluidoNomes[d.ID_PRODUTO] || tiposFluidoNomes[String(d.ID_PRODUTO)] || 'Indiferente')
+                : null;
+
+            return `
+                ${viewItem('Tipo de Medidor', tiposMedidorEquipNomes[d.CD_TIPO_MEDIDOR] || '-', 'settings-outline')}
+                ${viewItem('Tipo de Reservatório', tipoReservatorioNome, 'server-outline')}
+                ${viewItem('Marca', d.DS_MARCA, 'pricetag-outline')}
+                ${viewItem('Modelo', d.DS_MODELO, 'cube-outline')}
+                ${viewItem('Série', d.DS_SERIE, 'barcode-outline', true)}
+                ${viewItem('Tag', d.DS_TAG, 'pricetag-outline', true)}
+                ${viewItem('Data Fabricação', formatDateView(d.DT_FABRICACAO), 'calendar-outline')}
+                ${viewItem('Data Instalação', formatDateView(d.DT_INSTALACAO), 'calendar-outline')}
+                ${viewItem('Patrimônio Primário', d.DS_PATRIMONIO_PRIMARIO, 'document-outline')}
+                ${viewItem('Patrimônio Secundário', d.DS_PATRIMONIO_SECUNDARIO, 'document-outline')}
+                ${viewItem('Altura Máxima (m)', d.DS_ALTURA_MAXIMA, 'resize-outline')}
+                ${viewItem('NA', formatNumView(d.VL_NA), 'water-outline')}
+                ${viewItem('Cota', formatNumView(d.VL_COTA), 'analytics-outline')}
+                ${viewItem('Cota Extravasamento (m)', formatNumView(d.COTA_EXTRAVASAMENTO_M), 'arrow-up-outline')}
+                ${viewItem('Cota Extravasamento (%)', formatNumView(d.COTA_EXTRAVASAMENTO_P), 'arrow-up-outline')}
+                ${viewItem('Volume Total (m³)', formatNumView(d.VL_VOLUME_TOTAL), 'cube-outline')}
+                ${viewItem('Volume Câmara A (m³)', formatNumView(d.VL_VOLUME_CAMARA_A), 'cube-outline')}
+                ${viewItem('Volume Câmara B (m³)', formatNumView(d.VL_VOLUME_CAMARA_B), 'cube-outline')}
+                ${viewItem('Pressão Máx. Sucção', formatNumView(d.VL_PRESSAO_MAXIMA_SUCCAO), 'arrow-down-outline')}
+                ${viewItem('Pressão Máx. Recalque', formatNumView(d.VL_PRESSAO_MAXIMA_RECALQUE), 'arrow-up-outline')}
+                ${viewItem('Tipo de Fluido', tipoFluidoNome, 'water-outline')}
+            `;
+        }
+
+        /**
+         * Renderiza dados de Hidrômetro em modo VIEW
+         */
+        function renderHidrometroView(d) {
+            return `
+                ${viewItem('Matrícula Usuário', d.DS_MATRICULA_USUARIO, 'person-outline')}
+                ${viewItem('Nº Série Equipamento', d.DS_NUMERO_SERIE_EQUIPAMENTO, 'barcode-outline', true)}
+                ${viewItem('Diâmetro (mm)', formatNumView(d.VL_DIAMETRO), 'resize-outline')}
+                ${viewItem('Diâmetro Rede (mm)', formatNumView(d.VL_DIAMETRO_REDE), 'git-branch-outline')}
+                ${viewItem('Material', d.DS_MATERIAL, 'construct-outline')}
+                ${viewItem('Cota', d.DS_COTA, 'analytics-outline')}
+                ${viewItem('Endereço', d.DS_ENDERECO, 'location-outline')}
+                ${viewItem('Data Instalação', formatDateView(d.DT_INSTALACAO), 'calendar-outline')}
+                ${viewItem('Coordenadas', d.DS_COORDENADAS, 'navigate-outline', true)}
+                ${viewItem('Leitura Limite', formatNumView(d.VL_LEITURA_LIMITE), 'speedometer-outline')}
+                ${viewItem('Multiplicador', formatNumView(d.VL_MULTIPLICADOR, 4), 'calculator-outline')}
+            `;
         }
 
         // ============================================
