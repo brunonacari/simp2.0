@@ -9,6 +9,9 @@ recarregarPermissoesUsuario();
 // Agora verificar permissão
 exigePermissaoTela('Cadastro de Ponto de Medição', ACESSO_ESCRITA);
 
+// Permissão para editar instrumentos (funcionalidade 'Cadastro')
+$podeCadastro = podeEditarTela('Cadastro');
+
 include_once 'includes/menu.inc.php';
 
 // Verifica se é edição
@@ -1911,11 +1914,20 @@ $tiposInstalacao = [
                                 Instrumento Vinculado <span id="labelCdChaveVinculado"
                                     style="font-weight: 400; color: #64748b; font-size: 12px;"></span>
                             </h4>
-                            <button type="button" class="btn-danger-outline" onclick="desvincularInstrumentoAction()"
-                                id="btnDesvincular">
-                                <ion-icon name="trash-outline"></ion-icon>
-                                Desvincular
-                            </button>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <?php if (podeEditarTela('Cadastro')): ?>
+                                    <button type="button" class="btn btn-secondary" onclick="editarInstrumentoExterno()"
+                                        id="btnEditarInstrumento" title="Editar dados do instrumento">
+                                        <ion-icon name="create-outline"></ion-icon>
+                                        Editar
+                                    </button>
+                                <?php endif; ?>
+                                <button type="button" class="btn-danger-outline" onclick="desvincularInstrumentoAction()"
+                                    id="btnDesvincular">
+                                    <ion-icon name="trash-outline"></ion-icon>
+                                    Desvincular
+                                </button>
+                            </div>
                         </div>
                         <div id="conteudoEquipamentoView" class="view-grid">
                             <!-- Renderizado dinamicamente pelo JavaScript -->
@@ -2486,6 +2498,21 @@ $tiposInstalacao = [
             $('#seletorInstrumento').hide();
             $('#emptyStateInstrumento').hide();
             $('#instrumentoVinculado').show();
+        }
+
+        /**
+         * Redireciona para cadastrosAuxiliares.php abrindo o modal
+         * de edição do instrumento vinculado.
+         */
+        function editarInstrumentoExterno() {
+            if (!equipamentoData || !equipamentoData.CD_CHAVE) {
+                showToast('Nenhum instrumento vinculado para editar', 'aviso');
+                return;
+            }
+            const tipo = <?= $pontoMedicao['ID_TIPO_MEDIDOR'] ?? 0 ?>;
+            const cd = equipamentoData.CD_CHAVE;
+            // Redireciona com parâmetros para abrir a aba e o modal automaticamente
+            window.location.href = `cadastrosAuxiliares.php?tab=instrumentos&tipo=${tipo}&editar=${cd}`;
         }
 
         /**

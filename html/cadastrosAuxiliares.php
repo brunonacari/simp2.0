@@ -19,7 +19,12 @@ exigePermissaoTela('CADASTRO', ACESSO_LEITURA);
 $podeEditar = podeEditarTela('CADASTRO');
 
 include_once 'includes/menu.inc.php';
+?>
 
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<?php
 // Buscar Unidades para selects
 $sqlUnidades = $pdoSIMP->query("SELECT CD_UNIDADE, DS_NOME, CD_CODIGO FROM SIMP.dbo.UNIDADE ORDER BY DS_NOME");
 $unidades = $sqlUnidades->fetchAll(PDO::FETCH_ASSOC);
@@ -48,961 +53,10 @@ $tiposCalculo = [
 <!-- Choices.js CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 
-<style>
-    /* ============================================
-   Choices.js Customização - CORRIGIDO Z-INDEX
-   ============================================ */
-    .choices {
-        margin-bottom: 0;
-        position: relative;
-        z-index: 1;
-    }
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-    .choices.is-open {
-        z-index: 99999;
-    }
-
-    .choices__inner {
-        min-height: 44px;
-        padding: 6px 12px;
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        font-size: 13px;
-    }
-
-    .choices__inner:focus,
-    .is-focused .choices__inner,
-    .is-open .choices__inner {
-        background-color: #ffffff;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .choices__list--single {
-        padding: 4px 16px 4px 4px;
-    }
-
-    .choices__list--single .choices__item {
-        color: #334155;
-    }
-
-    /* Item selecionado - cor cinza escuro */
-    .choices__list--single .choices__item--selectable {
-        color: #334155 !important;
-    }
-
-    .choices__placeholder {
-        color: #94a3b8;
-        opacity: 1;
-    }
-
-    .choices__list--dropdown {
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        margin-top: 4px;
-        z-index: 99999 !important;
-        position: absolute !important;
-    }
-
-    .choices__list--dropdown .choices__item {
-        padding: 10px 14px;
-        font-size: 13px;
-    }
-
-    .choices__list--dropdown .choices__item--selectable.is-highlighted {
-        background-color: #dbeafe;
-        color: #1e293b;
-    }
-
-    .choices__list--dropdown .choices__item--selectable.is-selected {
-        background-color: #eff6ff;
-        color: #3b82f6;
-    }
-
-    .choices[data-type*="select-one"] .choices__input {
-        padding: 10px 12px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 13px;
-        margin: 8px;
-        width: calc(100% - 16px) !important;
-        max-width: calc(100% - 16px) !important;
-        box-sizing: border-box;
-    }
-
-    .choices[data-type*="select-one"] .choices__input:focus {
-        border-color: #3b82f6;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .choices[data-type*="select-one"]::after {
-        border-color: #64748b transparent transparent transparent;
-        right: 14px;
-    }
-
-    /* Choices.js dentro de modais - controle de largura e z-index */
-    .modal-body .choices {
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-
-    .modal-body .choices.is-open {
-        z-index: 100000 !important;
-    }
-
-
-    .modal-body .choices__inner {
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box;
-        z-index: 100000 !important;
-
-    }
-
-    .modal-body .choices__list--dropdown {
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box;
-        z-index: 100001 !important;
-    }
-
-    /* Z-index elevado para dropdowns dentro de modais */
-    .modal-overlay .choices.is-open,
-    .modal .choices.is-open {
-        z-index: 100000 !important;
-    }
-
-    .modal-overlay .choices__list--dropdown,
-    .modal .choices__list--dropdown {
-        z-index: 100001 !important;
-    }
-
-    .modal-overlay .choices.is-open {
-        z-index: 100000 !important;
-    }
-
-    /* ============================================
-   Page Container
-   ============================================ */
-    .page-container {
-        padding: 24px;
-        max-width: 1800px;
-        margin: 0 auto;
-    }
-
-    /* ============================================
-   Page Header
-   ============================================ */
-    .page-header {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
-        border-radius: 16px;
-        padding: 28px 32px;
-        margin-bottom: 24px;
-        color: white;
-    }
-
-    .page-header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-    }
-
-    .page-header-info {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .page-header-icon {
-        width: 52px;
-        height: 52px;
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-    }
-
-    .page-header h1 {
-        font-size: 22px;
-        font-weight: 700;
-        margin: 0 0 4px 0;
-        color: white;
-    }
-
-    .page-header-subtitle {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.7);
-        margin: 0;
-    }
-
-    /* ============================================
-   Tabs Navigation
-   ============================================ */
-    .tabs-navigation {
-        display: flex;
-        gap: 4px;
-        background: #f8fafc;
-        padding: 6px;
-        border-radius: 12px;
-        margin-bottom: 24px;
-        overflow-x: auto;
-        border: 1px solid #e2e8f0;
-    }
-
-    .tabs-navigation::-webkit-scrollbar {
-        height: 6px;
-    }
-
-    .tabs-navigation::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .tabs-navigation::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 3px;
-    }
-
-    .tab-btn {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 20px;
-        background: transparent;
-        border: none;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        color: #64748b;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        white-space: nowrap;
-    }
-
-    .tab-btn:hover {
-        background: white;
-        color: #334155;
-    }
-
-    .tab-btn.active {
-        background: white;
-        color: #3b82f6;
-        font-weight: 600;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .tab-btn ion-icon {
-        font-size: 18px;
-    }
-
-    /* ============================================
-   Tab Content
-   ============================================ */
-    .tab-content {
-        display: none;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    /* ============================================
-   Filters Card
-   ============================================ */
-    .filters-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    }
-
-    .filters-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .filters-title {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 14px;
-        font-weight: 600;
-        color: #334155;
-    }
-
-    .filters-title ion-icon {
-        font-size: 18px;
-        color: #64748b;
-    }
-
-    .btn-novo {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 18px;
-        background: #3b82f6;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .btn-novo:hover {
-        background: #2563eb;
-        transform: translateY(-1px);
-    }
-
-    .btn-novo ion-icon {
-        font-size: 16px;
-    }
-
-    .filters-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-    }
-
-    /* ============================================
-   Form Controls
-   ============================================ */
-    .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .form-label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 11px;
-        font-weight: 600;
-        color: #475569;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-    }
-
-    .form-label ion-icon {
-        font-size: 14px;
-        color: #94a3b8;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 12px 14px;
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        font-family: inherit;
-        font-size: 13px;
-        color: #334155;
-        transition: all 0.2s ease;
-        box-sizing: border-box;
-    }
-
-    .form-control:focus {
-        outline: none;
-        background-color: #ffffff;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    /* ============================================
-   Input Search com ícone
-   ============================================ */
-    .input-search-wrapper {
-        position: relative;
-        display: flex;
-        align-items: center;
-    }
-
-    .input-search-icon {
-        position: absolute;
-        left: 14px;
-        font-size: 18px;
-        color: #94a3b8;
-        pointer-events: none;
-        transition: color 0.2s ease;
-    }
-
-    .input-search-wrapper:focus-within .input-search-icon {
-        color: #3b82f6;
-    }
-
-    .input-search {
-        padding-left: 44px !important;
-        padding-right: 40px !important;
-    }
-
-    .btn-search-clear {
-        position: absolute;
-        right: 10px;
-        background: none;
-        border: none;
-        color: #94a3b8;
-        cursor: pointer;
-        padding: 4px;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        transition: color 0.2s ease;
-    }
-
-    .btn-search-clear.visible {
-        display: flex;
-    }
-
-    .btn-search-clear:hover {
-        color: #64748b;
-    }
-
-    .btn-search-clear ion-icon {
-        font-size: 18px;
-    }
-
-    /* ============================================
-   Results Info
-   ============================================ */
-    .results-info {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .results-count {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        color: #64748b;
-    }
-
-    .results-count strong {
-        color: #334155;
-    }
-
-    .results-count ion-icon {
-        font-size: 16px;
-    }
-
-    /* ============================================
-   Table Container
-   ============================================ */
-    .table-container {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        overflow: hidden;
-        position: relative;
-    }
-
-    .table-wrapper {
-        overflow-x: auto;
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .data-table th {
-        padding: 14px 16px;
-        text-align: left;
-        font-size: 11px;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        white-space: nowrap;
-    }
-
-    .data-table td {
-        padding: 14px 16px;
-        font-size: 13px;
-        color: #334155;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .data-table tbody tr:hover {
-        background: #f8fafc;
-    }
-
-    .data-table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Loading Overlay */
-    .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.8);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-    }
-
-    .loading-overlay.active {
-        display: flex;
-    }
-
-    .loading-spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid #e2e8f0;
-        border-top-color: #3b82f6;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    /* ============================================
-   Table Actions
-   ============================================ */
-    .table-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .btn-action {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .btn-action.edit {
-        background: #eff6ff;
-        color: #3b82f6;
-    }
-
-    .btn-action.edit:hover {
-        background: #3b82f6;
-        color: white;
-    }
-
-    .btn-action.delete {
-        background: #fef2f2;
-        color: #ef4444;
-    }
-
-    .btn-action.delete:hover {
-        background: #ef4444;
-        color: white;
-    }
-
-    .btn-action ion-icon {
-        font-size: 16px;
-    }
-
-    /* ============================================
-   Pagination
-   ============================================ */
-    .pagination-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-top: 20px;
-        padding: 16px 20px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-    }
-
-    .pagination {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .btn-page {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 36px;
-        height: 36px;
-        padding: 0 10px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        color: #475569;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .btn-page:hover:not(.disabled):not(.active) {
-        background: #eff6ff;
-        border-color: #3b82f6;
-        color: #3b82f6;
-    }
-
-    .btn-page.active {
-        background: #3b82f6;
-        border-color: #3b82f6;
-        color: white;
-        font-weight: 600;
-    }
-
-    .btn-page.disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .btn-page ion-icon {
-        font-size: 16px;
-    }
-
-    .page-info {
-        font-size: 13px;
-        color: #64748b;
-    }
-
-    /* ============================================
-   Modal
-   ============================================ */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(15, 23, 42, 0.6);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        padding: 20px;
-        backdrop-filter: blur(4px);
-    }
-
-    .modal-overlay.active {
-        display: flex;
-    }
-
-    .modal {
-        background: white;
-        border-radius: 16px;
-        width: 100%;
-        max-width: 500px;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
-        animation: modalIn 0.2s ease;
-        overflow: visible !important;
-
-    }
-
-    @keyframes modalIn {
-        from {
-            opacity: 0;
-            transform: scale(0.95) translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-        }
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 24px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .modal-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: #1e293b;
-    }
-
-    .modal-close {
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f1f5f9;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        color: #64748b;
-        transition: all 0.2s ease;
-    }
-
-    .modal-close:hover {
-        background: #e2e8f0;
-        color: #334155;
-
-    }
-
-    .modal-body {
-        padding: 24px;
-        overflow: visible !important;
-    }
-
-    .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-        padding: 16px 24px;
-        border-top: 1px solid #e2e8f0;
-        background: #f8fafc;
-        border-radius: 0 0 16px 16px;
-    }
-
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 10px 18px;
-        border: none;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .btn-secondary {
-        background: #f1f5f9;
-        color: #475569;
-    }
-
-    .btn-secondary:hover {
-        background: #e2e8f0;
-    }
-
-    .btn-primary {
-        background: #3b82f6;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background: #2563eb;
-    }
-
-    .form-group-modal {
-        margin-bottom: 16px;
-        overflow: visible !important;
-
-    }
-
-    .form-group-modal:last-child {
-        margin-bottom: 0;
-    }
-
-    .form-group-modal label {
-        display: block;
-        font-size: 13px;
-        font-weight: 600;
-        color: #334155;
-        margin-bottom: 8px;
-    }
-
-    .form-group-modal label .required {
-        color: #ef4444;
-    }
-
-    .form-group-modal .form-control {
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .modal-body .form-control {
-        max-width: 100%;
-    }
-
-    .modal-body textarea.form-control {
-        resize: vertical;
-        min-height: 80px;
-    }
-
-    .modal-body select.form-control {
-        cursor: pointer;
-    }
-
-    /* ============================================
-   Toast
-   ============================================ */
-    .toast-container {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-    }
-
-    .toast {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 20px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
-        margin-bottom: 10px;
-        animation: toastIn 0.3s ease;
-        min-width: 280px;
-    }
-
-    @keyframes toastIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    .toast.sucesso {
-        border-left: 4px solid #22c55e;
-    }
-
-    .toast.erro {
-        border-left: 4px solid #ef4444;
-    }
-
-    .toast-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-    }
-
-    .toast.sucesso .toast-icon {
-        background: #dcfce7;
-        color: #22c55e;
-    }
-
-    .toast.erro .toast-icon {
-        background: #fee2e2;
-        color: #ef4444;
-    }
-
-    .toast-message {
-        flex: 1;
-        font-size: 13px;
-        color: #334155;
-        font-weight: 500;
-    }
-
-    /* ============================================
-   Responsive
-   ============================================ */
-    @media (max-width: 1024px) {
-        .filters-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 768px) {
-        .page-container {
-            padding: 16px;
-        }
-
-        .page-header {
-            padding: 20px;
-            border-radius: 12px;
-        }
-
-        .page-header-content {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .page-header h1 {
-            font-size: 18px;
-        }
-
-        .tabs-navigation {
-            gap: 2px;
-            padding: 4px;
-        }
-
-        .tab-btn {
-            padding: 10px 14px;
-            font-size: 12px;
-        }
-
-        .tab-btn ion-icon {
-            font-size: 16px;
-        }
-
-        .filters-card {
-            padding: 16px;
-        }
-
-        .filters-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .filters-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
-        }
-
-        .table-container {
-            border-radius: 12px;
-        }
-
-        .pagination-container {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .modal {
-            margin: 10px;
-            max-height: 95vh;
-        }
-    }
-</style>
+<!-- css da tela -->
+<link rel="stylesheet" href="style/css/cadastrosAuxiliares.css">
 
 <div class="page-container">
     <!-- Toast Container -->
@@ -1053,6 +107,10 @@ $tiposCalculo = [
             <ion-icon name="flask-outline"></ion-icon>
             ETA
         </button> -->
+        <button type="button" class="tab-btn" data-tab="instrumentos">
+            <ion-icon name="hardware-chip-outline"></ion-icon>
+            Instrumentos
+        </button>
     </div>
 
     <!-- ========================================
@@ -1080,8 +138,10 @@ $tiposCalculo = [
                     </label>
                     <div class="input-search-wrapper">
                         <ion-icon name="search-outline" class="input-search-icon"></ion-icon>
-                        <input type="text" id="filtroTipoMedidor" class="form-control input-search" placeholder="Digite para buscar...">
-                        <button type="button" class="btn-search-clear" onclick="limparFiltro('filtroTipoMedidor', buscarTiposMedidor)">
+                        <input type="text" id="filtroTipoMedidor" class="form-control input-search"
+                            placeholder="Digite para buscar...">
+                        <button type="button" class="btn-search-clear"
+                            onclick="limparFiltro('filtroTipoMedidor', buscarTiposMedidor)">
                             <ion-icon name="close-circle"></ion-icon>
                         </button>
                     </div>
@@ -1143,8 +203,10 @@ $tiposCalculo = [
                     </label>
                     <div class="input-search-wrapper">
                         <ion-icon name="search-outline" class="input-search-icon"></ion-icon>
-                        <input type="text" id="filtroTipoReservatorio" class="form-control input-search" placeholder="Digite para buscar...">
-                        <button type="button" class="btn-search-clear" onclick="limparFiltro('filtroTipoReservatorio', buscarTiposReservatorio)">
+                        <input type="text" id="filtroTipoReservatorio" class="form-control input-search"
+                            placeholder="Digite para buscar...">
+                        <button type="button" class="btn-search-clear"
+                            onclick="limparFiltro('filtroTipoReservatorio', buscarTiposReservatorio)">
                             <ion-icon name="close-circle"></ion-icon>
                         </button>
                     </div>
@@ -1205,8 +267,10 @@ $tiposCalculo = [
                     </label>
                     <div class="input-search-wrapper">
                         <ion-icon name="search-outline" class="input-search-icon"></ion-icon>
-                        <input type="text" id="filtroAreaInfluencia" class="form-control input-search" placeholder="Digite para buscar...">
-                        <button type="button" class="btn-search-clear" onclick="limparFiltro('filtroAreaInfluencia', buscarAreasInfluencia)">
+                        <input type="text" id="filtroAreaInfluencia" class="form-control input-search"
+                            placeholder="Digite para buscar...">
+                        <button type="button" class="btn-search-clear"
+                            onclick="limparFiltro('filtroAreaInfluencia', buscarAreasInfluencia)">
                             <ion-icon name="close-circle"></ion-icon>
                         </button>
                     </div>
@@ -1270,8 +334,10 @@ $tiposCalculo = [
                     </label>
                     <div class="input-search-wrapper">
                         <ion-icon name="search-outline" class="input-search-icon"></ion-icon>
-                        <input type="text" id="filtroUnidade" class="form-control input-search" placeholder="Digite para buscar...">
-                        <button type="button" class="btn-search-clear" onclick="limparFiltro('filtroUnidade', buscarUnidades)">
+                        <input type="text" id="filtroUnidade" class="form-control input-search"
+                            placeholder="Digite para buscar...">
+                        <button type="button" class="btn-search-clear"
+                            onclick="limparFiltro('filtroUnidade', buscarUnidades)">
                             <ion-icon name="close-circle"></ion-icon>
                         </button>
                     </div>
@@ -1334,7 +400,9 @@ $tiposCalculo = [
                     <select id="filtroLocalidadeUnidade" class="form-control">
                         <option value="">Todas as Unidades</option>
                         <?php foreach ($unidades as $u): ?>
-                            <option value="<?= $u['CD_UNIDADE'] ?>"><?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?></option>
+                            <option value="<?= $u['CD_UNIDADE'] ?>">
+                                <?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?>
+                            </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -1345,8 +413,10 @@ $tiposCalculo = [
                     </label>
                     <div class="input-search-wrapper">
                         <ion-icon name="search-outline" class="input-search-icon"></ion-icon>
-                        <input type="text" id="filtroLocalidade" class="form-control input-search" placeholder="Digite para buscar...">
-                        <button type="button" class="btn-search-clear" onclick="limparFiltro('filtroLocalidade', buscarLocalidades)">
+                        <input type="text" id="filtroLocalidade" class="form-control input-search"
+                            placeholder="Digite para buscar...">
+                        <button type="button" class="btn-search-clear"
+                            onclick="limparFiltro('filtroLocalidade', buscarLocalidades)">
                             <ion-icon name="close-circle"></ion-icon>
                         </button>
                     </div>
@@ -1409,8 +479,10 @@ $tiposCalculo = [
                     </label>
                     <div class="input-search-wrapper">
                         <ion-icon name="search-outline" class="input-search-icon"></ion-icon>
-                        <input type="text" id="filtroSistemaAgua" class="form-control input-search" placeholder="Digite para buscar...">
-                        <button type="button" class="btn-search-clear" onclick="limparFiltro('filtroSistemaAgua', buscarSistemasAgua)">
+                        <input type="text" id="filtroSistemaAgua" class="form-control input-search"
+                            placeholder="Digite para buscar...">
+                        <button type="button" class="btn-search-clear"
+                            onclick="limparFiltro('filtroSistemaAgua', buscarSistemasAgua)">
                             <ion-icon name="close-circle"></ion-icon>
                         </button>
                     </div>
@@ -1486,7 +558,8 @@ $tiposCalculo = [
                     </label>
                     <div class="input-search-wrapper">
                         <ion-icon name="search-outline" class="input-search-icon"></ion-icon>
-                        <input type="text" id="filtroEta" class="form-control input-search" placeholder="Digite para buscar...">
+                        <input type="text" id="filtroEta" class="form-control input-search"
+                            placeholder="Digite para buscar...">
                         <button type="button" class="btn-search-clear" onclick="limparFiltro('filtroEta', buscarEtas)">
                             <ion-icon name="close-circle"></ion-icon>
                         </button>
@@ -1524,6 +597,165 @@ $tiposCalculo = [
         </div>
 
         <div class="pagination-container" id="paginacaoEta"></div>
+    </div>
+
+    <!-- ========================================
+         TAB: INSTRUMENTOS
+         ======================================== -->
+    <div class="tab-content" id="tab-instrumentos">
+        <div class="filters-card">
+            <div class="filters-header">
+                <div class="filters-title">
+                    <ion-icon name="hardware-chip-outline"></ion-icon>
+                    Instrumentos
+                </div>
+                <?php if ($podeEditar): ?>
+                    <button type="button" class="btn-novo" onclick="abrirModalInstrumento()">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Novo Instrumento
+                    </button>
+                <?php endif; ?>
+            </div>
+            <div class="filters-grid">
+                <div class="form-group">
+                    <label class="form-label">
+                        <ion-icon name="speedometer-outline"></ion-icon>
+                        Tipo de Medidor
+                    </label>
+                    <select id="filtroInstrumentoTipo" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="1">Macromedidor</option>
+                        <option value="2">Estação Pitométrica</option>
+                        <option value="4">Medidor de Pressão</option>
+                        <option value="6">Nível Reservatório</option>
+                        <option value="8">Hidrômetro</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <ion-icon name="link-outline"></ion-icon>
+                        Vínculo
+                    </label>
+                    <select id="filtroInstrumentoVinculo" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="vinculado">Vinculados</option>
+                        <option value="disponivel">Sem vínculo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <ion-icon name="search-outline"></ion-icon>
+                        Buscar
+                    </label>
+                    <div class="input-search-wrapper">
+                        <ion-icon name="search-outline" class="input-search-icon"></ion-icon>
+                        <input type="text" id="filtroInstrumento" class="form-control input-search"
+                            placeholder="Código, marca, modelo, série...">
+                        <button type="button" class="btn-search-clear"
+                            onclick="limparFiltro('filtroInstrumento', function(){ buscarInstrumentos(1); })">
+                            <ion-icon name="close-circle"></ion-icon>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-info">
+            <div class="results-count">
+                <ion-icon name="list-outline"></ion-icon>
+                <span id="countInstrumentos">Carregando...</span>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="loading-overlay" id="loadingInstrumentos">
+                <div class="loading-spinner"></div>
+            </div>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px; cursor:pointer;" onclick="ordenarInstrumentos('CD_CHAVE')"
+                                id="thInstrCd">
+                                Código <ion-icon name="swap-vertical-outline"
+                                    style="font-size:12px;vertical-align:middle;color:#94a3b8;"></ion-icon>
+                            </th>
+                            <th id="thInstrTipo" style="width: 140px; display:none;">Tipo</th>
+                            <th style="cursor:pointer;" onclick="ordenarInstrumentos('col1')" id="thInstrCol1">
+                                Marca <ion-icon name="swap-vertical-outline"
+                                    style="font-size:12px;vertical-align:middle;color:#94a3b8;"></ion-icon>
+                            </th>
+                            <th style="cursor:pointer;" onclick="ordenarInstrumentos('col2')" id="thInstrCol2">
+                                Modelo / Linha <ion-icon name="swap-vertical-outline"
+                                    style="font-size:12px;vertical-align:middle;color:#94a3b8;"></ion-icon>
+                            </th>
+                            <th style="cursor:pointer;" onclick="ordenarInstrumentos('col3')" id="thInstrCol3">
+                                Série / S.N. <ion-icon name="swap-vertical-outline"
+                                    style="font-size:12px;vertical-align:middle;color:#94a3b8;"></ion-icon>
+                            </th>
+                            <th style="width: 120px; cursor:pointer;" onclick="ordenarInstrumentos('col4')"
+                                id="thInstrCol4">
+                                Diâmetro <ion-icon name="swap-vertical-outline"
+                                    style="font-size:12px;vertical-align:middle;color:#94a3b8;"></ion-icon>
+                            </th>
+                            <th style="width: 200px; cursor:pointer;"
+                                onclick="ordenarInstrumentos('DS_PONTO_VINCULADO')">
+                                Ponto Vinculado <ion-icon name="swap-vertical-outline"
+                                    style="font-size:12px;vertical-align:middle;color:#94a3b8;"></ion-icon>
+                            </th>
+                            <th style="width: 90px;" class="no-sort">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaInstrumentos"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="pagination-container" id="paginacaoInstrumentos"></div>
+    </div>
+
+    <!-- ========================================
+         MODAL: INSTRUMENTO
+         ======================================== -->
+    <div class="modal-overlay" id="modalInstrumento">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalInstrumentoTitulo">Novo Instrumento</h3>
+                <button type="button" class="modal-close" onclick="fecharModal('modalInstrumento')">
+                    <ion-icon name="close-outline"></ion-icon>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="instrCdChave">
+
+                <!-- Tipo de Medidor (só visível no novo) -->
+                <div class="form-group" id="grupoTipoInstr" style="margin-bottom: 16px;">
+                    <label class="form-label">
+                        <ion-icon name="speedometer-outline"></ion-icon>
+                        Tipo de Medidor <span class="required">*</span>
+                    </label>
+                    <select id="instrTipoMedidor" class="form-control" onchange="atualizarCamposModal()">
+                        <option value="1">Macromedidor</option>
+                        <option value="2">Estação Pitométrica</option>
+                        <option value="4">Medidor de Pressão</option>
+                        <option value="6">Nível Reservatório</option>
+                        <option value="8">Hidrômetro</option>
+                    </select>
+                </div>
+
+                <!-- Container dinâmico de campos -->
+                <div id="instrCampos"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                    onclick="fecharModal('modalInstrumento')">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarInstrumento()">
+                    <ion-icon name="save-outline"></ion-icon>
+                    Salvar
+                </button>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -1584,7 +816,8 @@ $tiposCalculo = [
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="fecharModal('modalTipoReservatorio')">Cancelar</button>
+            <button type="button" class="btn btn-secondary"
+                onclick="fecharModal('modalTipoReservatorio')">Cancelar</button>
             <button type="button" class="btn btn-primary" onclick="salvarTipoReservatorio()">
                 <ion-icon name="checkmark-outline"></ion-icon>
                 Salvar
@@ -1618,7 +851,8 @@ $tiposCalculo = [
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="fecharModal('modalAreaInfluencia')">Cancelar</button>
+            <button type="button" class="btn btn-secondary"
+                onclick="fecharModal('modalAreaInfluencia')">Cancelar</button>
             <button type="button" class="btn btn-primary" onclick="salvarAreaInfluencia()">
                 <ion-icon name="checkmark-outline"></ion-icon>
                 Salvar
@@ -1673,7 +907,9 @@ $tiposCalculo = [
                 <select class="form-control choices-select" id="localidadeUnidade">
                     <option value="">Selecione...</option>
                     <?php foreach ($unidades as $u): ?>
-                        <option value="<?= $u['CD_UNIDADE'] ?>"><?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?></option>
+                        <option value="<?= $u['CD_UNIDADE'] ?>">
+                            <?= htmlspecialchars($u['CD_CODIGO'] . ' - ' . $u['DS_NOME']) ?>
+                        </option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -1712,7 +948,9 @@ $tiposCalculo = [
                 <select class="form-control choices-select" id="sistemaAguaLocalidade">
                     <option value="">Selecione...</option>
                     <?php foreach ($localidades as $loc): ?>
-                        <option value="<?= htmlspecialchars($loc['CD_CHAVE']) ?>"><?= htmlspecialchars($loc['CD_LOCALIDADE'] . ' - ' . $loc['DS_NOME']) ?></option>
+                        <option value="<?= htmlspecialchars($loc['CD_CHAVE']) ?>">
+                            <?= htmlspecialchars($loc['CD_LOCALIDADE'] . ' - ' . $loc['DS_NOME']) ?>
+                        </option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -1832,6 +1070,11 @@ $tiposCalculo = [
             total: 0,
             totalPaginas: 0
         },
+        instrumentos: {
+            pagina: 1,
+            total: 0,
+            totalPaginas: 0
+        },
         eta: {
             pagina: 1,
             total: 0,
@@ -1843,7 +1086,7 @@ $tiposCalculo = [
     // Navegação de Abas
     // ============================================
     document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
@@ -1882,7 +1125,7 @@ $tiposCalculo = [
 
     // Fechar modal ao clicar fora
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', function(e) {
+        overlay.addEventListener('click', function (e) {
             if (e.target === this) {
                 this.classList.remove('active');
             }
@@ -1900,7 +1143,7 @@ $tiposCalculo = [
 
     // Toggle botão limpar
     document.querySelectorAll('.input-search').forEach(input => {
-        input.addEventListener('input', function() {
+        input.addEventListener('input', function () {
             const clearBtn = this.parentElement.querySelector('.btn-search-clear');
             if (this.value.length > 0) {
                 clearBtn.classList.add('visible');
@@ -1985,7 +1228,7 @@ $tiposCalculo = [
             busca: filtro,
             pagina: pagina,
             porPagina: porPagina
-        }, function(response) {
+        }, function (response) {
             loading.classList.remove('active');
 
             if (response.success) {
@@ -2034,7 +1277,7 @@ $tiposCalculo = [
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoTipoMedidor', estadoPaginacao.tipoMedidor, 'buscarTiposMedidor');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             loading.classList.remove('active');
             showToast('Erro ao buscar tipos de medidor', 'erro');
         });
@@ -2051,7 +1294,7 @@ $tiposCalculo = [
     function editarTipoMedidor(id) {
         $.get('bd/cadastrosAuxiliares/getTipoMedidor.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success && response.data) {
                 document.getElementById('tipoMedidorId').value = response.data.CD_CHAVE;
                 document.getElementById('tipoMedidorNome').value = response.data.DS_NOME || '';
@@ -2061,7 +1304,7 @@ $tiposCalculo = [
             } else {
                 showToast('Erro ao carregar dados', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2078,7 +1321,7 @@ $tiposCalculo = [
             return;
         }
 
-        $.post('bd/cadastrosAuxiliares/salvarTipoMedidor.php', dados, function(response) {
+        $.post('bd/cadastrosAuxiliares/salvarTipoMedidor.php', dados, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 fecharModal('modalTipoMedidor');
@@ -2086,7 +1329,7 @@ $tiposCalculo = [
             } else {
                 showToast(response.message || 'Erro ao salvar', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2096,14 +1339,14 @@ $tiposCalculo = [
 
         $.post('bd/cadastrosAuxiliares/excluirTipoMedidor.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarTiposMedidor(estadoPaginacao.tipoMedidor.pagina);
             } else {
                 showToast(response.message || 'Erro ao excluir', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2122,7 +1365,7 @@ $tiposCalculo = [
             busca: filtro,
             pagina: pagina,
             porPagina: porPagina
-        }, function(response) {
+        }, function (response) {
             loading.classList.remove('active');
 
             if (response.success) {
@@ -2170,7 +1413,7 @@ $tiposCalculo = [
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoTipoReservatorio', estadoPaginacao.tipoReservatorio, 'buscarTiposReservatorio');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             loading.classList.remove('active');
             showToast('Erro ao buscar tipos de reservatório', 'erro');
         });
@@ -2186,7 +1429,7 @@ $tiposCalculo = [
     function editarTipoReservatorio(id) {
         $.get('bd/cadastrosAuxiliares/getTipoReservatorio.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success && response.data) {
                 document.getElementById('tipoReservatorioId').value = response.data.CD_CHAVE;
                 document.getElementById('tipoReservatorioNome').value = response.data.NOME || '';
@@ -2195,7 +1438,7 @@ $tiposCalculo = [
             } else {
                 showToast('Erro ao carregar dados', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2211,7 +1454,7 @@ $tiposCalculo = [
             return;
         }
 
-        $.post('bd/cadastrosAuxiliares/salvarTipoReservatorio.php', dados, function(response) {
+        $.post('bd/cadastrosAuxiliares/salvarTipoReservatorio.php', dados, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 fecharModal('modalTipoReservatorio');
@@ -2219,7 +1462,7 @@ $tiposCalculo = [
             } else {
                 showToast(response.message || 'Erro ao salvar', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2229,14 +1472,14 @@ $tiposCalculo = [
 
         $.post('bd/cadastrosAuxiliares/excluirTipoReservatorio.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarTiposReservatorio(estadoPaginacao.tipoReservatorio.pagina);
             } else {
                 showToast(response.message || 'Erro ao excluir', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2255,7 +1498,7 @@ $tiposCalculo = [
             busca: filtro,
             pagina: pagina,
             porPagina: porPagina
-        }, function(response) {
+        }, function (response) {
             loading.classList.remove('active');
 
             if (response.success) {
@@ -2306,7 +1549,7 @@ $tiposCalculo = [
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoAreaInfluencia', estadoPaginacao.areaInfluencia, 'buscarAreasInfluencia');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             loading.classList.remove('active');
             showToast('Erro ao buscar áreas de influência', 'erro');
         });
@@ -2324,7 +1567,7 @@ $tiposCalculo = [
     function editarAreaInfluencia(id) {
         $.get('bd/cadastrosAuxiliares/getAreaInfluencia.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success && response.data) {
                 document.getElementById('areaInfluenciaId').value = response.data.CD_AREA_INFLUENCIA;
                 document.getElementById('areaInfluenciaMunicipio').value = response.data.DS_MUNICIPIO || '';
@@ -2335,7 +1578,7 @@ $tiposCalculo = [
             } else {
                 showToast('Erro ao carregar dados', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2353,7 +1596,7 @@ $tiposCalculo = [
             return;
         }
 
-        $.post('bd/cadastrosAuxiliares/salvarAreaInfluencia.php', dados, function(response) {
+        $.post('bd/cadastrosAuxiliares/salvarAreaInfluencia.php', dados, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 fecharModal('modalAreaInfluencia');
@@ -2361,7 +1604,7 @@ $tiposCalculo = [
             } else {
                 showToast(response.message || 'Erro ao salvar', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2371,14 +1614,14 @@ $tiposCalculo = [
 
         $.post('bd/cadastrosAuxiliares/excluirAreaInfluencia.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarAreasInfluencia(estadoPaginacao.areaInfluencia.pagina);
             } else {
                 showToast(response.message || 'Erro ao excluir', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2397,7 +1640,7 @@ $tiposCalculo = [
             busca: filtro,
             pagina: pagina,
             porPagina: porPagina
-        }, function(response) {
+        }, function (response) {
             loading.classList.remove('active');
 
             if (response.success) {
@@ -2446,7 +1689,7 @@ $tiposCalculo = [
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoUnidade', estadoPaginacao.unidade, 'buscarUnidades');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             loading.classList.remove('active');
             showToast('Erro ao buscar unidades', 'erro');
         });
@@ -2463,7 +1706,7 @@ $tiposCalculo = [
     function editarUnidade(id) {
         $.get('bd/cadastrosAuxiliares/getUnidade.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success && response.data) {
                 document.getElementById('unidadeId').value = response.data.CD_UNIDADE;
                 document.getElementById('unidadeCodigo').value = response.data.CD_CODIGO || '';
@@ -2473,7 +1716,7 @@ $tiposCalculo = [
             } else {
                 showToast('Erro ao carregar dados', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2490,7 +1733,7 @@ $tiposCalculo = [
             return;
         }
 
-        $.post('bd/cadastrosAuxiliares/salvarUnidade.php', dados, function(response) {
+        $.post('bd/cadastrosAuxiliares/salvarUnidade.php', dados, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 fecharModal('modalUnidade');
@@ -2498,7 +1741,7 @@ $tiposCalculo = [
             } else {
                 showToast(response.message || 'Erro ao salvar', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2508,14 +1751,14 @@ $tiposCalculo = [
 
         $.post('bd/cadastrosAuxiliares/excluirUnidade.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarUnidades(estadoPaginacao.unidade.pagina);
             } else {
                 showToast(response.message || 'Erro ao excluir', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2536,7 +1779,7 @@ $tiposCalculo = [
             cd_unidade: unidade,
             pagina: pagina,
             porPagina: porPagina
-        }, function(response) {
+        }, function (response) {
             loading.classList.remove('active');
 
             if (response.success) {
@@ -2586,7 +1829,7 @@ $tiposCalculo = [
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoLocalidade', estadoPaginacao.localidade, 'buscarLocalidades');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             loading.classList.remove('active');
             showToast('Erro ao buscar localidades', 'erro');
         });
@@ -2604,7 +1847,7 @@ $tiposCalculo = [
     function editarLocalidade(id) {
         $.get('bd/cadastrosAuxiliares/getLocalidade.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success && response.data) {
                 document.getElementById('localidadeId').value = response.data.CD_CHAVE;
                 setChoicesValue('localidadeUnidade', response.data.CD_UNIDADE || '');
@@ -2615,7 +1858,7 @@ $tiposCalculo = [
             } else {
                 showToast('Erro ao carregar dados', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2633,7 +1876,7 @@ $tiposCalculo = [
             return;
         }
 
-        $.post('bd/cadastrosAuxiliares/salvarLocalidade.php', dados, function(response) {
+        $.post('bd/cadastrosAuxiliares/salvarLocalidade.php', dados, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 fecharModal('modalLocalidade');
@@ -2641,7 +1884,7 @@ $tiposCalculo = [
             } else {
                 showToast(response.message || 'Erro ao salvar', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2651,14 +1894,14 @@ $tiposCalculo = [
 
         $.post('bd/cadastrosAuxiliares/excluirLocalidade.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarLocalidades(estadoPaginacao.localidade.pagina);
             } else {
                 showToast(response.message || 'Erro ao excluir', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2677,7 +1920,7 @@ $tiposCalculo = [
             busca: filtro,
             pagina: pagina,
             porPagina: porPagina
-        }, function(response) {
+        }, function (response) {
             loading.classList.remove('active');
 
             if (response.success) {
@@ -2731,7 +1974,7 @@ $tiposCalculo = [
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoSistemaAgua', estadoPaginacao.sistemaAgua, 'buscarSistemasAgua');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             loading.classList.remove('active');
             showToast('Erro ao buscar sistemas de água', 'erro');
         });
@@ -2749,7 +1992,7 @@ $tiposCalculo = [
     function editarSistemaAgua(id) {
         $.get('bd/cadastrosAuxiliares/getSistemaAgua.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success && response.data) {
                 document.getElementById('sistemaAguaId').value = response.data.CD_CHAVE;
                 setChoicesValue('sistemaAguaLocalidade', response.data.CD_LOCALIDADE || '');
@@ -2760,7 +2003,7 @@ $tiposCalculo = [
             } else {
                 showToast('Erro ao carregar dados', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2778,7 +2021,7 @@ $tiposCalculo = [
             return;
         }
 
-        $.post('bd/cadastrosAuxiliares/salvarSistemaAgua.php', dados, function(response) {
+        $.post('bd/cadastrosAuxiliares/salvarSistemaAgua.php', dados, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 fecharModal('modalSistemaAgua');
@@ -2786,7 +2029,7 @@ $tiposCalculo = [
             } else {
                 showToast(response.message || 'Erro ao salvar', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2796,14 +2039,14 @@ $tiposCalculo = [
 
         $.post('bd/cadastrosAuxiliares/excluirSistemaAgua.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarSistemasAgua(estadoPaginacao.sistemaAgua.pagina);
             } else {
                 showToast(response.message || 'Erro ao excluir', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2824,7 +2067,7 @@ $tiposCalculo = [
             cd_sistema: sistema,
             pagina: pagina,
             porPagina: porPagina
-        }, function(response) {
+        }, function (response) {
             loading.classList.remove('active');
 
             if (response.success) {
@@ -2878,7 +2121,7 @@ $tiposCalculo = [
                 tbody.innerHTML = html;
                 renderizarPaginacao('paginacaoEta', estadoPaginacao.eta, 'buscarEtas');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             loading.classList.remove('active');
             showToast('Erro ao buscar ETAs', 'erro');
         });
@@ -2899,7 +2142,7 @@ $tiposCalculo = [
     function editarEta(id) {
         $.get('bd/cadastrosAuxiliares/getEta.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success && response.data) {
                 document.getElementById('etaId').value = response.data.CD_CHAVE;
                 setChoicesValue('etaSistema', response.data.CD_SISTEMA_AGUA || '');
@@ -2913,7 +2156,7 @@ $tiposCalculo = [
             } else {
                 showToast('Erro ao carregar dados', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2934,7 +2177,7 @@ $tiposCalculo = [
             return;
         }
 
-        $.post('bd/cadastrosAuxiliares/salvarEta.php', dados, function(response) {
+        $.post('bd/cadastrosAuxiliares/salvarEta.php', dados, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 fecharModal('modalEta');
@@ -2942,7 +2185,7 @@ $tiposCalculo = [
             } else {
                 showToast(response.message || 'Erro ao salvar', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2952,14 +2195,14 @@ $tiposCalculo = [
 
         $.post('bd/cadastrosAuxiliares/excluirEta.php', {
             id: id
-        }, function(response) {
+        }, function (response) {
             if (response.success) {
                 showToast(response.message, 'sucesso');
                 buscarEtas(estadoPaginacao.eta.pagina);
             } else {
                 showToast(response.message || 'Erro ao excluir', 'erro');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function () {
             showToast('Erro ao comunicar com o servidor', 'erro');
         });
     }
@@ -2968,51 +2211,857 @@ $tiposCalculo = [
     // Event Listeners - Busca ao digitar (debounce)
     // ============================================
     document.getElementById('filtroTipoMedidor').addEventListener('input',
-        debounce(function() {
+        debounce(function () {
             buscarTiposMedidor(1);
         }, 400, 'tipoMedidor'));
 
     document.getElementById('filtroTipoReservatorio').addEventListener('input',
-        debounce(function() {
+        debounce(function () {
             buscarTiposReservatorio(1);
         }, 400, 'tipoReservatorio'));
 
     document.getElementById('filtroAreaInfluencia').addEventListener('input',
-        debounce(function() {
+        debounce(function () {
             buscarAreasInfluencia(1);
         }, 400, 'areaInfluencia'));
 
     document.getElementById('filtroUnidade').addEventListener('input',
-        debounce(function() {
+        debounce(function () {
             buscarUnidades(1);
         }, 400, 'unidade'));
 
     document.getElementById('filtroLocalidade').addEventListener('input',
-        debounce(function() {
+        debounce(function () {
             buscarLocalidades(1);
         }, 400, 'localidade'));
-    document.getElementById('filtroLocalidadeUnidade').addEventListener('change', function() {
+    document.getElementById('filtroLocalidadeUnidade').addEventListener('change', function () {
         buscarLocalidades(1);
     });
 
     document.getElementById('filtroSistemaAgua').addEventListener('input',
-        debounce(function() {
+        debounce(function () {
             buscarSistemasAgua(1);
         }, 400, 'sistemaAgua'));
 
+    // Instrumentos - busca ao digitar
+    document.getElementById('filtroInstrumento').addEventListener('input',
+        debounce(function () {
+            buscarInstrumentos(1);
+        }, 400, 'instrumentos'));
+
+    // Instrumentos - busca ao mudar tipo
+    document.getElementById('filtroInstrumentoTipo').addEventListener('change', function () {
+        buscarInstrumentos(1);
+    });
+
+
+
+    // Instrumentos - filtro por vínculo
+    $(document).on('change', '#filtroInstrumentoVinculo', function () {
+        buscarInstrumentos(1);
+    });
+
+    // Autofocus no campo de busca ao abrir o dropdown do filtro
+    $('.select2-filtro-ponto').on('select2:open', function () {
+        setTimeout(function () {
+            var searchField = document.querySelector('.select2-container--open .select2-search__field');
+            if (searchField) searchField.focus();
+        }, 10);
+    });
+
+
+
     document.getElementById('filtroEta').addEventListener('input',
-        debounce(function() {
+        debounce(function () {
             buscarEtas(1);
         }, 400, 'eta'));
-    document.getElementById('filtroEtaSistema').addEventListener('change', function() {
+    document.getElementById('filtroEtaSistema').addEventListener('change', function () {
         buscarEtas(1);
     });
 
     // ============================================
+    // INSTRUMENTOS - CRUD
+    // ============================================
+
+    // Estado de ordenação dos instrumentos (var para hoisting - chamado via onclick do HTML)
+    var instrOrdenarPor = 'CD_CHAVE';
+    var instrOrdenarDir = 'DESC';
+
+    /**
+     * Nomes dos tipos de medidor para referência no JS
+     */
+    const tiposMedidorInstrNomes = {
+        1: 'Macromedidor',
+        2: 'Estação Pitométrica',
+        4: 'Medidor de Pressão',
+        6: 'Nível Reservatório',
+        8: 'Hidrômetro'
+    };
+
+    /**
+     * Busca instrumentos com paginação e filtros.
+     * Usa o endpoint listarInstrumentos.php
+     * @param {int} pagina - Página a buscar
+     */
+    function buscarInstrumentos(pagina = 1) {
+        const tipo = document.getElementById('filtroInstrumentoTipo').value;
+        const filtro = document.getElementById('filtroInstrumento').value;
+        const loading = document.getElementById('loadingInstrumentos');
+        const tbody = document.getElementById('tabelaInstrumentos');
+
+        loading.classList.add('active');
+
+        // Atualiza cabeçalhos da tabela conforme o tipo
+        atualizarCabecalhoTabela(parseInt(tipo));
+
+        if (!tipo) {
+            document.getElementById('thInstrCol1').textContent = 'Coluna 1';
+            document.getElementById('thInstrCol2').textContent = 'Coluna 2';
+            document.getElementById('thInstrCol3').textContent = 'Coluna 3';
+            document.getElementById('thInstrCol4').textContent = 'Coluna 4';
+            document.getElementById('thInstrTipo').style.display = '';
+        } else {
+            document.getElementById('thInstrTipo').style.display = 'none';
+        }
+
+        var vinculo = document.getElementById('filtroInstrumentoVinculo').value;
+
+        $.get('bd/cadastrosAuxiliares/listarInstrumentos.php', {
+            id_tipo_medidor: tipo,
+            busca: filtro,
+            vinculo: vinculo,
+            pagina: pagina,
+            por_pagina: porPagina,
+            ordenar_por: instrOrdenarPor,
+            ordenar_dir: instrOrdenarDir
+        }, function (response) {
+            loading.classList.remove('active');
+
+            if (response.success) {
+                estadoPaginacao.instrumentos = {
+                    pagina: response.pagina,
+                    total: response.total,
+                    totalPaginas: response.totalPaginas
+                };
+
+                document.getElementById('countInstrumentos').innerHTML =
+                    `<strong>${response.total}</strong> registro(s) encontrado(s)`;
+
+                let html = '';
+                if (response.data.length > 0) {
+                    const tipoInt = parseInt(tipo);
+                    const isTodos = response.todos || false;
+                    response.data.forEach(item => {
+                        // Colunas dinâmicas conforme tipo
+                        var cols;
+                        var itemTipo = tipoInt;
+                        if (isTodos) {
+                            // Modo "Todos" — usa colunas genéricas do UNION
+                            cols = {
+                                col1: item.COL1 || '<span style="color:#94a3b8;">-</span>',
+                                col2: item.COL2 || '<span style="color:#94a3b8;">-</span>',
+                                col3: item.COL3 || '<span style="color:#94a3b8;">-</span>',
+                                col4: item.COL4 || '<span style="color:#94a3b8;">-</span>'
+                            };
+                            itemTipo = parseInt(item.ID_TIPO_MEDIDOR);
+                        } else {
+                            cols = obterColunasTabela(item, tipoInt);
+                        }
+
+                        // Badge de tipo (só no modo Todos)
+                        var tipoCol = isTodos ? '<td><span style="font-size:11px;color:#0369a1;background:#e0f2fe;padding:3px 8px;border-radius:6px;white-space:nowrap;">' + item.DS_TIPO + '</span></td>' : '';
+                        // Badge de vínculo
+                        const vinculoBadge = item.CD_PONTO_MEDICAO
+                            ? `<a href="pontoMedicaoView.php?id=${item.CD_PONTO_MEDICAO}" class="link-ponto-vinculado" title="Ver ponto de medição">${item.DS_PONTO_VINCULADO || 'Ponto'} <span style="color:#64748b;">(${item.CD_PONTO_MEDICAO})</span></a>`
+                            : '<span style="color: #94a3b8; font-size: 11px;">Não vinculado</span>';
+
+                        html += `
+                            <tr>
+                                <td class="code">${item.CD_CHAVE}</td>
+                                ${tipoCol}
+                                <td>${cols.col1}</td>
+                                <td>${cols.col2}</td>
+                                <td>${cols.col3}</td>
+                                <td>${cols.col4}</td>
+                                <td>${vinculoBadge}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        ${podeEditar ? `
+                                        <button type="button" class="btn-action edit" onclick="editarInstrumento(${item.CD_CHAVE}, ${itemTipo})" title="Editar">
+                                            <ion-icon name="create-outline"></ion-icon>
+                                        </button>
+                                        <button type="button" class="btn-action delete" onclick="excluirInstrumento(${item.CD_CHAVE}, ${itemTipo})" title="Excluir">
+                                            <ion-icon name="trash-outline"></ion-icon>
+                                        </button>
+                                        ` : ''}
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    var totalCols = isTodos ? 8 : 7;
+                    html = `<tr><td colspan="${totalCols}">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><ion-icon name="hardware-chip-outline"></ion-icon></div>
+                            <h3>Nenhum instrumento encontrado</h3>
+                            <p>Tente ajustar os filtros ou cadastre um novo instrumento</p>
+                        </div>
+                    </td></tr>`;
+                }
+
+                tbody.innerHTML = html;
+                renderizarPaginacao('paginacaoInstrumentos', estadoPaginacao.instrumentos, 'buscarInstrumentos');
+            } else {
+                showToast(response.message || 'Erro ao buscar instrumentos', 'erro');
+            }
+        }, 'json').fail(function () {
+            loading.classList.remove('active');
+            showToast('Erro ao buscar instrumentos', 'erro');
+        });
+    }
+
+    /**
+     * Mapeamento de colunas genéricas (col1..col4) para colunas reais do banco
+     * conforme o tipo de medidor selecionado.
+     */
+    function obterColunaReal(colGenerica, tipo) {
+        const mapa = {
+            1: { col1: 'DS_MARCA', col2: 'DS_MODELO', col3: 'DS_SERIE', col4: 'VL_DIAMETRO' },
+            2: { col1: 'DS_LINHA', col2: 'DS_SISTEMA', col3: 'DS_REVESTIMENTO', col4: 'VL_DIAMETRO' },
+            4: { col1: 'DS_MATRICULA_USUARIO', col2: 'DS_NUMERO_SERIE_EQUIPAMENTO', col3: 'DS_MATERIAL', col4: 'VL_DIAMETRO' },
+            6: { col1: 'DS_MARCA', col2: 'DS_MODELO', col3: 'DS_SERIE', col4: 'VL_VOLUME_TOTAL' },
+            8: { col1: 'DS_MATRICULA_USUARIO', col2: 'DS_NUMERO_SERIE_EQUIPAMENTO', col3: 'DS_MATERIAL', col4: 'VL_DIAMETRO' }
+        };
+        // Se é coluna direta (CD_CHAVE, DS_PONTO_VINCULADO), retorna como está
+        if (!colGenerica.startsWith('col')) return colGenerica;
+        return mapa[tipo] ? mapa[tipo][colGenerica] || 'CD_CHAVE' : 'CD_CHAVE';
+    }
+
+    /**
+     * Ordena instrumentos por coluna clicada.
+     * Alterna ASC/DESC se clicar na mesma coluna.
+     * @param {string} coluna - Nome genérico (col1..col4) ou nome real (CD_CHAVE, DS_PONTO_VINCULADO)
+     */
+    function ordenarInstrumentos(coluna) {
+        const tipo = parseInt(document.getElementById('filtroInstrumentoTipo').value);
+        const colunaReal = obterColunaReal(coluna, tipo);
+
+        // Alterna direção se mesma coluna
+        if (instrOrdenarPor === colunaReal) {
+            instrOrdenarDir = instrOrdenarDir === 'ASC' ? 'DESC' : 'ASC';
+        } else {
+            instrOrdenarPor = colunaReal;
+            instrOrdenarDir = 'ASC';
+        }
+
+        buscarInstrumentos(1);
+    }
+
+    /**
+     * Atualiza os cabeçalhos da tabela conforme o tipo de medidor selecionado,
+     * para que as colunas façam sentido para cada tipo.
+     * @param {int} tipo - ID do tipo de medidor
+     */
+    function atualizarCabecalhoTabela(tipo) {
+        switch (tipo) {
+            case 1: // Macromedidor
+                document.getElementById('thInstrCol1').textContent = 'Marca';
+                document.getElementById('thInstrCol2').textContent = 'Modelo';
+                document.getElementById('thInstrCol3').textContent = 'Série';
+                document.getElementById('thInstrCol4').textContent = 'Diâmetro';
+                break;
+            case 2: // Estação Pitométrica
+                document.getElementById('thInstrCol1').textContent = 'Linha';
+                document.getElementById('thInstrCol2').textContent = 'Sistema';
+                document.getElementById('thInstrCol3').textContent = 'Revestimento';
+                document.getElementById('thInstrCol4').textContent = 'Diâmetro';
+                break;
+            case 4: // Medidor Pressão
+                document.getElementById('thInstrCol1').textContent = 'Matrícula';
+                document.getElementById('thInstrCol2').textContent = 'Nº Série';
+                document.getElementById('thInstrCol3').textContent = 'Material';
+                document.getElementById('thInstrCol4').textContent = 'Diâmetro';
+                break;
+            case 6: // Nível Reservatório
+                document.getElementById('thInstrCol1').textContent = 'Marca';
+                document.getElementById('thInstrCol2').textContent = 'Modelo';
+                document.getElementById('thInstrCol3').textContent = 'Série';
+                document.getElementById('thInstrCol4').textContent = 'Volume (m³)';
+                break;
+            case 8: // Hidrômetro
+                document.getElementById('thInstrCol1').textContent = 'Matrícula';
+                document.getElementById('thInstrCol2').textContent = 'Nº Série';
+                document.getElementById('thInstrCol3').textContent = 'Material';
+                document.getElementById('thInstrCol4').textContent = 'Diâmetro';
+                break;
+        }
+    }
+
+    /**
+     * Retorna os valores para as 4 colunas dinâmicas da tabela.
+     * @param {object} item - Dados do instrumento
+     * @param {int} tipo - ID do tipo de medidor
+     * @returns {object} { col1, col2, col3, col4 }
+     */
+    function obterColunasTabela(item, tipo) {
+        const vazio = '<span style="color:#94a3b8;">-</span>';
+        const fmtNum = (v) => v !== null && v !== undefined && v !== '' ? parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : null;
+
+        switch (tipo) {
+            case 1: // Macromedidor
+                return {
+                    col1: item.DS_MARCA || vazio,
+                    col2: item.DS_MODELO || vazio,
+                    col3: item.DS_SERIE || vazio,
+                    col4: fmtNum(item.VL_DIAMETRO) || vazio
+                };
+            case 2: // Estação Pitométrica
+                return {
+                    col1: item.DS_LINHA || vazio,
+                    col2: item.DS_SISTEMA || vazio,
+                    col3: item.DS_REVESTIMENTO || vazio,
+                    col4: fmtNum(item.VL_DIAMETRO) || vazio
+                };
+            case 4: // Medidor Pressão
+                return {
+                    col1: item.DS_MATRICULA_USUARIO || vazio,
+                    col2: item.DS_NUMERO_SERIE_EQUIPAMENTO || vazio,
+                    col3: item.DS_MATERIAL || vazio,
+                    col4: fmtNum(item.VL_DIAMETRO) || vazio
+                };
+            case 6: // Nível Reservatório
+                return {
+                    col1: item.DS_MARCA || vazio,
+                    col2: item.DS_MODELO || vazio,
+                    col3: item.DS_SERIE || vazio,
+                    col4: fmtNum(item.VL_VOLUME_TOTAL) || vazio
+                };
+            case 8: // Hidrômetro
+                return {
+                    col1: item.DS_MATRICULA_USUARIO || vazio,
+                    col2: item.DS_NUMERO_SERIE_EQUIPAMENTO || vazio,
+                    col3: item.DS_MATERIAL || vazio,
+                    col4: fmtNum(item.VL_DIAMETRO) || vazio
+                };
+            default:
+                return { col1: vazio, col2: vazio, col3: vazio, col4: vazio };
+        }
+    }
+
+    // ============================================
+    // Modal: Campos dinâmicos por tipo de medidor
+    // ============================================
+
+    /**
+     * Helper para gerar campo input no modal.
+     * Usa o padrão form-row + form-group + col do sistema.
+     * @param {string} name - Nome do campo
+     * @param {string} label - Rótulo
+     * @param {string} icon - Ícone Ionicons
+     * @param {string} type - Tipo do input (text, number, date)
+     * @param {string} placeholder - Placeholder
+     * @param {int} col - Tamanho da coluna (4, 6, 8, 12)
+     * @param {string} step - Step para inputs numéricos
+     */
+    function instrInput(name, label, icon, type = 'text', placeholder = '', col = 4, step = '') {
+        const stepAttr = step ? `step="${step}"` : '';
+        return `
+            <div class="form-group col-${col}">
+                <label class="form-label">
+                    <ion-icon name="${icon}"></ion-icon>
+                    ${label}
+                </label>
+                <input type="${type}" name="${name}" id="instr_${name}" class="form-control" placeholder="${placeholder}" ${stepAttr}>
+            </div>
+        `;
+    }
+
+    /**
+     * Helper para gerar campo select no modal.
+     * Adiciona classe select2-instr para inicialização posterior.
+     */
+    function instrSelect(name, label, icon, options, colSize = '50%') {
+        let optsHtml = '';
+        options.forEach(function (o) {
+            optsHtml += '<option value="' + o.value + '">' + o.text + '</option>';
+        });
+        return '<div class="form-group" style="width: ' + colSize + ';">' +
+            '<label class="form-label">' +
+            '<ion-icon name="' + icon + '"></ion-icon> ' + label +
+            '</label>' +
+            '<select name="' + name + '" id="instr_' + name + '" class="form-control select2-instr">' +
+            optsHtml +
+            '</select>' +
+            '</div>';
+    }
+
+    /**
+     * Atualiza os campos do modal conforme o tipo de medidor selecionado.
+     * Usa o padrão form-row do sistema para layout em 3 colunas.
+     */
+    function atualizarCamposModal() {
+        var tipoRaw = document.getElementById('instrTipoMedidor').value;
+        var tipo = tipoRaw ? parseInt(tipoRaw) : 1;
+        let html = '';
+
+        switch (tipo) {
+            case 1: // Macromedidor
+                html = `
+                    ${instrSelect('cd_tipo_medidor_equip', 'Tipo de Medidor', 'speedometer-outline', tiposMedidorEquip, '33.33%')}
+                    ${instrInput('ds_marca', 'Marca', 'pricetag-outline', 'text', 'Ex: CONAUT', '33.33%')}
+                    ${instrInput('ds_modelo', 'Modelo', 'cube-outline', 'text', 'Ex: OPTIFLUX KC2000', '33.33%')}
+                    ${instrInput('ds_serie', 'Série', 'barcode-outline', 'text', 'Número de série', '33.33%')}
+                    ${instrInput('ds_tag', 'Tag', 'pricetag-outline', 'text', 'Tag de identificação', '33.33%')}
+                    ${instrInput('dt_fabricacao', 'Data Fabricação', 'calendar-outline', 'date', '', '33.33%')}
+                    ${instrInput('ds_patrimonio_primario', 'Patrimônio Primário', 'document-outline', 'text', '', '33.33%')}
+                    ${instrInput('ds_patrimonio_secundario', 'Patrimônio Secundário', 'document-outline', 'text', '', '33.33%')}
+                    ${instrInput('vl_diametro', 'Diâmetro (mm)', 'resize-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('vl_diametro_rede', 'Diâmetro Rede (mm)', 'git-branch-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('ds_revestimento', 'Revestimento', 'layers-outline', 'text', '', '33.33%')}
+                    ${instrInput('vl_capacidade_nominal', 'Capacidade Nominal', 'speedometer-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('vl_k_fabricante', 'K Fabricante', 'calculator-outline', 'number', '0.0000', '33.33%', '0.0001')}
+                    ${instrInput('vl_perda_carga_fabricante', 'Perda Carga Fabricante', 'trending-down-outline', 'number', '0.0000', '33.33%', '0.0001')}
+                    ${instrInput('vl_pressao_maxima', 'Pressão Máxima (mca)', 'arrow-up-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('vl_vazao_esperada', 'Vazão Esperada', 'water-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('ds_tipo_flange', 'Forma / Tipo Flange', 'ellipse-outline', 'text', '', '33.33%')}
+                    ${instrInput('ds_altura_soleira', 'Altura da Soleira', 'resize-outline', 'text', '', '33.33%')}
+                    ${instrInput('ds_natureza_parede', 'Natureza da Parede', 'construct-outline', 'text', '', '33.33%')}
+                    ${instrInput('ds_largura_relativa', 'Largura Relativa', 'swap-horizontal-outline', 'text', '', '33.33%')}
+                    ${instrInput('ds_largura_garganta', 'Largura da Garganta', 'code-outline', 'text', '', '33.33%')}
+                    ${instrInput('vl_cota', 'Cota (m)', 'analytics-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('prot_comun', 'Protocolo Comunicação', 'radio-outline', 'text', 'Ex: Modbus', '33.33%')}
+                    ${instrSelect('id_produto', 'Tipo de Fluido', 'water-outline', tiposFluido, '33.33%')}
+                    ${instrSelect('cd_estacao_pitometrica', 'Código da EP', 'link-outline', estacoesDisponiveis, '100%')}           
+                `;
+                break;
+
+            case 2: // Estação Pitométrica
+                html = `
+                    ${instrInput('vl_cota_geografica', 'Cota (m)', 'location-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('ds_sistema', 'Sistema', 'apps-outline', 'text', 'Sistema', '33.33%')}
+                    ${instrInput('vl_diametro', 'Diâmetro do Trecho (mm)', 'resize-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('vl_diametro_rede', 'Diâmetro Rede (mm)', 'git-branch-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('ds_revestimento', 'Revestimento', 'layers-outline', 'text', '', '33.33%')}
+                    ${instrInput('ds_linha', 'Linha', 'git-commit-outline', 'text', 'Identificação da linha', '33.33%')}
+                    ${instrSelect('tp_periodicidade_levantamento', 'Periodicidade Levantamento Kpc', 'time-outline', periodicidadesKpc, '33.33%')}
+                `;
+                break;
+
+            case 4: // Medidor Pressão
+                html = `
+                    ${instrInput('ds_matricula_usuario', 'Matrícula Usuário', 'person-outline', 'text', '', '33.33%')}
+                    ${instrInput('vl_diametro', 'Diâmetro (mm)', 'resize-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('ds_numero_serie_equipamento', 'Nº Série Equipamento', 'barcode-outline', 'text', '', '33.33%')}
+                    ${instrInput('vl_diametro_rede', 'Diâmetro Rede (mm)', 'git-branch-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('dt_instalacao', 'Data Instalação', 'calendar-outline', 'date', '', '33.33%')}
+                    ${instrInput('ds_cota', 'Cota (m)', 'analytics-outline', 'text', '', '33.33%')}
+                    ${instrSelect('op_telemetria', 'Telemetria', 'radio-outline', [
+                    { value: '', text: 'Indiferente' }, { value: '1', text: 'Sim' }, { value: '0', text: 'Não' }
+                ], '33.33%')}
+                    ${instrInput('ds_coordenadas', 'Coordenadas', 'navigate-outline', 'text', 'Lat, Long', '33.33%')}
+                    ${instrInput('ds_material', 'Material', 'construct-outline', 'text', '', '33.33%')}
+                    ${instrInput('ds_endereco', 'Endereço', 'location-outline', 'text', 'Endereço completo', '100%')}
+                `;
+                break;
+
+            case 6: // Nível Reservatório
+                html = `
+                    ${instrSelect('cd_tipo_medidor_equip', 'Tipo de Medidor', 'speedometer-outline', tiposMedidorEquip, '33.33%')}
+                    ${instrInput('ds_marca', 'Marca', 'pricetag-outline', 'text', '', '33.33%')}
+                    ${instrInput('dt_fabricacao', 'Data Fabricação', 'calendar-outline', 'date', '', '33.33%')}
+                    ${instrInput('ds_modelo', 'Modelo', 'cube-outline', 'text', '', '33.33%')}
+                    ${instrInput('dt_instalacao', 'Data Instalação', 'calendar-outline', 'date', '', '33.33%')}
+                    ${instrInput('ds_serie', 'Série', 'barcode-outline', 'text', '', '33.33%')}
+                    ${instrInput('ds_patrimonio_primario', 'Patrimônio Primário', 'document-outline', 'text', '', '33.33%')}
+                    ${instrInput('ds_tag', 'Tag', 'pricetag-outline', 'text', '', '33.33%')}
+                    ${instrInput('ds_patrimonio_secundario', 'Patrimônio Secundário', 'document-outline', 'text', '', '33.33%')}
+                    ${instrSelect('cd_tipo_reservatorio', 'Reservatório', 'home-outline', tiposReservatorio, '33.33%')}
+                    ${instrInput('cota_extravasamento_m', 'Cota Extrav. (m)', 'arrow-up-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('ds_altura_maxima', 'Altura Máxima (m)', 'resize-outline', 'text', '', '33.33%')}
+                    ${instrInput('cota_extravasamento_p', 'Cota Extrav. (%)', 'arrow-up-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('vl_cota', 'Cota Fundo', 'analytics-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('vl_pressao_maxima_succao', 'Pressão Máx. Sucção (mca)', 'arrow-down-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('vl_na', 'NA (m)', 'water-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('vl_pressao_maxima_recalque', 'Pressão Máx. Recalque (mca)', 'arrow-up-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('vl_volume_total', 'Volume Total (m³)', 'cube-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('vl_volume_camara_a', 'Volume Câmara A (m³)', 'cube-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('vl_volume_camara_b', 'Volume Câmara B (m³)', 'cube-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrSelect('id_produto', 'Tipo de Fluido', 'water-outline', tiposFluido, '33.33%')}
+                `;
+                break;
+
+            case 8: // Hidrômetro
+                html = `
+                    ${instrInput('ds_matricula_usuario', 'Matrícula Usuário', 'person-outline', 'text', '', '33.33%')}
+                    ${instrInput('vl_diametro', 'Diâmetro (mm)', 'resize-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('ds_numero_serie_equipamento', 'Nº Série Equipamento', 'barcode-outline', 'text', '', '33.33%')}
+                    ${instrInput('vl_diametro_rede', 'Diâmetro Rede (mm)', 'git-branch-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('dt_instalacao', 'Data Instalação', 'calendar-outline', 'date', '', '33.33%')}
+                    ${instrInput('ds_cota', 'Cota (m)', 'analytics-outline', 'text', '', '33.33%')}
+                    ${instrSelect('id_tempo_operacao', 'Tempo de Operação', 'timer-outline', temposOperacao, '33.33%')}
+                    ${instrInput('ds_coordenadas', 'Coordenadas', 'navigate-outline', 'text', 'Lat, Long', '33.33%')}
+                    ${instrInput('vl_leitura_limite', 'Leitura Limite', 'speedometer-outline', 'number', '0.00', '33.33%', '0.01')}
+                    ${instrInput('ds_material', 'Material', 'construct-outline', 'text', '', '33.33%')}
+                    ${instrInput('vl_multiplicador', 'Multiplicador', 'calculator-outline', 'number', '0.0000', '33.33%', '0.0001')}
+                    ${instrInput('ds_endereco', 'Endereço', 'location-outline', 'text', 'Endereço completo', '100%')}
+                `;
+                break;
+        }
+
+        document.getElementById('instrCampos').innerHTML = html;
+
+        // Inicializa Select2 com pesquisa nos selects do modal (padrão do sistema)
+        setTimeout(function () {
+            // Destroy anterior se existir (evita duplicação)
+            $('#instrCampos .select2-instr').each(function () {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
+            // Inicializa Select2 seguindo o padrão pontoMedicao.php
+            $('#instrCampos .select2-instr').select2({
+                dropdownParent: $('#modalInstrumento .modal-body'),
+                width: '100%',
+                placeholder: 'Selecione...',
+                allowClear: true,
+                minimumResultsForSearch: 0,
+                language: {
+                    noResults: function () { return 'Nenhum resultado encontrado'; },
+                    searching: function () { return 'Pesquisando...'; }
+                }
+            });
+
+            // Autofocus no campo de busca ao abrir o dropdown
+            $('#instrCampos .select2-instr').on('select2:open', function () {
+                setTimeout(function () {
+                    var searchField = document.querySelector('.select2-container--open .select2-search__field');
+                    if (searchField) {
+                        searchField.focus();
+                    }
+                }, 10);
+            });
+        }, 50);
+    }
+
+    /**
+         * Listener para mudança de tipo do medidor durante edição.
+         * Se o instrumento está vinculado a um ponto e o tipo mudou,
+         * avisa que será desvinculado por incompatibilidade de tipo.
+         */
+    document.getElementById('instrTipoMedidor').addEventListener('change', function () {
+        const tipoOriginal = this.dataset.tipoOriginal;
+        const cdChaveEdit = this.dataset.cdChaveEdit;
+        const tipoNovo = this.value;
+
+        // Modo criação: apenas atualiza campos
+        if (!tipoOriginal || !cdChaveEdit) {
+            atualizarCamposModal();
+            return;
+        }
+
+        // Voltou ao tipo original: só atualiza campos
+        if (tipoNovo === tipoOriginal) {
+            atualizarCamposModal();
+            return;
+        }
+
+        // Verifica se está vinculado a um ponto de medição
+        let cdPontoVinculado = null;
+
+        $.ajax({
+            url: 'bd/cadastrosAuxiliares/listarInstrumentos.php',
+            type: 'GET',
+            data: {
+                id_tipo_medidor: tipoOriginal,
+                busca: cdChaveEdit,
+                pagina: 1,
+                limite: 1
+            },
+            dataType: 'json',
+            async: false,
+            success: function (response) {
+                if (response.success && response.dados && response.dados.length > 0) {
+                    const item = response.dados[0];
+                    if (item.CD_PONTO_MEDICAO != null && item.CD_PONTO_MEDICAO !== '') {
+                        cdPontoVinculado = item.CD_PONTO_MEDICAO;
+                    }
+                }
+            }
+        });
+
+        if (cdPontoVinculado) {
+            const confirmou = confirm(
+                'ATENÇÃO: Este instrumento está vinculado a um Ponto de Medição.\n\n' +
+                'Alterar o tipo do medidor irá DESVINCULAR o instrumento do ponto, ' +
+                'pois o tipo não será mais compatível.\n\n' +
+                'Deseja continuar?'
+            );
+
+            if (!confirmou) {
+                // Reverte para o tipo original
+                this.value = tipoOriginal;
+                return;
+            }
+
+            // Desvincula o instrumento
+            $.ajax({
+                url: 'bd/pontoMedicao/desvincularInstrumento.php',
+                type: 'POST',
+                data: {
+                    cd_chave: cdChaveEdit,
+                    cd_ponto_medicao: cdPontoVinculado,
+                    id_tipo_medidor: tipoOriginal
+                },
+                dataType: 'json',
+                async: false,
+                success: function (resp) {
+                    if (resp.success) {
+                        showToast('Instrumento desvinculado do ponto de medição', 'aviso');
+                    } else {
+                        showToast(resp.message || 'Erro ao desvincular', 'erro');
+                    }
+                },
+                error: function () {
+                    showToast('Erro ao comunicar com o servidor', 'erro');
+                }
+            });
+        }
+
+        // Atualiza campos para o novo tipo
+        atualizarCamposModal();
+    });
+
+    /**
+      * Abre o modal para criar novo instrumento.
+      * Limpa campos e define tipo conforme filtro atual.
+      */
+    function abrirModalInstrumento() {
+        // Limpa cd_chave (é novo, não edição)
+        document.getElementById('instrCdChave').value = '';
+        var btnSalvar = document.querySelector('#modalInstrumento .btn-primary');
+        if (btnSalvar) {
+            delete btnSalvar.dataset.cdChave;
+        }
+
+        document.getElementById('modalInstrumentoTitulo').textContent = 'Novo Instrumento';
+
+        // Habilita seleção do tipo
+        document.getElementById('instrTipoMedidor').disabled = false;
+        document.getElementById('grupoTipoInstr').style.display = 'block';
+
+        // Sincroniza tipo com filtro da aba (se "Todos", usa Macromedidor como padrão)
+        var tipoFiltro = document.getElementById('filtroInstrumentoTipo').value;
+        document.getElementById('instrTipoMedidor').value = tipoFiltro || '1';
+
+        // Monta campos
+        atualizarCamposModal();
+
+        abrirModal('modalInstrumento');
+    }
+
+    /**
+      * Abre o modal para editar instrumento existente.
+      * Busca dados via listarInstrumentos.php e preenche campos.
+      * @param {int} cdChave - CD_CHAVE do instrumento
+      * @param {int} tipo - ID do tipo de medidor
+      */
+    function editarInstrumento(cdChave, tipo) {
+
+        // Seta cd_chave no hidden E no data-attr do botão salvar (redundância)
+        document.getElementById('instrCdChave').value = cdChave;
+        var btnSalvar = document.querySelector('#modalInstrumento .btn-primary');
+        if (btnSalvar) {
+            btnSalvar.dataset.cdChave = cdChave;
+        }
+
+        // Configura título e tipo
+        document.getElementById('instrTipoMedidor').value = tipo;
+        document.getElementById('modalInstrumentoTitulo').textContent = 'Editar Instrumento (CD: ' + cdChave + ')';
+
+        // Mostra o tipo mas desabilita (não pode mudar na edição)
+        document.getElementById('instrTipoMedidor').disabled = true;
+        document.getElementById('grupoTipoInstr').style.display = 'block';
+
+        // Monta campos para o tipo
+        atualizarCamposModal();
+
+        // Mapeamento: coluna BD (lowercase) → name do campo no form
+        var fieldMap = {
+            'cd_tipo_medidor': 'cd_tipo_medidor_equip'
+        };
+
+        // Busca dados do instrumento
+        $.get('bd/cadastrosAuxiliares/listarInstrumentos.php', {
+            id_tipo_medidor: tipo,
+            busca: cdChave,
+            pagina: 1,
+            por_pagina: 1
+        }, function (response) {
+            if (response.success && response.data.length > 0) {
+                var dados = response.data[0];
+
+
+                // Preenche campos do modal
+                Object.keys(dados).forEach(function (key) {
+                    var fieldName = key.toLowerCase();
+
+                    // Aplica mapeamento se existir
+                    if (fieldMap[fieldName]) {
+                        fieldName = fieldMap[fieldName];
+                    }
+
+                    var field = document.getElementById('instr_' + fieldName);
+                    if (field) {
+                        if (field.type === 'date' && dados[key]) {
+                            field.value = dados[key].substring(0, 10);
+                        } else {
+                            field.value = (dados[key] !== null && dados[key] !== undefined) ? dados[key] : '';
+                        }
+                    }
+                });
+
+                // Atualiza Select2 (não responde a .value, precisa de .val().trigger)
+                $('#instrCampos .select2-instr').each(function () {
+                    var fieldName = $(this).attr('name');
+                    var dbKey = fieldName.toUpperCase();
+
+                    // Mapeamento inverso: form name → coluna BD
+                    if (fieldName === 'cd_tipo_medidor_equip') {
+                        dbKey = 'CD_TIPO_MEDIDOR';
+                    }
+
+                    if (dados[dbKey] !== undefined && dados[dbKey] !== null) {
+                        $(this).val(dados[dbKey]).trigger('change');
+                    } else {
+                        $(this).val('').trigger('change');
+                    }
+                });
+
+                // RE-SETA cd_chave (garante que não foi perdido)
+                document.getElementById('instrCdChave').value = cdChave;
+
+                abrirModal('modalInstrumento');
+            } else {
+                showToast('Instrumento não encontrado', 'erro');
+            }
+        }, 'json').fail(function () {
+            showToast('Erro ao carregar dados do instrumento', 'erro');
+        });
+    }
+
+    /**
+     * Salva (cria ou atualiza) instrumento.
+     * Coleta todos os campos do modal e envia ao endpoint.
+     * Usa data-attr como fallback para cd_chave (segurança contra perda do hidden).
+     */
+    function salvarInstrumento() {
+        // Lê cd_chave do hidden field
+        var cdChave = document.getElementById('instrCdChave').value;
+
+        // Fallback: tenta ler do data-attribute do botão salvar
+        if (!cdChave) {
+            var btnSalvar = document.querySelector('#modalInstrumento .btn-primary');
+            if (btnSalvar && btnSalvar.dataset.cdChave) {
+                cdChave = btnSalvar.dataset.cdChave;
+            }
+        }
+
+        var tipo = document.getElementById('instrTipoMedidor').value;
+
+
+        // Coleta todos os campos do container dinâmico
+        var formData = {
+            cd_chave: cdChave || '',
+            id_tipo_medidor: tipo
+        };
+
+        // Coleta inputs e selects do container dinâmico
+        document.querySelectorAll('#instrCampos input, #instrCampos select').forEach(function (el) {
+            if (el.name) {
+                formData[el.name] = el.value;
+            }
+        });
+
+
+        $.post('bd/cadastrosAuxiliares/salvarInstrumento.php', formData, function (response) {
+
+            if (response.success) {
+                showToast(response.message, 'sucesso');
+                fecharModal('modalInstrumento');
+                buscarInstrumentos(estadoPaginacao.instrumentos ? estadoPaginacao.instrumentos.pagina : 1);
+            } else {
+                showToast(response.message || 'Erro ao salvar', 'erro');
+            }
+        }, 'json').fail(function (xhr) {
+            console.log('[salvarInstrumento] FAIL:', xhr.responseText);
+            showToast('Erro ao comunicar com o servidor', 'erro');
+        });
+    }
+
+    /**
+     * Exclui instrumento após confirmação.
+     * Só permite exclusão se não estiver vinculado (backend valida também).
+     * @param {int} cdChave - CD_CHAVE do instrumento
+     * @param {int} tipo - ID do tipo de medidor
+     */
+    function excluirInstrumento(cdChave, tipo) {
+        if (!confirm('Deseja realmente excluir este instrumento?\n\nNão será possível excluir instrumentos vinculados a um ponto de medição.')) return;
+
+        $.post('bd/cadastrosAuxiliares/excluirInstrumento.php', {
+            cd_chave: cdChave,
+            id_tipo_medidor: tipo
+        }, function (response) {
+            if (response.success) {
+                showToast(response.message, 'sucesso');
+                buscarInstrumentos(estadoPaginacao.instrumentos ? estadoPaginacao.instrumentos.pagina : 1);
+            } else {
+                showToast(response.message || 'Erro ao excluir', 'erro');
+            }
+        }, 'json').fail(function () {
+            showToast('Erro ao comunicar com o servidor', 'erro');
+        });
+    }
+
+
+    // ============================================
     // Carregar dados ao iniciar
     // ============================================
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         buscarTiposMedidor(1);
+
+        // ============================================
+        // Abertura automática via URL params
+        // Ex: ?tab=instrumentos&tipo=1&editar=809
+        // ============================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        const tipoParam = urlParams.get('tipo');
+        const editarParam = urlParams.get('editar');
+
+        if (tabParam) {
+            // Ativa a aba solicitada
+            const tabBtn = document.querySelector(`.tab-btn[data-tab="${tabParam}"]`);
+            if (tabBtn) {
+                tabBtn.click();
+
+                // Se é aba instrumentos com parâmetros de edição
+                if (tabParam === 'instrumentos' && tipoParam) {
+                    // Aguarda a aba carregar, define o tipo e busca
+                    setTimeout(function () {
+                        document.getElementById('filtroInstrumentoTipo').value = tipoParam;
+                        buscarInstrumentos(1);
+
+                        // Se tem CD para editar, aguarda busca e abre modal
+                        if (editarParam) {
+                            setTimeout(function () {
+                                editarInstrumento(parseInt(editarParam), parseInt(tipoParam));
+                            }, 600);
+                        }
+                    }, 200);
+                }
+            }
+        }
     });
 
     // Carregar dados ao trocar de aba (apenas se não carregou ainda)
@@ -3020,7 +3069,7 @@ $tiposCalculo = [
         tipoMedidor: true
     };
     document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             const tab = this.dataset.tab;
             if (!abasCarregadas[tab]) {
                 abasCarregadas[tab] = true;
@@ -3040,6 +3089,9 @@ $tiposCalculo = [
                     case 'sistemaAgua':
                         buscarSistemasAgua(1);
                         break;
+                    case 'instrumentos':
+                        buscarInstrumentos(1);
+                        break;
                     case 'eta':
                         buscarEtas(1);
                         break;
@@ -3051,6 +3103,98 @@ $tiposCalculo = [
 
 <!-- Choices.js (não precisa de jQuery) -->
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+<!-- Dados para dropdowns de Instrumentos (gerados via PHP) -->
+<script>
+    // Tipos de Medidor (tabela TIPO_MEDIDOR)
+    var tiposMedidorEquip = [];
+    // Tipos de Reservatório (tabela TIPO_RESERVATORIO)
+    var tiposReservatorio = [];
+    // Tipos de Fluido (ID_PRODUTO)
+    var tiposFluido = [
+        { value: '', text: 'Indiferente' },
+        { value: '1', text: 'Água Tratada' },
+        { value: '3', text: 'Água Bruta' },
+        { value: '2', text: 'Esgoto' }
+    ];
+    // Periodicidade do levantamento do Kpc
+    var periodicidadesKpc = [
+        { value: '', text: 'Indiferente' },
+        { value: '1', text: 'Segundo' },
+        { value: '2', text: 'Minuto' },
+        { value: '3', text: 'Hora' },
+        { value: '4', text: 'Diário' },
+        { value: '5', text: 'Semanal' },
+        { value: '6', text: 'Mensal' },
+        { value: '7', text: 'Bimestral' },
+        { value: '8', text: 'Semestral' },
+        { value: '9', text: 'Anual' },
+        { value: '10', text: 'Bienal' }
+    ];
+    // Tempo de Operação (Hidrômetro)
+    var temposOperacao = [
+        { value: '', text: 'Indiferente' },
+        { value: '1', text: 'Até 12hs' },
+        { value: '2', text: '24hs' }
+    ];
+
+    <?php
+    // Carrega Tipos de Medidor do banco
+    try {
+        $sqlTM = $pdoSIMP->query("SELECT CD_CHAVE, DS_NOME FROM SIMP.dbo.TIPO_MEDIDOR ORDER BY DS_NOME");
+        $listaTM = $sqlTM->fetchAll(PDO::FETCH_ASSOC);
+        echo "tiposMedidorEquip = [{value:'', text:'Indiferente'},";
+        foreach ($listaTM as $tm) {
+            $nome = addslashes($tm['DS_NOME']);
+            echo "{value:'{$tm['CD_CHAVE']}', text:'{$nome}'},";
+        }
+        echo "];\n";
+    } catch (Exception $e) {
+        echo "tiposMedidorEquip = [{value:'', text:'Indiferente'},{value:'1', text:'Tipo 1'}];\n";
+    }
+
+    // Carrega Tipos de Reservatório do banco
+    try {
+        $sqlTR = $pdoSIMP->query("SELECT CD_CHAVE, NOME FROM SIMP.dbo.TIPO_RESERVATORIO ORDER BY NOME");
+        $listaTR = $sqlTR->fetchAll(PDO::FETCH_ASSOC);
+        echo "tiposReservatorio = [{value:'', text:'Selecione...'},";
+        foreach ($listaTR as $tr) {
+            $nome = addslashes($tr['NOME']);
+            echo "{value:'{$tr['CD_CHAVE']}', text:'{$nome}'},";
+        }
+        echo "];\n";
+    } catch (Exception $e) {
+        echo "tiposReservatorio = [{value:'', text:'Selecione...'}];\n";
+    }
+    ?>
+    // Carrega Estações Pitométricas (Pontos de Medição tipo EP)
+    var estacoesDisponiveis = [];
+    <?php
+    try {
+        $sqlEP = $pdoSIMP->query("
+                SELECT PM.CD_PONTO_MEDICAO, PM.DS_NOME, L.DS_NOME AS DS_LOCALIDADE
+                FROM SIMP.dbo.PONTO_MEDICAO PM
+                LEFT JOIN SIMP.dbo.LOCALIDADE L ON PM.CD_LOCALIDADE = L.CD_CHAVE
+                WHERE PM.ID_TIPO_MEDIDOR = 2
+                  AND PM.DT_DESATIVACAO IS NULL
+                ORDER BY PM.DS_NOME
+            ");
+        $listaEP = $sqlEP->fetchAll(PDO::FETCH_ASSOC);
+        echo "estacoesDisponiveis = [{value:'', text:'Indiferente'},";
+        foreach ($listaEP as $ep) {
+            $nome = addslashes(trim($ep['DS_NOME']));
+            $loc = addslashes(trim($ep['DS_LOCALIDADE'] ?? ''));
+            $label = $ep['CD_PONTO_MEDICAO'] . ' - ' . $nome . ($loc ? ' (' . $loc . ')' : '');
+            echo "{value:'{$ep['CD_PONTO_MEDICAO']}', text:'{$label}'},";
+        }
+        echo "];\n";
+    } catch (Exception $e) {
+        echo "estacoesDisponiveis = [{value:'', text:'Indiferente'}];\n";
+    }
+    ?>
+
+</script>
+
 <script>
     // ============================================
     // Choices.js Inicialização
@@ -3058,7 +3202,7 @@ $tiposCalculo = [
     const choicesInstances = {};
 
     function initChoices() {
-        document.querySelectorAll('.choices-select').forEach(function(select) {
+        document.querySelectorAll('.choices-select').forEach(function (select) {
             if (choicesInstances[select.id]) {
                 return; // Já inicializado
             }
@@ -3104,7 +3248,7 @@ $tiposCalculo = [
     }
 
     // Inicializar quando DOM estiver pronto
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         initChoices();
     });
 </script>
