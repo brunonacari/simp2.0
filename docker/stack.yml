@@ -90,17 +90,6 @@ services:
   #         memory: 1024M
 
 # ============================================
-# Volumes
-# ============================================
-volumes:
-  tensorflow_models:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: addr=nfs.cesan.com.br,rw,nfsvers=4
-      device: ":/api-edocs-php/files/modelos_treinados"
-
-# ============================================
 # Networks
 # ============================================
 networks:
