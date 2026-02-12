@@ -4445,7 +4445,7 @@ $letrasTipoMedidor = [
                         if (dadoAtual && dadoAtual.media !== null) {
                             valorAtualTexto = parseFloat(dadoAtual.media).toFixed(2);
                         }
-                    }
+                    } 
 
                     // Cor da confiança
                     let corConfianca = '#dc2626'; // baixa
