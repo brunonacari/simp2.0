@@ -1,3 +1,9 @@
+# ============================================
+# SIMP 2.0 - Stack de Produção
+# ============================================
+# Deploy: docker stack deploy -c stack.yml simp20-php
+# ============================================
+
 services:
   simp20-php:
     image: "${DOCKER_IMAGE_TAG}"
@@ -9,6 +15,7 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
+      - TENSORFLOW_URL=http://simp20-tensorflow:5000
       - http_proxy=http://cntlm:3128/
       - https_proxy=http://cntlm:3128/
       - HTTP_PROXY=http://cntlm:3128/
@@ -26,7 +33,38 @@ services:
         limits:
           cpus: '2'
           memory: 4192M
- 
+
+  simp20-tensorflow:
+    image: "registry.cesan.com.br/cesan/simp20-tensorflow:0.0.7"
+    labels:
+      - "br.com.cesan.app=${CI_PROJECT_NAME}"
+      - "io.portainer.accesscontrol.teams=adm"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - FINDESLAB_HOST=${FINDESLAB_HOST}
+      - FINDESLAB_DB=FINDESLAB
+      - PORT=5000
+      - FLASK_ENV=production
+      - MODELS_DIR=/app/models
+      - http_proxy=http://cntlm:3128/
+      - https_proxy=http://cntlm:3128/
+      - HTTP_PROXY=http://cntlm:3128/
+      - HTTPS_PROXY=http://cntlm:3128/
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - tensorflow_models:/app/models
+    networks:
+      - cntlm
+    deploy:
+      mode: replicated
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4096M
+
   # cronjob:
   #   image: registry.cesan.com.br/library/curlimages/curl:8.8.0
   #   labels:
@@ -36,20 +74,35 @@ services:
   #     - /etc/localtime:/etc/localtime:ro
   #   networks:
   #     - frontend
-    # command: "http://simp20-php/api.php"
-    # deploy:
-    #   mode: replicated
-    #   replicas: 0
-    #   restart_policy:
-    #     condition: none
-    #   labels:
-    #     - "swarm.cronjob.enable=true"
-    #     - "swarm.cronjob.schedule=${CRONJOB_SCHEDULE}"
-    #     - "swarm.cronjob.skip-running=false"
-      # resources:
-      #   limits:
-      #     cpus: '2'
-      #     memory: 1024M
+  #   command: "http://simp20-php/api.php"
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 0
+  #     restart_policy:
+  #       condition: none
+  #     labels:
+  #       - "swarm.cronjob.enable=true"
+  #       - "swarm.cronjob.schedule=${CRONJOB_SCHEDULE}"
+  #       - "swarm.cronjob.skip-running=false"
+  #     resources:
+  #       limits:
+  #         cpus: '2'
+  #         memory: 1024M
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  tensorflow_models:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs.cesan.com.br,rw,nfsvers=4
+      device: ":/simp20-php/files/modelos_treinados"
+
+# ============================================
+# Networks
+# ============================================
 networks:
   cntlm:
     name: backing-services_cntlm

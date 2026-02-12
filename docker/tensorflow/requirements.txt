@@ -1,0 +1,24 @@
+# SIMP - Microserviço de Predição v5.0
+# XGBoost como modelo principal (leve, rápido)
+
+# Web framework
+flask==3.0.0
+gunicorn==21.2.0
+
+# XGBoost - modelo principal v5.0
+xgboost==2.0.3
+
+# Dados e cálculos
+numpy==1.24.3
+pandas==2.0.3
+scikit-learn==1.3.2
+
+# Banco de dados
+pyodbc==5.0.1
+
+# Variáveis de ambiente
+python-dotenv==1.0.0
+
+# TensorFlow - OPCIONAL, apenas para compatibilidade com modelos LSTM legados (v1-v4)
+# Descomente a linha abaixo se precisar rodar modelos LSTM antigos
+# tensorflow-cpu==2.13.1

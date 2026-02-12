@@ -24,6 +24,19 @@ docker stack rm simp20-php
 SUBIR O CONTAINER
 docker stack deploy --with-registry-auth -c docker/stackdev.yml $CI_PROJECT_NAME
 
+```
+<!-- container PYTHON necessário para testes do TENSORFLOW -->
+# 1. Build do container
+```
+source docker/.env
+docker build -f docker/Dockerfile.tensorflow -t registry.cesan.com.br/cesan/simp20-tensorflow:0.0.1 .
+docker push registry.cesan.com.br/cesan/simp20-tensorflow:0.0.1
+
+# 2. Adicionar trechos nos stack.yml (ver arquivos _adicionar.yml)
+# 3. Adicionar TENSORFLOW_URL=http://simp20-tensorflow:5000 no env do simp20-php
+# 4. Redeploy
+docker stack deploy --with-registry-auth -c docker/stack.yml simp20-php
+
 
 
 ```

@@ -1,0 +1,59 @@
+# ============================================
+# SIMP - Microserviço TensorFlow
+# Container Python para predição e detecção de anomalias
+# em dados de macromedição de água
+#
+# Build:
+#   docker build -f docker/Dockerfile.tensorflow -t registry.cesan.com.br/cesan/simp20-tensorflow:0.0.1 .
+#
+# Run standalone (dev):
+#   docker run -p 5000:5000 --env-file docker/.env.tensorflow registry.cesan.com.br/cesan/simp20-tensorflow:0.0.1
+# ============================================
+
+FROM python:3.10-slim
+
+LABEL maintainer="Bruno - CESAN"
+LABEL description="SIMP TensorFlow - Predição e Detecção de Anomalias"
+
+# Variáveis de ambiente padrão
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    TF_CPP_MIN_LOG_LEVEL=2 \
+    FLASK_ENV=production
+
+WORKDIR /app
+
+# Instalar dependências do sistema (driver ODBC para SQL Server)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        gnupg2 \
+        unixodbc-dev \
+        gcc \
+        g++ \
+    && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
+    && curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements e instalar dependências Python
+COPY docker/tensorflow/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar código da aplicação
+COPY docker/tensorflow/app/ ./app/
+
+# Diretório para modelos treinados (persistente via volume)
+RUN mkdir -p /app/models
+
+# Porta da API
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+# Executar com gunicorn em produção
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "app.main:app"]

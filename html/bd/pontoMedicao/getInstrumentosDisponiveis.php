@@ -167,7 +167,7 @@ try {
         $label = $inst['DS_DESCRICAO'] ?: ('CD:' . $inst['CD_CHAVE']);
 
         // Se já está vinculado a outro ponto, indica no label
-        if ($inst['CD_PONTO_MEDICAO'] && $inst['CD_PONTO_MEDICAO'] != $cdPontoMedicao) {
+        if ($inst['CD_PONTO_MEDICAO'] && $inst['CD_PONTO_MEDICAO'] != 0 && $inst['CD_PONTO_MEDICAO'] != $cdPontoMedicao) {
             $label .= ' ⚠️ Vinculado: ' . $inst['DS_PONTO_VINCULADO'];
         }
 

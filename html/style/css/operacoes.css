@@ -1910,6 +1910,8 @@ input[type="date"].form-control {
     background: #8b5cf6;
 }
 
+.controle-cor.tensorflow { background: #ef4444; }
+
 .grafico-controle-item .controle-label {
     font-size: 12px;
     color: #334155;

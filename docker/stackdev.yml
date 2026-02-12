@@ -10,11 +10,10 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
-
+      - TENSORFLOW_URL=http://simp20-tensorflow:5000
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ../html:/var/www/html
-      # - /nfs/swarm/api-edocs-php/historico:/var/www/html/uploads
     networks:
       - cntlm
     ports:
@@ -24,6 +23,35 @@ services:
         limits:
           cpus: '2'
           memory: 4192M
+
+  simp20-tensorflow:
+    image: "registry.cesan.com.br/cesan/simp20-tensorflow:0.0.7"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - FINDESLAB_HOST=sgbd-dev-simp.sistemas.cesan.com.br\corporativo
+      - FINDESLAB_DB=FINDESLAB
+      - PORT=5000
+      - FLASK_ENV=development
+      - MODELS_DIR=/app/models
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /home/cesan/simp2.0/modelos_treinados:/app/models
+    networks:
+      - cntlm
+    ports:
+      - 5000:5000
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4096M
+
+volumes:
+  tensorflow_models_dev:
+    driver: local
 
 networks:
   cntlm:

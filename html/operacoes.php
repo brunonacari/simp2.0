@@ -490,6 +490,11 @@ $letrasTipoMedidor = [
                         <span class="controle-cor mini-quad"></span>
                         <span class="controle-label">Mín. Quadrados</span>
                     </label>
+                    <label class="grafico-controle-item" id="controleTensorFlow" style="display:none;">
+                        <input type="checkbox" id="chkTensorFlow" checked onchange="toggleLinhaGrafico('tensorflow')">
+                        <span class="controle-cor" style="background:#ef4444;"></span>
+                        <span class="controle-label">TensorFlow</span>
+                    </label>
                 </div>
 
                 <!-- Gráfico Error Bar Chart -->
@@ -2738,6 +2743,7 @@ $letrasTipoMedidor = [
                 // Limpar dados
                 validacaoDadosAtuais = null;
                 dadosEstimativasRede = null;
+                dadosTensorFlow = null;
                 validacaoHorasSelecionadas = [];
 
                 // Fechar área de valores sugeridos
@@ -3053,8 +3059,7 @@ $letrasTipoMedidor = [
                 let valoresTendenciaRede = new Array(24).fill(null);
                 let valoresProporcao = new Array(24).fill(null);
                 let valoresMiniQuad = new Array(24).fill(null);
-
-
+                let valoresTensorFlow = new Array(24).fill(null);
 
                 // Mapear dados por hora para acesso rápido
                 const horasMap = {};
@@ -3165,6 +3170,16 @@ $letrasTipoMedidor = [
                         if (est.minimos_quadrados && est.minimos_quadrados[h] !== null) {
                             valoresMiniQuad[h] = est.minimos_quadrados[h];
                         }
+                    }
+
+                    // Dados TensorFlow (se disponíveis)
+                    if (dadosTensorFlow && dadosTensorFlow.predicoes) {
+                        dadosTensorFlow.predicoes.forEach(pred => {
+                            const h = parseInt(pred.hora);
+                            if (h >= 0 && h < 24 && pred.valor_predito !== null) {
+                                valoresTensorFlow[h] = parseFloat(pred.valor_predito);
+                            }
+                        });
                     }
                 }
 
@@ -3379,6 +3394,22 @@ $letrasTipoMedidor = [
                                 tension: 0.3,
                                 fill: false,
                                 hidden: false
+                            }] : []),
+
+                            // Dataset: TensorFlow LSTM (vermelho, losango)
+                            ...(valoresTensorFlow.some(v => v !== null) && graficoControlesEstado.tensorflow !== false ? [{
+                                label: 'TensorFlow',
+                                data: valoresTensorFlow,
+                                borderColor: '#ef4444',
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                borderWidth: 2,
+                                borderDash: [2, 2],
+                                pointStyle: 'rectRot',
+                                pointRadius: 6,
+                                pointHoverRadius: 8,
+                                tension: 0.3,
+                                fill: false,
+                                hidden: false
                             }] : [])
                         ]
                     },
@@ -3522,6 +3553,10 @@ $letrasTipoMedidor = [
                 if (ctrlProp) ctrlProp.style.display = temProporcao ? '' : 'none';
                 if (ctrlMiniQ) ctrlMiniQ.style.display = temMiniQuad ? '' : 'none';
 
+                const temTensorFlow = valoresTensorFlow.some(v => v !== null);
+                const ctrlTF = document.getElementById('controleTensorFlow');
+                if (ctrlTF) ctrlTF.style.display = temTensorFlow ? '' : 'none';
+
                 // Atualizar botão toggle global das estimativas
                 atualizarVisibilidadeBtnEstimativas();
 
@@ -3548,6 +3583,9 @@ $letrasTipoMedidor = [
                 if (chkProporcao) chkProporcao.checked = true;
                 if (chkMiniQuad) chkMiniQuad.checked = true;
 
+                const chkTensorFlow = document.getElementById('chkTensorFlow');
+                if (chkTensorFlow) chkTensorFlow.checked = true;
+
                 // Resetar estado dos controles
                 graficoControlesEstado = {
                     principal: true,
@@ -3558,7 +3596,8 @@ $letrasTipoMedidor = [
                     interpolacao: true,
                     tendencia_rede: true,
                     proporcao: true,
-                    minimos_quadrados: true
+                    minimos_quadrados: true,
+                    tensorflow: true
                 };
                 errorBarsPluginAtivo = true;
             }
@@ -3598,18 +3637,20 @@ $letrasTipoMedidor = [
                     if (datasetIndex > -1) {
                         validacaoGrafico.data.datasets[datasetIndex].hidden = !graficoControlesEstado.historiador;
                     }
-                } else if (tipo === 'interpolacao' || tipo === 'tendencia_rede' || tipo === 'proporcao' || tipo === 'minimos_quadrados') {
+                } else if (tipo === 'interpolacao' || tipo === 'tendencia_rede' || tipo === 'proporcao' || tipo === 'minimos_quadrados' || tipo === 'tensorflow') {
                     const labelMapRede = {
                         'interpolacao': 'Interpolação',
                         'tendencia_rede': 'Tendência Rede',
                         'proporcao': 'Proporção Hist.',
-                        'minimos_quadrados': 'Mín. Quadrados'
+                        'minimos_quadrados': 'Mín. Quadrados',
+                        'tensorflow': 'TensorFlow'
                     };
                     const checkboxMapRede = {
                         'interpolacao': 'chkInterpolacao',
                         'tendencia_rede': 'chkTendenciaRede',
                         'proporcao': 'chkProporcao',
-                        'minimos_quadrados': 'chkMiniQuad'
+                        'minimos_quadrados': 'chkMiniQuad',
+                        'tensorflow': 'chkTensorFlow'
                     };
                     const datasetIdxRede = validacaoGrafico.data.datasets.findIndex(
                         ds => ds.label === labelMapRede[tipo]
@@ -3814,6 +3855,7 @@ $letrasTipoMedidor = [
 
             let valoresSugeridosAtual = []; // Armazena valores sugeridos para aplicar
             let dadosEstimativasRede = null; // Armazena estimativas da rede (interpolação, balanço, proporção)
+            let dadosTensorFlow = null; // Dados da predição TensorFlow (LSTM)
 
             /**
              * Carrega dados históricos da IA automaticamente ao abrir modal
@@ -4022,6 +4064,15 @@ $letrasTipoMedidor = [
                     }
                 }
 
+                // 6) TensorFlow (LSTM) - Predição via microserviço
+                metodosDisponiveis.push({
+                    id: 'tensorflow',
+                    nome: 'TensorFlow (LSTM)',
+                    icone: 'hardware-chip-outline',
+                    cor: '#ef4444',
+                    desc: 'Predição por rede neural LSTM treinada com histórico do ponto (mais preciso)'
+                });
+
                 // Se nenhum método tem dados, tentar carregar dados da IA primeiro
                 if (metodosDisponiveis.length === 0) {
                     // Tentar carregar dados históricos da IA
@@ -4135,6 +4186,9 @@ $letrasTipoMedidor = [
                 if (metodoId === 'historico') {
                     // Método original: Histórico + Tendência (IA)
                     exibirValoresSugeridos(horasSelecionadas);
+                } else if (metodoId === 'tensorflow') {
+                    // Método TensorFlow: chamada ao microserviço
+                    buscarPredicaoTensorFlow(horasSelecionadas);
                 } else {
                     // Métodos de rede: interpolacao, tendencia_rede, proporcao, minimos_quadrados
                     exibirValoresSugeridosRede(horasSelecionadas, metodoId);
@@ -4236,68 +4290,153 @@ $letrasTipoMedidor = [
             }
 
             /**
-             * Exibe valores sugeridos a partir de um método de estimativa de rede.
-             * Preenche a tabela com os valores do método selecionado e armazena
-             * em valoresSugeridosAtual para aplicação posterior.
-             * 
+             * Busca predição de valores via microserviço TensorFlow (LSTM).
+             * Chama o endpoint predicaoTensorFlow.php que faz ponte com o container Python.
+             * Exibe resultados na mesma tabela de valores sugeridos.
+             *
              * @param {Array} horasSelecionadas - Array de horas (0-23) selecionadas
-             * @param {string} metodoId - ID do método: 'interpolacao', 'tendencia_rede', 'proporcao', 'minimos_quadrados'
              */
-            function exibirValoresSugeridosRede(horasSelecionadas, metodoId) {
+            function buscarPredicaoTensorFlow(horasSelecionadas) {
                 const container = document.getElementById('valoresSugeridosContainer');
                 const tbody = document.getElementById('valoresSugeridosBody');
                 const info = document.getElementById('valoresSugeridosInfo');
 
-                // Validar dados de rede disponíveis
-                if (!dadosEstimativasRede || !dadosEstimativasRede.estimativas) {
-                    showToast('Dados de estimativa de rede não disponíveis', 'erro');
-                    return;
+                // Mostrar loading
+                info.innerHTML = `
+                    <span style="display:inline-flex;align-items:center;gap:6px;">
+                        <ion-icon name="hardware-chip-outline" style="color:#ef4444;font-size:16px;"></ion-icon>
+                        <strong style="color:#ef4444;">TensorFlow (LSTM)</strong>
+                    </span>
+                    <span style="color:#64748b;font-size:12px;margin-left:8px;">
+                        Consultando modelo...
+                    </span>
+                `;
+                tbody.innerHTML = `
+                    <tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b;">
+                        <ion-icon name="sync-outline" style="animation:spin 1s linear infinite;font-size:20px;"></ion-icon>
+                        <br>Buscando predição via TensorFlow...
+                    </td></tr>
+                `;
+                container.style.display = 'block';
+
+                // Ocultar botões enquanto carrega
+                const btnAplicar = document.querySelector('.btn-aplicar-sugeridos');
+                const btnCancelar = document.querySelector('.btn-cancelar-sugeridos');
+                if (btnAplicar) btnAplicar.style.display = 'none';
+                if (btnCancelar) btnCancelar.style.display = 'none';
+
+                // Chamar endpoint PHP que faz ponte com o container TensorFlow
+                fetch('bd/operacoes/predicaoTensorFlow.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        acao: 'predict',
+                        cd_ponto: validacaoPontoAtual,
+                        data: validacaoDataAtual,
+                        horas: horasSelecionadas,
+                        tipo_medidor: validacaoTipoMedidorAtual || 1,
+                        semanas_historico: 12
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.success) {
+                            // Se TensorFlow offline ou sem modelo, informar e oferecer fallback
+                            const msgErro = data.tensorflow_offline
+                                ? 'Serviço TensorFlow indisponível. Use outro método.'
+                                : (data.error || 'Erro desconhecido');
+
+                            tbody.innerHTML = `
+                            <tr><td colspan="5" style="text-align:center;padding:16px;color:#dc2626;">
+                                <ion-icon name="alert-circle-outline" style="font-size:20px;"></ion-icon>
+                                <br>${msgErro}
+                                ${data.fallback ? `<br><small style="color:#64748b;">${data.fallback}</small>` : ''}
+                                <br><br>
+                                <button type="button" onclick="buscarValoresSugeridos()"
+                                    style="padding:6px 14px;border:1px solid #e2e8f0;border-radius:6px;background:white;cursor:pointer;font-size:12px;">
+                                    <ion-icon name="arrow-back-outline"></ion-icon> Voltar aos métodos
+                                </button>
+                            </td></tr>
+                        `;
+                            return;
+                        }
+
+                        // Sucesso - exibir predições na tabela
+                        exibirResultadoTensorFlow(data, horasSelecionadas);
+                    })
+                    .catch(error => {
+                        tbody.innerHTML = `
+                        <tr><td colspan="5" style="text-align:center;padding:16px;color:#dc2626;">
+                            <ion-icon name="alert-circle-outline" style="font-size:20px;"></ion-icon>
+                            <br>Erro de conexão com TensorFlow: ${error.message}
+                            <br><br>
+                            <button type="button" onclick="buscarValoresSugeridos()"
+                                style="padding:6px 14px;border:1px solid #e2e8f0;border-radius:6px;background:white;cursor:pointer;font-size:12px;">
+                                <ion-icon name="arrow-back-outline"></ion-icon> Voltar aos métodos
+                            </button>
+                        </td></tr>
+                    `;
+                    });
+            }
+
+            /**
+             * Exibe o resultado da predição TensorFlow na tabela de valores sugeridos.
+             * Formato idêntico ao dos outros métodos para manter consistência visual.
+             *
+             * @param {Object} data - Resposta do endpoint TensorFlow (predicoes, formula, metricas)
+             * @param {Array} horasSelecionadas - Horas selecionadas
+             */
+            function exibirResultadoTensorFlow(data, horasSelecionadas) {
+                const tbody = document.getElementById('valoresSugeridosBody');
+                const info = document.getElementById('valoresSugeridosInfo');
+                const unidade = validacaoUnidadeAtual || 'L/s';
+
+                // Armazenar dados globalmente para o gráfico
+                dadosTensorFlow = data;
+
+                // Mostrar controle no gráfico
+                const ctrlTF = document.getElementById('controleTensorFlow');
+                if (ctrlTF) ctrlTF.style.display = '';
+
+                // Re-renderizar gráfico com linha TensorFlow
+                if (validacaoDadosAtuais) {
+                    renderizarGraficoValidacao(validacaoDadosAtuais.dados, validacaoDadosAtuais.unidade);
                 }
 
-                // Mapa de nomes e cores por método
-                const metodoConfig = {
-                    'interpolacao': { nome: 'Interpolação Linear', cor: '#8b5cf6', icone: 'trending-up-outline' },
-                    'tendencia_rede': { nome: 'Tendência da Rede', cor: '#14b8a6', icone: 'git-network-outline' },
-                    'proporcao': { nome: 'Proporção Histórica', cor: '#d946ef', icone: 'pie-chart-outline' },
-                    'minimos_quadrados': { nome: 'Mínimos Quadrados', cor: '#f59e0b', icone: 'calculator-outline' }
-                };
+                // Atualizar cabeçalho com info do modelo
+                const modelo = data.modelo === 'xgboost' ? 'XGBoost v5.0'
+                    : data.modelo === 'lstm' ? 'LSTM treinado'
+                        : 'Estatístico (fallback)'; const metricas = data.metricas || {};
+                const metricaTexto = metricas.mae
+                    ? `MAE: ${metricas.mae} | RMSE: ${metricas.rmse}`
+                    : (metricas.metodo || '');
 
-                const config = metodoConfig[metodoId] || { nome: metodoId, cor: '#64748b', icone: 'help-outline' };
-                const valoresMetodo = dadosEstimativasRede.estimativas[metodoId] || [];
-
-                // Informações da rede (metadados)
-                const metadados = dadosEstimativasRede.metadados || {};
-                const totalPontos = metadados.total_pontos_rede || 0;
-
-                // Atualizar cabeçalho com nome do método e info da rede
                 info.innerHTML = `
-            <span style="display:inline-flex;align-items:center;gap:6px;">
-                <ion-icon name="${config.icone}" style="color:${config.cor};font-size:16px;"></ion-icon>
-                <strong style="color:${config.cor};">${config.nome}</strong>
-            </span>
-            <span style="color:#64748b;font-size:12px;margin-left:8px;">
-                ${totalPontos > 0 ? totalPontos + ' pontos na rede' : ''}
-            </span>
-            <button type="button" onclick="buscarValoresSugeridos()" 
-                    style="margin-left:auto;background:none;border:1px solid #cbd5e1;border-radius:6px;padding:2px 10px;font-size:12px;color:#64748b;cursor:pointer;"
-                    title="Voltar para seleção de método">
-                <ion-icon name="arrow-back-outline"></ion-icon> Trocar método
-            </button>
-        `;
+                    <span style="display:inline-flex;align-items:center;gap:6px;">
+                        <ion-icon name="hardware-chip-outline" style="color:#ef4444;font-size:16px;"></ion-icon>
+                        <strong style="color:#ef4444;">TensorFlow - ${modelo}</strong>
+                    </span>
+                    <span style="color:#64748b;font-size:12px;margin-left:8px;">
+                        ${metricaTexto}
+                    </span>
+                    <button type="button" onclick="buscarValoresSugeridos()"
+                        style="margin-left:auto;background:none;border:1px solid #cbd5e1;border-radius:6px;padding:2px 10px;font-size:12px;color:#64748b;cursor:pointer;"
+                        title="Voltar para seleção de método">
+                        <ion-icon name="arrow-back-outline"></ion-icon> Trocar método
+                    </button>
+                `;
 
-                // Limpar tabela e valores
+                // Limpar e preencher tabela
                 tbody.innerHTML = '';
                 valoresSugeridosAtual = [];
 
-                // Ordenar horas
-                horasSelecionadas.sort((a, b) => a - b);
+                const predicoes = data.predicoes || [];
 
-                // Unidade de medida
-                const unidade = validacaoUnidadeAtual || 'L/s';
-
-                // Preencher tabela com valores do método
-                horasSelecionadas.forEach(hora => {
-                    const valorEstimado = valoresMetodo[hora];
+                predicoes.forEach(pred => {
+                    const hora = pred.hora;
+                    const valorPredito = parseFloat(pred.valor_predito);
+                    const confianca = parseFloat(pred.confianca || 0);
+                    const metodo = pred.metodo || 'lstm';
 
                     // Buscar valor atual da hora
                     let valorAtualTexto = '-';
@@ -4308,53 +4447,59 @@ $letrasTipoMedidor = [
                         }
                     }
 
-                    if (valorEstimado !== null && valorEstimado !== undefined) {
-                        const valorNum = parseFloat(valorEstimado);
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                    <td><strong>${String(hora).padStart(2, '0')}:00</strong></td>
-                    <td>${valorAtualTexto} ${unidade}</td>
-                    <td colspan="2" style="color:${config.cor};font-weight:500;">
-                        <ion-icon name="${config.icone}" style="font-size:12px;vertical-align:middle;"></ion-icon>
-                        ${config.nome}
-                    </td>
-                    <td class="valor-sugerido" style="color:${config.cor};font-weight:600;">
-                        ${valorNum.toFixed(2)} ${unidade}
-                    </td>
-                `;
-                        tbody.appendChild(tr);
+                    // Cor da confiança
+                    let corConfianca = '#dc2626'; // baixa
+                    if (confianca >= 0.7) corConfianca = '#16a34a'; // alta
+                    else if (confianca >= 0.4) corConfianca = '#f59e0b'; // média
 
-                        // Armazenar para aplicar depois
-                        valoresSugeridosAtual.push({
-                            hora: hora,
-                            valor: valorNum
-                        });
-                    } else {
-                        // Hora sem dados para este método
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                    <td><strong>${String(hora).padStart(2, '0')}:00</strong></td>
-                    <td>${valorAtualTexto} ${unidade}</td>
-                    <td colspan="3" style="color:#94a3b8;font-style:italic;">
-                        Sem estimativa disponível para este método
-                    </td>
-                `;
-                        tbody.appendChild(tr);
-                    }
+                    // Ícone do método
+                    const iconeMetodo = (metodo === 'xgboost_correlacao' || metodo === 'lstm') ? 'hardware-chip-outline' : 'analytics-outline';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${String(hora).padStart(2, '0')}:00</strong></td>
+                        <td>${valorAtualTexto} ${unidade}</td>
+                        <td style="color:#ef4444;font-weight:500;">
+                            <ion-icon name="${iconeMetodo}" style="font-size:12px;vertical-align:middle;"></ion-icon>
+                            ${metodo === 'xgboost_correlacao' ? 'XGBoost' : metodo === 'lstm' ? 'LSTM' : 'Estatístico'}
+                        </td>
+                        <td>
+                            <span style="color:${corConfianca};font-weight:600;font-size:12px;">
+                                ${(confianca * 100).toFixed(0)}%
+                            </span>
+                        </td>
+                        <td class="valor-sugerido" style="color:#ef4444;font-weight:600;">
+                            ${valorPredito.toFixed(2)} ${unidade}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    // Armazenar para aplicação
+                    valoresSugeridosAtual.push({
+                        hora: hora,
+                        valor: valorPredito
+                    });
                 });
 
-                // Mostrar container
-                container.style.display = 'block';
+                // Mostrar botões de ação
+                const btnAplicar = document.querySelector('.btn-aplicar-sugeridos');
+                const btnCancelar = document.querySelector('.btn-cancelar-sugeridos');
+                if (btnAplicar) { btnAplicar.style.display = ''; btnAplicar.disabled = false; }
+                if (btnCancelar) { btnCancelar.style.display = ''; btnCancelar.disabled = false; }
 
-                // Scroll para o container
-                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-                if (valoresSugeridosAtual.length === 0) {
-                    showToast('Nenhuma hora com estimativa disponível por este método', 'aviso');
-                } else {
-                    showToast(`${valoresSugeridosAtual.length} valor(es) estimado(s) por ${config.nome}`, 'info');
+                // Se tem fórmula, exibir
+                if (data.formula) {
+                    const formulaRow = document.createElement('tr');
+                    formulaRow.innerHTML = `
+                        <td colspan="5" style="font-size:11px;color:#64748b;padding:8px 12px;border-top:2px solid #fde68a;">
+                            <ion-icon name="code-outline" style="vertical-align:middle;"></ion-icon>
+                            <strong>Fórmula:</strong> ${data.formula}
+                        </td>
+                    `;
+                    tbody.appendChild(formulaRow);
                 }
             }
+
 
             /**
              * Aplica os valores sugeridos
@@ -6799,12 +6944,9 @@ $letrasTipoMedidor = [
                 // Inverter estado global
                 estimativasRedeVisiveis = !estimativasRedeVisiveis;
 
-                // Labels dos 5 datasets de estimativa (inclui Valores Sugeridos = Histórico + Tendência IA)
-                const labelsEstimativas = ['Valores Sugeridos', 'Interpolação', 'Tendência Rede', 'Proporção Hist.', 'Mín. Quadrados'];
-                // Chaves dos checkboxes correspondentes
-                const checkboxIds = ['chkValoresSugeridos', 'chkInterpolacao', 'chkTendenciaRede', 'chkProporcao', 'chkMiniQuad'];
-                // Chaves do estado
-                const estadoKeys = ['sugeridos', 'interpolacao', 'tendencia_rede', 'proporcao', 'minimos_quadrados'];
+                const labelsEstimativas = ['Valores Sugeridos', 'Interpolação', 'Tendência Rede', 'Proporção Hist.', 'Mín. Quadrados', 'TensorFlow'];
+                const checkboxIds = ['chkValoresSugeridos', 'chkInterpolacao', 'chkTendenciaRede', 'chkProporcao', 'chkMiniQuad', 'chkTensorFlow'];
+                const estadoKeys = ['sugeridos', 'interpolacao', 'tendencia_rede', 'proporcao', 'minimos_quadrados', 'tensorflow'];
 
                 labelsEstimativas.forEach((label, i) => {
                     // Atualizar dataset no gráfico
@@ -6854,7 +6996,7 @@ $letrasTipoMedidor = [
              * Chamar após renderizar o gráfico e configurar controles de estimativa
              */
             function atualizarVisibilidadeBtnEstimativas() {
-                const temAlguma = ['controleValoresSugeridos', 'controleInterpolacao', 'controleTendenciaRede', 'controleProporcao', 'controleMiniQuad'].some(id => {
+                const temAlguma = ['controleValoresSugeridos', 'controleInterpolacao', 'controleTendenciaRede', 'controleProporcao', 'controleMiniQuad', 'controleTensorFlow'].some(id => {
                     const el = document.getElementById(id);
                     return el && el.style.display !== 'none';
                 });
@@ -6871,4 +7013,3 @@ $letrasTipoMedidor = [
         </script>
 
         <?php include_once 'includes/footer.inc.php'; ?>
-        
