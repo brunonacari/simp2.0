@@ -335,10 +335,17 @@ function chamarTensorFlow(string $url, string $method = 'POST', ?array $data = n
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => $timeout,
         CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Cache-Control: no-cache, no-store',
+            'Pragma: no-cache'
+        ],
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => 0,
-        CURLOPT_PROXY => ''  // Bypass proxy para chamadas internas ao container TensorFlow
+        CURLOPT_PROXY => '',
+        CURLOPT_NOPROXY => '*',
+        CURLOPT_FRESH_CONNECT => true,
+        CURLOPT_FORBID_REUSE => true
     ];
     
     if ($method === 'POST' && $data !== null) {
