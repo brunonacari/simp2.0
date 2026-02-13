@@ -83,10 +83,17 @@ https://portainer-swarm.sistemas.cesan.com.br/#!/7/docker/stacks
 ```
 ACESSAR A PASTA ONDE SALVO OS ARQUIVOS JSON
 ```
-https://nfs.cesan.com.br/simp20-php/files/uploads/
+https://nfs.cesan.com.br/simp20-php
 usuário: cesan
 senha: a6BLRCPJ2yefub
 
+https://hom-nfs.cesan.com.br/simp20-php
+usuário: cesan
+senha: a6BLRCPJ2yefub
+
+https://devnfs.cesan.com.br/simp20-php
+usuário: cesan
+senha: a6BLRCPJ2yefub
 
 ```
 ACESSAR O LINK DO DEEPSEEK QUE CONTROLA CRÉDITOS DA IA
