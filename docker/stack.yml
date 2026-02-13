@@ -59,7 +59,7 @@ services:
       - NO_PROXY=localhost,127.0.0.1
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /nfs/swarm/simp20-php/modelos_treinados:/app/models
+      - /nfs/swarm/simp20-php/files/modelos_treinados:/app/models
     networks:
       - cntlm
     deploy:
