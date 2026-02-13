@@ -28,7 +28,7 @@ services:
       - 9461:80
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - modelos_treinados:/var/www/html/modelos_treinados
+      - /nfs/swarm/simp20-php/modelos_treinados:/var/www/html/modelos_treinados
     deploy:
       mode: replicated
       resources:
@@ -58,7 +58,7 @@ services:
       - no_proxy=localhost,127.0.0.1
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - modelos_treinados:/app/models
+      - /nfs/swarm/simp20-php/modelos_treinados:/app/models
     networks:
       - cntlm
     deploy:
@@ -68,11 +68,6 @@ services:
           cpus: '2'
           memory: 4096M
 
-# ============================================
-# Volumes
-# ============================================
-volumes:
-  modelos_treinados:
 
 # ============================================
 # Networks
