@@ -36,6 +36,8 @@ services:
       - PORT=5000
       - FLASK_ENV=development
       - MODELS_DIR=/app/models
+      - no_proxy=localhost,127.0.0.1
+      - NO_PROXY=localhost,127.0.0.1
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /home/cesan/simp2.0/modelos_treinados:/app/models

@@ -96,6 +96,7 @@ usuário: cesan
 senha: a6BLRCPJ2yefub
 
 
+
 ```
 ACESSAR O LINK DO DEEPSEEK QUE CONTROLA CRÉDITOS DA IA
 ```
