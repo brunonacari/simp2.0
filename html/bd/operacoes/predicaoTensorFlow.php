@@ -135,6 +135,14 @@ try {
                 $timeoutPadrao
             );
             
+            // DEBUG TEMPORÁRIO - remover depois
+            $resposta['_debug'] = [
+                'url_chamada' => $tensorflowUrl . '/api/predict',
+                'payload' => $payload,
+                'proxy_env' => getenv('http_proxy'),
+                'curl_response_raw' => isset($response) ? substr($response, 0, 200) : 'N/A'
+            ];
+            
             retornarJSON_TF($resposta);
             break;
         
