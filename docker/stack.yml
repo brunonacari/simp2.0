@@ -55,7 +55,7 @@ services:
       - HTTPS_PROXY=http://cntlm:3128/
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - tensorflow_models:/app/models
+      - /nfs/swarm/simp20-php/modelos_treinados:/app/models
     networks:
       - cntlm
     deploy:

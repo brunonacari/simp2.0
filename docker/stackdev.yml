@@ -25,7 +25,7 @@ services:
           memory: 4192M
 
   simp20-tensorflow:
-    image: "registry.cesan.com.br/cesan/simp20-tensorflow:0.0.7"
+    image: "registry.cesan.com.br/cesan/simp20-tensorflow:0.0.8"
     environment:
       - DB_HOST=${DB_HOST}
       - DB_NAME=${DB_NAME}
@@ -38,7 +38,7 @@ services:
       - MODELS_DIR=/app/models
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /home/cesan/simp2.0/modelos_treinados:/app/models
+      - /var/www/modelos_treinados:/app/models
     networks:
       - cntlm
     ports:
@@ -50,8 +50,6 @@ services:
           memory: 4096M
 
 volumes:
-  tensorflow_models_dev:
-    driver: local
 
 networks:
   cntlm:

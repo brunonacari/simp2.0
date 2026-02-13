@@ -69,7 +69,8 @@ def get_findeslab_connection() -> Optional[pyodbc.Connection]:
 
 def buscar_dados_tags_recentes(
     tags: List[str],
-    horas_necessarias: int = 12
+    horas_necessarias: int = 12,
+    data_alvo: str = None
 ) -> Optional[pd.DataFrame]:
     """
     Busca dados horários recentes das tags auxiliares no FINDESLAB.
@@ -90,7 +91,14 @@ def buscar_dados_tags_recentes(
 
     try:
         # Buscar 2x as horas necessárias para cobrir gaps
-        data_inicio = datetime.now() - timedelta(hours=horas_necessarias * 2)
+        if data_alvo:
+            # Buscar dados do dia solicitado (00:00 até 23:59) + horas extras para lags
+            data_ref = datetime.strptime(data_alvo, '%Y-%m-%d')
+            data_inicio = data_ref - timedelta(hours=horas_necessarias)
+            data_fim = data_ref + timedelta(hours=24)
+        else:
+            data_inicio = datetime.now() - timedelta(hours=horas_necessarias * 2)
+            data_fim = None
         tags_sql = ','.join([f"'{t}'" for t in tags])
 
         sql = f"""
@@ -103,6 +111,7 @@ def buscar_dados_tags_recentes(
             WHERE [TagName] IN ({tags_sql})
               AND [Value] IS NOT NULL
               AND [DateTime] >= ?
+              AND ([DateTime] < ? OR ? IS NULL)
             GROUP BY 
                 CAST(CAST([DateTime] AS DATE) AS DATETIME) 
                     + CAST(DATEPART(HOUR, [DateTime]) AS FLOAT) / 24.0,
@@ -111,7 +120,7 @@ def buscar_dados_tags_recentes(
         """
 
         cursor = conn.cursor()
-        cursor.execute(sql, data_inicio)
+        cursor.execute(sql, data_inicio, data_fim, data_fim)
         rows = cursor.fetchall()
         conn.close()
 
