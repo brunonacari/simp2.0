@@ -74,7 +74,7 @@ services:
   #     - /etc/localtime:/etc/localtime:ro
   #   networks:
   #     - frontend
-  #   command: "http://simp20-php/api.php"
+  #   command: "python3 treinar_modelos.py --semanas 52"
   #   deploy:
   #     mode: replicated
   #     replicas: 0
