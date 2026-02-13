@@ -290,7 +290,31 @@ try {
             );
             retornarJSON_TF($resposta);
             break;
-        
+        case 'diagnose':
+            $cdPonto = intval($dados['cd_ponto'] ?? 1396);
+            
+            // 1. Status dos modelos
+            $status = chamarTensorFlow($tensorflowUrl . '/api/model-status', 'GET', null, 10);
+            
+            // 2. Health completo
+            $health = chamarTensorFlow($tensorflowUrl . '/health', 'GET', null, 5);
+            
+            // 3. Predict com detalhes
+            $predict = chamarTensorFlow($tensorflowUrl . '/api/predict', 'POST', [
+                'cd_ponto' => $cdPonto,
+                'data' => date('Y-m-d'),
+                'horas' => [8],
+                'tipo_medidor' => 1
+            ], 30);
+            
+            retornarJSON_TF([
+                'success' => true,
+                'health' => $health,
+                'modelos' => $status,
+                'predict_resultado' => $predict['modelo'] ?? 'erro',
+                'predict_completo' => $predict
+            ]);
+            break;
         // ----------------------------------------
         // Ação desconhecida
         // ----------------------------------------
