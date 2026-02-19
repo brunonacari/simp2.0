@@ -293,18 +293,15 @@ def correlate_points():
 
 
 @app.route('/api/train', methods=['POST'])
-def train_model():
+def train():
     """
-    Treina ou retreina o modelo XGBoost para um ponto específico.
-    Usa dados do próprio histórico do SIMP (sem tags auxiliares).
-    Para treino completo com auxiliares, usar treinar_modelos.py.
+    Treinar modelo XGBoost via treinar_modelos.py (subprocess).
     
-    Recebe:
-        cd_ponto (int): Código do ponto
-        semanas (int, opcional): Semanas de histórico para treino (default: 24)
-        tipo_medidor (int, opcional): Tipo de medidor
-        force (bool, opcional): Forçar retreino mesmo se modelo existir
+    Usa o script completo que conecta ao FINDESLAB, busca tags auxiliares
+    e treina com correlação de rede. Sem fallback simplificado.
     """
+    import subprocess
+    
     try:
         dados = request.get_json()
         cd_ponto = dados.get('cd_ponto')
@@ -315,7 +312,7 @@ def train_model():
         if not cd_ponto:
             return jsonify({'success': False, 'error': 'cd_ponto é obrigatório'}), 400
         
-        # Verificar se já existe modelo treinado
+        # Verificar se já existe modelo (e não é force)
         if not force and predictor.has_model(cd_ponto):
             return jsonify({
                 'success': True,
@@ -323,33 +320,261 @@ def train_model():
                 'model_info': predictor.get_model_info(cd_ponto)
             })
         
-        logger.info(f"Treinamento: ponto={cd_ponto}, semanas={semanas}")
+        # =============================================
+        # Buscar TAG principal do ponto no banco
+        # =============================================
+        tag_principal = _buscar_tag_ponto(cd_ponto, tipo_medidor)
         
-        # Buscar histórico extenso
-        from datetime import date
-        data_ref = date.today().isoformat()
-        historico = db.get_historico_horario(cd_ponto, data_ref, semanas, tipo_medidor)
-        
-        if historico is None or len(historico) < 336:  # Mínimo 2 semanas
+        if not tag_principal:
             return jsonify({
                 'success': False,
-                'error': f'Histórico insuficiente para treino: {len(historico) if historico is not None else 0} registros'
+                'error': f'Ponto {cd_ponto} não possui TAG configurada para o tipo de medidor {tipo_medidor}'
             }), 200
         
-        # Treinar modelo
-        resultado = predictor.train(cd_ponto, historico, tipo_medidor)
+        # =============================================
+        # Executar treinar_modelos.py via subprocess
+        # =============================================
+        script_path = os.environ.get('TREINAR_SCRIPT', '/app/treinar_modelos.py')
+        
+        if not os.path.exists(script_path):
+            return jsonify({
+                'success': False,
+                'error': f'Script de treino não encontrado: {script_path}. Verifique o volume no docker-compose.'
+            }), 500
+        
+        cmd = [
+            'python3', script_path,
+            '--tag', tag_principal,
+            '--semanas', str(semanas),
+            '--output', MODELS_DIR
+        ]
+        
+        logger.info(f"Executando: {' '.join(cmd)}")
+        
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=600  # 10 minutos
+        )
+        
+        # Log do output
+        if result.stdout:
+            logger.info(f"STDOUT:\n{result.stdout[-1000:]}")
+        if result.stderr:
+            logger.error(f"STDERR:\n{result.stderr[-500:]}")
+        
+        # Verificar resultado
+        if result.returncode != 0:
+            return jsonify({
+                'success': False,
+                'error': f'Erro no treino (código {result.returncode})',
+                'detalhes': result.stderr[-300:] if result.stderr else result.stdout[-300:]
+            }), 200
+        
+        # Verificar se teve sucesso no output
+        if 'Sucesso: 0' in result.stdout:
+            return jsonify({
+                'success': False,
+                'error': 'Treino executou mas nenhum modelo foi gerado com sucesso',
+                'detalhes': result.stdout[-500:]
+            }), 200
+        
+        # =============================================
+        # Recarregar modelo treinado e retornar métricas
+        # =============================================
+        # Forçar recarga do modelo
+        if cd_ponto in predictor.models:
+            del predictor.models[cd_ponto]
+        
+        predictor._load_model(cd_ponto)
+        metricas = predictor._load_metrics(cd_ponto)
         
         return jsonify({
             'success': True,
-            'message': f'Modelo treinado com sucesso para ponto {cd_ponto}',
-            'metricas': resultado['metricas'],
-            'n_arvores': resultado['n_arvores'],
-            'dados_treino': resultado['dados_treino']
+            'message': f'Modelo treinado com sucesso para ponto {cd_ponto} ({tag_principal})',
+            'metricas': metricas,
+            'epocas': metricas.get('n_arvores', 0),
+            'dados_treino': metricas.get('amostras_treino', 0)
         })
         
+    except subprocess.TimeoutExpired:
+        return jsonify({
+            'success': False,
+            'error': 'Timeout: treino excedeu 10 minutos'
+        }), 200
     except Exception as e:
         logger.error(f"Erro no treinamento: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def _buscar_tag_ponto(cd_ponto: int, tipo_medidor: int = 1) -> str:
+    """
+    Busca a TAG principal do ponto de medição no banco SIMP.
+    
+    Mapeia o tipo de medidor para o campo correto:
+      1,2,8 → DS_TAG_VAZAO
+      4     → DS_TAG_PRESSAO  
+      6     → DS_TAG_RESERVATORIO
+    
+    Returns:
+        TAG principal (string) ou None
+    """
+    campo_tag = {
+        1: 'DS_TAG_VAZAO',
+        2: 'DS_TAG_VAZAO',
+        4: 'DS_TAG_PRESSAO',
+        6: 'DS_TAG_RESERVATORIO',
+        8: 'DS_TAG_VAZAO'
+    }.get(tipo_medidor, 'DS_TAG_VAZAO')
+    
+    conn = db._get_connection()
+    if not conn:
+        return None
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            f"SELECT {campo_tag} FROM PONTO_MEDICAO WHERE CD_PONTO_MEDICAO = ?",
+            (cd_ponto,)
+        )
+        row = cursor.fetchone()
+        if row and row[0]:
+            return row[0].strip()
+        return None
+    finally:
+        conn.close()
+
+
+def _treinar_via_script(tag_principal: str, semanas: int) -> dict:
+    """
+    Treina modelo completo usando as funções do treinar_modelos.py.
+    
+    Importa diretamente (sem subprocess) para:
+      - Conectar ao FINDESLAB (Wonderware Historian via linked server)
+      - Buscar tags auxiliares (RELACAO_TAGS)
+      - Montar features com correlação de rede (44+ features)
+      - Treinar XGBoost com métricas completas
+    
+    Args:
+        tag_principal: TAG do ponto (ex: GPRS050_M010_MED)
+        semanas: Semanas de histórico
+    
+    Returns:
+        dict com success e error (se houver)
+    """
+    import sys
+    
+    # Garantir que o treinar_modelos.py está importável
+    script_path = os.environ.get('TREINAR_SCRIPT', '/app/treinar_modelos.py')
+    script_dir = os.path.dirname(script_path)
+    if script_dir not in sys.path:
+        sys.path.insert(0, script_dir)
+    
+    try:
+        
+        # Importar funções do treinar_modelos.py
+        from treinar_modelos import (
+            conectar_banco,
+            buscar_relacoes,
+            buscar_pontos_medicao,
+            buscar_dados_tags,
+            preparar_dados_treino,
+            treinar_modelo,
+            salvar_modelo
+        )
+        
+        # Sobrescrever OUTPUT_DIR do treinar_modelos para usar o diretório do container
+        import treinar_modelos
+        treinar_modelos.OUTPUT_DIR = MODELS_DIR
+        
+    except ImportError as e:
+        return {
+            'success': False,
+            'error': f'Não foi possível importar treinar_modelos: {e}. Verifique se o arquivo está montado em {script_path}'
+        }
+    
+    try:
+        # 1. Conectar ao banco (SIMP + FINDESLAB via linked server)
+        conn = conectar_banco()
+        
+        # 2. Buscar relações (tags auxiliares) para a tag principal
+        relacoes = buscar_relacoes(conn, tag_principal)
+        if not relacoes or tag_principal not in relacoes:
+            conn.close()
+            return {
+                'success': False,
+                'error': f'Nenhuma relação de tags encontrada para {tag_principal}'
+            }
+        
+        tags_auxiliares = relacoes[tag_principal]
+        logger.info(f"  Tags auxiliares encontradas: {len(tags_auxiliares)}")
+        
+        # 3. Buscar mapeamento TAG → CD_PONTO_MEDICAO / TIPO_MEDIDOR
+        pontos_df = buscar_pontos_medicao(conn)
+        tag_to_ponto = {}
+        tag_to_tipo = {}
+        for _, row in pontos_df.iterrows():
+            tag = row['TAG'].strip() if row['TAG'] else ''
+            tag_to_ponto[tag] = int(row['CD_PONTO_MEDICAO'])
+            tag_to_tipo[tag] = int(row['ID_TIPO_MEDIDOR'])
+        
+        cd_ponto = tag_to_ponto.get(tag_principal)
+        tipo_medidor = tag_to_tipo.get(tag_principal, 1)
+        
+        if cd_ponto is None:
+            cd_ponto = abs(hash(tag_principal)) % 100000
+            logger.warning(f"  TAG '{tag_principal}' sem CD_PONTO_MEDICAO, usando hash: {cd_ponto}")
+        
+        # 4. Buscar dados do FINDESLAB (principal + auxiliares)
+        todas_tags = [tag_principal] + tags_auxiliares
+        dados = buscar_dados_tags(conn, todas_tags, semanas)
+        conn.close()
+        
+        if dados.empty:
+            return {
+                'success': False,
+                'error': f'Sem dados no FINDESLAB para as tags ({semanas} semanas)'
+            }
+        
+        # 5. Preparar features (correlação de rede)
+        resultado = preparar_dados_treino(dados, tag_principal, tags_auxiliares)
+        if resultado is None:
+            return {
+                'success': False,
+                'error': 'Dados insuficientes após preparação (mínimo 100 amostras)'
+            }
+        
+        X, y, feature_names = resultado
+        
+        # 6. Treinar modelo XGBoost
+        modelo, metricas, feature_importance = treinar_modelo(X, y, tag_principal)
+        
+        # 7. Salvar modelo + metadados completos
+        logger.info(f"  Salvando modelo em: {MODELS_DIR}/ponto_{cd_ponto}/")
+        os.makedirs(os.path.join(MODELS_DIR, f"ponto_{cd_ponto}"), exist_ok=True)
+        salvar_modelo(
+            cd_ponto=cd_ponto,
+            tag_principal=tag_principal,
+            tags_auxiliares=tags_auxiliares,
+            modelo=modelo,
+            feature_names=feature_names,
+            metricas=metricas,
+            feature_importance=feature_importance,
+            tipo_medidor=tipo_medidor,
+            output_dir=MODELS_DIR
+        )
+        
+        logger.info(f"  Treino completo finalizado: R²={metricas.get('r2', 0):.4f}")
+        
+        return {'success': True}
+        
+    except Exception as e:
+        logger.error(f"Erro no treino completo: {e}", exc_info=True)
+        return {
+            'success': False,
+            'error': str(e)
+        }
 
 
 @app.route('/api/model-status', methods=['GET'])

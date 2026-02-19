@@ -23,7 +23,7 @@ try {
     }
 
     // Captura parâmetro
-    $cdPontoMedicao = isset($_POST['cd_ponto_medicao']) && $_POST['cd_ponto_medicao'] !== '' ? (int)$_POST['cd_ponto_medicao'] : null;
+    $cdPontoMedicao = isset($_POST['cd_ponto_medicao']) && $_POST['cd_ponto_medicao'] !== '' ? (int) $_POST['cd_ponto_medicao'] : null;
 
     if (empty($cdPontoMedicao)) {
         throw new Exception('Código do ponto de medição não informado');
@@ -37,7 +37,7 @@ try {
     $stmtBusca = $pdoSIMP->prepare($sqlBusca);
     $stmtBusca->execute([':id' => $cdPontoMedicao]);
     $dadosPonto = $stmtBusca->fetch(PDO::FETCH_ASSOC);
-    
+
     if (!$dadosPonto) {
         throw new Exception('Ponto de medição não encontrado');
     }
@@ -50,8 +50,8 @@ try {
         throw new Exception('Este ponto de medição já está desativado');
     }
 
-    // Verifica se existem leituras vinculadas
-    $sqlLeituras = "SELECT COUNT(*) as total FROM SIMP.dbo.LEITURA WHERE CD_PONTO_MEDICAO = :id";
+// Verifica se existem leituras vinculadas (tabela real: REGISTRO_VAZAO_PRESSAO)
+    $sqlLeituras = "SELECT COUNT(*) as total FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO WHERE CD_PONTO_MEDICAO = :id";
     $stmtLeituras = $pdoSIMP->prepare($sqlLeituras);
     $stmtLeituras->execute([':id' => $cdPontoMedicao]);
     $totalLeituras = $stmtLeituras->fetch(PDO::FETCH_ASSOC)['total'];
@@ -90,7 +90,8 @@ try {
     // Registrar log de erro
     try {
         registrarLogErro('Cadastro de Ponto de Medição', 'DELETE', $e->getMessage(), ['cd_ponto_medicao' => $cdPontoMedicao ?? null]);
-    } catch (Exception $logEx) {}
+    } catch (Exception $logEx) {
+    }
 
     echo json_encode([
         'success' => false,

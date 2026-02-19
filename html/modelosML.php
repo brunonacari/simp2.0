@@ -1,0 +1,1999 @@
+<?php
+/**
+ * SIMP - Sistema Integrado de Macromedição e Pitometria
+ * Modelos de Machine Learning (XGBoost)
+ * 
+ * Tela para gerenciar modelos treinados:
+ *  - Listar modelos existentes com métricas
+ *  - Treinar novos modelos por ponto de medição
+ *  - Retreinar modelos existentes (force)
+ *  - Visualizar métricas detalhadas (MAE, RMSE, R², MAPE, features)
+ * 
+ * Usa endpoints existentes do predicaoTensorFlow.php:
+ *  - acao=status  → lista modelos
+ *  - acao=train   → treina/retreina modelo
+ *  - acao=health  → verifica serviço online
+ * 
+ * @author Bruno - CESAN
+ * @version 1.0
+ * @date 2026-02
+ */
+
+$paginaAtual = 'modelosML';
+
+include_once 'includes/header.inc.php';
+include_once 'bd/conexao.php';
+
+// Recarregar permissões do banco
+recarregarPermissoesUsuario();
+
+// Permissão (usa mesma permissão de Treinamento IA)
+exigePermissaoTela('Treinamento IA', ACESSO_LEITURA);
+$podeEditar = podeEditarTela('Treinamento IA');
+
+include_once 'includes/menu.inc.php';
+
+// Buscar pontos de medição ativos (para dropdown de treino)
+$pontosMedicao = [];
+try {
+    $sqlPontos = "
+        SELECT 
+            PM.CD_PONTO_MEDICAO,
+            PM.DS_NOME,
+            PM.ID_TIPO_MEDIDOR,
+            TM.DS_NOME AS DS_TIPO_MEDIDOR,
+            L.DS_NOME AS DS_LOCALIDADE,
+            U.DS_NOME AS DS_UNIDADE
+        FROM SIMP.dbo.PONTO_MEDICAO PM
+        LEFT JOIN SIMP.dbo.TIPO_MEDIDOR TM ON TM.CD_CHAVE = PM.ID_TIPO_MEDIDOR
+        LEFT JOIN SIMP.dbo.LOCALIDADE L ON L.CD_CHAVE = PM.CD_LOCALIDADE
+        LEFT JOIN SIMP.dbo.UNIDADE U ON U.CD_UNIDADE = L.CD_UNIDADE
+        WHERE PM.DT_DESATIVACAO IS NULL
+        ORDER BY PM.DS_NOME
+    ";
+    $stmtPontos = $pdoSIMP->query($sqlPontos);
+    $pontosMedicao = $stmtPontos->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $pontosMedicao = [];
+}
+?>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<style>
+    /* ============================================
+       Page Container
+       ============================================ */
+    .page-container {
+        padding: 24px;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    /* ============================================
+       Page Header (padrão SIMP)
+       ============================================ */
+    .page-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        border-radius: 16px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        color: white;
+    }
+
+    .page-header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-header-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .page-header-icon {
+        width: 52px;
+        height: 52px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .page-header h1 {
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0 0 4px 0;
+        color: white;
+    }
+
+    .page-header-subtitle {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+        margin: 0;
+    }
+
+    .page-header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    /* Badge de status do serviço TensorFlow */
+    .service-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .service-badge .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #94a3b8;
+        animation: pulse-dot 2s infinite;
+    }
+
+    .service-badge .status-dot.online {
+        background: #22c55e;
+    }
+
+    .service-badge .status-dot.offline {
+        background: #ef4444;
+        animation: none;
+    }
+
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Botão novo treino */
+    .btn-novo-treino {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-novo-treino:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .btn-novo-treino ion-icon {
+        font-size: 18px;
+    }
+
+    /* ============================================
+       Stats Cards (resumo)
+       ============================================ */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .stat-card-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+
+    .stat-card-icon.total { background: #eff6ff; color: #3b82f6; }
+    .stat-card-icon.xgboost { background: #fef3c7; color: #f59e0b; }
+    .stat-card-icon.good { background: #dcfce7; color: #16a34a; }
+    .stat-card-icon.bad { background: #fee2e2; color: #dc2626; }
+
+    .stat-card-info h3 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .stat-card-info p {
+        font-size: 12px;
+        color: #64748b;
+        margin: 2px 0 0 0;
+    }
+
+    /* ============================================
+       Filtros
+       ============================================ */
+    .filters-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .search-input-wrapper {
+        position: relative;
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .search-input-wrapper ion-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 18px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 12px 10px 40px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 13px;
+        background: white;
+        transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .filter-select {
+        padding: 10px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 13px;
+        background: white;
+        cursor: pointer;
+        min-width: 160px;
+    }
+
+    .btn-refresh {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-refresh:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+
+    .btn-refresh.loading ion-icon {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* ============================================
+       Grid de Modelos
+       ============================================ */
+    .models-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 16px;
+    }
+
+    .model-card {
+        background: white;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .model-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+
+    /* Cabeçalho do card */
+    .model-card-header {
+        padding: 16px 20px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .model-card-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .model-card-title .ponto-id {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-family: 'SF Mono', Monaco, monospace;
+    }
+
+    .model-card-title .ponto-nome {
+        font-size: 13px;
+        font-weight: 600;
+        color: #0f172a;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .model-card-tipo {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    .model-card-tipo.xgboost {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .model-card-tipo.lstm {
+        background: #fce7f3;
+        color: #9d174d;
+    }
+
+    /* Corpo do card - métricas */
+    .model-card-body {
+        padding: 16px 20px;
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .metric-item {
+        text-align: center;
+    }
+
+    .metric-item .metric-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .metric-item .metric-label {
+        font-size: 10px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 2px;
+    }
+
+    /* Qualidade do modelo (barra colorida) */
+    .model-quality {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .quality-bar {
+        flex: 1;
+        height: 6px;
+        background: #f1f5f9;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .quality-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+
+    .quality-bar-fill.excellent { background: linear-gradient(90deg, #22c55e, #16a34a); }
+    .quality-bar-fill.good { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+    .quality-bar-fill.fair { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .quality-bar-fill.poor { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+    .quality-label {
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .quality-label.excellent { color: #16a34a; }
+    .quality-label.good { color: #2563eb; }
+    .quality-label.fair { color: #d97706; }
+    .quality-label.poor { color: #dc2626; }
+
+    /* Informações extras */
+    .model-info-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 12px;
+        color: #64748b;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .model-info-row:first-child {
+        border-top: none;
+    }
+
+    .model-info-row .info-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .model-info-row .info-label ion-icon {
+        font-size: 14px;
+        color: #94a3b8;
+    }
+
+    .model-info-row .info-value {
+        font-weight: 600;
+        color: #334155;
+    }
+
+    /* Footer do card - ações */
+    .model-card-footer {
+        padding: 12px 20px;
+        background: #fafbfc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-model-action {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }
+
+    .btn-model-action.btn-details {
+        background: #f1f5f9;
+        color: #475569;
+        border-color: #e2e8f0;
+    }
+
+    .btn-model-action.btn-details:hover {
+        background: #e2e8f0;
+    }
+
+    .btn-model-action.btn-retrain {
+        background: #eff6ff;
+        color: #2563eb;
+        border-color: #bfdbfe;
+    }
+
+    .btn-model-action.btn-retrain:hover {
+        background: #dbeafe;
+    }
+
+    .btn-model-action.btn-retrain.loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .btn-model-action ion-icon {
+        font-size: 15px;
+    }
+
+    /* ============================================
+       Empty State
+       ============================================ */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .empty-state-icon {
+        width: 64px;
+        height: 64px;
+        background: #f1f5f9;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        font-size: 28px;
+        color: #94a3b8;
+    }
+
+    .empty-state h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #334155;
+        margin: 0 0 8px 0;
+    }
+
+    .empty-state p {
+        font-size: 13px;
+        color: #94a3b8;
+        margin: 0;
+    }
+
+    /* ============================================
+       Loading Overlay
+       ============================================ */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .loading-overlay.active {
+        display: flex;
+    }
+
+    .loading-box {
+        background: white;
+        border-radius: 16px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+
+    .loading-box ion-icon {
+        font-size: 36px;
+        color: #3b82f6;
+        animation: spin 1.5s linear infinite;
+    }
+
+    .loading-box p {
+        margin: 12px 0 0 0;
+        font-size: 14px;
+        color: #475569;
+        font-weight: 500;
+    }
+
+    .loading-box .loading-sub {
+        font-size: 12px;
+        color: #94a3b8;
+        margin-top: 4px;
+    }
+
+    /* ============================================
+       Modal de Detalhes
+       ============================================ */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 9998;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-container {
+        background: white;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 700px;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        padding: 20px 24px;
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .modal-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .modal-header .btn-close {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        transition: all 0.2s ease;
+    }
+
+    .modal-header .btn-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .modal-section {
+        margin-bottom: 20px;
+    }
+
+    .modal-section-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .modal-section-title ion-icon {
+        font-size: 16px;
+    }
+
+    /* Métricas no modal */
+    .modal-metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .modal-metric {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px;
+        text-align: center;
+    }
+
+    .modal-metric .value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .modal-metric .label {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 2px;
+    }
+
+    .modal-metric .hint {
+        font-size: 10px;
+        color: #cbd5e1;
+        margin-top: 4px;
+    }
+
+    /* Feature Importance no modal */
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .feature-item:last-child {
+        border-bottom: none;
+    }
+
+    .feature-rank {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 700;
+        color: #64748b;
+        flex-shrink: 0;
+    }
+
+    .feature-rank.top { background: #fef3c7; color: #92400e; }
+
+    .feature-name {
+        flex: 1;
+        font-size: 12px;
+        color: #334155;
+        font-family: 'SF Mono', Monaco, monospace;
+    }
+
+    .feature-bar-wrapper {
+        width: 120px;
+        flex-shrink: 0;
+    }
+
+    .feature-bar {
+        height: 6px;
+        background: #f1f5f9;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .feature-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #2563eb);
+        border-radius: 3px;
+    }
+
+    .feature-value {
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748b;
+        width: 50px;
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    /* Informações gerais no modal */
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .info-item .label {
+        font-size: 11px;
+        color: #94a3b8;
+    }
+
+    .info-item .value {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+    }
+
+    /* Tags auxiliares no modal */
+    .tags-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .tag-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 11px;
+        font-family: 'SF Mono', Monaco, monospace;
+        color: #475569;
+    }
+
+    /* ============================================
+       Modal de Treino
+       ============================================ */
+    .train-form-group {
+        margin-bottom: 16px;
+    }
+
+    .train-form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 6px;
+    }
+
+    .train-form-group label ion-icon {
+        font-size: 14px;
+        vertical-align: middle;
+        margin-right: 4px;
+    }
+
+    .train-form-group select,
+    .train-form-group input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 13px;
+        background: white;
+        transition: all 0.2s ease;
+    }
+
+    .train-form-group select:focus,
+    .train-form-group input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .train-form-hint {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 4px;
+    }
+
+    .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-modal {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+    }
+
+    .btn-modal.btn-cancel {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-modal.btn-cancel:hover {
+        background: #e2e8f0;
+    }
+
+    .btn-modal.btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+
+    .btn-modal.btn-primary:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        transform: translateY(-1px);
+    }
+
+    .btn-modal.btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* ============================================
+       Select2 customização (padrão SIMP)
+       ============================================ */
+    .select2-container--default .select2-selection--single {
+        height: 42px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 6px 14px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 28px;
+        font-size: 13px;
+        color: #334155;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px;
+    }
+
+    .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+        background-color: #3b82f6;
+    }
+
+    .select2-dropdown {
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .select2-search__field {
+        border-radius: 8px !important;
+        padding: 8px 12px !important;
+    }
+
+    /* ============================================
+       Responsivo
+       ============================================ */
+    @media (max-width: 768px) {
+        .page-container {
+            padding: 16px;
+        }
+
+        .page-header {
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .page-header-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .page-header h1 {
+            font-size: 18px;
+        }
+
+        .page-header-actions {
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .stats-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .models-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filters-bar {
+            flex-direction: column;
+        }
+
+        .search-input-wrapper {
+            min-width: 100%;
+        }
+
+        .filter-select {
+            width: 100%;
+        }
+
+        .modal-container {
+            max-height: 95vh;
+        }
+
+        .modal-metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-metrics-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="page-container">
+
+    <!-- ============================================
+         Page Header
+         ============================================ -->
+    <div class="page-header">
+        <div class="page-header-content">
+            <div class="page-header-info">
+                <div class="page-header-icon">
+                    <ion-icon name="hardware-chip"></ion-icon>
+                </div>
+                <div>
+                    <h1>Modelos de Machine Learning</h1>
+                    <p class="page-header-subtitle">Gerenciamento de modelos XGBoost treinados para predição</p>
+                </div>
+            </div>
+            <div class="page-header-actions">
+                <!-- Status do serviço TensorFlow -->
+                <div class="service-badge" id="serviceBadge">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="serviceStatusText">Verificando...</span>
+                </div>
+                <?php if ($podeEditar): ?>
+                    <button type="button" class="btn-novo-treino" onclick="abrirModalTreino()">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Novo Treino
+                    </button>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         Stats Cards
+         ============================================ -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-card-icon total">
+                <ion-icon name="cube-outline"></ion-icon>
+            </div>
+            <div class="stat-card-info">
+                <h3 id="statTotal">-</h3>
+                <p>Modelos treinados</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon xgboost">
+                <ion-icon name="git-branch-outline"></ion-icon>
+            </div>
+            <div class="stat-card-info">
+                <h3 id="statXgboost">-</h3>
+                <p>XGBoost v5.0</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon good">
+                <ion-icon name="checkmark-circle-outline"></ion-icon>
+            </div>
+            <div class="stat-card-info">
+                <h3 id="statGood">-</h3>
+                <p>R² &ge; 0.70</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon bad">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+            </div>
+            <div class="stat-card-info">
+                <h3 id="statBad">-</h3>
+                <p>R² &lt; 0.70</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         Filtros
+         ============================================ -->
+    <div class="filters-bar">
+        <div class="search-input-wrapper">
+            <ion-icon name="search-outline"></ion-icon>
+            <input type="text" class="search-input" id="searchInput"
+                placeholder="Buscar por ponto, TAG ou código..." oninput="filtrarModelos()">
+        </div>
+        <select class="filter-select" id="filterQuality" onchange="filtrarModelos()">
+            <option value="">Todas as qualidades</option>
+            <option value="excellent">Excelente (R² &ge; 0.90)</option>
+            <option value="good">Bom (R² &ge; 0.70)</option>
+            <option value="fair">Regular (R² &ge; 0.50)</option>
+            <option value="poor">Baixo (R² &lt; 0.50)</option>
+        </select>
+        <select class="filter-select" id="filterTipo" onchange="filtrarModelos()">
+            <option value="">Todos os tipos</option>
+            <option value="xgboost">XGBoost</option>
+            <option value="lstm">LSTM (legado)</option>
+        </select>
+        <button type="button" class="btn-refresh" id="btnRefresh" onclick="carregarModelos()">
+            <ion-icon name="refresh-outline"></ion-icon>
+            Atualizar
+        </button>
+    </div>
+
+    <!-- ============================================
+         Grid de Modelos
+         ============================================ -->
+    <div id="modelsContainer">
+        <!-- Preenchido via JavaScript -->
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <ion-icon name="sync-outline" style="animation: spin 1.5s linear infinite;"></ion-icon>
+            </div>
+            <h3>Carregando modelos...</h3>
+            <p>Conectando ao serviço TensorFlow</p>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================
+     Modal: Detalhes do Modelo
+     ============================================ -->
+<div class="modal-overlay" id="modalDetalhes" onclick="fecharModalDetalhes(event)">
+    <div class="modal-container" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2>
+                <ion-icon name="analytics-outline"></ion-icon>
+                <span id="modalDetalhesTitle">Detalhes do Modelo</span>
+            </h2>
+            <button class="btn-close" onclick="fecharModalDetalhes()">
+                <ion-icon name="close-outline"></ion-icon>
+            </button>
+        </div>
+        <div class="modal-body" id="modalDetalhesBody">
+            <!-- Preenchido via JavaScript -->
+        </div>
+    </div>
+</div>
+
+<!-- ============================================
+     Modal: Novo Treino
+     ============================================ -->
+<?php if ($podeEditar): ?>
+<div class="modal-overlay" id="modalTreino" onclick="fecharModalTreino(event)">
+    <div class="modal-container" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2>
+                <ion-icon name="fitness-outline"></ion-icon>
+                Treinar Novo Modelo
+            </h2>
+            <button class="btn-close" onclick="fecharModalTreino()">
+                <ion-icon name="close-outline"></ion-icon>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Ponto de Medição (Select2 com busca) -->
+            <div class="train-form-group">
+                <label>
+                    <ion-icon name="pin-outline"></ion-icon>
+                    Ponto de Medição
+                </label>
+                <select id="selectPontoTreino" style="width: 100%;">
+                    <option value="">Selecione um ponto de medição...</option>
+                    <?php foreach ($pontosMedicao as $pm): ?>
+                        <option value="<?= $pm['CD_PONTO_MEDICAO'] ?>"
+                            data-tipo="<?= $pm['ID_TIPO_MEDIDOR'] ?>">
+                            <?= htmlspecialchars(
+                                $pm['CD_PONTO_MEDICAO'] . ' - ' .
+                                $pm['DS_NOME'] .
+                                ($pm['DS_TIPO_MEDIDOR'] ? ' (' . $pm['DS_TIPO_MEDIDOR'] . ')' : '') .
+                                ($pm['DS_UNIDADE'] ? ' - ' . $pm['DS_UNIDADE'] : '')
+                            ) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <div class="train-form-hint">
+                    Selecione o ponto para o qual deseja treinar o modelo preditivo
+                </div>
+            </div>
+
+            <!-- Semanas de histórico -->
+            <div class="train-form-group">
+                <label>
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    Semanas de Histórico
+                </label>
+                <select id="selectSemanas">
+                    <option value="12">12 semanas (3 meses)</option>
+                    <option value="24" selected>24 semanas (6 meses)</option>
+                    <option value="36">36 semanas (9 meses)</option>
+                    <option value="52">52 semanas (1 ano)</option>
+                </select>
+                <div class="train-form-hint">
+                    Mais semanas = modelo mais robusto, porém treino mais demorado
+                </div>
+            </div>
+
+            <!-- Forçar retreino -->
+            <div class="train-form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="chkForce" style="width: auto;">
+                    <span>Forçar retreino (sobrescrever modelo existente)</span>
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-modal btn-cancel" onclick="fecharModalTreino()">
+                Cancelar
+            </button>
+            <button type="button" class="btn-modal btn-primary" id="btnIniciarTreino" onclick="iniciarTreino()">
+                <ion-icon name="flash-outline"></ion-icon>
+                Iniciar Treinamento
+            </button>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- ============================================
+     Loading Overlay (para treino)
+     ============================================ -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-box">
+        <ion-icon name="sync-outline"></ion-icon>
+        <p id="loadingText">Treinando modelo...</p>
+        <div class="loading-sub" id="loadingSub">Isso pode levar alguns minutos</div>
+    </div>
+</div>
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    /**
+     * SIMP - Modelos de Machine Learning
+     * Gerenciamento frontend dos modelos XGBoost
+     * 
+     * @author Bruno - CESAN
+     * @version 1.0
+     */
+
+    // ============================================
+    // Variáveis globais
+    // ============================================
+
+    /** Lista completa de modelos carregados do serviço */
+    let todosModelos = [];
+
+    /** Indica se o serviço TensorFlow está online */
+    let servicoOnline = false;
+
+    /** Permissão de edição do usuário */
+    const podeEditar = <?= $podeEditar ? 'true' : 'false' ?>;
+
+    // ============================================
+    // Inicialização
+    // ============================================
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Inicializar Select2 no modal de treino (com busca)
+        if (document.getElementById('selectPontoTreino')) {
+            $('#selectPontoTreino').select2({
+                placeholder: 'Selecione um ponto de medição...',
+                allowClear: true,
+                dropdownParent: $('#modalTreino'),
+                width: '100%',
+                language: {
+                    noResults: function () { return 'Nenhum ponto encontrado'; },
+                    searching: function () { return 'Buscando...'; }
+                }
+            });
+        }
+
+        // Verificar status do serviço e carregar modelos
+        verificarServico();
+        carregarModelos();
+
+        // Fechar modais com ESC
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                fecharModalDetalhes();
+                fecharModalTreino();
+            }
+        });
+    });
+
+    // ============================================
+    // Verificar status do serviço TensorFlow
+    // ============================================
+
+    /**
+     * Chama o health check do serviço TensorFlow.
+     * Atualiza o badge de status no header.
+     */
+    function verificarServico() {
+        fetch('bd/operacoes/predicaoTensorFlow.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ acao: 'health' })
+        })
+        .then(r => r.json())
+        .then(data => {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('serviceStatusText');
+
+            if (data.success && data.tensorflow && data.tensorflow.status === 'ok') {
+                servicoOnline = true;
+                dot.className = 'status-dot online';
+                text.textContent = 'TensorFlow Online';
+            } else {
+                servicoOnline = false;
+                dot.className = 'status-dot offline';
+                text.textContent = 'TensorFlow Offline';
+            }
+        })
+        .catch(() => {
+            servicoOnline = false;
+            document.getElementById('statusDot').className = 'status-dot offline';
+            document.getElementById('serviceStatusText').textContent = 'TensorFlow Offline';
+        });
+    }
+
+    // ============================================
+    // Carregar modelos do serviço
+    // ============================================
+
+    /**
+     * Busca a lista de modelos treinados via predicaoTensorFlow.php?acao=status.
+     * Atualiza os cards e estatísticas na tela.
+     */
+    function carregarModelos() {
+        const btn = document.getElementById('btnRefresh');
+        btn.classList.add('loading');
+
+        fetch('bd/operacoes/predicaoTensorFlow.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ acao: 'status' })
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.classList.remove('loading');
+
+            if (data.success && data.modelos) {
+                todosModelos = data.modelos;
+                atualizarEstatisticas();
+                filtrarModelos();
+            } else {
+                // Serviço offline ou erro
+                todosModelos = [];
+                atualizarEstatisticas();
+                document.getElementById('modelsContainer').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <ion-icon name="cloud-offline-outline"></ion-icon>
+                        </div>
+                        <h3>Serviço indisponível</h3>
+                        <p>${data.error || 'Não foi possível conectar ao serviço TensorFlow'}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(err => {
+            btn.classList.remove('loading');
+            todosModelos = [];
+            atualizarEstatisticas();
+            document.getElementById('modelsContainer').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <ion-icon name="warning-outline"></ion-icon>
+                    </div>
+                    <h3>Erro de conexão</h3>
+                    <p>${err.message}</p>
+                </div>
+            `;
+        });
+    }
+
+    // ============================================
+    // Atualizar estatísticas
+    // ============================================
+
+    /**
+     * Atualiza os cards de resumo (total, XGBoost, bons, ruins).
+     */
+    function atualizarEstatisticas() {
+        const total = todosModelos.length;
+        const xgboost = todosModelos.filter(m => getModeloTipo(m) === 'xgboost').length;
+        const good = todosModelos.filter(m => getR2(m) >= 0.70).length;
+        const bad = todosModelos.filter(m => getR2(m) < 0.70 && getR2(m) !== null).length;
+
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statXgboost').textContent = xgboost;
+        document.getElementById('statGood').textContent = good;
+        document.getElementById('statBad').textContent = bad;
+    }
+
+    // ============================================
+    // Filtrar e renderizar modelos
+    // ============================================
+
+    /**
+     * Filtra os modelos baseado nos inputs de busca e selects.
+     * Renderiza os cards filtrados.
+     */
+    function filtrarModelos() {
+        const busca = (document.getElementById('searchInput').value || '').toLowerCase();
+        const qualidade = document.getElementById('filterQuality').value;
+        const tipo = document.getElementById('filterTipo').value;
+
+        let filtrados = todosModelos.filter(m => {
+            // Filtro de busca (ponto, tag, código)
+            if (busca) {
+                const cdPonto = String(m.cd_ponto || '');
+                const tag = (m.metricas?.tag_principal || '').toLowerCase();
+                const tags = (m.metricas?.tags_auxiliares || []).join(' ').toLowerCase();
+                if (!cdPonto.includes(busca) && !tag.includes(busca) && !tags.includes(busca)) {
+                    return false;
+                }
+            }
+
+            // Filtro de qualidade
+            if (qualidade) {
+                const r2 = getR2(m);
+                if (qualidade === 'excellent' && r2 < 0.90) return false;
+                if (qualidade === 'good' && (r2 < 0.70 || r2 >= 0.90)) return false;
+                if (qualidade === 'fair' && (r2 < 0.50 || r2 >= 0.70)) return false;
+                if (qualidade === 'poor' && r2 >= 0.50) return false;
+            }
+
+            // Filtro de tipo
+            if (tipo && getModeloTipo(m) !== tipo) {
+                return false;
+            }
+
+            return true;
+        });
+
+        // Ordenar por R² decrescente
+        filtrados.sort((a, b) => (getR2(b) || 0) - (getR2(a) || 0));
+
+        renderizarModelos(filtrados);
+    }
+
+    /**
+     * Renderiza os cards de modelos no container.
+     * @param {Array} modelos - Lista filtrada de modelos
+     */
+    function renderizarModelos(modelos) {
+        const container = document.getElementById('modelsContainer');
+
+        if (modelos.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <ion-icon name="cube-outline"></ion-icon>
+                    </div>
+                    <h3>Nenhum modelo encontrado</h3>
+                    <p>Nenhum modelo corresponde aos filtros aplicados</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="models-grid">';
+
+        modelos.forEach(m => {
+            const cdPonto = m.cd_ponto || '?';
+            const metricas = m.metricas || {};
+            const tipoModelo = getModeloTipo(m);
+            const r2 = getR2(m);
+            const mae = metricas.mae != null ? parseFloat(metricas.mae).toFixed(4) : '-';
+            const rmse = metricas.rmse != null ? parseFloat(metricas.rmse).toFixed(4) : '-';
+            const r2Display = r2 != null ? parseFloat(r2).toFixed(4) : '-';
+            const mape = metricas.mape_pct != null ? parseFloat(metricas.mape_pct).toFixed(1) + '%' : '-';
+            const correlacao = metricas.correlacao != null ? parseFloat(metricas.correlacao).toFixed(4) : '-';
+            const tagPrincipal = metricas.tag_principal || '-';
+            const nArvores = metricas.n_arvores || '-';
+            const nFeatures = metricas.n_features || '-';
+            const treinadoEm = metricas.treinado_em ? formatarData(metricas.treinado_em) : '-';
+            const versao = metricas.versao_treino || '-';
+
+            // Qualidade baseada no R²
+            const qualidade = getQualidade(r2);
+            const r2Pct = r2 != null ? Math.round(r2 * 100) : 0;
+
+            html += `
+                <div class="model-card" data-ponto="${cdPonto}">
+                    <div class="model-card-header">
+                        <div class="model-card-title">
+                            <span class="ponto-id">#${cdPonto}</span>
+                            <span class="ponto-nome" title="${escapeHtml(tagPrincipal)}">${escapeHtml(tagPrincipal)}</span>
+                        </div>
+                        <span class="model-card-tipo ${tipoModelo}">${tipoModelo.toUpperCase()} v${versao}</span>
+                    </div>
+
+                    <div class="model-card-body">
+                        <!-- Métricas principais -->
+                        <div class="metrics-grid">
+                            <div class="metric-item">
+                                <div class="metric-value">${r2Display}</div>
+                                <div class="metric-label">R²</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value">${mae}</div>
+                                <div class="metric-label">MAE</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value">${mape}</div>
+                                <div class="metric-label">MAPE</div>
+                            </div>
+                        </div>
+
+                        <!-- Barra de qualidade -->
+                        <div class="model-quality">
+                            <div class="quality-bar">
+                                <div class="quality-bar-fill ${qualidade.classe}" style="width: ${r2Pct}%"></div>
+                            </div>
+                            <span class="quality-label ${qualidade.classe}">${qualidade.texto}</span>
+                        </div>
+
+                        <!-- Informações extras -->
+                        <div class="model-info-row">
+                            <span class="info-label">
+                                <ion-icon name="git-branch-outline"></ion-icon>
+                                Árvores
+                            </span>
+                            <span class="info-value">${nArvores}</span>
+                        </div>
+                        <div class="model-info-row">
+                            <span class="info-label">
+                                <ion-icon name="layers-outline"></ion-icon>
+                                Features
+                            </span>
+                            <span class="info-value">${nFeatures}</span>
+                        </div>
+                        <div class="model-info-row">
+                            <span class="info-label">
+                                <ion-icon name="time-outline"></ion-icon>
+                                Treinado em
+                            </span>
+                            <span class="info-value">${treinadoEm}</span>
+                        </div>
+                    </div>
+
+                    <div class="model-card-footer">
+                        <button type="button" class="btn-model-action btn-details"
+                            onclick="abrirDetalhes(${cdPonto})" title="Ver detalhes">
+                            <ion-icon name="eye-outline"></ion-icon>
+                            Detalhes
+                        </button>
+                        ${podeEditar ? `
+                        <button type="button" class="btn-model-action btn-retrain"
+                            onclick="retreinar(${cdPonto}, ${metricas.tipo_medidor || 1})" title="Retreinar modelo">
+                            <ion-icon name="refresh-outline"></ion-icon>
+                            Retreinar
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    // ============================================
+    // Funções auxiliares
+    // ============================================
+
+    /**
+     * Retorna o tipo do modelo (xgboost ou lstm).
+     */
+    function getModeloTipo(m) {
+        return m.metricas?.modelo_tipo || (m.metricas?.versao_treino ? 'xgboost' : 'lstm');
+    }
+
+    /**
+     * Retorna o R² do modelo (ou null).
+     */
+    function getR2(m) {
+        const r2 = m.metricas?.r2;
+        return r2 != null ? parseFloat(r2) : null;
+    }
+
+    /**
+     * Retorna a classificação de qualidade baseada no R².
+     * @param {number|null} r2 - Valor do R²
+     * @returns {{classe: string, texto: string}}
+     */
+    function getQualidade(r2) {
+        if (r2 === null || r2 === undefined) return { classe: 'poor', texto: 'Sem dados' };
+        if (r2 >= 0.90) return { classe: 'excellent', texto: 'Excelente' };
+        if (r2 >= 0.70) return { classe: 'good', texto: 'Bom' };
+        if (r2 >= 0.50) return { classe: 'fair', texto: 'Regular' };
+        return { classe: 'poor', texto: 'Baixo' };
+    }
+
+    /**
+     * Formata data ISO para exibição (dd/mm/yyyy HH:mm).
+     */
+    function formatarData(isoString) {
+        if (!isoString) return '-';
+        try {
+            const d = new Date(isoString);
+            return d.toLocaleDateString('pt-BR') + ' ' +
+                d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        } catch (e) {
+            return isoString;
+        }
+    }
+
+    /**
+     * Escapa HTML para prevenir XSS.
+     */
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // ============================================
+    // Modal de Detalhes
+    // ============================================
+
+    /**
+     * Abre o modal com detalhes completos do modelo.
+     * @param {number} cdPonto - Código do ponto
+     */
+    function abrirDetalhes(cdPonto) {
+        const modelo = todosModelos.find(m => m.cd_ponto == cdPonto);
+        if (!modelo) return;
+
+        const metricas = modelo.metricas || {};
+        const fi = metricas.feature_importance || {};
+        const tagsAux = metricas.tags_auxiliares || [];
+
+        // Título
+        document.getElementById('modalDetalhesTitle').textContent =
+            `Ponto #${cdPonto} - ${metricas.tag_principal || 'N/A'}`;
+
+        // Montar corpo do modal
+        let html = '';
+
+        // Seção: Métricas de Performance
+        html += `
+            <div class="modal-section">
+                <div class="modal-section-title">
+                    <ion-icon name="speedometer-outline"></ion-icon>
+                    Métricas de Performance
+                </div>
+                <div class="modal-metrics-grid">
+                    <div class="modal-metric">
+                        <div class="value">${fmt(metricas.r2)}</div>
+                        <div class="label">R² (Determinação)</div>
+                        <div class="hint">Ideal: &ge; 0.90</div>
+                    </div>
+                    <div class="modal-metric">
+                        <div class="value">${fmt(metricas.mae)}</div>
+                        <div class="label">MAE</div>
+                        <div class="hint">Erro Absoluto Médio</div>
+                    </div>
+                    <div class="modal-metric">
+                        <div class="value">${fmt(metricas.rmse)}</div>
+                        <div class="label">RMSE</div>
+                        <div class="hint">Raiz do Erro Quadrático</div>
+                    </div>
+                    <div class="modal-metric">
+                        <div class="value">${metricas.mape_pct != null ? parseFloat(metricas.mape_pct).toFixed(1) + '%' : '-'}</div>
+                        <div class="label">MAPE</div>
+                        <div class="hint">Erro Percentual Médio</div>
+                    </div>
+                    <div class="modal-metric">
+                        <div class="value">${fmt(metricas.correlacao)}</div>
+                        <div class="label">Correlação</div>
+                        <div class="hint">Ideal: &ge; 0.95</div>
+                    </div>
+                    <div class="modal-metric">
+                        <div class="value">${metricas.n_arvores || '-'}</div>
+                        <div class="label">Árvores</div>
+                        <div class="hint">Early stopping</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Seção: Informações Gerais
+        html += `
+            <div class="modal-section">
+                <div class="modal-section-title">
+                    <ion-icon name="information-circle-outline"></ion-icon>
+                    Informações do Modelo
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="label">Tipo do Modelo</span>
+                        <span class="value">${(metricas.modelo_tipo || 'N/A').toUpperCase()} v${metricas.versao_treino || '?'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Tipo de Target</span>
+                        <span class="value">${metricas.target_tipo || 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Amostras Treino</span>
+                        <span class="value">${metricas.amostras_treino ? metricas.amostras_treino.toLocaleString('pt-BR') : '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Amostras Validação</span>
+                        <span class="value">${metricas.amostras_validacao ? metricas.amostras_validacao.toLocaleString('pt-BR') : '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Learning Rate</span>
+                        <span class="value">${metricas.learning_rate || '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Max Depth</span>
+                        <span class="value">${metricas.max_depth || '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Features</span>
+                        <span class="value">${metricas.n_features || '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Treinado em</span>
+                        <span class="value">${formatarData(metricas.treinado_em)}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Lags utilizados</span>
+                        <span class="value">${metricas.lags ? metricas.lags.join(', ') + 'h' : '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Banco de Treino</span>
+                        <span class="value" style="font-size:11px;">${metricas.banco_treino || '-'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Seção: Tags Auxiliares
+        if (tagsAux.length > 0) {
+            html += `
+                <div class="modal-section">
+                    <div class="modal-section-title">
+                        <ion-icon name="pricetags-outline"></ion-icon>
+                        Tags Auxiliares (${tagsAux.length})
+                    </div>
+                    <div class="tags-list">
+                        ${tagsAux.map(t => `<span class="tag-badge">${escapeHtml(t)}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Seção: Feature Importance (top 10)
+        const fiEntries = Object.entries(fi);
+        if (fiEntries.length > 0) {
+            const top10 = fiEntries.slice(0, 10);
+            const maxImportance = top10.length > 0 ? top10[0][1] : 1;
+
+            html += `
+                <div class="modal-section">
+                    <div class="modal-section-title">
+                        <ion-icon name="bar-chart-outline"></ion-icon>
+                        Feature Importance (Top 10)
+                    </div>
+                    <ul class="feature-list">
+            `;
+
+            top10.forEach((entry, idx) => {
+                const [name, importance] = entry;
+                const pct = maxImportance > 0 ? (importance / maxImportance * 100) : 0;
+                html += `
+                    <li class="feature-item">
+                        <span class="feature-rank ${idx < 3 ? 'top' : ''}">${idx + 1}</span>
+                        <span class="feature-name">${escapeHtml(name)}</span>
+                        <div class="feature-bar-wrapper">
+                            <div class="feature-bar">
+                                <div class="feature-bar-fill" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                        <span class="feature-value">${parseFloat(importance).toFixed(4)}</span>
+                    </li>
+                `;
+            });
+
+            html += '</ul></div>';
+        }
+
+        document.getElementById('modalDetalhesBody').innerHTML = html;
+        document.getElementById('modalDetalhes').classList.add('active');
+    }
+
+    /**
+     * Formata valor numérico para exibição.
+     */
+    function fmt(val) {
+        if (val == null || val === '') return '-';
+        return parseFloat(val).toFixed(4);
+    }
+
+    /**
+     * Fecha o modal de detalhes.
+     */
+    function fecharModalDetalhes(event) {
+        if (event && event.target !== event.currentTarget) return;
+        document.getElementById('modalDetalhes').classList.remove('active');
+    }
+
+    // ============================================
+    // Modal de Treino
+    // ============================================
+
+    /**
+     * Abre o modal para treinar um novo modelo.
+     */
+    function abrirModalTreino() {
+        if (!servicoOnline) {
+            showToast('Serviço TensorFlow está offline. Verifique o container.', 'erro');
+            return;
+        }
+        // Resetar formulário
+        $('#selectPontoTreino').val('').trigger('change');
+        document.getElementById('selectSemanas').value = '24';
+        document.getElementById('chkForce').checked = false;
+        document.getElementById('btnIniciarTreino').disabled = false;
+
+        document.getElementById('modalTreino').classList.add('active');
+
+        // Focar no Select2
+        setTimeout(() => $('#selectPontoTreino').select2('open'), 300);
+    }
+
+    /**
+     * Fecha o modal de treino.
+     */
+    function fecharModalTreino(event) {
+        if (event && event.target !== event.currentTarget) return;
+        document.getElementById('modalTreino').classList.remove('active');
+    }
+
+    // ============================================
+    // Treinar / Retreinar modelo
+    // ============================================
+
+    /**
+     * Inicia o treinamento de um novo modelo via modal.
+     */
+    function iniciarTreino() {
+        const cdPonto = $('#selectPontoTreino').val();
+        if (!cdPonto) {
+            showToast('Selecione um ponto de medição', 'aviso');
+            return;
+        }
+
+        const semanas = parseInt(document.getElementById('selectSemanas').value);
+        const force = document.getElementById('chkForce').checked;
+        const tipoMedidor = parseInt($('#selectPontoTreino option:selected').data('tipo') || 1);
+
+        // Fechar modal e mostrar loading
+        fecharModalTreino();
+        executarTreino(parseInt(cdPonto), tipoMedidor, semanas, force);
+    }
+
+    /**
+     * Retreina um modelo existente (force=true).
+     * @param {number} cdPonto - Código do ponto
+     * @param {number} tipoMedidor - Tipo do medidor
+     */
+    function retreinar(cdPonto, tipoMedidor) {
+        if (!servicoOnline) {
+            showToast('Serviço TensorFlow está offline', 'erro');
+            return;
+        }
+
+        if (!confirm(`Deseja retreinar o modelo do ponto #${cdPonto}?\n\nIsso irá sobrescrever o modelo existente.`)) {
+            return;
+        }
+
+        executarTreino(cdPonto, tipoMedidor, 24, true);
+    }
+
+    /**
+     * Executa o treinamento chamando o endpoint predicaoTensorFlow.php.
+     * @param {number} cdPonto - Código do ponto
+     * @param {number} tipoMedidor - Tipo do medidor
+     * @param {number} semanas - Semanas de histórico
+     * @param {boolean} force - Forçar retreino
+     */
+    function executarTreino(cdPonto, tipoMedidor, semanas, force) {
+        // Mostrar loading
+        document.getElementById('loadingText').textContent = `Treinando modelo para ponto #${cdPonto}...`;
+        document.getElementById('loadingSub').textContent =
+            `${semanas} semanas de histórico | Isso pode levar alguns minutos`;
+        document.getElementById('loadingOverlay').classList.add('active');
+
+        fetch('bd/operacoes/predicaoTensorFlow.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                acao: 'train',
+                cd_ponto: cdPonto,
+                semanas: semanas,
+                tipo_medidor: tipoMedidor,
+                force: force
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('loadingOverlay').classList.remove('active');
+
+            if (data.success) {
+                showToast(data.message || `Modelo treinado com sucesso para ponto #${cdPonto}`, 'sucesso');
+
+                // Recarregar lista de modelos
+                carregarModelos();
+            } else {
+                showToast(data.error || 'Erro ao treinar modelo', 'erro');
+            }
+        })
+        .catch(err => {
+            document.getElementById('loadingOverlay').classList.remove('active');
+            showToast('Erro de conexão: ' + err.message, 'erro');
+        });
+    }
+</script>
+
+<?php include_once 'includes/footer.inc.php'; ?>

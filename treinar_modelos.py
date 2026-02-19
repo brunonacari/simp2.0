@@ -60,13 +60,14 @@ import xgboost as xgb
 # ============================================
 # Configuração
 # ============================================
+global OUTPUT_DIR
 
 # v6.0: Usa banco SIMP diretamente (sem FINDESLAB)
 DB_CONFIG = {
-    'server': os.environ.get('DB_HOST', r'sgbd-dev-simp.sistemas.cesan.com.br\corporativo'),
+    'server': os.environ.get('DB_HOST', r'sgbd-hom-simp.sistemas.cesan.com.br\corporativo'),
     'database': os.environ.get('DB_NAME', 'simp'),
     'user': os.environ.get('DB_USER', 'simp'),
-    'password': os.environ.get('DB_PASS', 'cesan'),
+    'password': os.environ.get('DB_PASS', 'wzJirU9kWK1LWzwFruGE'),
     'driver': '{ODBC Driver 17 for SQL Server}'
 }
 
@@ -107,12 +108,17 @@ logger = logging.getLogger('treino')
 # ============================================
 
 def conectar_banco() -> pyodbc.Connection:
-    """
-    Conecta ao banco SIMP.
-    v6.0: Conexão direta ao SIMP (sem FINDESLAB).
-    """
+    """Conecta ao banco FINDESLAB. Detecta driver ODBC disponível."""
+    # Detectar driver disponível (18 tem prioridade)
+    driver = DB_CONFIG['driver']
+    available = pyodbc.drivers()
+    if 'ODBC Driver 18 for SQL Server' in available:
+        driver = '{ODBC Driver 18 for SQL Server}'
+    elif 'ODBC Driver 17 for SQL Server' in available:
+        driver = '{ODBC Driver 17 for SQL Server}'
+    
     conn_str = (
-        f"DRIVER={DB_CONFIG['driver']};"
+        f"DRIVER={driver};"
         f"SERVER={DB_CONFIG['server']};"
         f"DATABASE={DB_CONFIG['database']};"
         f"UID={DB_CONFIG['user']};"
@@ -797,7 +803,7 @@ Exemplos:
         parser.error(f"--bloco deve ser entre 1 e {args.total_blocos}")
     if args.workers < 1:
         parser.error("--workers deve ser >= 1")
-    if args.output != OUTPUT_DIR:
+    if args.output:
         OUTPUT_DIR = args.output
     
     treinar_todos(

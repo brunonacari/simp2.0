@@ -57,6 +57,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /nfs/swarm/simp20-php/modelos_treinados:/app/models
+      - ../treinar_modelos.py:/app/treinar_modelos.py:ro
     networks:
       - cntlm
     deploy:

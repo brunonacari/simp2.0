@@ -41,6 +41,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /home/cesan/simp2.0/modelos_treinados:/app/models
+      - ../treinar_modelos.py:/app/treinar_modelos.py:ro
     networks:
       - cntlm
     ports:

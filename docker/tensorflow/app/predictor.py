@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.preprocessing import MinMaxScaler, RobustScaler
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 import xgboost as xgb
 
@@ -425,36 +425,73 @@ class TimeSeriesPredictor:
 
         modelo.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
 
+        # =============================================
+        # Avaliar métricas completas (mesmo padrão do treinar_modelos.py)
+        # =============================================
         y_pred = modelo.predict(X_val)
         mae = mean_absolute_error(y_val, y_pred)
         rmse = np.sqrt(mean_squared_error(y_val, y_pred))
+        r2 = r2_score(y_val, y_pred)
 
-        # Salvar
+        # Correlação
+        if y_val.std() > 0 and np.std(y_pred) > 0:
+            correlacao = float(np.corrcoef(y_val, y_pred)[0, 1])
+        else:
+            correlacao = 0.0
+
+        # MAPE (Erro Percentual Absoluto Médio)
+        mask = y_val > 0
+        if mask.sum() > 0:
+            mape = float(np.mean(np.abs((y_val[mask] - y_pred[mask]) / y_val[mask]))) * 100
+        else:
+            mape = 0.0
+
+        # Feature Importance (ordenado por importância decrescente)
+        importances = modelo.feature_importances_
+        fi_dict = dict(zip(feature_cols, [round(float(v), 4) for v in importances]))
+        fi_sorted = dict(sorted(fi_dict.items(), key=lambda x: x[1], reverse=True))
+
+        # Número de árvores (early stopping pode cortar)
+        n_arvores = modelo.best_iteration + 1 if modelo.best_iteration else 300
+
+        # Salvar modelo
         ponto_dir = os.path.join(self.models_dir, f"ponto_{cd_ponto}")
         os.makedirs(ponto_dir, exist_ok=True)
-
         modelo.save_model(os.path.join(ponto_dir, 'model.json'))
 
+        # Metadados completos (mesmo formato do treinar_modelos.py v5.0)
         metricas = {
             'mae': round(float(mae), 4),
             'rmse': round(float(rmse), 4),
-            'n_arvores': modelo.best_iteration + 1 if modelo.best_iteration else 300,
+            'r2': round(float(r2), 4),
+            'correlacao': round(float(correlacao), 4),
+            'mape_pct': round(float(mape), 2),
+            'n_arvores': int(n_arvores),
+            'max_depth': 6,
+            'learning_rate': 0.05,
+            'amostras_treino': len(X_train),
+            'amostras_validacao': len(X_val),
+            'n_features': len(feature_cols),
             'feature_names': feature_cols,
+            'feature_importance': fi_sorted,
             'modelo_tipo': 'xgboost',
+            'target_tipo': 'autolag',
             'lags': [1, 3, 6],
             'treinado_em': datetime.now().isoformat(),
             'tipo_medidor': tipo_medidor,
             'versao_treino': '6.0_api'
         }
 
-        with open(os.path.join(ponto_dir, 'metricas.json'), 'w') as f:
-            json.dump(metricas, f, indent=2)
+        with open(os.path.join(ponto_dir, 'metricas.json'), 'w', encoding='utf-8') as f:
+            json.dump(metricas, f, indent=2, ensure_ascii=False)
 
         self.models[cd_ponto] = modelo
 
+        logger.info(f"  Treino API concluído: MAE={mae:.4f} | RMSE={rmse:.4f} | R²={r2:.4f} | MAPE={mape:.1f}%")
+
         return {
-            'metricas': {'mae': round(float(mae), 4), 'rmse': round(float(rmse), 4)},
-            'n_arvores': metricas['n_arvores'],
+            'metricas': metricas,
+            'epocas': n_arvores,
             'dados_treino': len(X_train)
         }
 

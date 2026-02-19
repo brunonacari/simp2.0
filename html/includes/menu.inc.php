@@ -1531,6 +1531,13 @@ if (isset($_SESSION['msg'])) {
                     </a>
                 </li>
                 <li class="sidebar-item">
+                    <a href="modelosML.php" class="sidebar-link <?= $paginaAtual === 'modelosML' ? 'active' : '' ?>"
+                        data-title="Modelos ML">
+                        <ion-icon name="hardware-chip-outline"></ion-icon>
+                        <span class="sidebar-link-text">Modelos ML</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
                     <a href="log.php" class="sidebar-link <?= $paginaAtual === 'log' ? 'active' : '' ?>"
                         data-title="Consulta de Log">
                         <ion-icon name="document-text-outline"></ion-icon>

@@ -204,13 +204,13 @@ try {
         // TRAIN - Treinar modelo para um ponto
         // ----------------------------------------
         case 'train':
-            // Verificar permissão (apenas administradores)
+            // Verificar permissão usando o sistema padrão do SIMP
             session_start();
-            $perfil = $_SESSION['perfil'] ?? '';
-            if (!in_array($perfil, ['ADMIN', 'DESENVOLVEDOR'])) {
+            require_once __DIR__ . '/../verificarAuth.php';
+            if (!podeEditarTela('Treinamento IA')) {
                 retornarJSON_TF([
                     'success' => false,
-                    'error' => 'Permissão negada. Apenas administradores podem treinar modelos.'
+                    'error' => 'Permissão negada. Você não tem acesso de escrita em Treinamento IA.'
                 ]);
             }
             
