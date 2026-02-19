@@ -315,6 +315,30 @@ try {
                 'predict_completo' => $predict
             ]);
             break;
+        case 'test_findeslab':
+            $resposta = chamarTensorFlow(
+                $tensorflowUrl . '/api/predict',
+                'POST',
+                [
+                    'cd_ponto' => 1396,
+                    'data' => date('Y-m-d'),
+                    'horas' => [8],
+                    'tipo_medidor' => 1
+                ],
+                60
+            );
+            
+            // Checar env vars do TF
+            $health = chamarTensorFlow($tensorflowUrl . '/health', 'GET', null, 5);
+            
+            retornarJSON_TF([
+                'success' => true,
+                'predict_modelo' => $resposta['modelo'] ?? 'erro',
+                'predict_dados' => $resposta['dados_utilizados'] ?? 0,
+                'health_db' => $health['database'] ?? false,
+                'nota' => 'Se modelo=statistical_fallback mas modelos existem, FINDESLAB provavelmente inacessível'
+            ]);
+            break;
         // ----------------------------------------
         // Ação desconhecida
         // ----------------------------------------

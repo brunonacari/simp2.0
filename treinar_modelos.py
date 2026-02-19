@@ -62,7 +62,7 @@ import xgboost as xgb
 # ============================================
 
 DB_CONFIG = {
-    'server': r'sgbd-dev-simp.sistemas.cesan.com.br\corporativo',
+    'server': 'sgbd-dev-simp.sistemas.cesan.com.br\corporativo',
     'database': 'FINDESLAB',
     'user': 'simp',
     'password': 'cesan',

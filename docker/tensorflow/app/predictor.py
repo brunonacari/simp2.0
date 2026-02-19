@@ -135,7 +135,11 @@ class TimeSeriesPredictor:
         max_lag = max(lags) if lags else 6
 
         # Buscar dados recentes das auxiliares
-        dados_findeslab = buscar_dados_tags_recentes(tags_auxiliares, max_lag + 12, data_alvo)
+        try:
+            dados_findeslab = buscar_dados_tags_recentes(tags_auxiliares, max_lag + 12, data_alvo)
+        except Exception as e:
+            logger.error(f"Erro ao conectar FINDESLAB: {e}")
+            dados_findeslab = None
 
         if dados_findeslab is None or dados_findeslab.empty:
             logger.warning(f"Sem dados FINDESLAB para auxiliares, usando fallback")

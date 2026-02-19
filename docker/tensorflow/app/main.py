@@ -134,7 +134,11 @@ def predict():
             horas=horas,
             tipo_medidor=tipo_medidor
         )
-        
+        # Debug: adicionar motivo se fallback
+        if resultado.get('modelo') == 'statistical_fallback':
+            resultado['_debug_motivo'] = 'Modelo existe mas caiu no fallback - provável falha FINDESLAB'
+            resultado['_debug_modelo_existe'] = predictor.has_model(cd_ponto)
+            resultado['_debug_metricas_exist'] = bool(predictor._load_metrics(cd_ponto))
         return jsonify({
             'success': True,
             'predicoes': resultado['predicoes'],
