@@ -366,4 +366,4 @@ function chamarTensorFlow(string $url, string $method = 'POST', ?array $data = n
     }
     
     return $decoded;
-}
+} 
