@@ -21,6 +21,7 @@ services:
       - HTTP_PROXY=http://cntlm:3128/
       - HTTPS_PROXY=http://cntlm:3128/
       - no_proxy=localhost,127.0.0.1,simp20-tensorflow
+      - NO_PROXY=localhost,127.0.0.1,simp20-tensorflow
     networks:
       - frontend
       - cntlm
@@ -28,7 +29,6 @@ services:
       - 9461:80
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /nfs/swarm/simp20-php/modelos_treinados:/var/www/html/modelos_treinados
     deploy:
       mode: replicated
       resources:
@@ -38,27 +38,23 @@ services:
 
   simp20-tensorflow:
     image: "registry.cesan.com.br/cesan/simp20-tensorflow:latest"
-    labels:
-      - "br.com.cesan.app=${CI_PROJECT_NAME}"
-      - "io.portainer.accesscontrol.teams=adm"
     environment:
       - DB_HOST=${DB_HOST}
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
       - FINDESLAB_HOST=${FINDESLAB_HOST}
-      - FINDESLAB_DB=FINDESLAB
+      - FINDESLAB_DB=${FINDESLAB_DB}
+      - FINDESLAB_DB_USER=${FINDESLAB_DB_USER}
+      - FINDESLAB_DB_PASS=${FINDESLAB_DB_PASS}
       - PORT=5000
-      - FLASK_ENV=production
+      - FLASK_ENV=development
       - MODELS_DIR=/app/models
-      - http_proxy=http://cntlm:3128/
-      - https_proxy=http://cntlm:3128/
-      - HTTP_PROXY=http://cntlm:3128/
-      - HTTPS_PROXY=http://cntlm:3128/
       - no_proxy=localhost,127.0.0.1
+      - NO_PROXY=localhost,127.0.0.1
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /nfs/swarm/simp20-php/modelos_treinados:/app/models
+      - tensorflow_models:/app/models
     networks:
       - cntlm
     deploy:
@@ -67,6 +63,39 @@ services:
         limits:
           cpus: '2'
           memory: 4096M
+
+  # cronjob:
+  #   image: registry.cesan.com.br/library/curlimages/curl:8.8.0
+  #   labels:
+  #     - "br.com.cesan.app=${CI_PROJECT_NAME}"
+  #     - "io.portainer.accesscontrol.teams=adm"
+  #   volumes:
+  #     - /etc/localtime:/etc/localtime:ro
+  #   networks:
+  #     - frontend
+  #   command: "python3 treinar_modelos.py --semanas 52"
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 0
+  #     restart_policy:
+  #       condition: none
+  #     labels:
+  #       - "swarm.cronjob.enable=true"
+  #       - "swarm.cronjob.schedule=${CRONJOB_SCHEDULE}"
+  #       - "swarm.cronjob.skip-running=false"
+  #     resources:
+  #       limits:
+  #         cpus: '2'
+  #         memory: 1024M
+
+
+volumes:
+  tensorflow_models:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs.cesan.com.br,rw,nfsvers=4
+      device: ":/simp20-php/files/modelos_treinados"
 
 
 # ============================================
