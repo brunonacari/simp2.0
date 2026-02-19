@@ -157,8 +157,15 @@ try {
     }
 
     @keyframes pulse-dot {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
     }
 
     /* Botão novo treino */
@@ -217,10 +224,25 @@ try {
         font-size: 22px;
     }
 
-    .stat-card-icon.total { background: #eff6ff; color: #3b82f6; }
-    .stat-card-icon.xgboost { background: #fef3c7; color: #f59e0b; }
-    .stat-card-icon.good { background: #dcfce7; color: #16a34a; }
-    .stat-card-icon.bad { background: #fee2e2; color: #dc2626; }
+    .stat-card-icon.total {
+        background: #eff6ff;
+        color: #3b82f6;
+    }
+
+    .stat-card-icon.xgboost {
+        background: #fef3c7;
+        color: #f59e0b;
+    }
+
+    .stat-card-icon.good {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .stat-card-icon.bad {
+        background: #fee2e2;
+        color: #dc2626;
+    }
 
     .stat-card-info h3 {
         font-size: 22px;
@@ -312,8 +334,13 @@ try {
     }
 
     @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     /* ============================================
@@ -446,10 +473,21 @@ try {
         transition: width 0.5s ease;
     }
 
-    .quality-bar-fill.excellent { background: linear-gradient(90deg, #22c55e, #16a34a); }
-    .quality-bar-fill.good { background: linear-gradient(90deg, #3b82f6, #2563eb); }
-    .quality-bar-fill.fair { background: linear-gradient(90deg, #f59e0b, #d97706); }
-    .quality-bar-fill.poor { background: linear-gradient(90deg, #ef4444, #dc2626); }
+    .quality-bar-fill.excellent {
+        background: linear-gradient(90deg, #22c55e, #16a34a);
+    }
+
+    .quality-bar-fill.good {
+        background: linear-gradient(90deg, #3b82f6, #2563eb);
+    }
+
+    .quality-bar-fill.fair {
+        background: linear-gradient(90deg, #f59e0b, #d97706);
+    }
+
+    .quality-bar-fill.poor {
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+    }
 
     .quality-label {
         font-size: 11px;
@@ -457,10 +495,21 @@ try {
         white-space: nowrap;
     }
 
-    .quality-label.excellent { color: #16a34a; }
-    .quality-label.good { color: #2563eb; }
-    .quality-label.fair { color: #d97706; }
-    .quality-label.poor { color: #dc2626; }
+    .quality-label.excellent {
+        color: #16a34a;
+    }
+
+    .quality-label.good {
+        color: #2563eb;
+    }
+
+    .quality-label.fair {
+        color: #d97706;
+    }
+
+    .quality-label.poor {
+        color: #dc2626;
+    }
 
     /* Informações extras */
     .model-info-row {
@@ -789,7 +838,10 @@ try {
         flex-shrink: 0;
     }
 
-    .feature-rank.top { background: #fef3c7; color: #92400e; }
+    .feature-rank.top {
+        background: #fef3c7;
+        color: #92400e;
+    }
 
     .feature-name {
         flex: 1;
@@ -1151,8 +1203,8 @@ try {
     <div class="filters-bar">
         <div class="search-input-wrapper">
             <ion-icon name="search-outline"></ion-icon>
-            <input type="text" class="search-input" id="searchInput"
-                placeholder="Buscar por ponto, TAG ou código..." oninput="filtrarModelos()">
+            <input type="text" class="search-input" id="searchInput" placeholder="Buscar por ponto, TAG ou código..."
+                oninput="filtrarModelos()">
         </div>
         <select class="filter-select" id="filterQuality" onchange="filtrarModelos()">
             <option value="">Todas as qualidades</option>
@@ -1211,79 +1263,130 @@ try {
      Modal: Novo Treino
      ============================================ -->
 <?php if ($podeEditar): ?>
-<div class="modal-overlay" id="modalTreino" onclick="fecharModalTreino(event)">
-    <div class="modal-container" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <h2>
-                <ion-icon name="fitness-outline"></ion-icon>
-                Treinar Novo Modelo
-            </h2>
-            <button class="btn-close" onclick="fecharModalTreino()">
-                <ion-icon name="close-outline"></ion-icon>
-            </button>
-        </div>
-        <div class="modal-body">
-            <!-- Ponto de Medição (Select2 com busca) -->
-            <div class="train-form-group">
-                <label>
-                    <ion-icon name="pin-outline"></ion-icon>
-                    Ponto de Medição
-                </label>
-                <select id="selectPontoTreino" style="width: 100%;">
-                    <option value="">Selecione um ponto de medição...</option>
-                    <?php foreach ($pontosMedicao as $pm): ?>
-                        <option value="<?= $pm['CD_PONTO_MEDICAO'] ?>"
-                            data-tipo="<?= $pm['ID_TIPO_MEDIDOR'] ?>">
-                            <?= htmlspecialchars(
-                                $pm['CD_PONTO_MEDICAO'] . ' - ' .
-                                $pm['DS_NOME'] .
-                                ($pm['DS_TIPO_MEDIDOR'] ? ' (' . $pm['DS_TIPO_MEDIDOR'] . ')' : '') .
-                                ($pm['DS_UNIDADE'] ? ' - ' . $pm['DS_UNIDADE'] : '')
-                            ) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <div class="train-form-hint">
-                    Selecione o ponto para o qual deseja treinar o modelo preditivo
+    <div class="modal-overlay" id="modalTreino" onclick="fecharModalTreino(event)">
+        <div class="modal-container" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>
+                    <ion-icon name="fitness-outline"></ion-icon>
+                    Treinar Novo Modelo
+                </h2>
+                <button class="btn-close" onclick="fecharModalTreino()">
+                    <ion-icon name="close-outline"></ion-icon>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Ponto de Medição (Select2 com busca) -->
+                <div class="train-form-group">
+                    <label>
+                        <ion-icon name="pin-outline"></ion-icon>
+                        Ponto de Medição
+                    </label>
+                    <select id="selectPontoTreino" style="width: 100%;">
+                        <option value="">Selecione um ponto de medição...</option>
+                        <?php foreach ($pontosMedicao as $pm): ?>
+                            <option value="<?= $pm['CD_PONTO_MEDICAO'] ?>" data-tipo="<?= $pm['ID_TIPO_MEDIDOR'] ?>">
+                                <?= htmlspecialchars(
+                                    $pm['CD_PONTO_MEDICAO'] . ' - ' .
+                                    $pm['DS_NOME'] .
+                                    ($pm['DS_TIPO_MEDIDOR'] ? ' (' . $pm['DS_TIPO_MEDIDOR'] . ')' : '') .
+                                    ($pm['DS_UNIDADE'] ? ' - ' . $pm['DS_UNIDADE'] : '')
+                                ) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="train-form-hint">
+                        Selecione o ponto para o qual deseja treinar o modelo preditivo
+                    </div>
+                </div>
+
+                <!-- Semanas de histórico -->
+                <div class="train-form-group">
+                    <label>
+                        <ion-icon name="calendar-outline"></ion-icon>
+                        Semanas de Histórico
+                    </label>
+                    <select id="selectSemanas">
+                        <option value="12">12 semanas (3 meses)</option>
+                        <option value="24" selected>24 semanas (6 meses)</option>
+                        <option value="36">36 semanas (9 meses)</option>
+                        <option value="52">52 semanas (1 ano)</option>
+                    </select>
+                    <div class="train-form-hint">
+                        Mais semanas = modelo mais robusto, porém treino mais demorado
+                    </div>
+                </div>
+
+                <!-- Forçar retreino -->
+                <div class="train-form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="chkForce" style="width: auto;">
+                        <span>Forçar retreino (sobrescrever modelo existente)</span>
+                    </label>
                 </div>
             </div>
-
-            <!-- Semanas de histórico -->
-            <div class="train-form-group">
-                <label>
-                    <ion-icon name="calendar-outline"></ion-icon>
-                    Semanas de Histórico
-                </label>
-                <select id="selectSemanas">
-                    <option value="12">12 semanas (3 meses)</option>
-                    <option value="24" selected>24 semanas (6 meses)</option>
-                    <option value="36">36 semanas (9 meses)</option>
-                    <option value="52">52 semanas (1 ano)</option>
-                </select>
-                <div class="train-form-hint">
-                    Mais semanas = modelo mais robusto, porém treino mais demorado
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-cancel" onclick="fecharModalTreino()">
+                    Cancelar
+                </button>
+                <button type="button" class="btn-modal btn-primary" id="btnIniciarTreino" onclick="iniciarTreino()">
+                    <ion-icon name="flash-outline"></ion-icon>
+                    Iniciar Treinamento
+                </button>
             </div>
-
-            <!-- Forçar retreino -->
-            <div class="train-form-group">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" id="chkForce" style="width: auto;">
-                    <span>Forçar retreino (sobrescrever modelo existente)</span>
-                </label>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-modal btn-cancel" onclick="fecharModalTreino()">
-                Cancelar
-            </button>
-            <button type="button" class="btn-modal btn-primary" id="btnIniciarTreino" onclick="iniciarTreino()">
-                <ion-icon name="flash-outline"></ion-icon>
-                Iniciar Treinamento
-            </button>
         </div>
     </div>
-</div>
+<?php endif; ?>
+
+<!-- ============================================
+     Modal: Retreinar Modelo
+     ============================================ -->
+<?php if ($podeEditar): ?>
+    <div class="modal-overlay" id="modalRetreino" onclick="fecharModalRetreino(event)">
+        <div class="modal-container" style="max-width: 440px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>
+                    <ion-icon name="refresh-outline"></ion-icon>
+                    Retreinar Modelo <span id="retreinoPonto"></span>
+                </h2>
+                <button class="btn-close" onclick="fecharModalRetreino()">
+                    <ion-icon name="close-outline"></ion-icon>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Campos ocultos -->
+                <input type="hidden" id="retreinoCdPonto">
+                <input type="hidden" id="retreinoTipoMedidor">
+
+                <!-- Período de histórico -->
+                <div class="train-form-group">
+                    <label>
+                        <ion-icon name="calendar-outline"></ion-icon>
+                        Período de histórico
+                    </label>
+                    <select id="selectSemanasRetreino">
+                        <option value="12">12 semanas (3 meses)</option>
+                        <option value="24" selected>24 semanas (6 meses)</option>
+                        <option value="36">36 semanas (9 meses)</option>
+                        <option value="52">52 semanas (1 ano)</option>
+                        <option value="78">78 semanas (1 ano e meio)</option>
+                        <option value="104">104 semanas (2 anos)</option>
+                    </select>
+                    <div class="train-form-hint">
+                        Mais semanas = modelo mais robusto, porém treino mais demorado
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-cancel" onclick="fecharModalRetreino()">
+                    Cancelar
+                </button>
+                <button type="button" class="btn-modal btn-primary" onclick="confirmarRetreino()">
+                    <ion-icon name="flash-outline"></ion-icon>
+                    Retreinar
+                </button>
+            </div>
+        </div>
+    </div>
 <?php endif; ?>
 
 <!-- ============================================
@@ -1350,6 +1453,7 @@ try {
             if (e.key === 'Escape') {
                 fecharModalDetalhes();
                 fecharModalTreino();
+                fecharModalRetreino();
             }
         });
     });
@@ -1368,26 +1472,26 @@ try {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ acao: 'health' })
         })
-        .then(r => r.json())
-        .then(data => {
-            const dot = document.getElementById('statusDot');
-            const text = document.getElementById('serviceStatusText');
+            .then(r => r.json())
+            .then(data => {
+                const dot = document.getElementById('statusDot');
+                const text = document.getElementById('serviceStatusText');
 
-            if (data.success && data.tensorflow && data.tensorflow.status === 'ok') {
-                servicoOnline = true;
-                dot.className = 'status-dot online';
-                text.textContent = 'TensorFlow Online';
-            } else {
+                if (data.success && data.tensorflow && data.tensorflow.status === 'ok') {
+                    servicoOnline = true;
+                    dot.className = 'status-dot online';
+                    text.textContent = 'TensorFlow Online';
+                } else {
+                    servicoOnline = false;
+                    dot.className = 'status-dot offline';
+                    text.textContent = 'TensorFlow Offline';
+                }
+            })
+            .catch(() => {
                 servicoOnline = false;
-                dot.className = 'status-dot offline';
-                text.textContent = 'TensorFlow Offline';
-            }
-        })
-        .catch(() => {
-            servicoOnline = false;
-            document.getElementById('statusDot').className = 'status-dot offline';
-            document.getElementById('serviceStatusText').textContent = 'TensorFlow Offline';
-        });
+                document.getElementById('statusDot').className = 'status-dot offline';
+                document.getElementById('serviceStatusText').textContent = 'TensorFlow Offline';
+            });
     }
 
     // ============================================
@@ -1407,19 +1511,19 @@ try {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ acao: 'status' })
         })
-        .then(r => r.json())
-        .then(data => {
-            btn.classList.remove('loading');
+            .then(r => r.json())
+            .then(data => {
+                btn.classList.remove('loading');
 
-            if (data.success && data.modelos) {
-                todosModelos = data.modelos;
-                atualizarEstatisticas();
-                filtrarModelos();
-            } else {
-                // Serviço offline ou erro
-                todosModelos = [];
-                atualizarEstatisticas();
-                document.getElementById('modelsContainer').innerHTML = `
+                if (data.success && data.modelos) {
+                    todosModelos = data.modelos;
+                    atualizarEstatisticas();
+                    filtrarModelos();
+                } else {
+                    // Serviço offline ou erro
+                    todosModelos = [];
+                    atualizarEstatisticas();
+                    document.getElementById('modelsContainer').innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">
                             <ion-icon name="cloud-offline-outline"></ion-icon>
@@ -1428,13 +1532,13 @@ try {
                         <p>${data.error || 'Não foi possível conectar ao serviço TensorFlow'}</p>
                     </div>
                 `;
-            }
-        })
-        .catch(err => {
-            btn.classList.remove('loading');
-            todosModelos = [];
-            atualizarEstatisticas();
-            document.getElementById('modelsContainer').innerHTML = `
+                }
+            })
+            .catch(err => {
+                btn.classList.remove('loading');
+                todosModelos = [];
+                atualizarEstatisticas();
+                document.getElementById('modelsContainer').innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">
                         <ion-icon name="warning-outline"></ion-icon>
@@ -1443,7 +1547,7 @@ try {
                     <p>${err.message}</p>
                 </div>
             `;
-        });
+            });
     }
 
     // ============================================
@@ -1934,7 +2038,7 @@ try {
     }
 
     /**
-     * Retreina um modelo existente (force=true).
+     * Abre modal de retreino com seleção de período.
      * @param {number} cdPonto - Código do ponto
      * @param {number} tipoMedidor - Tipo do medidor
      */
@@ -1944,11 +2048,32 @@ try {
             return;
         }
 
-        if (!confirm(`Deseja retreinar o modelo do ponto #${cdPonto}?\n\nIsso irá sobrescrever o modelo existente.`)) {
-            return;
-        }
+        // Preencher modal de retreino
+        document.getElementById('retreinoPonto').textContent = '#' + cdPonto;
+        document.getElementById('retreinoCdPonto').value = cdPonto;
+        document.getElementById('retreinoTipoMedidor').value = tipoMedidor;
+        document.getElementById('selectSemanasRetreino').value = '24';
+        document.getElementById('modalRetreino').classList.add('active');
+    }
 
-        executarTreino(cdPonto, tipoMedidor, 24, true);
+    /**
+     * Fecha o modal de retreino.
+     */
+    function fecharModalRetreino(event) {
+        if (event && event.target !== event.currentTarget) return;
+        document.getElementById('modalRetreino').classList.remove('active');
+    }
+
+    /**
+     * Confirma e executa o retreino a partir do modal.
+     */
+    function confirmarRetreino() {
+        const cdPonto = parseInt(document.getElementById('retreinoCdPonto').value);
+        const tipoMedidor = parseInt(document.getElementById('retreinoTipoMedidor').value);
+        const semanas = parseInt(document.getElementById('selectSemanasRetreino').value);
+
+        fecharModalRetreino();
+        executarTreino(cdPonto, tipoMedidor, semanas, true);
     }
 
     /**
@@ -1976,23 +2101,23 @@ try {
                 force: force
             })
         })
-        .then(r => r.json())
-        .then(data => {
-            document.getElementById('loadingOverlay').classList.remove('active');
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('loadingOverlay').classList.remove('active');
 
-            if (data.success) {
-                showToast(data.message || `Modelo treinado com sucesso para ponto #${cdPonto}`, 'sucesso');
+                if (data.success) {
+                    showToast(data.message || `Modelo treinado com sucesso para ponto #${cdPonto}`, 'sucesso');
 
-                // Recarregar lista de modelos
-                carregarModelos();
-            } else {
-                showToast(data.error || 'Erro ao treinar modelo', 'erro');
-            }
-        })
-        .catch(err => {
-            document.getElementById('loadingOverlay').classList.remove('active');
-            showToast('Erro de conexão: ' + err.message, 'erro');
-        });
+                    // Recarregar lista de modelos
+                    carregarModelos();
+                } else {
+                    showToast(data.error || 'Erro ao treinar modelo', 'erro');
+                }
+            })
+            .catch(err => {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                showToast('Erro de conexão: ' + err.message, 'erro');
+            });
     }
 </script>
 
