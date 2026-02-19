@@ -47,7 +47,9 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
       - FINDESLAB_HOST=${FINDESLAB_HOST}
-      - FINDESLAB_DB=FINDESLAB
+      - FINDESLAB_DB=${FINDESLAB_DB}
+      - FINDESLAB_DB_USER=${FINDESLAB_DB_USER}
+      - FINDESLAB_DB_PASS=${FINDESLAB_DB_PASS}
       - PORT=5000
       - FLASK_ENV=production
       - MODELS_DIR=/app/models
