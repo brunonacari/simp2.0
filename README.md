@@ -28,6 +28,14 @@ docker stack deploy --with-registry-auth -c docker/stackdev.yml $CI_PROJECT_NAME
 <!-- container PYTHON necessário para testes do TENSORFLOW -->
 # 1. Build do container
 ```
+BUILDAR SOLUÇÃO
+
+docker login registry.cesan.com.br
+docker build -f docker/Dockerfile.tensorflow -t registry.cesan.com.br/cesan/simp20-tensorflow:latest .
+docker push registry.cesan.com.br/cesan/simp20-tensorflow:latest
+docker service update --force simp20-php_simp20-tensorflow
+
+
 source docker/.env
 docker build -f docker/Dockerfile.tensorflow -t registry.cesan.com.br/cesan/simp20-tensorflow:0.0.1 .
 docker push registry.cesan.com.br/cesan/simp20-tensorflow:0.0.1
