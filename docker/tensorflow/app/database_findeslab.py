@@ -33,8 +33,8 @@ def get_findeslab_connection() -> Optional[pyodbc.Connection]:
     """
     host = os.environ.get('FINDESLAB_HOST')
     db = os.environ.get('FINDESLAB_DB', 'FINDESLAB')
-    user = os.environ.get('FINDESLAB_DB_USER')
-    password = os.environ.get('FINDESLAB_DB_PASS')
+    user = os.environ.get('simp')
+    password = os.environ.get('cesan')
 
     if not host:
         logger.warning("FINDESLAB_HOST não configurado")
