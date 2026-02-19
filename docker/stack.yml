@@ -47,14 +47,15 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
       - FINDESLAB_HOST=${FINDESLAB_HOST}
-      - FINDESLAB_DB=${FINDESLAB_DB}
-      - FINDESLAB_DB_USER=${FINDESLAB_DB_USER}
-      - FINDESLAB_DB_PASS=${FINDESLAB_DB_PASS}
+      - FINDESLAB_DB=FINDESLAB
       - PORT=5000
-      - FLASK_ENV=development
+      - FLASK_ENV=production
       - MODELS_DIR=/app/models
+      - http_proxy=http://cntlm:3128/
+      - https_proxy=http://cntlm:3128/
+      - HTTP_PROXY=http://cntlm:3128/
+      - HTTPS_PROXY=http://cntlm:3128/
       - no_proxy=localhost,127.0.0.1
-      - NO_PROXY=localhost,127.0.0.1
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /nfs/swarm/simp20-php/modelos_treinados:/app/models
