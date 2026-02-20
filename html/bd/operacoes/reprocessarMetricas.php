@@ -17,7 +17,7 @@
 
 /**
  * Enfileira uma data para reprocessamento assíncrono.
- * A SP_PROCESSAR_MEDICAO_V2 será executada pelo Job do SQL Server Agent.
+ * A SP_2_PROCESSAR_MEDICAO será executada pelo Job do SQL Server Agent.
  *
  * @param PDO    $pdo      Conexão PDO com o banco SIMP
  * @param string $data     Data no formato 'Y-m-d' (ex: '2026-01-25')

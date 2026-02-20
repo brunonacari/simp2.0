@@ -7,10 +7,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 --**************************************************************************
--- Procedure : SP_INTEGRACAO_CCO
+-- Procedure : SP_2_INTEGRACAO_CCO
 --
 -- Descrição : Procedure que executa a integração do BD do SIMP
---             com o BD do CCO. Ela chama a SP_INTEGRACAO_CCO_BODY.
+--             com o BD do CCO. Ela chama a SP_2_INTEGRACAO_CCO_BODY.
 --
 -- Argumentos: @id_tipo_leitura     - Tipo de Leitura desejado para filtragem dos Pontos de Medição.
 --             @ds_matricula        - Matricula do usuário da integração CCO
@@ -26,7 +26,7 @@ GO
 -- 04/02/2026    Bruno Nacari    CESAN    Adicionado parâmetro @dias_retroativos e SQL dinâmico para Historiador
 --**************************************************************************
 
-ALTER PROCEDURE [dbo].[SP_INTEGRACAO_CCO]
+ALTER PROCEDURE [dbo].[SP_2_INTEGRACAO_CCO]
 (
 	@id_tipo_leitura		tinyint,
 	@ds_matricula			varchar(10),
@@ -86,7 +86,7 @@ BEGIN TRY
 
     -- ***** Chama a procedure principal
     -- ***************************************************************************************
-    EXEC @rtn = [dbo].SP_INTEGRACAO_CCO_BODY 
+    EXEC @rtn = [dbo].SP_2_INTEGRACAO_CCO_BODY 
         @id_tipo_leitura, 
         @cd_usuario, 
         @cd_funcionalidade, 
@@ -144,7 +144,7 @@ RETURN 0
 -- -- COMO CHAMAR A PROCEDURE:
 -- -- Busca últimos 7 dias até ontem 23:59:59 (default)
 DECLARE @msg_erro VARCHAR(4000);
-EXEC [simp].[dbo].SP_INTEGRACAO_CCO 
+EXEC [simp].[dbo].SP_2_INTEGRACAO_CCO 
     @id_tipo_leitura = 8,
     @ds_matricula = '999999',
     @sp_msg_erro = @msg_erro OUTPUT,
@@ -153,7 +153,7 @@ SELECT @msg_erro AS Erro;
 
 -- -- Busca últimos 60 dias até ontem 23:59:59 (default de ambos)
 DECLARE @msg_erro VARCHAR(4000);
-EXEC [simp].[dbo].SP_INTEGRACAO_CCO 
+EXEC [simp].[dbo].SP_2_INTEGRACAO_CCO 
     @id_tipo_leitura = 8,
     @ds_matricula = '999999',
     @sp_msg_erro = @msg_erro OUTPUT;
@@ -161,7 +161,7 @@ SELECT @msg_erro AS Erro;
 
 -- -- Busca até data específica (sobrescreve o default)
 DECLARE @msg_erro VARCHAR(4000);
-EXEC [simp].[dbo].SP_INTEGRACAO_CCO 
+EXEC [simp].[dbo].SP_2_INTEGRACAO_CCO 
     @id_tipo_leitura = 8,
     @ds_matricula = '999999',
     @sp_msg_erro = @msg_erro OUTPUT,
@@ -172,7 +172,7 @@ SELECT @msg_erro AS Erro;
 -- Busca até agora (quase tempo real), últimos dados novos
 DECLARE @msg_erro VARCHAR(4000);
 DECLARE @agora DATETIME = GETDATE();
-EXEC [simp].[dbo].SP_INTEGRACAO_CCO 
+EXEC [simp].[dbo].SP_2_INTEGRACAO_CCO 
     @id_tipo_leitura = 8,
     @ds_matricula = '999999',
     @sp_msg_erro = @msg_erro OUTPUT,

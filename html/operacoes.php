@@ -2049,7 +2049,7 @@ $letrasTipoMedidor = [
                     const ponto = pontosEntrada[key];
                     const op = parseInt(ponto.operacao) || 1;
                     const iconeOp = op == 1 ? '<span class="icone-op soma">⊕</span>' : '<span class="icone-op subtracao">⊖</span>';
-                    headerHtml += `<th class="header-ponto">${iconeOp} ${ponto.codigo || ''}<br><small>${ponto.nome || ''}</small><button type="button" class="btn-grafico-popup" onclick="mostrarGraficoPopup('${key}', 'entrada')" title="Ver gráfico"><ion-icon name="stats-chart-outline"></ion-icon></button></th>`;
+                    headerHtml += `<th class="header-ponto">${iconeOp} ${ponto.codigo || ''}<br><small>${ponto.nome || ''}</small><button type="button" class="btn-grafico-popup" onclick="mostrarGraficoPopup('${key}', 'entrada')" title="Gráfico Médias Horárias"><ion-icon name="stats-chart-outline"></ion-icon></button></th>`;
                 });
                 // Subtotal de entrada
                 if (keysEntrada.length > 0) {
@@ -2060,7 +2060,7 @@ $letrasTipoMedidor = [
                     const ponto = pontosSaida[key];
                     const op = parseInt(ponto.operacao) || 1;
                     const iconeOp = op == 1 ? '<span class="icone-op soma">⊕</span>' : '<span class="icone-op subtracao">⊖</span>';
-                    headerHtml += `<th class="header-ponto">${iconeOp} ${ponto.codigo || ''}<br><small>${ponto.nome || ''}</small><button type="button" class="btn-grafico-popup" onclick="mostrarGraficoPopup('${key}', 'saida')" title="Ver gráfico"><ion-icon name="stats-chart-outline"></ion-icon></button></th>`;
+                    headerHtml += `<th class="header-ponto">${iconeOp} ${ponto.codigo || ''}<br><small>${ponto.nome || ''}</small><button type="button" class="btn-grafico-popup" onclick="mostrarGraficoPopup('${key}', 'saida')" title="Gráfico Médias Horárias"><ion-icon name="stats-chart-outline"></ion-icon></button></th>`;
                 });
                 // Subtotal de saída
                 if (keysSaida.length > 0) {

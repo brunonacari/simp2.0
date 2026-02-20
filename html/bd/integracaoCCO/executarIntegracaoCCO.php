@@ -2,7 +2,7 @@
 /**
  * SIMP - Sistema Integrado de Macromedição e Pitometria
  * Endpoint: Executar Integração CCO - Ponto de Medição
- * Executa a stored procedure SP_INTEGRACAO_CCO_BODY_PONTO_MEDICAO
+ * Executa a stored procedure SP_2_INTEGRACAO_CCO_BODY_PONTO_MEDICAO
  * 
  * Compatível com PHP 8.3+
  */
@@ -139,7 +139,7 @@ try {
         DECLARE @old_ansi_warnings BIT = 0;
         
         BEGIN TRY
-            EXEC SP_INTEGRACAO_CCO_BODY_PONTO_MEDICAO 
+            EXEC SP_2_INTEGRACAO_CCO_BODY_PONTO_MEDICAO 
                 @id_tipo_leitura = {$idTipoLeitura},
                 @cd_usuario = {$cdUsuario},
                 @cd_funcionalidade = {$cdFuncionalidade},

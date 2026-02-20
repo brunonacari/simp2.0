@@ -6,7 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[SP_INTEGRACAO_CCO_BODY]
+ALTER PROCEDURE [dbo].[SP_2_INTEGRACAO_CCO_BODY]
 (
 	@id_tipo_leitura		tinyint,
 	@cd_usuario             bigint,

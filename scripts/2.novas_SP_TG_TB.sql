@@ -4,7 +4,7 @@
 --                               │
 --                               ▼
 --               ┌───────────────────────────────────────┐
---               │  SP_PROCESSAR_MEDICAO_V2 (nova)       │
+--               │  SP_2_PROCESSAR_MEDICAO (nova)       │
 --               │  - Usa AVG                            │
 --               │  - 4 flags apenas                     │
 --               │  - Gera resumo textual                │
@@ -20,7 +20,7 @@
 -- ============================================================
 -- SIMP - Sistema Integrado de Macromedição e Pitometria
 -- ============================================================
--- Script: Criação de IA_METRICAS_DIARIAS e SP_PROCESSAR_MEDICAO_V2
+-- Script: Criação de IA_METRICAS_DIARIAS e SP_2_PROCESSAR_MEDICAO
 -- Versão: 1.0
 -- Data: 22/01/2026
 -- Autor: Bruno
@@ -139,10 +139,10 @@ PRINT '';
 -- PARTE 3: CRIAR STORED PROCEDURE
 -- ============================================================
 
-PRINT 'Criando SP_PROCESSAR_MEDICAO_V2...';
+PRINT 'Criando SP_2_PROCESSAR_MEDICAO...';
 GO
 
-CREATE OR ALTER PROCEDURE [dbo].[SP_PROCESSAR_MEDICAO_V2]
+CREATE OR ALTER PROCEDURE [dbo].[SP_2_PROCESSAR_MEDICAO]
     @DT_PROCESSAMENTO DATE = NULL
 AS
 BEGIN
@@ -162,7 +162,7 @@ END
     DECLARE @DT_FIM DATETIME = DATEADD(DAY, 1, @DT_INICIO);
     
     PRINT '================================================';
-    PRINT 'SP_PROCESSAR_MEDICAO_V2 - VERSAO SIMPLIFICADA';
+    PRINT 'SP_2_PROCESSAR_MEDICAO - VERSAO SIMPLIFICADA';
     PRINT '================================================';
     PRINT 'Data: ' + CONVERT(VARCHAR, @DT_PROCESSAMENTO, 103);
     PRINT 'Formula: AVG (media dos registros recebidos)';
@@ -646,7 +646,7 @@ FETCH NEXT FROM cur INTO @DATA;
 WHILE @@FETCH_STATUS = 0
 BEGIN
     PRINT 'Processando: ' + CONVERT(VARCHAR, @DATA, 103);
-    EXEC SP_PROCESSAR_MEDICAO_V2 @DT_PROCESSAMENTO = @DATA;
+    EXEC SP_2_PROCESSAR_MEDICAO @DT_PROCESSAMENTO = @DATA;
     FETCH NEXT FROM cur INTO @DATA;
 END
 

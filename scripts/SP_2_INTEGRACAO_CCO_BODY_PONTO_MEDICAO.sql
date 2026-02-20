@@ -1,12 +1,12 @@
 USE [SIMP]
 GO
-/****** Object:  StoredProcedure [dbo].[SP_INTEGRACAO_CCO_BODY_PONTO_MEDICAO]    Script Date: 09/02/2026 11:01:22 ******/
+/****** Object:  StoredProcedure [dbo].[SP_2_INTEGRACAO_CCO_BODY_PONTO_MEDICAO]    Script Date: 09/02/2026 11:01:22 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[SP_INTEGRACAO_CCO_BODY_PONTO_MEDICAO]
+ALTER PROCEDURE [dbo].[SP_2_INTEGRACAO_CCO_BODY_PONTO_MEDICAO]
 (
     @id_tipo_leitura        tinyint,
     @cd_usuario             bigint,
@@ -354,7 +354,7 @@ END CATCH
 -- Como Executar ==============================================================================
 DECLARE @msg VARCHAR(4000);
 
-EXEC SP_INTEGRACAO_CCO_BODY_PONTO_MEDICAO 
+EXEC SP_2_INTEGRACAO_CCO_BODY_PONTO_MEDICAO 
     @id_tipo_leitura = 8,           -- 1 = CCO
     @cd_usuario = 100,              -- Seu código de usuário
     @cd_funcionalidade = 1,         -- Código da funcionalidade
@@ -371,7 +371,7 @@ GO
 -- Executar para uma data específica ==============================================================================
 DECLARE @msg VARCHAR(4000);
 
-EXEC SP_INTEGRACAO_CCO_BODY_PONTO_MEDICAO 
+EXEC SP_2_INTEGRACAO_CCO_BODY_PONTO_MEDICAO 
     @id_tipo_leitura = 8,
     @cd_usuario = 100,
     @cd_funcionalidade = 1,

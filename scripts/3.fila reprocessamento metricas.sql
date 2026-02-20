@@ -80,10 +80,10 @@ GO
 -- PARTE 3: PROCEDURE PARA PROCESSAR A FILA
 -- ============================================================
 
-PRINT 'Criando SP_PROCESSAR_FILA_METRICAS...';
+PRINT 'Criando SP_2_PROCESSAR_FILA_METRICAS...';
 GO
 
-CREATE OR ALTER PROCEDURE [dbo].[SP_PROCESSAR_FILA_METRICAS]
+CREATE OR ALTER PROCEDURE [dbo].[SP_2_PROCESSAR_FILA_METRICAS]
     @MAX_ITENS INT = 10,           -- Máximo de itens por execução
     @MAX_TENTATIVAS INT = 3        -- Máximo de tentativas por item
 AS
@@ -117,7 +117,7 @@ BEGIN
             WHERE ID = @ID;
             
             -- Executar reprocessamento
-            EXEC [dbo].[SP_PROCESSAR_MEDICAO_V2] @DT_PROCESSAMENTO = @DT_REFERENCIA;
+            EXEC [dbo].[SP_2_PROCESSAR_MEDICAO] @DT_PROCESSAMENTO = @DT_REFERENCIA;
             
             -- Marcar como concluído
             UPDATE [dbo].[FILA_REPROCESSAMENTO_METRICAS]
@@ -156,17 +156,17 @@ BEGIN
 END
 GO
 
-PRINT '  - SP_PROCESSAR_FILA_METRICAS criada.';
+PRINT '  - SP_2_PROCESSAR_FILA_METRICAS criada.';
 GO
 
 -- ============================================================
 -- PARTE 4: LIMPEZA AUTOMÁTICA (registros antigos)
 -- ============================================================
 
-PRINT 'Criando SP_LIMPAR_FILA_METRICAS...';
+PRINT 'Criando SP_2_LIMPAR_FILA_METRICAS...';
 GO
 
-CREATE OR ALTER PROCEDURE [dbo].[SP_LIMPAR_FILA_METRICAS]
+CREATE OR ALTER PROCEDURE [dbo].[SP_2_LIMPAR_FILA_METRICAS]
     @DIAS_MANTER INT = 7   -- Manter registros dos últimos N dias
 AS
 BEGIN
@@ -180,7 +180,7 @@ BEGIN
 END
 GO
 
-PRINT '  - SP_LIMPAR_FILA_METRICAS criada.';
+PRINT '  - SP_2_LIMPAR_FILA_METRICAS criada.';
 GO
 
 -- ============================================================
@@ -224,7 +224,7 @@ EXEC msdb.dbo.sp_add_jobstep
     @retry_attempts = 0,
     @retry_interval = 0,
     @subsystem = N'TSQL',
-    @command = N'EXEC [SIMP].[dbo].[SP_PROCESSAR_FILA_METRICAS] @MAX_ITENS = 10;',
+    @command = N'EXEC [SIMP].[dbo].[SP_2_PROCESSAR_FILA_METRICAS] @MAX_ITENS = 10;',
     @database_name = N'SIMP';
 
 PRINT '  - Step 1 (Processar Fila) adicionado.';
@@ -240,7 +240,7 @@ EXEC msdb.dbo.sp_add_jobstep
     @retry_attempts = 0,
     @retry_interval = 0,
     @subsystem = N'TSQL',
-    @command = N'EXEC [SIMP].[dbo].[SP_LIMPAR_FILA_METRICAS] @DIAS_MANTER = 7;',
+    @command = N'EXEC [SIMP].[dbo].[SP_2_LIMPAR_FILA_METRICAS] @DIAS_MANTER = 7;',
     @database_name = N'SIMP';
 
 PRINT '  - Step 2 (Limpeza) adicionado.';
@@ -283,8 +283,8 @@ PRINT '';
 PRINT 'Objetos criados:';
 PRINT '  - Tabela: FILA_REPROCESSAMENTO_METRICAS';
 PRINT '  - SP: SP_ENFILEIRAR_REPROCESSAMENTO';
-PRINT '  - SP: SP_PROCESSAR_FILA_METRICAS';
-PRINT '  - SP: SP_LIMPAR_FILA_METRICAS';
+PRINT '  - SP: SP_2_PROCESSAR_FILA_METRICAS';
+PRINT '  - SP: SP_2_LIMPAR_FILA_METRICAS';
 PRINT '  - Job: SIMP_Processar_Fila_Metricas (a cada 2 min)';
 PRINT '';
 PRINT 'Como usar no PHP:';
@@ -295,7 +295,7 @@ PRINT 'Para verificar a fila:';
 PRINT '  SELECT * FROM FILA_REPROCESSAMENTO_METRICAS ORDER BY DT_SOLICITACAO DESC;';
 PRINT '';
 PRINT 'Para processar manualmente:';
-PRINT '  EXEC SP_PROCESSAR_FILA_METRICAS;';
+PRINT '  EXEC SP_2_PROCESSAR_FILA_METRICAS;';
 PRINT '';
 
 -- Mostrar status atual

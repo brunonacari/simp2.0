@@ -2953,7 +2953,7 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                 <ion-icon name="book-outline"></ion-icon>
                 <div>
                     <h3>Como funciona o Dashboard de Métricas</h3>
-                    <p>Regras de processamento da SP_PROCESSAR_MEDICAO_V2</p>
+                    <p>Regras de processamento da SP_2_PROCESSAR_MEDICAO</p>
                 </div>
             </div>
             <button class="modal-regras-close" onclick="fecharModalRegras()" title="Fechar">
@@ -2973,7 +2973,7 @@ $ultimaData = $sqlUltimaData->fetch(PDO::FETCH_ASSOC)['ULTIMA_DATA'] ?? date('Y-
                 <ion-icon name="arrow-forward-outline" class="regras-fluxo-seta"></ion-icon>
                 <div class="regras-fluxo-item proc">
                     <ion-icon name="cog-outline"></ion-icon>
-                    SP_PROCESSAR_MEDICAO_V2
+                    SP_2_PROCESSAR_MEDICAO
                 </div>
                 <ion-icon name="arrow-forward-outline" class="regras-fluxo-seta"></ion-icon>
                 <div class="regras-fluxo-item saida">
