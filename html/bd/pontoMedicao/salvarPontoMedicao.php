@@ -37,7 +37,8 @@ try {
     $dsNome = isset($_POST['ds_nome']) ? mb_substr(trim($_POST['ds_nome']), 0, 100) : '';
     $dsLocalizacao = isset($_POST['ds_localizacao']) ? mb_substr(trim($_POST['ds_localizacao']), 0, 200) : null;
     $idTipoLeitura = isset($_POST['id_tipo_leitura']) && $_POST['id_tipo_leitura'] !== '' ? (int) $_POST['id_tipo_leitura'] : null;
-    $opPeriodicidadeLeitura = isset($_POST['op_periodicidade_leitura']) && $_POST['op_periodicidade_leitura'] !== '' ? (int) $_POST['op_periodicidade_leitura'] : null;
+    // OP_PERIODICIDADE_LEITURA não aceita NULL - default 1 (diária)
+    $opPeriodicidadeLeitura = isset($_POST['op_periodicidade_leitura']) && $_POST['op_periodicidade_leitura'] !== '' ? (int) $_POST['op_periodicidade_leitura'] : 2;
     $cdUsuarioResponsavel = isset($_POST['cd_usuario_responsavel']) && $_POST['cd_usuario_responsavel'] !== '' ? (int) $_POST['cd_usuario_responsavel'] : null;
     $tipoInstalacao = isset($_POST['tipo_instalacao']) && $_POST['tipo_instalacao'] !== '' ? (int) $_POST['tipo_instalacao'] : null;
     $dtAtivacao = isset($_POST['dt_ativacao']) && $_POST['dt_ativacao'] !== '' ? $_POST['dt_ativacao'] : null;
@@ -81,7 +82,7 @@ try {
             $$tagVar = null; // Força NULL nas tags não correspondentes ao tipo
         }
     }
-    
+
     // Mapeamento: 1,2,8 → vazão | 4 → pressão | 6 → reservatório
     switch ((int) $idTipoMedidor) {
         case 1: // Macromedidor
@@ -352,9 +353,10 @@ try {
 
         $stmt->execute($insertParams);
 
-        // Pegar o ID inserido usando SCOPE_IDENTITY() (SQL Server)
-        $stmtId = $pdoSIMP->query("SELECT SCOPE_IDENTITY() AS ID");
-        $cdPontoMedicao = $stmtId->fetch(PDO::FETCH_ASSOC)['ID'];
+        // Pegar o ID inserido - usa @@IDENTITY como fallback do SCOPE_IDENTITY
+// (SCOPE_IDENTITY via PDO+ODBC frequentemente retorna NULL)
+        $stmtId = $pdoSIMP->query("SELECT COALESCE(SCOPE_IDENTITY(), @@IDENTITY) AS ID");
+        $cdPontoMedicao = (int) $stmtId->fetch(PDO::FETCH_ASSOC)['ID'];
 
         $mensagem = 'Ponto de medição cadastrado com sucesso!';
 

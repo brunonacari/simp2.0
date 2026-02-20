@@ -328,16 +328,18 @@ $letrasTipoMedidor = [
 </div>
 
 <!-- Popup do Gráfico -->
-<div class="grafico-popup" id="graficoPopup">
-    <div class="grafico-popup-header">
-        <div>
-            <div class="grafico-popup-titulo" id="graficoPopupTitulo">-</div>
-            <div class="grafico-popup-codigo" id="graficoPopupCodigo">-</div>
+<div class="grafico-popup" id="graficoPopup" onclick="fecharGraficoPopupOverlay(event)">
+    <div class="grafico-popup-inner" onclick="event.stopPropagation()">
+        <div class="grafico-popup-header">
+            <div>
+                <div class="grafico-popup-titulo" id="graficoPopupTitulo">-</div>
+                <div class="grafico-popup-codigo" id="graficoPopupCodigo">-</div>
+            </div>
+            <button type="button" class="grafico-popup-fechar" onclick="fecharGraficoPopup()">X</button>
         </div>
-        <button type="button" class="grafico-popup-fechar" onclick="fecharGraficoPopup()">X</button>
-    </div>
-    <div class="grafico-popup-container">
-        <canvas id="graficoPopupCanvas"></canvas>
+        <div class="grafico-popup-container">
+            <canvas id="graficoPopupCanvas"></canvas>
+        </div>
     </div>
 </div>
 
@@ -1472,6 +1474,21 @@ $letrasTipoMedidor = [
                     grupoDataInicio.style.display = 'flex';
                     grupoDataFim.style.display = 'flex';
                     grid.classList.add('modo-datas');
+
+                    // Preenche últimos 8 dias como padrão ao entrar no modo data
+                    const hoje = new Date();
+                    const inicio = new Date();
+                    inicio.setDate(hoje.getDate() - 14); // Últimos 15 dias para dar mais opções de análise
+                    document.getElementById('inputDataFim').value = hoje.toISOString().split('T')[0];
+                    document.getElementById('inputDataInicio').value = inicio.toISOString().split('T')[0];
+
+                    // Busca dados automaticamente se já tiver filtros preenchidos
+                    const tipoId = document.getElementById('selectTipoEntidade').value;
+                    const valorId = document.getElementById('selectValorEntidade').value;
+                    const pontoId = document.getElementById('filtroPontoMedicao').value;
+                    if ((tipoId && valorId) || pontoId) {
+                        buscarDados();
+                    }
                 }
             }
 
@@ -2365,10 +2382,15 @@ $letrasTipoMedidor = [
             }
 
             // ============================================
-            // Popup com Gráfico do Ponto
+            // Popup com Gráfico do Ponto - Médias Horárias
             // ============================================
             let graficoPopupInstance = null;
 
+            /**
+             * Abre o modal do gráfico e busca médias horárias via AJAX.
+             * @param {string} pontoKey - Chave do ponto (cd_ponto)
+             * @param {string} fluxo - 'entrada' ou 'saida'
+             */
             function mostrarGraficoPopup(pontoKey, fluxo) {
                 const dados = window.dadosGraficoHover;
                 if (!dados) return;
@@ -2377,27 +2399,61 @@ $letrasTipoMedidor = [
                 const ponto = pontos[pontoKey];
                 if (!ponto) return;
 
-                // Atualizar tà­tulos
+                // Atualizar títulos
                 document.getElementById('graficoPopupTitulo').textContent = ponto.nome || '-';
                 document.getElementById('graficoPopupCodigo').textContent = ponto.codigo || '-';
 
-                // Posicionar popup no centro da tela
+                // Mostrar modal com loading
                 const popup = document.getElementById('graficoPopup');
-                const popupWidth = 520;
-                const popupHeight = 300;
-
-                const left = (window.innerWidth - popupWidth) / 2;
-                const top = (window.innerHeight - popupHeight) / 2;
-
-                popup.style.left = left + 'px';
-                popup.style.top = top + 'px';
                 popup.classList.add('active');
 
-                // Gerar gráfico
-                gerarGraficoPopup(ponto, dados.dias, dados.unidade);
+                const container = document.querySelector('.grafico-popup-container');
+                container.innerHTML = '<div class="grafico-popup-loading"><ion-icon name="sync-outline" style="animation:spin 1s linear infinite;font-size:20px;"></ion-icon> Carregando médias horárias...</div><canvas id="graficoPopupCanvas" style="display:none;"></canvas>';
+
+                // Determinar período (primeiro e último dia do array dias)
+                const dias = dados.dias;
+                if (!dias || dias.length === 0) return;
+
+                const dataInicio = dias[0];
+                const dataFim = dias[dias.length - 1];
+
+                // Buscar médias horárias via AJAX
+                $.ajax({
+                    url: 'bd/operacoes/getMediasHorariasPeriodo.php',
+                    type: 'GET',
+                    data: {
+                        cd_ponto: ponto.cd_ponto,
+                        data_inicio: dataInicio,
+                        data_fim: dataFim,
+                        tipo_medidor: ponto.tipo_medidor
+                    },
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success) {
+                            // Remover loading e mostrar canvas
+                            container.querySelector('.grafico-popup-loading').style.display = 'none';
+                            container.querySelector('#graficoPopupCanvas').style.display = 'block';
+                            gerarGraficoPopup(response.dados, dias, response.unidade || dados.unidade);
+                        } else {
+                            container.querySelector('.grafico-popup-loading').innerHTML =
+                                '<ion-icon name="alert-circle-outline" style="color:#ef4444;font-size:20px;"></ion-icon> ' +
+                                (response.message || 'Erro ao carregar dados');
+                        }
+                    },
+                    error: function () {
+                        container.querySelector('.grafico-popup-loading').innerHTML =
+                            '<ion-icon name="alert-circle-outline" style="color:#ef4444;font-size:20px;"></ion-icon> Erro ao comunicar com o servidor';
+                    }
+                });
             }
 
-            function gerarGraficoPopup(ponto, dias, unidade) {
+            /**
+             * Gera o gráfico Chart.js com médias horárias e fundo alternado por dia.
+             * @param {Array} dadosHorarios - Array de {data, hora, media}
+             * @param {Array} dias - Array de datas (YYYY-MM-DD) do período
+             * @param {string} unidade - Unidade de medida (L/s, mca, %)
+             */
+            function gerarGraficoPopup(dadosHorarios, dias, unidade) {
                 const ctx = document.getElementById('graficoPopupCanvas').getContext('2d');
 
                 // Destruir gráfico anterior
@@ -2405,95 +2461,98 @@ $letrasTipoMedidor = [
                     graficoPopupInstance.destroy();
                 }
 
-                // Preparar dados
+                // Mapear dados por "data|hora" para acesso rápido
+                const mapaValores = {};
+                dadosHorarios.forEach(d => {
+                    mapaValores[d.data + '|' + d.hora] = d.media;
+                });
+
+                // Montar labels (dia hora) e valores para todas as horas de cada dia
                 const labels = [];
-                const valoresMedia = [];
-                const valoresMin = [];
-                const valoresMax = [];
+                const valores = [];
+                const diasIndices = []; // Marca qual dia (índice) cada ponto pertence
 
-                dias.forEach(diaStr => {
-                    const partes = diaStr.split('-');
-                    const diaNum = partes.length === 3 ? parseInt(partes[2], 10) : diaStr;
-                    labels.push(diaNum);
+                dias.forEach((diaStr, diaIdx) => {
+                    for (let h = 0; h < 24; h++) {
+                        const chave = diaStr + '|' + h;
+                        const partes = diaStr.split('-');
+                        const diaNum = partes.length === 3 ? parseInt(partes[2], 10) : diaStr;
 
-                    const dadosDia = ponto.valores[diaStr];
-                    if (dadosDia && dadosDia.count > 0) {
-                        const media = dadosDia.soma / dadosDia.count;
-                        valoresMedia.push(media);
-                        valoresMin.push(dadosDia.valor_min !== null ? dadosDia.valor_min : media);
-                        valoresMax.push(dadosDia.valor_max !== null ? dadosDia.valor_max : media);
-                    } else {
-                        valoresMedia.push(null);
-                        valoresMin.push(null);
-                        valoresMax.push(null);
+                        // Label: armazena hora simples, a formatação completa fica no callback do eixo X
+                        labels.push(h);
+
+                        valores.push(mapaValores[chave] !== undefined ? mapaValores[chave] : null);
+                        diasIndices.push(diaIdx);
                     }
                 });
 
-                // Plugin para desenhar as error bars
-                const errorBarsPlugin = {
-                    id: 'errorBars',
-                    afterDatasetsDraw: function (chart) {
+                // Plugin para fundo alternado por dia
+                const dayBandsPlugin = {
+                    id: 'dayBands',
+                    beforeDraw: function (chart) {
                         const ctx = chart.ctx;
-                        const meta = chart.getDatasetMeta(0);
+                        const xScale = chart.scales.x;
+                        const yScale = chart.scales.y;
+                        const totalPontos = labels.length;
 
                         ctx.save();
-                        ctx.strokeStyle = '#1e3a5f';
-                        ctx.lineWidth = 2;
 
-                        meta.data.forEach((point, index) => {
-                            if (valoresMin[index] === null || valoresMax[index] === null) return;
+                        let diaAtual = -1;
+                        let inicioX = null;
 
-                            const x = point.x;
-                            const yMin = chart.scales.y.getPixelForValue(valoresMin[index]);
-                            const yMax = chart.scales.y.getPixelForValue(valoresMax[index]);
-                            const capWidth = 6;
+                        for (let i = 0; i <= totalPontos; i++) {
+                            const diaIdx = i < totalPontos ? diasIndices[i] : -999;
 
-                            // Linha vertical (min-max)
-                            ctx.beginPath();
-                            ctx.moveTo(x, yMin);
-                            ctx.lineTo(x, yMax);
-                            ctx.stroke();
+                            if (diaIdx !== diaAtual) {
+                                // Fechar banda anterior
+                                if (inicioX !== null && diaAtual >= 0) {
+                                    const fimX = i < totalPontos
+                                        ? xScale.getPixelForValue(i)
+                                        : xScale.right;
 
-                            // Cap superior (max)
-                            ctx.beginPath();
-                            ctx.moveTo(x - capWidth, yMax);
-                            ctx.lineTo(x + capWidth, yMax);
-                            ctx.stroke();
+                                    // Cores alternadas: azul claro / branco (mais contraste)
+                                    if (diaAtual % 2 === 0) {
+                                        ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+                                    } else {
+                                        ctx.fillStyle = 'rgba(30, 58, 95, 0.06)';
+                                    }
+                                    ctx.fillRect(inicioX, yScale.top, fimX - inicioX, yScale.bottom - yScale.top);
+                                }
 
-                            // Cap inferior (min)
-                            ctx.beginPath();
-                            ctx.moveTo(x - capWidth, yMin);
-                            ctx.lineTo(x + capWidth, yMin);
-                            ctx.stroke();
-                        });
+                                // Iniciar nova banda
+                                diaAtual = diaIdx;
+                                inicioX = i < totalPontos ? xScale.getPixelForValue(i) : null;
+                            }
+                        }
 
                         ctx.restore();
                     }
                 };
 
+                // Criar gráfico
                 graficoPopupInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Média',
-                            data: valoresMedia,
+                            label: 'Média Horária',
+                            data: valores,
                             borderColor: '#dc2626',
                             backgroundColor: '#dc2626',
-                            borderWidth: 2,
+                            borderWidth: 1.5,
                             tension: 0,
-                            pointRadius: 5,
+                            pointRadius: 1.5,
                             pointBackgroundColor: '#dc2626',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                            pointHoverRadius: 7,
-                            spanGaps: true,
+                            pointBorderColor: '#dc2626',
+                            pointHoverRadius: 5,
+                            spanGaps: false,
                             fill: false
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: { duration: 300 },
                         plugins: {
                             legend: {
                                 display: true,
@@ -2501,57 +2560,65 @@ $letrasTipoMedidor = [
                                 labels: {
                                     boxWidth: 12,
                                     padding: 8,
-                                    font: {
-                                        size: 10
-                                    },
-                                    generateLabels: function (chart) {
-                                        return [{
-                                            text: 'Média',
-                                            fillStyle: '#dc2626',
-                                            strokeStyle: '#dc2626',
-                                            lineWidth: 2,
-                                            hidden: false,
-                                            index: 0
-                                        },
-                                        {
-                                            text: 'Mín/Máx',
-                                            fillStyle: '#1e3a5f',
-                                            strokeStyle: '#1e3a5f',
-                                            lineWidth: 2,
-                                            hidden: false,
-                                            index: 1
-                                        }
-                                        ];
-                                    }
+                                    font: { size: 11 }
                                 }
                             },
                             tooltip: {
                                 callbacks: {
+                                    title: function (items) {
+                                        if (!items.length) return '';
+                                        const idx = items[0].dataIndex;
+                                        const diaIdx = diasIndices[idx];
+                                        const diaStr = dias[diaIdx];
+                                        const hora = idx % 24;
+                                        // Formatar data DD/MM
+                                        const partes = diaStr.split('-');
+                                        return partes[2] + '/' + partes[1] + ' - ' + String(hora).padStart(2, '0') + ':00';
+                                    },
                                     label: function (context) {
-                                        const idx = context.dataIndex;
-                                        let lines = [];
-                                        lines.push('Média: ' + formatarNumero(context.raw) + ' ' + unidade);
-                                        if (valoresMin[idx] !== null && valoresMax[idx] !== null) {
-                                            lines.push('Mín: ' + formatarNumero(valoresMin[idx]) + ' ' + unidade);
-                                            lines.push('Máx: ' + formatarNumero(valoresMax[idx]) + ' ' + unidade);
-                                        }
-                                        return lines;
+                                        if (context.raw === null) return 'Sem dados';
+                                        return 'Média: ' + formatarNumero(context.raw) + ' ' + unidade;
                                     }
                                 }
                             }
                         },
                         scales: {
                             x: {
-                                title: {
-                                    display: true,
-                                    text: 'Dia',
-                                    font: {
-                                        size: 10
+                                ticks: {
+                                    font: { size: 9 },
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    autoSkip: false,
+                                    callback: function (value, index) {
+                                        const hora = index % 24;
+                                        // Hora 0: mostra data DD/MM
+                                        if (hora === 0) {
+                                            const diaIdx = Math.floor(index / 24);
+                                            if (diaIdx < dias.length) {
+                                                const partes = dias[diaIdx].split('-');
+                                                return partes[2] + '/' + partes[1];
+                                            }
+                                        }
+                                        // Hora 12: dia da semana abaixo
+                                        if (hora === 12) {
+                                            const diaIdx = Math.floor(index / 24);
+                                            if (diaIdx < dias.length) {
+                                                const dataObj = new Date(dias[diaIdx] + 'T12:00:00');
+                                                const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                                                return diasSemana[dataObj.getDay()];
+                                            }
+                                        }
+                                        return '';
                                     }
                                 },
-                                ticks: {
-                                    font: {
-                                        size: 9
+                                grid: {
+                                    display: true,
+                                    color: function (context) {
+                                        // Linhas mais fortes na hora 0 (divisão de dias)
+                                        if (context.tick && context.tick.value % 24 === 0) {
+                                            return 'rgba(30, 58, 95, 0.25)';
+                                        }
+                                        return 'rgba(226, 232, 240, 0.3)';
                                     }
                                 }
                             },
@@ -2559,14 +2626,10 @@ $letrasTipoMedidor = [
                                 title: {
                                     display: true,
                                     text: unidade,
-                                    font: {
-                                        size: 10
-                                    }
+                                    font: { size: 10 }
                                 },
                                 ticks: {
-                                    font: {
-                                        size: 9
-                                    },
+                                    font: { size: 9 },
                                     callback: function (value) {
                                         return formatarNumero(value);
                                     }
@@ -2575,22 +2638,29 @@ $letrasTipoMedidor = [
                             }
                         }
                     },
-                    plugins: [errorBarsPlugin]
+                    plugins: [dayBandsPlugin]
                 });
             }
 
+            /**
+             * Fecha o modal do gráfico popup
+             */
             function fecharGraficoPopup() {
                 document.getElementById('graficoPopup').classList.remove('active');
+                if (graficoPopupInstance) {
+                    graficoPopupInstance.destroy();
+                    graficoPopupInstance = null;
+                }
             }
 
-            // Fechar popup ao clicar fora
-            document.addEventListener('click', function (e) {
-                const popup = document.getElementById('graficoPopup');
-                const isButton = e.target.closest('.btn-grafico-popup');
-                if (popup && !popup.contains(e.target) && !isButton) {
+            /**
+             * Fecha ao clicar no overlay (fora do conteúdo)
+             */
+            function fecharGraficoPopupOverlay(event) {
+                if (event.target === event.currentTarget) {
                     fecharGraficoPopup();
                 }
-            });
+            }
 
             // Fechar popup ao pressionar ESC
             document.addEventListener('keydown', function (e) {

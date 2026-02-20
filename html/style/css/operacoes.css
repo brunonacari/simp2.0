@@ -1583,69 +1583,144 @@ input[type="date"].form-control {
     font-size: 12px;
 }
 
-/* Popup do gráfico */
+/* ============================================
+   Modal Gráfico Popup - Médias Horárias
+   Padrão visual SIMP (overlay + header gradient)
+   ============================================ */
 .grafico-popup {
     display: none;
     position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 9999;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
-    padding: 16px;
-    width: 520px;
-    max-width: 95vw;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
 }
 
 .grafico-popup.active {
-    display: block;
+    display: flex;
+}
+
+.grafico-popup-inner {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    width: 95%;
+    max-width: 1300px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: graficoPopupEntrar 0.25s ease-out;
+}
+
+@keyframes graficoPopupEntrar {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 .grafico-popup-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+    color: white;
+    flex-shrink: 0;
 }
 
 .grafico-popup-titulo {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
-    color: #1e3a5f;
+    color: #ffffff;
 }
 
 .grafico-popup-codigo {
-    font-size: 11px;
-    color: #64748b;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
+    margin-top: 2px;
 }
 
 .grafico-popup-fechar {
-    background: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.15);
     border: none;
-    font-size: 20px;
-    color: #94a3b8;
+    border-radius: 8px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
     cursor: pointer;
-    padding: 0;
-    line-height: 1;
+    transition: all 0.2s ease;
 }
 
 .grafico-popup-fechar:hover {
-    color: #64748b;
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .grafico-popup-container {
-    height: 220px;
+    padding: 20px;
+    height: 300px;
+    position: relative;
+}
+
+.grafico-popup-container canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .grafico-popup-loading {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 200px;
+    height: 300px;
     color: #64748b;
-    font-size: 13px;
+    font-size: 14px;
+    gap: 10px;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .grafico-popup {
+        padding: 0;
+    }
+
+    .grafico-popup-inner {
+        width: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+
+    .grafico-popup-container {
+        min-height: 300px;
+        padding: 12px;
+    }
 }
 
 /* Override z-index do toast para ficar acima do modal */
@@ -1910,7 +1985,9 @@ input[type="date"].form-control {
     background: #8b5cf6;
 }
 
-.controle-cor.tensorflow { background: #ef4444; }
+.controle-cor.tensorflow {
+    background: #ef4444;
+}
 
 .grafico-controle-item .controle-label {
     font-size: 12px;
@@ -4337,6 +4414,7 @@ input#inputDataFim {
         opacity: 0;
         transform: scale(0.95) translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: scale(1) translateY(0);

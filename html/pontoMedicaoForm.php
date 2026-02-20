@@ -2203,24 +2203,25 @@ $tiposInstalacao = [
                 success: function (response) {
                     if (response.success) {
                         showToast(response.message, 'sucesso');
+                        
+                        var idRedirecionar = response.cd_ponto_medicao || <?= $id ?? 0 ?>;
+
                         setTimeout(function () {
-                            <?php if ($isEdicao): ?>
-                                    // Em edição: recarrega a mesma página para refletir alterações
-                                    window.location.href = 'pontoMedicaoForm.php?id=<?= $id ?>';
-                            <?php else: ?>
-                            // Novo cadastro: redireciona para a lista
-                            window.location.href = 'pontoMedicao.php';
-                            <?php endif; ?>
-                        }, 1500);
-        } else {
-            showToast(response.message || 'Erro ao salvar', 'erro');
-        btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar');
-    }
+                            if (idRedirecionar) {
+                                window.location.href = 'pontoMedicaoForm.php?id=' + idRedirecionar + '#tabsContainer';
+                            } else {
+                                window.location.href = 'pontoMedicao.php';
+                            }
+                        }, 100);
+                    } else {
+                        showToast(response.message || 'Erro ao salvar', 'erro');
+                        btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar');
+                    }
                 },
-        error: function (xhr, status, error) {
-            showToast('Erro ao comunicar com o servidor', 'erro');
-            btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar');
-        }
+                error: function (xhr, status, error) {
+                    showToast('Erro ao comunicar com o servidor', 'erro');
+                    btnSalvar.prop('disabled', false).html('<ion-icon name="save-outline"></ion-icon> Salvar');
+                }
             });
         });
     });
