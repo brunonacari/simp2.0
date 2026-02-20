@@ -882,7 +882,7 @@ $tiposEixo = [['value' => 'H', 'text' => 'Horizontal'], ['value' => 'V', 'text' 
                             Vazão (L/s)
                         </label>
                         <input type="number" name="vl_vazao_bomba" class="form-control" step="0.01" 
-                               value="<?= $isEdicao ? $motorBomba['VL_VAZAO_BOMBA'] : '' ?>" placeholder="0.00">
+                               value="<?= $isEdicao ? $motorBomba['VL_VAZAO_BOMBA'] : '' ?>" placeholder="0.00" required>
                     </div>
                     <div class="form-group col-3">
                         <label class="form-label">
@@ -898,12 +898,12 @@ $tiposEixo = [['value' => 'H', 'text' => 'Horizontal'], ['value' => 'V', 'text' 
                             Rotação (rpm)
                         </label>
                         <input type="number" name="vl_rotacao_bomba" class="form-control" step="0.01" 
-                               value="<?= $isEdicao ? $motorBomba['VL_ROTACAO_BOMBA'] : '' ?>" placeholder="0">
+                               value="<?= $isEdicao ? $motorBomba['VL_ROTACAO_BOMBA'] : '' ?>" placeholder="0" required>
                     </div>
                     <div class="form-group col-3">
                         <label class="form-label">
                             <ion-icon name="enter-outline"></ion-icon>
-                            Área Sucção (mm²)
+                            Área Sucção (m²)
                         </label>
                         <input type="number" name="vl_area_succao_bomba" class="form-control" step="0.01" readonly 
                                value="<?= $isEdicao ? $motorBomba['VL_AREA_SUCCAO_BOMBA'] : '' ?>" placeholder="Calculado">
@@ -913,7 +913,7 @@ $tiposEixo = [['value' => 'H', 'text' => 'Horizontal'], ['value' => 'V', 'text' 
                     <div class="form-group col-3">
                         <label class="form-label">
                             <ion-icon name="exit-outline"></ion-icon>
-                            Área Recalque (mm²)
+                            Área Recalque (m²)
                         </label>
                         <input type="number" name="vl_area_recalque_bomba" class="form-control" step="0.01" readonly 
                                value="<?= $isEdicao ? $motorBomba['VL_AREA_RECALQUE_BOMBA'] : '' ?>" placeholder="Calculado">
@@ -986,7 +986,7 @@ $tiposEixo = [['value' => 'H', 'text' => 'Horizontal'], ['value' => 'V', 'text' 
                             Rotação (rpm)
                         </label>
                         <input type="number" name="vl_rotacao_motor" class="form-control" step="0.01" 
-                               value="<?= $isEdicao ? $motorBomba['VL_ROTACAO_MOTOR'] : '' ?>" placeholder="0">
+                               value="<?= $isEdicao ? $motorBomba['VL_ROTACAO_MOTOR'] : '' ?>" placeholder="0" required>
                     </div>
                 </div>
             </div>
