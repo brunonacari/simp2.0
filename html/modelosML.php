@@ -4233,7 +4233,7 @@ try {
             msg.textContent = `${data.resumo.total_inalteradas} relação(ões) ativas — tudo alinhado.`;
             btnRevisar.style.display = 'none';
         }
-    }
+    } 
 
     /**
      * Abre o modal de sincronização e executa o check.
