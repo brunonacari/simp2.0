@@ -45,7 +45,7 @@
   "semanas_historico": 12,
   "modelo_tipo": "xgboost",
   "target_tipo": "correlacao",
-  "treinado_em": "2026-02-22T11:31:51.006092",
+  "treinado_em": "2026-02-22T11:51:57.211198",
   "banco_treino": "sgbd-hom-simp.sistemas.cesan.com.br\\corporativo\\simp",
   "versao_treino": "6.0"
 }
