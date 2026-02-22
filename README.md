@@ -19,7 +19,7 @@ SE FOR PRECISO CRIAR A NETWORK
 docker network create --driver overlay --attachable backing-services_cntlm
 
 SE FOR PRECISO EXCLUIR 
-docker stack rm simp20-php
+docker stack rm simp20-php 
 
 SUBIR O CONTAINER
 docker stack deploy --with-registry-auth -c docker/stackdev.yml $CI_PROJECT_NAME
