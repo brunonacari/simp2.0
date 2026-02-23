@@ -591,6 +591,7 @@ def train_all():
     try:
         dados = request.get_json()
         semanas = dados.get('semanas', 24)
+        modo = dados.get('modo', 'fixo')
 
         script_path = os.environ.get('TREINAR_SCRIPT', '/app/treinar_modelos.py')
         progress_file = os.path.join(MODELS_DIR, '_train_all_progress.json')
@@ -634,13 +635,14 @@ def train_all():
         with open(progress_file, 'w') as f:
             json.dump(progress_data, f, ensure_ascii=False)
 
-        def _executar_treino_background(semanas, job_id, progress_file):
+        def _executar_treino_background(semanas, job_id, progress_file, modo='fixo'):
             """Função que roda em thread separada para executar o treino."""
             try:
                 cmd = [
                     'python3', script_path,
                     '--semanas', str(semanas),
-                    '--output', MODELS_DIR
+                    '--output', MODELS_DIR,
+                    '--modo', modo
                 ]
                 logger.info(f"[Job {job_id}] Train-all iniciado: {' '.join(cmd)}")
 
@@ -756,7 +758,7 @@ def train_all():
         # Disparar em thread separada (não bloqueia a resposta HTTP)
         thread = threading.Thread(
             target=_executar_treino_background,
-            args=(semanas, job_id, progress_file),
+            args=(semanas, job_id, progress_file, modo),
             daemon=True
         )
         thread.start()

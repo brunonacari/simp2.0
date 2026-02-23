@@ -3436,7 +3436,8 @@ try {
                     </label>
                     <select id="selectModoTreino" onchange="toggleModoPonto()">
                         <option value="unico">Ponto específico</option>
-                        <option value="todos">Todos os pontos</option>
+                        <option value="todos">Todos os pontos (período fixo)</option>
+                        <option value="otimizado">Todos os pontos (otimizado por R²)</option>
                     </select>
                     <div class="train-form-hint" id="hintModo">
                         Treinar modelo para um único ponto de medição
@@ -4313,40 +4314,57 @@ try {
     // ============================================
 
     /**
-     * Alterna visibilidade do campo Ponto conforme o modo de treino.
+     * Alterna visibilidade dos campos conforme o modo de treino.
+     * Modos: 'unico', 'todos' (período fixo) e 'otimizado' (melhor R² anterior).
      */
     function toggleModoPonto() {
         const modo = document.getElementById('selectModoTreino').value;
         const grupoPonto = document.getElementById('grupoPonto');
+        const grupoSemanas = document.getElementById('selectSemanas').closest('.train-form-group');
         const hint = document.getElementById('hintModo');
         const chkForce = document.getElementById('chkForce');
 
-        if (modo === 'todos') {
-            grupoPonto.style.display = 'none';
-            hint.textContent = 'Treinar todos os pontos. Pode levar vários minutos.';
-            // Forçar force=true para todos (sobrescrever existentes)
-            chkForce.checked = true;
-            chkForce.parentElement.style.display = 'none';
-        } else {
+        if (modo === 'unico') {
             grupoPonto.style.display = '';
+            if (grupoSemanas) grupoSemanas.style.display = '';
             hint.textContent = 'Treinar modelo para um único ponto de medição';
             chkForce.parentElement.style.display = '';
+        } else if (modo === 'todos') {
+            grupoPonto.style.display = 'none';
+            if (grupoSemanas) grupoSemanas.style.display = '';
+            hint.textContent = 'Treinar todos os pontos com o mesmo período. Pode levar vários minutos.';
+            chkForce.checked = true;
+            chkForce.parentElement.style.display = 'none';
+        } else if (modo === 'otimizado') {
+            grupoPonto.style.display = 'none';
+            if (grupoSemanas) grupoSemanas.style.display = 'none';
+            hint.innerHTML = '<ion-icon name="sparkles-outline" style="font-size:13px;vertical-align:middle;color:#f59e0b;"></ion-icon> ' +
+                'Cada ponto será treinado com o período que obteve melhor R² no treino anterior. ' +
+                'Pontos sem modelo usarão 24 semanas como padrão.';
+            chkForce.checked = true;
+            chkForce.parentElement.style.display = 'none';
         }
     }
 
     /**
-     * Inicia o treinamento (ponto único ou todos).
+     * Inicia o treinamento (ponto único, todos fixo, ou otimizado).
      */
     function iniciarTreino() {
         const modo = document.getElementById('selectModoTreino').value;
         const semanas = parseInt(document.getElementById('selectSemanas').value);
 
         if (modo === 'todos') {
-            if (!confirm('Isso irá treinar/retreinar TODOS os pontos.\n\nO processo pode levar vários minutos. Deseja continuar?')) {
+            if (!confirm('Isso irá treinar/retreinar TODOS os pontos com ' + semanas + ' semanas.\n\nO processo pode levar vários minutos. Deseja continuar?')) {
                 return;
             }
             fecharModalTreino();
-            executarTreinoTodos(semanas);
+            executarTreinoTodos(semanas, 'fixo');
+        } else if (modo === 'otimizado') {
+            if (!confirm('Isso irá treinar/retreinar TODOS os pontos usando o período otimizado por melhor R² de cada um.\n\nO processo pode levar vários minutos. Deseja continuar?')) {
+                return;
+            }
+            fecharModalTreino();
+            executarTreinoTodos(24, 'otimizado'); // 24 como fallback
         } else {
             const cdPonto = $('#selectPontoTreino').val();
             if (!cdPonto) {
@@ -4370,10 +4388,10 @@ try {
 
     /**
      * Dispara treino de todos os pontos em background.
-     * O backend executa assincronamente — frontend faz polling do progresso.
-     * @param {number} semanas - Semanas de histórico
+     * @param {number} semanas - Semanas de histórico (usado como fallback no modo otimizado)
+     * @param {string} modo    - 'fixo' (período único) ou 'otimizado' (melhor R² por ponto)
      */
-    function executarTreinoTodos(semanas) {
+    function executarTreinoTodos(semanas, modo) {
         // Mostrar painel de progresso (não bloqueante)
         mostrarPainelProgresso('running', 'Iniciando treino de todos os pontos...', 0, 0, 0);
         _trainAllInicio = Date.now();
@@ -4384,7 +4402,8 @@ try {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 acao: 'train_all',
-                semanas: semanas
+                semanas: semanas,
+                modo: modo || 'fixo'
             })
         })
             .then(r => r.json())

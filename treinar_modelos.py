@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 """
-SIMP - Script de Treino Offline XGBoost (v6.0)
+SIMP - Script de Treino Offline XGBoost (v6.1)
 =============================================================
 Treina modelos XGBoost que aprendem: "dados os valores ATUAIS e RECENTES
 das tags auxiliares + momento do dia/semana, qual deveria ser o valor
 da tag principal?"
+
+v6.1 - Modo otimizado por R²:
+  - Novo argumento --modo otimizado|fixo
+  - Modo otimizado: lê metricas.json anterior de cada ponto e usa
+    o semanas_historico que gerou o melhor R²
+  - Pontos sem modelo anterior usam o --semanas como fallback
 
 v6.0 - Migração FINDESLAB → SIMP:
   - Busca relações de AUX_RELACAO_PONTOS_MEDICAO no banco SIMP
@@ -27,9 +33,11 @@ Target:
   valor_principal (escala real, sem normalização)
 
 Uso:
-  python3 treinar_modelos.py                                    # Treinar todos
+  python3 treinar_modelos.py                                    # Treinar todos (fixo 24 semanas)
   python3 treinar_modelos.py --tag GPRS050_M010_MED             # Treinar só uma tag
   python3 treinar_modelos.py --semanas 52                       # 1 ano de histórico
+  python3 treinar_modelos.py --modo otimizado                   # Cada ponto usa seu melhor período
+  python3 treinar_modelos.py --modo otimizado --semanas 24      # Otimizado com fallback 24 sem
   python3 treinar_modelos.py --bloco 1 --total-blocos 7         # Cron diário
   python3 treinar_modelos.py --workers 3                        # Paralelo
 
@@ -37,7 +45,7 @@ Após treino:
   docker cp modelos_treinados/. $(docker ps -q -f name=tensorflow):/app/models/
 
 @author Bruno - CESAN
-@version 6.0
+@version 6.1
 @date 2026-02
 """
 
@@ -109,7 +117,7 @@ logger = logging.getLogger('treino')
 # ============================================
 
 def conectar_banco() -> pyodbc.Connection:
-    """Conecta ao banco FINDESLAB. Detecta driver ODBC disponível."""
+    """Conecta ao banco SIMP. Detecta driver ODBC disponível."""
     # Detectar driver disponível (18 tem prioridade)
     driver = DB_CONFIG['driver']
     available = pyodbc.drivers()
@@ -200,7 +208,6 @@ def _mapear_tag_para_campo(conn: pyodbc.Connection, tag: str) -> Tuple[Optional[
     Returns:
         Tupla (cd_ponto, campo_valor) ou (None, '') se não encontrar
     """
-    # PARA (corrigido — priorizar ponto ativo e com dados):
     sql = """
         SELECT TOP 1
             PM.CD_PONTO_MEDICAO,
@@ -596,7 +603,7 @@ def salvar_modelo(
         'target_tipo': 'correlacao',
         'treinado_em': datetime.now().isoformat(),
         'banco_treino': f"{DB_CONFIG['server']}\\{DB_CONFIG['database']}",
-        'versao_treino': '6.0'
+        'versao_treino': '6.1'
     }
     
     metricas_path = os.path.join(ponto_dir, 'metricas.json')
@@ -611,6 +618,37 @@ def salvar_modelo(
         if os.path.exists(old_path):
             os.remove(old_path)
             logger.info(f"  → Removido arquivo legado: {old_file}")
+
+
+# ============================================
+# v6.1: Modo otimizado — ler semanas do treino anterior
+# ============================================
+
+def obter_semanas_otimizado(cd_ponto: int, output_dir: str, semanas_padrao: int) -> int:
+    """
+    Lê metricas.json do modelo existente e retorna o semanas_historico
+    que foi usado no último treino (que gerou o R² atual).
+    Se não houver modelo anterior, retorna o padrão.
+    
+    @param cd_ponto       Código do ponto de medição
+    @param output_dir     Diretório base dos modelos
+    @param semanas_padrao Semanas padrão (fallback para pontos sem modelo)
+    @return               Número de semanas a usar no treino
+    """
+    metricas_path = os.path.join(output_dir, f'ponto_{cd_ponto}', 'metricas.json')
+    try:
+        if os.path.exists(metricas_path):
+            with open(metricas_path, 'r', encoding='utf-8') as f:
+                metricas = json.load(f)
+            semanas_anterior = int(metricas.get('semanas_historico', semanas_padrao))
+            r2_anterior = metricas.get('r2', 0)
+            logger.info(f"  ⚡ Modo otimizado: {semanas_anterior} semanas (R² anterior={r2_anterior:.4f})")
+            return semanas_anterior
+    except Exception as e:
+        logger.warning(f"  ⚠ Erro ao ler métricas anteriores do ponto {cd_ponto}: {e}")
+    
+    logger.info(f"  ⚡ Sem modelo anterior → fallback {semanas_padrao} semanas")
+    return semanas_padrao
 
 
 # ============================================
@@ -659,7 +697,7 @@ def treinar_ponto(args_tupla: tuple) -> Tuple[str, bool, str, float]:
         duracao = (datetime.now() - inicio_ponto).total_seconds()
         r2 = metricas.get('r2', 0)
         mape = metricas.get('mape_pct', 0)
-        return tag_principal, True, f"R²={r2:.3f} MAPE={mape:.1f}%", duracao
+        return tag_principal, True, f"R²={r2:.3f} MAPE={mape:.1f}% ({semanas}sem)", duracao
         
     except Exception as e:
         return tag_principal, False, str(e), (datetime.now() - inicio_ponto).total_seconds()
@@ -674,14 +712,26 @@ def treinar_todos(
     semanas: int = SEMANAS_HISTORICO,
     bloco: int = None,
     total_blocos: int = 7,
-    workers: int = 1
+    workers: int = 1,
+    modo: str = 'fixo'
 ):
-    """Fluxo principal de treino."""
+    """
+    Fluxo principal de treino.
+    
+    v6.1: Parâmetro 'modo' controla o período de histórico:
+      - 'fixo':      todos os pontos usam o mesmo valor de --semanas
+      - 'otimizado': cada ponto usa o semanas_historico do seu metricas.json anterior.
+                     Pontos sem modelo usam --semanas como fallback.
+    """
     inicio = datetime.now()
     logger.info("=" * 60)
-    logger.info("SIMP - Treino XGBoost v6.0 (Dados via SIMP)")
+    logger.info("SIMP - Treino XGBoost v6.1 (Dados via SIMP)")
     logger.info(f"Banco: {DB_CONFIG['server']}\\{DB_CONFIG['database']}")
-    logger.info(f"Histórico: {semanas} semanas")
+    # v6.1: Log diferente conforme o modo
+    if modo == 'otimizado':
+        logger.info(f"Modo: OTIMIZADO (cada ponto usa seu melhor período, fallback: {semanas} semanas)")
+    else:
+        logger.info(f"Modo: FIXO ({semanas} semanas para todos)")
     logger.info(f"Abordagem: auxiliares(t0,t-1,t-3,t-6) + temporais → principal")
     logger.info(f"Modelo: XGBoost (max {XGB_PARAMS['n_estimators']} árvores, depth={XGB_PARAMS['max_depth']})")
     logger.info(f"Lags: {LAGS}")
@@ -724,7 +774,9 @@ def treinar_todos(
     
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     
-    # Montar tarefas
+    # ============================================
+    # v6.1: Montar tarefas — resolver semanas por ponto no modo otimizado
+    # ============================================
     tarefas = []
     for tag_principal in tags_lista:
         tags_auxiliares = relacoes[tag_principal]
@@ -733,26 +785,43 @@ def treinar_todos(
         if cd_ponto is None:
             logger.warning(f"  TAG '{tag_principal}' sem CD_PONTO_MEDICAO, usando hash")
             cd_ponto = abs(hash(tag_principal)) % 100000
-        tarefas.append((tag_principal, tags_auxiliares, cd_ponto, tipo_medidor, semanas, OUTPUT_DIR))
+        
+        # v6.1: No modo otimizado, cada ponto usa o período do treino anterior
+        if modo == 'otimizado':
+            semanas_ponto = obter_semanas_otimizado(cd_ponto, OUTPUT_DIR, semanas)
+        else:
+            semanas_ponto = semanas
+        
+        tarefas.append((tag_principal, tags_auxiliares, cd_ponto, tipo_medidor, semanas_ponto, OUTPUT_DIR))
     
     total_tarefas = len(tarefas)
     sucesso = 0
     falha = 0
+    
+    # v6.1: Log resumo de períodos no modo otimizado
+    if modo == 'otimizado':
+        semanas_usadas = [t[4] for t in tarefas]
+        semanas_unicos = sorted(set(semanas_usadas))
+        logger.info(f"\nModo otimizado — períodos em uso: {semanas_unicos}")
+        for s in semanas_unicos:
+            qtd = semanas_usadas.count(s)
+            logger.info(f"  {s} semanas: {qtd} ponto(s)")
+        logger.info("")
     
     if workers <= 1:
         for idx, tarefa in enumerate(tarefas, 1):
             logger.info("")
             logger.info(f"[{idx}/{total_tarefas}] TAG: {tarefa[0]}")
             logger.info(f"  Auxiliares: {', '.join(tarefa[1])}")
-            logger.info(f"  CD_PONTO: {tarefa[2]} | Tipo: {tarefa[3]}")
+            logger.info(f"  CD_PONTO: {tarefa[2]} | Tipo: {tarefa[3]} | Semanas: {tarefa[4]}")
             
             tag, ok, msg, duracao = treinar_ponto(tarefa)
             if ok:
                 sucesso += 1
-                logger.info(f"  ✓ {msg} ({duracao:.1f}s)")
+                logger.info(f"  ✓ SUCESSO {msg} ({duracao:.1f}s)")
             else:
                 falha += 1
-                logger.error(f"  ✗ {msg}")
+                logger.error(f"  ✗ FALHA {msg}")
     else:
         logger.info(f"\nTreino paralelo: {workers} workers × {total_tarefas} pontos...")
         with ProcessPoolExecutor(max_workers=workers) as executor:
@@ -763,19 +832,20 @@ def treinar_todos(
                     tag, ok, msg, duracao = futuro.result(timeout=300)
                     if ok:
                         sucesso += 1
-                        logger.info(f"  [{idx}/{total_tarefas}] ✓ {tag}: {msg} ({duracao:.1f}s)")
+                        logger.info(f"  [{idx}/{total_tarefas}] ✓ SUCESSO {tag}: {msg} ({duracao:.1f}s)")
                     else:
                         falha += 1
-                        logger.error(f"  [{idx}/{total_tarefas}] ✗ {tag}: {msg}")
+                        logger.error(f"  [{idx}/{total_tarefas}] ✗ FALHA {tag}: {msg}")
                 except Exception as e:
                     falha += 1
-                    logger.error(f"  [{idx}/{total_tarefas}] ✗ {tag_principal}: {e}")
+                    logger.error(f"  [{idx}/{total_tarefas}] ✗ FALHA {tag_principal}: {e}")
     
     # Resumo
     duracao_total = datetime.now() - inicio
     logger.info("")
     logger.info("=" * 60)
-    logger.info("RESUMO v6.0 (XGBoost via SIMP)")
+    logger.info("RESUMO v6.1 (XGBoost via SIMP)")
+    logger.info(f"  Modo: {modo.upper()}")
     logger.info(f"  Total: {total_tarefas}" + (f" (de {total_geral})" if bloco else ""))
     logger.info(f"  Sucesso: {sucesso} | Falha: {falha}")
     logger.info(f"  Duração: {duracao_total}")
@@ -792,24 +862,34 @@ def treinar_todos(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='SIMP - Treino XGBoost v6.0 (Dados via SIMP)',
+        description='SIMP - Treino XGBoost v6.1 (Dados via SIMP)',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Exemplos:
-  python treinar_modelos.py                                    # Treinar todos
+  python treinar_modelos.py                                    # Treinar todos (fixo 24 sem)
   python treinar_modelos.py --tag GPRS050_M010_MED             # Treinar só uma tag
   python treinar_modelos.py --semanas 52                       # 1 ano
+  python treinar_modelos.py --modo otimizado                   # Cada ponto usa seu melhor período
+  python treinar_modelos.py --modo otimizado --semanas 24      # Otimizado com fallback 24 sem
   python treinar_modelos.py --workers 3                        # Paralelo
   python treinar_modelos.py --bloco 1 --total-blocos 7         # Cron
         """
     )
     
-    parser.add_argument('--tag', type=str, default=None)
-    parser.add_argument('--semanas', type=int, default=24)
-    parser.add_argument('--output', type=str, default=OUTPUT_DIR)
-    parser.add_argument('--bloco', type=int, default=None)
-    parser.add_argument('--total-blocos', type=int, default=7)
-    parser.add_argument('--workers', type=int, default=1)
+    parser.add_argument('--tag', type=str, default=None,
+                        help='Treinar apenas esta tag principal')
+    parser.add_argument('--semanas', type=int, default=24,
+                        help='Semanas de histórico (padrão: 24). No modo otimizado, serve como fallback.')
+    parser.add_argument('--output', type=str, default=OUTPUT_DIR,
+                        help='Diretório de saída dos modelos')
+    parser.add_argument('--bloco', type=int, default=None,
+                        help='Número do bloco (para execução distribuída)')
+    parser.add_argument('--total-blocos', type=int, default=7,
+                        help='Total de blocos (padrão: 7)')
+    parser.add_argument('--workers', type=int, default=1,
+                        help='Número de workers paralelos (padrão: 1)')
+    parser.add_argument('--modo', type=str, default='fixo', choices=['fixo', 'otimizado'],
+                        help='fixo = mesmo período para todos | otimizado = usa período do melhor R² anterior por ponto')
     
     args = parser.parse_args()
     
@@ -825,5 +905,6 @@ Exemplos:
         semanas=args.semanas,
         bloco=args.bloco,
         total_blocos=args.total_blocos,
-        workers=args.workers
+        workers=args.workers,
+        modo=args.modo
     )

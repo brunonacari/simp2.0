@@ -292,7 +292,7 @@ try {
             $resposta = chamarTensorFlow(
                 $tensorflowUrl . '/api/train-all',
                 'POST',
-                ['semanas' => $semanas],
+                ['semanas' => $semanas, 'modo' => $dados['modo'] ?? 'fixo'],
                 15 // Timeout curto: só precisa disparar, não esperar
             );
 
