@@ -5,7 +5,7 @@ PARA PUBLICAR EM LOCALHOST (VDESK)
 
 é necessário preencher corretamente o arquivo "docker/.env"
 ```
-sudo mkdir -p /nfs/swarm/simp20-php/uploads
+sudo mkdir -p /nfs/swarm/simp20-php/modelos_treinados
 
 SUBIR AS VARIÁVEIS DE AMBIENTE 
 source docker/.env
@@ -26,9 +26,8 @@ docker stack deploy --with-registry-auth -c docker/stackdev.yml $CI_PROJECT_NAME
 
 ```
 <!-- container PYTHON necessário para testes do TENSORFLOW -->
-# 1. Build do container
+# 1. Build do container TENSORFLOW
 ```
-BUILDAR SOLUÇÃO TENSORFLOW
 
 source docker/.env
 docker login registry.cesan.com.br
@@ -50,10 +49,9 @@ PARA PUBLICAR EM HOMOLOGAÇÃO
 . é necessário estar na branch STAGING
 ```
 git checkout staging
-git add .
-git commit -m "XPTO"
-//está integrado no github tb 
-git push && git push github
+
+git add . && git commit -m "descrição" && git push && git push github
+
 ```
 PARA SUBIR A APLICAÇÃO EM PRODUÇÃO, APÓS REALIZAR AS ALTERAÇÕES NECESSÁRIAS, BASTA EXECUTAR:
 Está com o CI/CD CONFIGURADO, basta seguir os passos abaixo.
@@ -65,9 +63,8 @@ git merge staging
 ```
 . e seguir os passos abaixo:
 ```
-git add .
-git commit -m "descrição"
-git push
+git add . && git commit -m "descrição" && git push && git push github
+
 ```
 <!-- NÃO ESTÁ FUNCIONANDO A INTEGRAÇÃO ABAIXO -->
 

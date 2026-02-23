@@ -43,12 +43,18 @@ try {
             PM.ID_TIPO_MEDIDOR,
             TM.DS_NOME AS DS_TIPO_MEDIDOR,
             L.DS_NOME AS DS_LOCALIDADE,
-            U.DS_NOME AS DS_UNIDADE
+            U.DS_NOME AS DS_UNIDADE,
+            COALESCE(PM.DS_TAG_VAZAO, PM.DS_TAG_PRESSAO, PM.DS_TAG_RESERVATORIO, PM.DS_TAG_VOLUME, PM.DS_TAG_TEMP_AGUA, PM.DS_TAG_TEMP_AMBIENTE) AS DS_TAG
         FROM SIMP.dbo.PONTO_MEDICAO PM
         LEFT JOIN SIMP.dbo.TIPO_MEDIDOR TM ON TM.CD_CHAVE = PM.ID_TIPO_MEDIDOR
         LEFT JOIN SIMP.dbo.LOCALIDADE L ON L.CD_CHAVE = PM.CD_LOCALIDADE
         LEFT JOIN SIMP.dbo.UNIDADE U ON U.CD_UNIDADE = L.CD_UNIDADE
-        WHERE PM.DT_DESATIVACAO IS NULL
+        WHERE (PM.DT_DESATIVACAO IS NULL OR PM.DT_DESATIVACAO > GETDATE())
+          AND EXISTS (
+              SELECT 1 FROM SIMP.dbo.AUX_RELACAO_PONTOS_MEDICAO R
+              WHERE R.TAG_PRINCIPAL IN (PM.DS_TAG_VAZAO, PM.DS_TAG_PRESSAO, PM.DS_TAG_RESERVATORIO, PM.DS_TAG_VOLUME, PM.DS_TAG_TEMP_AGUA, PM.DS_TAG_TEMP_AMBIENTE)
+                 OR R.TAG_AUXILIAR IN (PM.DS_TAG_VAZAO, PM.DS_TAG_PRESSAO, PM.DS_TAG_RESERVATORIO, PM.DS_TAG_VOLUME, PM.DS_TAG_TEMP_AGUA, PM.DS_TAG_TEMP_AMBIENTE)
+          )
         ORDER BY PM.DS_NOME
     ";
     $stmtPontos = $pdoSIMP->query($sqlPontos);
@@ -3279,7 +3285,8 @@ try {
                     <select id="selectPontoTreino" style="width: 100%;">
                         <option value="">Selecione um ponto de medição...</option>
                         <?php foreach ($pontosMedicao as $pm): ?>
-                            <option value="<?= $pm['CD_PONTO_MEDICAO'] ?>" data-tipo="<?= $pm['ID_TIPO_MEDIDOR'] ?>">
+                            <option value="<?= $pm['CD_PONTO_MEDICAO'] ?>" data-tipo="<?= $pm['ID_TIPO_MEDIDOR'] ?>"
+                                data-tag="<?= htmlspecialchars($pm['DS_TAG'] ?? '') ?>">
                                 <?= htmlspecialchars(
                                     $pm['CD_PONTO_MEDICAO'] . ' - ' .
                                     $pm['DS_NOME'] .
@@ -3508,15 +3515,42 @@ try {
     document.addEventListener('DOMContentLoaded', function () {
         // Inicializar Select2 no modal de treino (com busca)
         if (document.getElementById('selectPontoTreino')) {
+            /**
+             * Matcher customizado: pesquisa por código, nome, tipo e TAG
+             */
+            function matcherPontoTreino(params, data) {
+                if (!params.term || params.term.trim() === '') return data;
+                if (!data.element) return null;
+
+                var termo = params.term.toLowerCase();
+                var tag = (data.element.dataset.tag || '').toLowerCase();
+                var texto = (data.text || '').toLowerCase();
+
+                // Pesquisa no texto visível e na TAG
+                if (texto.indexOf(termo) > -1 || tag.indexOf(termo) > -1) {
+                    return data;
+                }
+                return null;
+            }
+
             $('#selectPontoTreino').select2({
-                placeholder: 'Selecione um ponto de medição...',
+                placeholder: 'Buscar por código, nome ou TAG...',
                 allowClear: true,
                 dropdownParent: $('#modalTreino'),
                 width: '100%',
+                matcher: matcherPontoTreino,
                 language: {
                     noResults: function () { return 'Nenhum ponto encontrado'; },
                     searching: function () { return 'Buscando...'; }
                 }
+            });
+
+            // Autofocus no campo de busca ao abrir
+            $('#selectPontoTreino').on('select2:open', function () {
+                setTimeout(function () {
+                    var campo = document.querySelector('.select2-container--open .select2-search__field');
+                    if (campo) campo.focus();
+                }, 0);
             });
         }
 

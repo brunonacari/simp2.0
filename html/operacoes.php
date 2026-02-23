@@ -2926,6 +2926,9 @@ $letrasTipoMedidor = [
 
                             // Carregar estimativas de rede (interpolação, balanço, proporção)
                             carregarEstimativasRede();
+
+                            // Carregar predição TensorFlow automaticamente
+                            carregarDadosTensorFlow();
                         } else {
                             tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#dc2626;">${data.message || 'Erro ao carregar dados'}</td></tr>`;
                         }
@@ -4059,6 +4062,67 @@ $letrasTipoMedidor = [
                     .catch(error => {
                         // Silenciosamente ignorar erros - não é crítico
                         console.warn('Estimativas de rede não disponíveis:', error.message);
+                    });
+            }
+
+            /**
+             * Carrega predição TensorFlow automaticamente ao abrir modal de validação.
+             * Segue o mesmo padrão das estimativas de rede: carrega silenciosamente
+             * e exibe o dataset no gráfico quando disponível.
+             * Chama o endpoint predict para todas as 24 horas.
+             */
+            function carregarDadosTensorFlow() {
+                if (!validacaoPontoAtual || !validacaoDataAtual) {
+                    return;
+                }
+
+                // Se já foram carregados, apenas re-renderizar o gráfico
+                if (dadosTensorFlow && validacaoDadosAtuais) {
+                    renderizarGraficoValidacao(validacaoDadosAtuais.dados, validacaoDadosAtuais.unidade);
+                    return;
+                }
+
+                // Chamar endpoint de predição para todas as 24 horas
+                fetch('bd/operacoes/predicaoTensorFlow.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        acao: 'predict',
+                        cd_ponto: validacaoPontoAtual,
+                        data: validacaoDataAtual,
+                        horas: Array.from({ length: 24 }, (_, i) => i), // [0..23]
+                        tipo_medidor: validacaoTipoMedidorAtual || 1,
+                        semanas_historico: 12
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success && data.predicoes && data.predicoes.length > 0) {
+                            // Armazenar dados globalmente para o gráfico
+                            dadosTensorFlow = data;
+
+                            // Mostrar controle do checkbox TensorFlow no gráfico
+                            const ctrlTF = document.getElementById('controleTensorFlow');
+                            if (ctrlTF) ctrlTF.style.display = '';
+
+                            // Re-renderizar gráfico com linha TensorFlow
+                            if (validacaoDadosAtuais) {
+                                renderizarGraficoValidacao(validacaoDadosAtuais.dados, validacaoDadosAtuais.unidade);
+                            }
+
+                            // Atualizar visibilidade do botão toggle estimativas
+                            atualizarVisibilidadeBtnEstimativas();
+                        }
+                        // Se não tem modelo ou serviço offline, silenciosamente ignora
+                    })
+                    .catch(error => {
+                        // Silenciosamente ignorar erros - não é crítico
+                        console.warn('TensorFlow não disponível:', error.message);
                     });
             }
 
