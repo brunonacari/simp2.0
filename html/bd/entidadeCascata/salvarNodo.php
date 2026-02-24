@@ -24,6 +24,8 @@ header('Content-Type: application/json; charset=utf-8');
 
 // Verificar permissão de edição
 require_once __DIR__ . '/../../includes/auth.php';
+include_once __DIR__ . '/topologiaHelper.php';
+
 if (!podeEditarTela('Cadastro de Entidade')) {
     echo json_encode(['success' => false, 'message' => 'Sem permissão para esta operação']);
     exit;
@@ -39,18 +41,18 @@ try {
     // --------------------------------------------------
     // Receber parâmetros
     // --------------------------------------------------
-    $cd            = isset($_POST['cd']) && $_POST['cd'] !== '' ? (int)$_POST['cd'] : null;
-    $cdNivel       = isset($_POST['cdNivel']) ? (int)$_POST['cdNivel'] : 0;
-    $nome          = isset($_POST['nome']) ? trim($_POST['nome']) : '';
+    $cd = isset($_POST['cd']) && $_POST['cd'] !== '' ? (int) $_POST['cd'] : null;
+    $cdNivel = isset($_POST['cdNivel']) ? (int) $_POST['cdNivel'] : 0;
+    $nome = isset($_POST['nome']) ? trim($_POST['nome']) : '';
     $identificador = isset($_POST['identificador']) ? trim($_POST['identificador']) : null;
-    $ordem         = isset($_POST['ordem']) ? (int)$_POST['ordem'] : 0;
-    $cdPonto       = isset($_POST['cdPonto']) && $_POST['cdPonto'] !== '' ? (int)$_POST['cdPonto'] : null;
-    $cdSistemaAgua = isset($_POST['cdSistemaAgua']) && $_POST['cdSistemaAgua'] !== '' ? (int)$_POST['cdSistemaAgua'] : null;
-    $operacao      = isset($_POST['operacao']) && $_POST['operacao'] !== '' ? (int)$_POST['operacao'] : null;
-    $fluxo         = isset($_POST['fluxo']) && $_POST['fluxo'] !== '' ? (int)$_POST['fluxo'] : null;
-    $observacao    = isset($_POST['observacao']) ? trim($_POST['observacao']) : null;
-    $posX          = isset($_POST['posX']) && $_POST['posX'] !== '' ? (int)$_POST['posX'] : null;
-    $posY          = isset($_POST['posY']) && $_POST['posY'] !== '' ? (int)$_POST['posY'] : null;
+    $ordem = isset($_POST['ordem']) ? (int) $_POST['ordem'] : 0;
+    $cdPonto = isset($_POST['cdPonto']) && $_POST['cdPonto'] !== '' ? (int) $_POST['cdPonto'] : null;
+    $cdSistemaAgua = isset($_POST['cdSistemaAgua']) && $_POST['cdSistemaAgua'] !== '' ? (int) $_POST['cdSistemaAgua'] : null;
+    $operacao = isset($_POST['operacao']) && $_POST['operacao'] !== '' ? (int) $_POST['operacao'] : null;
+    $fluxo = isset($_POST['fluxo']) && $_POST['fluxo'] !== '' ? (int) $_POST['fluxo'] : null;
+    $observacao = isset($_POST['observacao']) ? trim($_POST['observacao']) : null;
+    $posX = isset($_POST['posX']) && $_POST['posX'] !== '' ? (int) $_POST['posX'] : null;
+    $posY = isset($_POST['posY']) && $_POST['posY'] !== '' ? (int) $_POST['posY'] : null;
 
     // --------------------------------------------------
     // Validações
@@ -71,7 +73,7 @@ try {
                      WHERE CD_ENTIDADE_NIVEL = :cdNivel";
         $stmtOrdem = $pdoSIMP->prepare($sqlOrdem);
         $stmtOrdem->execute([':cdNivel' => $cdNivel]);
-        $ordem = (int)$stmtOrdem->fetch(PDO::FETCH_ASSOC)['PROX'];
+        $ordem = (int) $stmtOrdem->fetch(PDO::FETCH_ASSOC)['PROX'];
     }
 
     // --------------------------------------------------
@@ -95,18 +97,18 @@ try {
                 WHERE CD_CHAVE = :cd";
         $stmt = $pdoSIMP->prepare($sql);
         $stmt->execute([
-            ':cdNivel'       => $cdNivel,
-            ':nome'          => $nome,
+            ':cdNivel' => $cdNivel,
+            ':nome' => $nome,
             ':identificador' => $identificador,
-            ':ordem'         => $ordem,
-            ':cdPonto'       => $cdPonto,
+            ':ordem' => $ordem,
+            ':cdPonto' => $cdPonto,
             ':cdSistemaAgua' => $cdSistemaAgua,
-            ':operacao'      => $operacao,
-            ':fluxo'         => $fluxo,
-            ':observacao'    => $observacao,
-            ':posX'          => $posX,
-            ':posY'          => $posY,
-            ':cd'            => $cd
+            ':operacao' => $operacao,
+            ':fluxo' => $fluxo,
+            ':observacao' => $observacao,
+            ':posX' => $posX,
+            ':posY' => $posY,
+            ':cd' => $cd
         ]);
 
         // Log isolado
@@ -115,12 +117,13 @@ try {
             if (function_exists('registrarLogUpdate')) {
                 registrarLogUpdate('Cadastro Cascata', 'Nodo', $cd, $nome, $_POST);
             }
-        } catch (Exception $logEx) {}
+        } catch (Exception $logEx) {
+        }
 
         echo json_encode([
             'success' => true,
             'message' => 'Nó atualizado com sucesso!',
-            'cd'      => $cd
+            'cd' => $cd
         ], JSON_UNESCAPED_UNICODE);
 
     } else {
@@ -135,17 +138,17 @@ try {
                  :posX, :posY)";
         $stmt = $pdoSIMP->prepare($sql);
         $stmt->execute([
-            ':cdNivel'       => $cdNivel,
-            ':nome'          => $nome,
+            ':cdNivel' => $cdNivel,
+            ':nome' => $nome,
             ':identificador' => $identificador,
-            ':ordem'         => $ordem,
-            ':cdPonto'       => $cdPonto,
+            ':ordem' => $ordem,
+            ':cdPonto' => $cdPonto,
             ':cdSistemaAgua' => $cdSistemaAgua,
-            ':operacao'      => $operacao,
-            ':fluxo'         => $fluxo,
-            ':observacao'    => $observacao,
-            ':posX'          => $posX,
-            ':posY'          => $posY
+            ':operacao' => $operacao,
+            ':fluxo' => $fluxo,
+            ':observacao' => $observacao,
+            ':posX' => $posX,
+            ':posY' => $posY
         ]);
 
         // Recuperar ID gerado
@@ -158,15 +161,20 @@ try {
             if (function_exists('registrarLogInsert')) {
                 registrarLogInsert('Cadastro Cascata', 'Nodo', $novoId, $nome, $_POST);
             }
-        } catch (Exception $logEx) {}
+        } catch (Exception $logEx) {
+        }
 
         echo json_encode([
             'success' => true,
             'message' => 'Nó cadastrado com sucesso!',
-            'cd'      => (int)$novoId
+            'cd' => (int) $novoId
         ], JSON_UNESCAPED_UNICODE);
     }
 
+    // Disparar snapshot de topologia (Fase A1 - Governança)
+    if (function_exists('dispararSnapshotTopologia')) {
+        dispararSnapshotTopologia($pdoSIMP, ($cd !== null ? 'Nó atualizado' : 'Nó adicionado') . ': ' . $nome);
+    }
 } catch (Exception $e) {
     // Log de erro isolado
     try {
@@ -174,10 +182,12 @@ try {
         if (function_exists('registrarLogErro')) {
             registrarLogErro('Cadastro Cascata', $cd !== null ? 'UPDATE' : 'INSERT', $e->getMessage(), $_POST);
         }
-    } catch (Exception $logEx) {}
+    } catch (Exception $logEx) {
+    }
 
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
+
 }

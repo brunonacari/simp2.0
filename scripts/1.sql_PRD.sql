@@ -842,3 +842,525 @@ GO
 -- =============================================================================================================================
 
 
+-- ============================================
+-- SIMP 2.0 — Fase A1: Governanca e Versionamento de Topologia
+-- 
+-- Objetivo:
+--   Rastrear mudancas na topologia do flowchart (nos + conexoes)
+--   e vincular cada modelo ML a versao de topologia vigente no treino.
+--   Detecta automaticamente quando a topologia muda e invalida modelos.
+--
+-- Tabelas:
+--   VERSAO_TOPOLOGIA  — snapshot com hash SHA-256 dos nos + conexoes
+--   MODELO_REGISTRO   — vinculo modelo <-> versao topologia, flag validade
+--
+-- Dependencias:
+--   - ENTIDADE_NODO (existente)
+--   - ENTIDADE_NODO_CONEXAO (existente)
+--   - PONTO_MEDICAO (existente)
+--
+-- @author Bruno - CESAN
+-- @version 1.0
+-- @date 2026-02
+-- ============================================
+
+USE SIMP;
+GO
+
+-- ============================================
+-- 1. VERSAO_TOPOLOGIA
+--    Snapshot da topologia em determinado momento.
+--    Hash SHA-256 calculado sobre nos ativos + conexoes ativas.
+--    Se hash muda, nova versao e criada automaticamente.
+-- ============================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'VERSAO_TOPOLOGIA' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE dbo.VERSAO_TOPOLOGIA (
+        CD_CHAVE            INT IDENTITY(1,1) PRIMARY KEY,
+
+        -- Hash SHA-256 dos nos + conexoes (detecta mudanca)
+        DS_HASH_TOPOLOGIA   VARCHAR(64)   NOT NULL,
+
+        -- Contexto: sistema de abastecimento (NULL = topologia global)
+        CD_SISTEMA          INT           NULL,
+
+        -- Contadores no momento do snapshot
+        QTD_NOS_ATIVOS      INT           NOT NULL DEFAULT 0,
+        QTD_CONEXOES_ATIVAS INT           NOT NULL DEFAULT 0,
+        QTD_NOS_COM_PONTO   INT           NOT NULL DEFAULT 0,
+
+        -- Descricao da mudanca (preenchido automaticamente ou pelo operador)
+        DS_DESCRICAO        VARCHAR(500)  NULL,
+
+        -- Detalhes da mudanca (JSON com diff: nos adicionados/removidos/alterados)
+        DS_DIFF_JSON        VARCHAR(MAX)  NULL,
+
+        -- Auditoria
+        CD_USUARIO          INT           NULL,
+        DT_CADASTRO         DATETIME      NOT NULL DEFAULT GETDATE()
+    );
+
+    -- Indice para busca rapida por hash (verificar se ja existe)
+    CREATE INDEX IX_VERSAO_TOPO_HASH 
+        ON dbo.VERSAO_TOPOLOGIA(DS_HASH_TOPOLOGIA);
+
+    -- Indice para busca por sistema
+    CREATE INDEX IX_VERSAO_TOPO_SISTEMA 
+        ON dbo.VERSAO_TOPOLOGIA(CD_SISTEMA);
+
+    -- Indice para ordenacao cronologica
+    CREATE INDEX IX_VERSAO_TOPO_DATA 
+        ON dbo.VERSAO_TOPOLOGIA(DT_CADASTRO DESC);
+
+    PRINT 'Tabela VERSAO_TOPOLOGIA criada com sucesso!';
+END
+ELSE
+BEGIN
+    PRINT 'Tabela VERSAO_TOPOLOGIA ja existe.';
+END
+GO
+
+
+-- ============================================
+-- 2. MODELO_REGISTRO
+--    Vinculo entre modelo ML treinado e a versao
+--    de topologia vigente no momento do treino.
+--    
+--    Permite:
+--    - Saber se modelo esta desatualizado (topologia mudou)
+--    - Historico de treinos por ponto
+--    - SLA de retreino configuravel
+--    - Auditoria completa de invalidacao
+-- ============================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MODELO_REGISTRO' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE dbo.MODELO_REGISTRO (
+        CD_CHAVE                INT IDENTITY(1,1) PRIMARY KEY,
+
+        -- Ponto de medicao vinculado ao modelo
+        CD_PONTO_MEDICAO        INT           NOT NULL,
+
+        -- Tipo do modelo (1=XGBoost, 2=GNN, 3=LSTM, 4=Estatistico)
+        ID_TIPO_MODELO          TINYINT       NOT NULL DEFAULT 1,
+
+        -- Versao da topologia usada no treino
+        CD_VERSAO_TOPOLOGIA     INT           NULL,
+
+        -- Metricas do treino (snapshot no momento do treino)
+        VL_R2                   DECIMAL(8,6)  NULL,
+        VL_MAE                  DECIMAL(12,4) NULL,
+        VL_RMSE                 DECIMAL(12,4) NULL,
+        VL_MAPE                 DECIMAL(8,4)  NULL,
+
+        -- Configuracao do treino
+        NR_SEMANAS_HISTORICO    INT           NULL,
+        NR_AMOSTRAS_TREINO      INT           NULL,
+        NR_FEATURES             INT           NULL,
+        DS_VERSAO_PIPELINE      VARCHAR(20)   NULL,  -- Ex: 'v6.0', 'v6.1'
+
+        -- Caminho do modelo salvo (relativo ao diretorio de modelos)
+        DS_CAMINHO_MODELO       VARCHAR(500)  NULL,
+
+        -- Flag de validade
+        OP_VALIDO               BIT           NOT NULL DEFAULT 1,
+
+        -- Motivo da invalidacao (preenchido quando OP_VALIDO = 0)
+        DS_MOTIVO_INVALIDACAO   VARCHAR(500)  NULL,
+
+        -- Data da invalidacao
+        DT_INVALIDACAO          DATETIME      NULL,
+
+        -- SLA de retreino: dias maximos sem retreino apos mudanca de topologia
+        NR_SLA_RETREINO_DIAS    INT           NOT NULL DEFAULT 7,
+
+        -- Auditoria
+        CD_USUARIO_TREINO       INT           NULL,
+        DT_TREINO               DATETIME      NOT NULL DEFAULT GETDATE(),
+        DT_CADASTRO             DATETIME      NOT NULL DEFAULT GETDATE(),
+
+        -- Constraints
+        CONSTRAINT FK_MODELO_REG_PONTO 
+            FOREIGN KEY (CD_PONTO_MEDICAO) 
+            REFERENCES dbo.PONTO_MEDICAO(CD_PONTO_MEDICAO),
+
+        CONSTRAINT FK_MODELO_REG_VERSAO 
+            FOREIGN KEY (CD_VERSAO_TOPOLOGIA) 
+            REFERENCES dbo.VERSAO_TOPOLOGIA(CD_CHAVE)
+    );
+
+    -- Indice principal: buscar modelo ativo por ponto
+    CREATE INDEX IX_MODELO_REG_PONTO_VALIDO 
+        ON dbo.MODELO_REGISTRO(CD_PONTO_MEDICAO, OP_VALIDO) 
+        INCLUDE (CD_VERSAO_TOPOLOGIA, VL_R2, DT_TREINO);
+
+    -- Indice para busca por versao de topologia
+    CREATE INDEX IX_MODELO_REG_VERSAO 
+        ON dbo.MODELO_REGISTRO(CD_VERSAO_TOPOLOGIA);
+
+    -- Indice para busca por tipo de modelo
+    CREATE INDEX IX_MODELO_REG_TIPO 
+        ON dbo.MODELO_REGISTRO(ID_TIPO_MODELO);
+
+    -- Indice para SLA: modelos validos ordenados por data de treino
+    CREATE INDEX IX_MODELO_REG_SLA 
+        ON dbo.MODELO_REGISTRO(OP_VALIDO, DT_TREINO) 
+        WHERE OP_VALIDO = 1;
+
+    PRINT 'Tabela MODELO_REGISTRO criada com sucesso!';
+END
+ELSE
+BEGIN
+    PRINT 'Tabela MODELO_REGISTRO ja existe.';
+END
+GO
+
+
+-- ============================================
+-- 3. VIEW: VW_MODELO_STATUS
+--    Consolida status de cada modelo com info
+--    da topologia e calculo de SLA.
+--    Usada pelo banner de alerta e dashboard.
+-- ============================================
+IF EXISTS (SELECT * FROM sys.views WHERE name = 'VW_MODELO_STATUS')
+    DROP VIEW dbo.VW_MODELO_STATUS;
+GO
+
+CREATE VIEW dbo.VW_MODELO_STATUS AS
+SELECT 
+    MR.CD_CHAVE                     AS CD_MODELO_REGISTRO,
+    MR.CD_PONTO_MEDICAO,
+    PM.DS_NOME                      AS DS_PONTO_NOME,
+    PM.ID_TIPO_MEDIDOR,
+
+    -- Tipo do modelo (texto)
+    CASE MR.ID_TIPO_MODELO
+        WHEN 1 THEN 'XGBoost'
+        WHEN 2 THEN 'GNN'
+        WHEN 3 THEN 'LSTM'
+        WHEN 4 THEN 'Estatistico'
+        ELSE 'Desconhecido'
+    END                             AS DS_TIPO_MODELO,
+
+    -- Metricas
+    MR.VL_R2,
+    MR.VL_MAE,
+    MR.VL_RMSE,
+    MR.VL_MAPE,
+    MR.NR_SEMANAS_HISTORICO,
+    MR.DS_VERSAO_PIPELINE,
+
+    -- Validade
+    MR.OP_VALIDO,
+    MR.DS_MOTIVO_INVALIDACAO,
+    MR.DT_INVALIDACAO,
+    MR.DT_TREINO,
+
+    -- Versao da topologia usada no treino
+    MR.CD_VERSAO_TOPOLOGIA,
+    VT.DS_HASH_TOPOLOGIA            AS DS_HASH_TREINO,
+    VT.DT_CADASTRO                  AS DT_VERSAO_TREINO,
+    VT.QTD_NOS_ATIVOS               AS QTD_NOS_NO_TREINO,
+
+    -- Versao atual da topologia (mais recente do mesmo sistema)
+    VT_ATUAL.CD_CHAVE               AS CD_VERSAO_ATUAL,
+    VT_ATUAL.DS_HASH_TOPOLOGIA      AS DS_HASH_ATUAL,
+    VT_ATUAL.DT_CADASTRO            AS DT_VERSAO_ATUAL,
+
+    -- Flag: topologia mudou desde o treino?
+    CASE 
+        WHEN VT.DS_HASH_TOPOLOGIA IS NULL THEN NULL
+        WHEN VT_ATUAL.DS_HASH_TOPOLOGIA IS NULL THEN NULL
+        WHEN VT.DS_HASH_TOPOLOGIA <> VT_ATUAL.DS_HASH_TOPOLOGIA THEN 1
+        ELSE 0
+    END                             AS FL_TOPOLOGIA_ALTERADA,
+
+    -- Dias desde o treino
+    DATEDIFF(DAY, MR.DT_TREINO, GETDATE()) AS NR_DIAS_DESDE_TREINO,
+
+    -- SLA: dias restantes para retreino (negativo = vencido)
+    CASE 
+        WHEN VT.DS_HASH_TOPOLOGIA IS NOT NULL 
+         AND VT_ATUAL.DS_HASH_TOPOLOGIA IS NOT NULL
+         AND VT.DS_HASH_TOPOLOGIA <> VT_ATUAL.DS_HASH_TOPOLOGIA
+        THEN MR.NR_SLA_RETREINO_DIAS - DATEDIFF(DAY, VT_ATUAL.DT_CADASTRO, GETDATE())
+        ELSE NULL
+    END                             AS NR_DIAS_SLA_RESTANTES,
+
+    -- Status consolidado
+    CASE 
+        WHEN MR.OP_VALIDO = 0 THEN 'INVALIDADO'
+        WHEN VT.DS_HASH_TOPOLOGIA IS NULL THEN 'SEM_VERSAO'
+        WHEN VT_ATUAL.DS_HASH_TOPOLOGIA IS NULL THEN 'SEM_VERSAO'
+        WHEN VT.DS_HASH_TOPOLOGIA <> VT_ATUAL.DS_HASH_TOPOLOGIA 
+         AND DATEDIFF(DAY, VT_ATUAL.DT_CADASTRO, GETDATE()) > MR.NR_SLA_RETREINO_DIAS
+        THEN 'SLA_VENCIDO'
+        WHEN VT.DS_HASH_TOPOLOGIA <> VT_ATUAL.DS_HASH_TOPOLOGIA
+        THEN 'DESATUALIZADO'
+        ELSE 'ATUALIZADO'
+    END                             AS DS_STATUS_MODELO
+
+FROM dbo.MODELO_REGISTRO MR
+
+-- Ponto de medicao
+INNER JOIN dbo.PONTO_MEDICAO PM 
+    ON PM.CD_PONTO_MEDICAO = MR.CD_PONTO_MEDICAO
+
+-- Versao usada no treino
+LEFT JOIN dbo.VERSAO_TOPOLOGIA VT 
+    ON VT.CD_CHAVE = MR.CD_VERSAO_TOPOLOGIA
+
+-- Versao atual: mais recente do mesmo sistema (ou global se NULL)
+OUTER APPLY (
+    SELECT TOP 1 
+        V2.CD_CHAVE,
+        V2.DS_HASH_TOPOLOGIA,
+        V2.DT_CADASTRO
+    FROM dbo.VERSAO_TOPOLOGIA V2
+    WHERE ISNULL(V2.CD_SISTEMA, 0) = ISNULL(VT.CD_SISTEMA, 0)
+    ORDER BY V2.DT_CADASTRO DESC
+) VT_ATUAL
+
+GO
+
+PRINT 'View VW_MODELO_STATUS criada com sucesso!';
+GO
+
+
+-- ============================================
+-- 4. VIEW: VW_TOPOLOGIA_RESUMO
+--    Resumo da ultima versao de topologia por sistema.
+--    Util para tela de modelos e dashboard.
+-- ============================================
+IF EXISTS (SELECT * FROM sys.views WHERE name = 'VW_TOPOLOGIA_RESUMO')
+    DROP VIEW dbo.VW_TOPOLOGIA_RESUMO;
+GO
+
+CREATE VIEW dbo.VW_TOPOLOGIA_RESUMO AS
+SELECT 
+    VT.CD_CHAVE,
+    VT.CD_SISTEMA,
+    VT.DS_HASH_TOPOLOGIA,
+    VT.QTD_NOS_ATIVOS,
+    VT.QTD_CONEXOES_ATIVAS,
+    VT.QTD_NOS_COM_PONTO,
+    VT.DS_DESCRICAO,
+    VT.DT_CADASTRO,
+
+    -- Total de versoes deste sistema
+    (SELECT COUNT(*) 
+     FROM dbo.VERSAO_TOPOLOGIA V2 
+     WHERE ISNULL(V2.CD_SISTEMA, 0) = ISNULL(VT.CD_SISTEMA, 0)
+    ) AS QTD_VERSOES_TOTAL,
+
+    -- Modelos ativos vinculados a esta versao
+    (SELECT COUNT(*) 
+     FROM dbo.MODELO_REGISTRO MR 
+     WHERE MR.CD_VERSAO_TOPOLOGIA = VT.CD_CHAVE 
+       AND MR.OP_VALIDO = 1
+    ) AS QTD_MODELOS_ATIVOS,
+
+    -- Modelos desatualizados (treinados em versao anterior)
+    (SELECT COUNT(*) 
+     FROM dbo.MODELO_REGISTRO MR2
+     INNER JOIN dbo.VERSAO_TOPOLOGIA VT2 ON VT2.CD_CHAVE = MR2.CD_VERSAO_TOPOLOGIA
+     WHERE MR2.OP_VALIDO = 1
+       AND ISNULL(VT2.CD_SISTEMA, 0) = ISNULL(VT.CD_SISTEMA, 0)
+       AND VT2.DS_HASH_TOPOLOGIA <> VT.DS_HASH_TOPOLOGIA
+    ) AS QTD_MODELOS_DESATUALIZADOS
+
+FROM dbo.VERSAO_TOPOLOGIA VT
+WHERE VT.CD_CHAVE = (
+    SELECT TOP 1 V3.CD_CHAVE 
+    FROM dbo.VERSAO_TOPOLOGIA V3
+    WHERE ISNULL(V3.CD_SISTEMA, 0) = ISNULL(VT.CD_SISTEMA, 0)
+    ORDER BY V3.DT_CADASTRO DESC
+)
+GO
+
+PRINT 'View VW_TOPOLOGIA_RESUMO criada com sucesso!';
+GO
+
+
+-- ============================================
+-- 5. STORED PROCEDURE: SP_GERAR_HASH_TOPOLOGIA
+--    Calcula hash SHA-256 da topologia atual.
+--    Compara com ultimo hash. Se diferente, grava nova versao.
+--    Chamada pelo PHP ao salvar nodo/conexao.
+--
+--    Parametros:
+--    @CD_SISTEMA  — NULL para global, ou CD do sistema
+--    @CD_USUARIO  — Usuario que disparou a acao
+--    @DS_DESCRICAO — Descricao da mudanca (opcional)
+--    @NOVA_VERSAO OUTPUT — 1 se criou nova versao, 0 se hash igual
+-- ============================================
+IF EXISTS (SELECT * FROM sys.procedures WHERE name = 'SP_GERAR_HASH_TOPOLOGIA')
+    DROP PROCEDURE dbo.SP_GERAR_HASH_TOPOLOGIA;
+GO
+
+CREATE PROCEDURE dbo.SP_GERAR_HASH_TOPOLOGIA
+    @CD_SISTEMA   INT           = NULL,
+    @CD_USUARIO   INT           = NULL,
+    @DS_DESCRICAO VARCHAR(500)  = NULL,
+    @NOVA_VERSAO  BIT           OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- ========================================
+    -- 1. Montar string canonica da topologia
+    --    Nos: CD_CHAVE|CD_ENTIDADE_NIVEL|CD_PONTO_MEDICAO|OP_ATIVO
+    --    Conexoes: CD_NODO_ORIGEM|CD_NODO_DESTINO|OP_ATIVO
+    --    Ordenados por CD_CHAVE para determinismo
+    -- ========================================
+    DECLARE @TOPO_STRING VARCHAR(MAX) = '';
+
+    -- Nos ativos (filtrar por sistema se informado)
+    SELECT @TOPO_STRING = @TOPO_STRING + 
+        'N:' + CAST(N.CD_CHAVE AS VARCHAR) + '|' +
+        CAST(N.CD_ENTIDADE_NIVEL AS VARCHAR) + '|' +
+        ISNULL(CAST(N.CD_PONTO_MEDICAO AS VARCHAR), 'NULL') + '|' +
+        CAST(N.OP_ATIVO AS VARCHAR) + ';'
+    FROM dbo.ENTIDADE_NODO N
+    WHERE N.OP_ATIVO = 1
+      AND (@CD_SISTEMA IS NULL OR N.CD_CHAVE IN (
+          -- Nos do sistema: descendentes via conexoes
+          SELECT CD_NODO_DESTINO FROM dbo.ENTIDADE_NODO_CONEXAO WHERE OP_ATIVO = 1
+          UNION
+          SELECT CD_NODO_ORIGEM FROM dbo.ENTIDADE_NODO_CONEXAO WHERE OP_ATIVO = 1
+      ))
+    ORDER BY N.CD_CHAVE;
+
+    -- Conexoes ativas
+    SELECT @TOPO_STRING = @TOPO_STRING + 
+        'C:' + CAST(C.CD_NODO_ORIGEM AS VARCHAR) + '|' +
+        CAST(C.CD_NODO_DESTINO AS VARCHAR) + '|' +
+        CAST(C.OP_ATIVO AS VARCHAR) + ';'
+    FROM dbo.ENTIDADE_NODO_CONEXAO C
+    WHERE C.OP_ATIVO = 1
+    ORDER BY C.CD_CHAVE;
+
+    -- ========================================
+    -- 2. Calcular SHA-256
+    -- ========================================
+    DECLARE @HASH VARCHAR(64);
+    SET @HASH = CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', @TOPO_STRING), 2);
+
+    -- ========================================
+    -- 3. Comparar com ultimo hash do mesmo sistema
+    -- ========================================
+    DECLARE @ULTIMO_HASH VARCHAR(64);
+    SELECT TOP 1 @ULTIMO_HASH = DS_HASH_TOPOLOGIA
+    FROM dbo.VERSAO_TOPOLOGIA
+    WHERE ISNULL(CD_SISTEMA, 0) = ISNULL(@CD_SISTEMA, 0)
+    ORDER BY DT_CADASTRO DESC;
+
+    -- ========================================
+    -- 4. Se hash diferente, gravar nova versao
+    -- ========================================
+    IF @ULTIMO_HASH IS NULL OR @HASH <> @ULTIMO_HASH
+    BEGIN
+        -- Contadores
+        DECLARE @QTD_NOS INT, @QTD_CONEXOES INT, @QTD_COM_PONTO INT;
+
+        SELECT @QTD_NOS = COUNT(*) FROM dbo.ENTIDADE_NODO WHERE OP_ATIVO = 1;
+        SELECT @QTD_CONEXOES = COUNT(*) FROM dbo.ENTIDADE_NODO_CONEXAO WHERE OP_ATIVO = 1;
+        SELECT @QTD_COM_PONTO = COUNT(*) FROM dbo.ENTIDADE_NODO WHERE OP_ATIVO = 1 AND CD_PONTO_MEDICAO IS NOT NULL;
+
+        INSERT INTO dbo.VERSAO_TOPOLOGIA (
+            DS_HASH_TOPOLOGIA,
+            CD_SISTEMA,
+            QTD_NOS_ATIVOS,
+            QTD_CONEXOES_ATIVAS,
+            QTD_NOS_COM_PONTO,
+            DS_DESCRICAO,
+            CD_USUARIO,
+            DT_CADASTRO
+        )
+        VALUES (
+            @HASH,
+            @CD_SISTEMA,
+            @QTD_NOS,
+            @QTD_CONEXOES,
+            @QTD_COM_PONTO,
+            ISNULL(@DS_DESCRICAO, 'Snapshot automatico - topologia alterada'),
+            @CD_USUARIO,
+            GETDATE()
+        );
+
+        SET @NOVA_VERSAO = 1;
+        PRINT 'Nova versao de topologia registrada. Hash: ' + @HASH;
+    END
+    ELSE
+    BEGIN
+        SET @NOVA_VERSAO = 0;
+        PRINT 'Topologia inalterada. Hash: ' + @HASH;
+    END
+END
+GO
+
+PRINT 'SP SP_GERAR_HASH_TOPOLOGIA criada com sucesso!';
+GO
+
+
+-- ============================================
+-- 6. STORED PROCEDURE: SP_VERIFICAR_MODELOS_DESATUALIZADOS
+--    Retorna modelos que precisam de retreino.
+--    Usada pelo banner de alerta na tela de modelos.
+-- ============================================
+IF EXISTS (SELECT * FROM sys.procedures WHERE name = 'SP_VERIFICAR_MODELOS_DESATUALIZADOS')
+    DROP PROCEDURE dbo.SP_VERIFICAR_MODELOS_DESATUALIZADOS;
+GO
+
+CREATE PROCEDURE dbo.SP_VERIFICAR_MODELOS_DESATUALIZADOS
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        CD_MODELO_REGISTRO,
+        CD_PONTO_MEDICAO,
+        DS_PONTO_NOME,
+        DS_TIPO_MODELO,
+        VL_R2,
+        DT_TREINO,
+        DS_STATUS_MODELO,
+        FL_TOPOLOGIA_ALTERADA,
+        NR_DIAS_DESDE_TREINO,
+        NR_DIAS_SLA_RESTANTES
+    FROM dbo.VW_MODELO_STATUS
+    WHERE OP_VALIDO = 1
+      AND DS_STATUS_MODELO IN ('DESATUALIZADO', 'SLA_VENCIDO')
+    ORDER BY 
+        -- SLA vencido primeiro, depois por dias restantes
+        CASE DS_STATUS_MODELO WHEN 'SLA_VENCIDO' THEN 0 ELSE 1 END,
+        NR_DIAS_SLA_RESTANTES ASC;
+END
+GO
+
+PRINT 'SP SP_VERIFICAR_MODELOS_DESATUALIZADOS criada com sucesso!';
+GO
+
+
+-- ============================================
+-- 7. Gerar snapshot inicial da topologia atual
+--    (primeira versao de referencia)
+-- ============================================
+DECLARE @NOVA BIT;
+EXEC dbo.SP_GERAR_HASH_TOPOLOGIA 
+    @CD_SISTEMA = NULL, 
+    @CD_USUARIO = NULL, 
+    @DS_DESCRICAO = 'Snapshot inicial - implantacao Fase A1',
+    @NOVA_VERSAO = @NOVA OUTPUT;
+
+IF @NOVA = 1
+    PRINT 'Snapshot inicial da topologia gravado com sucesso!';
+ELSE
+    PRINT 'Topologia ja possuia snapshot.';
+GO
+
+
+PRINT '';
+PRINT '================================================';
+PRINT 'Fase A1 - Governanca e Versionamento: SQL OK';
+PRINT '================================================';
+GO

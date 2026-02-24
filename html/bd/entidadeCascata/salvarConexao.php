@@ -18,6 +18,8 @@
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../../includes/auth.php';
+include_once __DIR__ . '/topologiaHelper.php';
+
 if (!podeEditarTela('Cadastro de Entidade')) {
     echo json_encode(['success' => false, 'message' => 'Sem permissão para esta operação']);
     exit;
@@ -30,12 +32,12 @@ try {
         throw new Exception('Conexão não estabelecida');
     }
 
-    $cd            = isset($_POST['cd']) && $_POST['cd'] !== '' ? (int)$_POST['cd'] : null;
-    $cdOrigem      = isset($_POST['cdOrigem']) ? (int)$_POST['cdOrigem'] : 0;
-    $cdDestino     = isset($_POST['cdDestino']) ? (int)$_POST['cdDestino'] : 0;
-    $rotulo        = isset($_POST['rotulo']) ? trim($_POST['rotulo']) : null;
-    $cor           = isset($_POST['cor']) && $_POST['cor'] !== '' ? trim($_POST['cor']) : '#1565C0';
-    $diametroRede  = isset($_POST['diametroRede']) && $_POST['diametroRede'] !== '' ? (float)$_POST['diametroRede'] : null;
+    $cd = isset($_POST['cd']) && $_POST['cd'] !== '' ? (int) $_POST['cd'] : null;
+    $cdOrigem = isset($_POST['cdOrigem']) ? (int) $_POST['cdOrigem'] : 0;
+    $cdDestino = isset($_POST['cdDestino']) ? (int) $_POST['cdDestino'] : 0;
+    $rotulo = isset($_POST['rotulo']) ? trim($_POST['rotulo']) : null;
+    $cor = isset($_POST['cor']) && $_POST['cor'] !== '' ? trim($_POST['cor']) : '#1565C0';
+    $diametroRede = isset($_POST['diametroRede']) && $_POST['diametroRede'] !== '' ? (float) $_POST['diametroRede'] : null;
 
     // --------------------------------------------------
     // Validações
@@ -67,7 +69,8 @@ try {
     }
     $stmtDup = $pdoSIMP->prepare($sqlDup);
     $paramsDup = [':o' => $cdOrigem, ':d' => $cdDestino];
-    if ($cd !== null) $paramsDup[':cd'] = $cd;
+    if ($cd !== null)
+        $paramsDup[':cd'] = $cd;
     $stmtDup->execute($paramsDup);
     if ($stmtDup->fetch()) {
         throw new Exception('Já existe uma conexão entre estes dois nós nesta direção');
@@ -87,12 +90,12 @@ try {
                 WHERE CD_CHAVE = :cd";
         $stmt = $pdoSIMP->prepare($sql);
         $stmt->execute([
-            ':cdOrigem'      => $cdOrigem,
-            ':cdDestino'     => $cdDestino,
-            ':rotulo'        => $rotulo,
-            ':cor'           => $cor,
-            ':diametroRede'  => $diametroRede,
-            ':cd'            => $cd
+            ':cdOrigem' => $cdOrigem,
+            ':cdDestino' => $cdDestino,
+            ':rotulo' => $rotulo,
+            ':cor' => $cor,
+            ':diametroRede' => $diametroRede,
+            ':cd' => $cd
         ]);
 
         // Log isolado
@@ -101,12 +104,13 @@ try {
             if (function_exists('registrarLogUpdate')) {
                 registrarLogUpdate('Cadastro Cascata', 'Conexão Fluxo', $cd, $rotulo ?: "Conexão $cdOrigem→$cdDestino", $_POST);
             }
-        } catch (Exception $logEx) {}
+        } catch (Exception $logEx) {
+        }
 
         echo json_encode([
             'success' => true,
             'message' => 'Conexão atualizada com sucesso!',
-            'cd'      => $cd
+            'cd' => $cd
         ], JSON_UNESCAPED_UNICODE);
 
     } else {
@@ -116,11 +120,11 @@ try {
                     (:cdOrigem, :cdDestino, :rotulo, :cor, :diametroRede, 0, 1, GETDATE())";
         $stmt = $pdoSIMP->prepare($sql);
         $stmt->execute([
-            ':cdOrigem'      => $cdOrigem,
-            ':cdDestino'     => $cdDestino,
-            ':rotulo'        => $rotulo,
-            ':cor'           => $cor,
-            ':diametroRede'  => $diametroRede
+            ':cdOrigem' => $cdOrigem,
+            ':cdDestino' => $cdDestino,
+            ':rotulo' => $rotulo,
+            ':cor' => $cor,
+            ':diametroRede' => $diametroRede
         ]);
         $novoCd = $pdoSIMP->lastInsertId();
 
@@ -130,15 +134,19 @@ try {
             if (function_exists('registrarLogInsert')) {
                 registrarLogInsert('Cadastro Cascata', 'Conexão Fluxo', $novoCd, $rotulo ?: "Conexão $cdOrigem→$cdDestino", $_POST);
             }
-        } catch (Exception $logEx) {}
+        } catch (Exception $logEx) {
+        }
 
         echo json_encode([
             'success' => true,
             'message' => 'Conexão criada com sucesso!',
-            'cd'      => $novoCd
+            'cd' => $novoCd
         ], JSON_UNESCAPED_UNICODE);
     }
-
+    // Disparar snapshot de topologia (Fase A1 - Governança)
+    if (function_exists('dispararSnapshotTopologia')) {
+        dispararSnapshotTopologia($pdoSIMP, ($cd !== null ? 'Conexão atualizada' : 'Conexão criada') . ': ' . ($rotulo ?: "$cdOrigem→$cdDestino"));
+    }
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
