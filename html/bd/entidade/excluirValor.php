@@ -1,6 +1,10 @@
 <?php
 /**
- * SIMP - Excluir Valor de Entidade
+ * SIMP - Excluir Valor de Entidade (Unidade Operacional inteira)
+ * 
+ * Remove uma unidade operacional e todos os seus vínculos com pontos de medição.
+ * Também remove registros dependentes em FORMULA_ITEM_PONTO_MEDICAO
+ * para evitar conflito com FK_FORMULA_A_ENTIDADE__ENTIDADE.
  */
 
 ini_set('display_errors', 0);
@@ -46,13 +50,23 @@ try {
     $pdoSIMP->beginTransaction();
 
     try {
-        // Primeiro exclui TODOS os itens vinculados (pontos de medição)
+        // 1) Excluir registros dependentes em FORMULA_ITEM_PONTO_MEDICAO
+        //    que referenciam itens deste valor via FK_FORMULA_A_ENTIDADE__ENTIDADE
+        $sqlFormula = "DELETE FROM SIMP.dbo.FORMULA_ITEM_PONTO_MEDICAO 
+                       WHERE CD_ENTIDADE_VALOR_ITEM IN (
+                           SELECT CD_CHAVE FROM SIMP.dbo.ENTIDADE_VALOR_ITEM WHERE CD_ENTIDADE_VALOR = ?
+                       )";
+        $stmtFormula = $pdoSIMP->prepare($sqlFormula);
+        $stmtFormula->execute([$cd]);
+        $formulasExcluidas = $stmtFormula->rowCount();
+
+        // 2) Excluir TODOS os itens vinculados (pontos de medição)
         $sqlItens = "DELETE FROM SIMP.dbo.ENTIDADE_VALOR_ITEM WHERE CD_ENTIDADE_VALOR = ?";
         $stmtItens = $pdoSIMP->prepare($sqlItens);
         $stmtItens->execute([$cd]);
         $itensExcluidos = $stmtItens->rowCount();
 
-        // Depois exclui o valor
+        // 3) Excluir o valor (unidade operacional)
         $sqlValor = "DELETE FROM SIMP.dbo.ENTIDADE_VALOR WHERE CD_CHAVE = ?";
         $stmtValor = $pdoSIMP->prepare($sqlValor);
         $stmtValor->execute([$cd]);
@@ -60,9 +74,10 @@ try {
         // Confirmar transação
         $pdoSIMP->commit();
 
-        // Adicionar quantidade de itens excluídos ao log
+        // Adicionar quantidades ao log
         if ($dadosExcluidos) {
             $dadosExcluidos['itens_excluidos'] = $itensExcluidos;
+            $dadosExcluidos['formulas_excluidas'] = $formulasExcluidas;
         }
 
         // Log (isolado)
@@ -95,8 +110,9 @@ try {
     
     echo json_encode([
         'success' => false,
-        'message' => 'Erro BD: ' . $e->getMessage()
+        'message' => 'Erro ao excluir: ' . $e->getMessage()
     ]);
+
 } catch (Exception $e) {
     // Log de erro (isolado)
     try {

@@ -56,77 +56,27 @@ try {
 }
 
 try {
-    if ($temNrOrdem) {
-        $sql = "
-            SELECT 
-                ET.CD_CHAVE AS TIPO_CD,
-                ET.DS_NOME AS TIPO_NOME,
-                ET.CD_ENTIDADE_TIPO_ID AS TIPO_ID,
-                ET.DESCARTE AS TIPO_DESCARTE,
-                ET.DT_EXC_ENTIDADE_TIPO AS TIPO_DT_EXC,
-                EV.CD_CHAVE AS VALOR_CD,
-                EV.DS_NOME AS VALOR_NOME,
-                EV.CD_ENTIDADE_VALOR_ID AS VALOR_ID,
-                EV.ID_FLUXO,
-                EVI.CD_CHAVE AS ITEM_CD,
-                EVI.CD_PONTO_MEDICAO AS ITEM_PONTO,
-                EVI.DT_INICIO AS ITEM_DT_INICIO,
-                EVI.DT_FIM AS ITEM_DT_FIM,
-                EVI.ID_OPERACAO AS ITEM_OPERACAO,
-                EVI.NR_ORDEM AS ITEM_ORDEM,
-                PM.DS_NOME AS PONTO_NOME,
-                PM.ID_TIPO_MEDIDOR,
-                PM.DS_TAG_VAZAO,
-                PM.DS_TAG_PRESSAO,
-                PM.DS_TAG_VOLUME,
-                PM.DS_TAG_RESERVATORIO,
-                PM.DS_TAG_TEMP_AGUA,
-                PM.DS_TAG_TEMP_AMBIENTE,
-                L.CD_LOCALIDADE,
-                L.CD_UNIDADE
-            FROM SIMP.dbo.ENTIDADE_TIPO ET
-            LEFT JOIN SIMP.dbo.ENTIDADE_VALOR EV ON EV.CD_ENTIDADE_TIPO = ET.CD_CHAVE
-            LEFT JOIN SIMP.dbo.ENTIDADE_VALOR_ITEM EVI ON EVI.CD_ENTIDADE_VALOR = EV.CD_CHAVE
-            LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = EVI.CD_PONTO_MEDICAO
-            LEFT JOIN SIMP.dbo.LOCALIDADE L ON PM.CD_LOCALIDADE = L.CD_CHAVE
-            ORDER BY ET.DS_NOME, EV.DS_NOME, ISNULL(EVI.NR_ORDEM, 999999), PM.DS_NOME
-        ";
-    } else {
-        $sql = "
-            SELECT 
-                ET.CD_CHAVE AS TIPO_CD,
-                ET.DS_NOME AS TIPO_NOME,
-                ET.CD_ENTIDADE_TIPO_ID AS TIPO_ID,
-                ET.DESCARTE AS TIPO_DESCARTE,
-                ET.DT_EXC_ENTIDADE_TIPO AS TIPO_DT_EXC,
-                EV.CD_CHAVE AS VALOR_CD,
-                EV.DS_NOME AS VALOR_NOME,
-                EV.CD_ENTIDADE_VALOR_ID AS VALOR_ID,
-                EV.ID_FLUXO,
-                EVI.CD_CHAVE AS ITEM_CD,
-                EVI.CD_PONTO_MEDICAO AS ITEM_PONTO,
-                EVI.DT_INICIO AS ITEM_DT_INICIO,
-                EVI.DT_FIM AS ITEM_DT_FIM,
-                EVI.ID_OPERACAO AS ITEM_OPERACAO,
-                NULL AS ITEM_ORDEM,
-                PM.DS_NOME AS PONTO_NOME,
-                PM.ID_TIPO_MEDIDOR,
-                PM.DS_TAG_VAZAO,
-                PM.DS_TAG_PRESSAO,
-                PM.DS_TAG_VOLUME,
-                PM.DS_TAG_RESERVATORIO,
-                PM.DS_TAG_TEMP_AGUA,
-                PM.DS_TAG_TEMP_AMBIENTE,
-                L.CD_LOCALIDADE,
-                L.CD_UNIDADE
-            FROM SIMP.dbo.ENTIDADE_TIPO ET
-            LEFT JOIN SIMP.dbo.ENTIDADE_VALOR EV ON EV.CD_ENTIDADE_TIPO = ET.CD_CHAVE
-            LEFT JOIN SIMP.dbo.ENTIDADE_VALOR_ITEM EVI ON EVI.CD_ENTIDADE_VALOR = EV.CD_CHAVE
-            LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = EVI.CD_PONTO_MEDICAO
-            LEFT JOIN SIMP.dbo.LOCALIDADE L ON PM.CD_LOCALIDADE = L.CD_CHAVE
-            ORDER BY ET.DS_NOME, EV.DS_NOME, PM.DS_NOME
-        ";
-    }
+    // ============================================
+    // Query LEVE: Carrega apenas TIPO + VALOR (sem itens)
+    // Itens são carregados via AJAX (lazy load) ao expandir cada valor
+    // ============================================
+    $sql = "
+        SELECT 
+            ET.CD_CHAVE AS TIPO_CD,
+            ET.DS_NOME AS TIPO_NOME,
+            ET.CD_ENTIDADE_TIPO_ID AS TIPO_ID,
+            ET.DESCARTE AS TIPO_DESCARTE,
+            ET.DT_EXC_ENTIDADE_TIPO AS TIPO_DT_EXC,
+            EV.CD_CHAVE AS VALOR_CD,
+            EV.DS_NOME AS VALOR_NOME,
+            EV.CD_ENTIDADE_VALOR_ID AS VALOR_ID,
+            EV.ID_FLUXO,
+            (SELECT COUNT(*) FROM SIMP.dbo.ENTIDADE_VALOR_ITEM 
+             WHERE CD_ENTIDADE_VALOR = EV.CD_CHAVE) AS TOTAL_ITENS
+        FROM SIMP.dbo.ENTIDADE_TIPO ET
+        LEFT JOIN SIMP.dbo.ENTIDADE_VALOR EV ON EV.CD_ENTIDADE_TIPO = ET.CD_CHAVE
+        ORDER BY ET.DS_NOME, EV.DS_NOME
+    ";
 
     $queryEntidades = $pdoSIMP->query($sql);
 
@@ -156,34 +106,7 @@ try {
                 'nome' => $row['VALOR_NOME'],
                 'id' => $row['VALOR_ID'],
                 'fluxo' => $row['ID_FLUXO'],
-                'itens' => []
-            ];
-        }
-
-        if ($row['ITEM_CD'] && $valorId && isset($entidadesTemp[$tipoId]['valores'][$valorId])) {
-            // Gerar código do ponto formatado
-            $letrasTipo = [1 => 'M', 2 => 'E', 4 => 'P', 6 => 'R', 8 => 'H'];
-            $letraTipo = $letrasTipo[$row['ID_TIPO_MEDIDOR']] ?? 'X';
-            $codigoPonto = $row['CD_LOCALIDADE'] . '-' .
-                str_pad($row['ITEM_PONTO'], 6, '0', STR_PAD_LEFT) . '-' .
-                $letraTipo . '-' .
-                $row['CD_UNIDADE'];
-
-            $entidadesTemp[$tipoId]['valores'][$valorId]['itens'][] = [
-                'cd' => $row['ITEM_CD'],
-                'cdPonto' => $row['ITEM_PONTO'],
-                'pontoNome' => $row['PONTO_NOME'],
-                'pontoCodigo' => $codigoPonto,
-                'dtInicio' => $row['ITEM_DT_INICIO'],
-                'dtFim' => $row['ITEM_DT_FIM'],
-                'operacao' => $row['ITEM_OPERACAO'],
-                'ordem' => $row['ITEM_ORDEM'],
-                'tagVazao' => $row['DS_TAG_VAZAO'] ?? '',
-                'tagPressao' => $row['DS_TAG_PRESSAO'] ?? '',
-                'tagVolume' => $row['DS_TAG_VOLUME'] ?? '',
-                'tagReservatorio' => $row['DS_TAG_RESERVATORIO'] ?? '',
-                'tagTempAgua' => $row['DS_TAG_TEMP_AGUA'] ?? '',
-                'tagTempAmbiente' => $row['DS_TAG_TEMP_AMBIENTE'] ?? ''
+                'totalItens' => (int) $row['TOTAL_ITENS']
             ];
         }
     }
@@ -212,7 +135,7 @@ try {
             $totalTipos++; // Conta apenas os ativos
         $totalValores += count($t['valores']);
         foreach ($t['valores'] as $v) {
-            $totalItens += count($v['itens']);
+            $totalItens += $v['totalItens'];
         }
     }
 
@@ -438,7 +361,8 @@ try {
                                         </div>
                                     </div>
                                     <div class="valor-card-header-right">
-                                        <span class="valor-badge-count"><?= count($valor['itens']) ?> Ponto(s) de Medição</span>
+                                        <span class="valor-badge-count" id="badge-count-<?= $valor['cd'] ?>"><?= $valor['totalItens'] ?>
+                                            Ponto(s) de Medição</span>
                                         <div class="header-actions" onclick="event.stopPropagation();">
                                             <button class="btn-action favorito <?= in_array($valor['cd'], $favoritos) ? 'ativo' : '' ?>"
                                                 onclick="toggleFavorito(<?= $valor['cd'] ?>, this)"
@@ -474,121 +398,14 @@ try {
                                     </div>
                                 </div>
 
-                                <!-- Valor Body (Itens) -->
-                                <div class="valor-card-body">
-                                    <?php if (empty($valor['itens'])): ?>
-                                        <div class="empty-state" style="padding: 24px;">
-                                            <ion-icon name="location-outline"></ion-icon>
-                                            <h3>Nenhum ponto vinculado</h3>
-                                            <p>Adicione pontos de medição a esta unidade operacional</p>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="itens-sortable" data-valor-cd="<?= $valor['cd'] ?>">
-                                            <?php foreach ($valor['itens'] as $item):
-                                                // Usar DateTime para evitar problema do Y2K38 com strtotime
-                                                $expirado = false;
-                                                if (!empty($item['dtFim'])) {
-                                                    try {
-                                                        $dtFimObj = new DateTime($item['dtFim']);
-                                                        $hoje = new DateTime();
-                                                        $expirado = $dtFimObj < $hoje;
-                                                    } catch (Exception $e) {
-                                                        $expirado = false;
-                                                    }
-                                                }
-                                                $pontoLabel = ($item['pontoCodigo'] ?? '') . ' ' . ($item['pontoNome'] ?? '');
-                                                $operacaoAtual = $item['operacao'];
-                                                ?>
-                                                <div class="item-row <?= $expirado ? 'expired' : '' ?>" data-item-cd="<?= $item['cd'] ?>" <?php if ($podeEditar && $temNrOrdem): ?>draggable="true" <?php endif; ?>
-                                                    data-ponto-nome="<?= htmlspecialchars(strtolower($item['pontoNome'] ?? '')) ?>"
-                                                    data-ponto-codigo="<?= htmlspecialchars(strtolower($item['pontoCodigo'] ?? '')) ?>"
-                                                    data-tag-vazao="<?= htmlspecialchars(strtolower($item['tagVazao'] ?? '')) ?>"
-                                                    data-tag-pressao="<?= htmlspecialchars(strtolower($item['tagPressao'] ?? '')) ?>"
-                                                    data-tag-volume="<?= htmlspecialchars(strtolower($item['tagVolume'] ?? '')) ?>"
-                                                    data-tag-reservatorio="<?= htmlspecialchars(strtolower($item['tagReservatorio'] ?? '')) ?>"
-                                                    data-tag-temp-agua="<?= htmlspecialchars(strtolower($item['tagTempAgua'] ?? '')) ?>"
-                                                    data-tag-temp-ambiente="<?= htmlspecialchars(strtolower($item['tagTempAmbiente'] ?? '')) ?>">
-                                                    <?php if ($podeEditar && $temNrOrdem): ?>
-                                                        <div class="item-drag-handle" title="Arraste para reordenar">
-                                                            <ion-icon name="reorder-three-outline"></ion-icon>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <div class="item-row-left">
-                                                        <div class="item-icons">
-                                                            <ion-icon name="location-outline" class="icon-location"></ion-icon>
-                                                            <?php if ($operacaoAtual !== null && $operacaoAtual !== ''): ?>
-                                                                <ion-icon name="<?= $operacaoAtual == 1 ? 'add-circle' : 'remove-circle' ?>"
-                                                                    class="icon-operacao operacao-<?= $operacaoAtual ?>"></ion-icon>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                        <div class="item-info">
-                                                            <h5>
-                                                                <strong><?= htmlspecialchars($item['pontoCodigo'] ?? '') ?></strong>
-                                                                <?= htmlspecialchars($item['pontoNome'] ?? 'Ponto #' . $item['cdPonto']) ?>
-                                                            </h5>
-                                                            <span>
-                                                                <?php
-                                                                $periodo = [];
-                                                                if (!empty($item['dtInicio'])) {
-                                                                    $periodo[] = 'Início: ' . date('d/m/Y', strtotime($item['dtInicio']));
-                                                                }
-                                                                if (!empty($item['dtFim'])) {
-                                                                    $periodo[] = 'Fim: ' . date('d/m/Y', strtotime($item['dtFim']));
-                                                                }
-                                                                echo implode(' | ', $periodo) ?: 'Período não definido';
-                                                                ?>
-                                                            </span>
-                                                            <?php
-                                                            // Coletar TAGs não vazias
-                                                            $tags = [];
-                                                            if (!empty($item['tagVazao']))
-                                                                $tags[] = 'V: ' . $item['tagVazao'];
-                                                            if (!empty($item['tagPressao']))
-                                                                $tags[] = 'P: ' . $item['tagPressao'];
-                                                            if (!empty($item['tagVolume']))
-                                                                $tags[] = 'Vol: ' . $item['tagVolume'];
-                                                            if (!empty($item['tagReservatorio']))
-                                                                $tags[] = 'R: ' . $item['tagReservatorio'];
-                                                            if (!empty($item['tagTempAgua']))
-                                                                $tags[] = 'TA: ' . $item['tagTempAgua'];
-                                                            if (!empty($item['tagTempAmbiente']))
-                                                                $tags[] = 'TAm: ' . $item['tagTempAmbiente'];
-
-                                                            if (!empty($tags)):
-                                                                ?>
-                                                                <span class="item-tags" title="Tags SCADA configuradas">
-                                                                    <ion-icon name="pricetag-outline"></ion-icon>
-                                                                    <?= htmlspecialchars(implode(' | ', $tags)) ?>
-                                                                </span>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    </div>
-                                                    <div class="item-row-right">
-                                                        <a href="pontoMedicaoView.php?id=<?= $item['cdPonto'] ?>" class="btn-action view"
-                                                            title="Ver Cadastro do Ponto">
-                                                            <ion-icon name="eye-outline"></ion-icon>
-                                                        </a>
-                                                        <button class="btn-action chart"
-                                                            onclick="abrirGraficoPonto(<?= $tipo['cd'] ?>, <?= $valor['cd'] ?>, '<?= $valor['id'] ?? '' ?>', <?= $item['cdPonto'] ?>)"
-                                                            title="Ver Gráfico">
-                                                            <ion-icon name="stats-chart-outline"></ion-icon>
-                                                        </button>
-                                                        <?php if ($podeEditar): ?>
-                                                            <button class="btn-action edit"
-                                                                onclick="abrirModalItem(<?= $item['cd'] ?>, <?= $item['cdPonto'] ?>, '<?= $item['dtInicio'] ? date('Y-m-d', strtotime($item['dtInicio'])) : '' ?>', '<?= $item['dtFim'] ? date('Y-m-d', strtotime($item['dtFim'])) : '' ?>', <?= $valor['cd'] ?>, <?= htmlspecialchars(json_encode($pontoLabel), ENT_QUOTES) ?>, '<?= $operacaoAtual ?? '' ?>')"
-                                                                title="Editar">
-                                                                <ion-icon name="pencil-outline"></ion-icon>
-                                                            </button>
-                                                            <button class="btn-action delete"
-                                                                onclick="excluirItem(<?= $item['cd'] ?>, <?= $valor['cd'] ?>)" title="Excluir">
-                                                                <ion-icon name="trash-outline"></ion-icon>
-                                                            </button>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div><!-- .itens-sortable -->
-                                    <?php endif; ?>
+                                <!-- Valor Body (Itens) - Carregado via AJAX (lazy load) -->
+                                <div class="valor-card-body" id="valor-body-<?= $valor['cd'] ?>" data-loaded="0"
+                                    data-total="<?= $valor['totalItens'] ?>">
+                                    <div class="lazy-load-placeholder" style="padding: 24px; text-align: center; color: #94a3b8;">
+                                        <ion-icon name="hourglass-outline"
+                                            style="font-size: 24px; animation: spin 1s linear infinite;"></ion-icon>
+                                        <p style="margin-top: 8px; font-size: 12px;">Carregando pontos de medição...</p>
+                                    </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -967,6 +784,17 @@ try {
     .radio-menos:hover .radio-label {
         border-color: #fca5a5;
     }
+
+    /* Spinner para lazy load */
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
 </style>
 
 <script>
@@ -975,6 +803,18 @@ try {
     // ============================================
     const STORAGE_KEY = 'entidade_expanded_state';
     const STORAGE_KEY_FILTROS = 'entidade_filtros_state';
+
+    // Flag para controle de reload após inclusão contínua de itens
+    let _itemAdicionado = false;
+
+    // Cache de itens já carregados por valor (evita requisições repetidas)
+    const _itensCache = {};
+
+    // Permissão de edição (passada do PHP)
+    const _podeEditar = <?= $podeEditar ? 'true' : 'false' ?>;
+
+    // Flag de NR_ORDEM
+    const _temNrOrdem = <?= $temNrOrdem ? 'true' : 'false' ?>;
 
     function saveExpandedState() {
         const expandedTipos = [];
@@ -1012,7 +852,11 @@ try {
                 if (state.valores) {
                     state.valores.forEach(id => {
                         const card = document.getElementById('valor-' + id);
-                        if (card) card.classList.add('expanded');
+                        if (card) {
+                            card.classList.add('expanded');
+                            // Lazy load: carregar itens dos valores que estavam expandidos
+                            carregarItensValor(id);
+                        }
                     });
                 }
             }
@@ -1086,10 +930,30 @@ try {
         verificarEstadoAcordeoes();
     }
 
+    /**
+     * Toggle de expansão do valor (unidade operacional).
+     * Ao expandir, carrega os itens via AJAX (lazy load).
+     */
     function toggleValor(id) {
         event.stopPropagation();
         const card = document.getElementById('valor-' + id);
+        if (!card) return;
+
         card.classList.toggle('expanded');
+
+        // Lazy load: carregar itens ao expandir
+        if (card.classList.contains('expanded')) {
+            const body = document.getElementById('valor-body-' + id);
+            console.log('[toggleValor] Expandindo valor:', id, 'body:', body, 'loaded:', body ? body.dataset.loaded : 'N/A');
+
+            // Forçar carregamento se nunca carregou
+            if (body && body.dataset.loaded !== '1') {
+                carregarItensValor(id);
+            } else if (body && body.dataset.loaded === '1') {
+                console.log('[toggleValor] Já carregado, itens no cache:', _itensCache[id] ? _itensCache[id].length : 0);
+            }
+        }
+
         saveExpandedState();
         verificarEstadoAcordeoes();
     }
@@ -1126,6 +990,9 @@ try {
         valorCards.forEach(card => {
             if (devemExpandir) {
                 card.classList.add('expanded');
+                // Lazy load ao expandir
+                const cdValor = card.id.replace('valor-', '');
+                carregarItensValor(cdValor);
             } else {
                 card.classList.remove('expanded');
             }
@@ -1192,9 +1059,18 @@ try {
 
             clearTimeout(filtroTimeout);
             filtroTimeout = setTimeout(() => {
-                aplicarFiltros();
-                saveFiltrosState();
-            }, 300);
+                // Se o termo tem 2+ caracteres, buscar itens no servidor
+                // para encontrar valores que contêm itens matching
+                if (termo.length >= 2) {
+                    buscarItensServidor(termo, function () {
+                        aplicarFiltros();
+                        saveFiltrosState();
+                    });
+                } else {
+                    aplicarFiltros();
+                    saveFiltrosState();
+                }
+            }, 400);
         });
 
         // Evento de mudança no filtro de descarte
@@ -1298,57 +1174,61 @@ try {
                 let valorMatchDireto = termoBusca && (valorNome.includes(termoBusca) || valorId.includes(termoBusca));
                 let valorTemFilhoVisivel = false;
 
-                const itemRows = valorCard.querySelectorAll('.item-row');
-                itemRows.forEach(itemRow => {
-                    const pontoNome = normalizarTexto(itemRow.dataset.pontoNome || '');
-                    const pontoCodigo = normalizarTexto(itemRow.dataset.pontoCodigo || '');
-                    const tagVazao = normalizarTexto(itemRow.dataset.tagVazao || '');
-                    const tagPressao = normalizarTexto(itemRow.dataset.tagPressao || '');
-                    const tagVolume = normalizarTexto(itemRow.dataset.tagVolume || '');
-                    const tagReservatorio = normalizarTexto(itemRow.dataset.tagReservatorio || '');
-                    const tagTempAgua = normalizarTexto(itemRow.dataset.tagTempAgua || '');
-                    const tagTempAmbiente = normalizarTexto(itemRow.dataset.tagTempAmbiente || '');
+                // Verificar itens dentro do valor (se já carregados via lazy load)
+                const cdValor = valorCard.id.replace('valor-', '');
+                const body = document.getElementById('valor-body-' + cdValor);
+                const itensCarregados = body && body.dataset.loaded === '1';
+                const itens = valorCard.querySelectorAll('.item-row');
 
-                    // Verificar se Ponto dá match direto
-                    let pontoMatchDireto = termoBusca && (
-                        pontoNome.includes(termoBusca) ||
-                        pontoCodigo.includes(termoBusca) ||
-                        tagVazao.includes(termoBusca) ||
-                        tagPressao.includes(termoBusca) ||
-                        tagVolume.includes(termoBusca) ||
-                        tagReservatorio.includes(termoBusca) ||
-                        tagTempAgua.includes(termoBusca) ||
-                        tagTempAmbiente.includes(termoBusca)
-                    );
+                if (itensCarregados && itens.length > 0) {
+                    itens.forEach(itemRow => {
+                        itemRow.classList.remove('filtro-oculto', 'filtro-match', 'filtro-match-direto');
+                        // Remover badges anteriores
+                        itemRow.querySelectorAll('.badge-match').forEach(b => b.remove());
 
-                    // Determinar visibilidade: match direto OU herdado do pai (tipo ou valor)
-                    let itemVisivel = pontoMatchDireto || valorMatchDireto || tipoMatchDireto || !termoBusca;
+                        let itemVisivel = !termoBusca; // Se não tem busca, todos visíveis
 
-                    if (itemVisivel) {
-                        itemRow.classList.remove('filtro-oculto');
-                        totalItensVisiveis++;
-                        valorTemFilhoVisivel = true;
-
-                        // Adicionar badge indicando onde foi o match
                         if (termoBusca) {
-                            if (pontoMatchDireto) {
+                            // FIX: usar termoBusca (não "termo")
+                            const itemMatch = verificarMatchItem(itemRow, termoBusca);
+
+                            if (itemMatch) {
+                                itemVisivel = true;
                                 itemRow.classList.add('filtro-match', 'filtro-match-direto');
-                                adicionarBadgeMatchItem(itemRow, 'ponto', getMatchField(itemRow, termoBusca));
-                            } else if (valorMatchDireto) {
-                                itemRow.classList.add('filtro-match');
-                                adicionarBadgeMatchItem(itemRow, 'unidade');
-                            } else if (tipoMatchDireto) {
-                                itemRow.classList.add('filtro-match');
-                                adicionarBadgeMatchItem(itemRow, 'tipo');
+                                const campo = getMatchField(itemRow, termoBusca);
+                                adicionarBadgeMatchItem(itemRow, 'ponto', campo);
                             }
                         }
-                    } else {
-                        itemRow.classList.add('filtro-oculto');
+
+                        if (!itemVisivel) {
+                            itemRow.classList.add('filtro-oculto');
+                        } else {
+                            valorTemFilhoVisivel = true;
+                            totalItensVisiveis++;
+                        }
+                    });
+                }
+
+                // Expandir valor se tem item com match
+                if (valorTemFilhoVisivel && termoBusca) {
+                    valorCard.classList.add('expanded');
+                    // Carregar itens se ainda não carregou (para mostrar os matches)
+                    if (!itensCarregados) {
+                        carregarItensValor(cdValor);
                     }
-                });
+                }
 
                 // Valor visível se: ele mesmo deu match OU tem filho visível OU tipo deu match
                 let valorVisivel = valorMatchDireto || valorTemFilhoVisivel || tipoMatchDireto || !termoBusca;
+
+                // Verificar se servidor indicou match de itens neste valor (lazy load)
+                const itemMatchServidor = valorCard.hasAttribute('data-item-match');
+                if (itemMatchServidor && termoBusca) {
+                    valorTemFilhoVisivel = true;
+                    valorVisivel = true;
+                    const totalMatchServidor = parseInt(valorCard.getAttribute('data-item-match') || '0');
+                    totalItensVisiveis += totalMatchServidor;
+                }
 
                 // Mas apenas se passar pelo filtro de favoritos
                 if (filtroFavoritos === 'favoritos' && !isFavorito) {
@@ -1364,15 +1244,25 @@ try {
                         if (valorMatchDireto) {
                             valorCard.classList.add('filtro-match', 'filtro-match-direto');
                             adicionarBadgeMatchValor(valorCard, 'unidade');
+                            // Match direto no valor: expandir e carregar itens
+                            valorCard.classList.add('expanded');
+                            if (!itensCarregados) {
+                                carregarItensValor(cdValor);
+                            }
                         } else if (tipoMatchDireto) {
                             valorCard.classList.add('filtro-match');
                             adicionarBadgeMatchValor(valorCard, 'tipo');
+                            // Match no tipo: NÃO expandir automaticamente
+                            // (pode ter centenas de valores - usuário expande manualmente)
                         }
-                    }
 
-                    // Expandir valor se tem item com match
-                    if (valorTemFilhoVisivel && termoBusca) {
-                        valorCard.classList.add('expanded');
+                        // Match nos itens (server-side): expandir e carregar
+                        if (itemMatchServidor) {
+                            valorCard.classList.add('expanded');
+                            if (!itensCarregados) {
+                                carregarItensValor(cdValor);
+                            }
+                        }
                     }
                 } else {
                     valorCard.classList.add('filtro-oculto');
@@ -1481,12 +1371,14 @@ try {
         return null;
     }
 
-    // Atualizar função limparFiltros para remover badges
     function limparFiltros() {
         document.getElementById('filtroBusca').value = '';
         document.getElementById('btnLimparBusca').style.display = 'none';
-        document.querySelector('input[name="filtroDescarte"][value="todos"]').checked = true;
-        document.querySelector('input[name="filtroFavoritos"][value="todos"]').checked = true;
+        // Null-safe: filtroDescarte pode estar comentado no HTML
+        const radioDescarte = document.querySelector('input[name="filtroDescarte"][value="todos"]');
+        if (radioDescarte) radioDescarte.checked = true;
+        const radioFavoritos = document.querySelector('input[name="filtroFavoritos"][value="todos"]');
+        if (radioFavoritos) radioFavoritos.checked = true;
 
         // Remover classes de filtro
         document.querySelectorAll('.tipo-card, .valor-card, .item-row').forEach(el => {
@@ -1535,11 +1427,56 @@ try {
     // Inicializar filtros
     document.addEventListener('DOMContentLoaded', initFiltros);
 
-    // ============================================
-    // Modal Functions
-    // ============================================
+    /**
+         * Busca no servidor quais valores contêm itens que correspondem ao termo.
+         * Marca os valor-cards com data-item-match para o filtro saber que tem match de item.
+         * @param {string} termo - Termo de busca
+         * @param {function} callback - Função a chamar após a busca
+         */
+    function buscarItensServidor(termo, callback) {
+        // Limpar marcações anteriores
+        document.querySelectorAll('.valor-card').forEach(vc => {
+            vc.removeAttribute('data-item-match');
+        });
+
+        $.ajax({
+            url: 'bd/entidade/buscarItensEntidade.php',
+            type: 'GET',
+            data: { busca: termo },
+            dataType: 'json',
+            success: function (response) {
+                if (response.success && response.data.length > 0) {
+                    response.data.forEach(function (r) {
+                        const vc = document.getElementById('valor-' + r.cdValor);
+                        if (vc) {
+                            // Marcar que este valor tem itens matching
+                            vc.setAttribute('data-item-match', r.totalMatch);
+                        }
+                    });
+                }
+                if (typeof callback === 'function') callback();
+            },
+            error: function () {
+                // Em caso de erro, continua com filtro local
+                if (typeof callback === 'function') callback();
+            }
+        });
+    }
+
+    /**
+     * Fecha o modal e, se for o modalItem com itens adicionados,
+     * recarrega a página uma única vez preservando filtros e acordeões.
+     */
     function fecharModal(modalId) {
         document.getElementById(modalId).classList.remove('active');
+
+        // Se houve inclusão de itens, recarrega uma única vez ao fechar
+        if (modalId === 'modalItem' && _itemAdicionado) {
+            _itemAdicionado = false;
+            saveExpandedState();
+            saveFiltrosState();
+            location.reload();
+        }
     }
 
     function abrirModalTipo(cd = null, nome = '', idExterno = '', descarte = 0) {
@@ -1944,6 +1881,7 @@ try {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
                     saveExpandedState();
+                    saveFiltrosState();
                     setTimeout(() => location.reload(), 200);
                 } else {
                     showToast(response.message || 'Erro ao salvar', 'erro');
@@ -1968,6 +1906,7 @@ try {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
                     saveExpandedState();
+                    saveFiltrosState();
                     setTimeout(() => location.reload(), 200);
                 } else {
                     showToast(response.message || 'Erro ao alterar status', 'erro');
@@ -2013,6 +1952,7 @@ try {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
                     saveExpandedState();
+                    saveFiltrosState();
                     setTimeout(() => location.reload(), 200);
                 } else {
                     showToast(response.message || 'Erro ao salvar', 'erro');
@@ -2055,21 +1995,47 @@ try {
             return;
         }
 
+        // Desabilitar botão de salvar para evitar duplo clique
+        const btnSalvar = document.querySelector('#formItem button[type="submit"]');
+        if (btnSalvar) btnSalvar.disabled = true;
+
         $.ajax({
             url: 'bd/entidade/salvarItem.php',
             type: 'POST',
             data: { cd, cdValor, cdPonto, dtInicio, dtFim, operacao },
             dataType: 'json',
             success: function (response) {
+                if (btnSalvar) btnSalvar.disabled = false;
+
                 if (response.success) {
                     showToast(response.message, 'sucesso');
-                    saveExpandedState();
-                    setTimeout(() => location.reload(), 200);
+
+                    if (cd) {
+                        // EDIÇÃO: fecha modal e recarrega preservando filtros
+                        saveExpandedState();
+                        saveFiltrosState();
+                        fecharModal('modalItem');
+                        location.reload();
+                    } else {
+                        // INCLUSÃO: marca flag e limpa apenas o campo de ponto
+                        // para permitir adicionar outro item sem recarregar
+                        _itemAdicionado = true;
+
+                        // Limpar somente o ponto de medição (mantém datas e operação)
+                        document.getElementById('inputItemPonto').value = '';
+                        document.getElementById('inputItemPontoText').value = '';
+                        document.getElementById('btnLimparPontoItem').style.display = 'none';
+                        document.getElementById('inputItemPontoDropdown').classList.remove('active');
+
+                        // Foco no campo de ponto para inclusão rápida
+                        document.getElementById('inputItemPontoText').focus();
+                    }
                 } else {
                     showToast(response.message || 'Erro ao salvar', 'erro');
                 }
             },
             error: function () {
+                if (btnSalvar) btnSalvar.disabled = false;
                 showToast('Erro ao comunicar com o servidor', 'erro');
             }
         });
@@ -2104,6 +2070,7 @@ try {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
                     saveExpandedState();
+                    saveFiltrosState();
                     setTimeout(() => location.reload(), 200);
                 } else {
                     showToast(response.message || 'Erro ao excluir', 'erro');
@@ -2149,6 +2116,7 @@ try {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
                     saveExpandedState();
+                    saveFiltrosState();
                     setTimeout(() => location.reload(), 200);
                 } else {
                     showToast(response.message || 'Erro ao excluir', 'erro');
@@ -2159,6 +2127,261 @@ try {
                 showToast('Erro ao comunicar com o servidor', 'erro');
             }
         });
+    }
+
+    // ============================================
+    // Lazy Load de Itens (Pontos de Medição)
+    // ============================================
+
+    /**
+     * Carrega os itens de um valor via AJAX.
+     * Usa cache para não recarregar se já foi carregado.
+     * @param {int} cdValor - CD_CHAVE do ENTIDADE_VALOR
+     * @param {boolean} forceReload - Forçar recarga ignorando cache
+     */
+    function carregarItensValor(cdValor, forceReload = false) {
+        console.log('[carregarItensValor] Chamado para valor:', cdValor, 'forceReload:', forceReload);
+        const body = document.getElementById('valor-body-' + cdValor);
+        if (!body) {
+            console.error('[carregarItensValor] BODY NÃO ENCONTRADO: valor-body-' + cdValor); return;
+        }
+
+        // Se já carregou e não é forceReload, não faz nada
+        if (body.dataset.loaded === '1' && !forceReload) return;
+
+        // Mostrar loading
+        body.innerHTML = `
+            <div class="lazy-load-placeholder" style="padding: 24px; text-align: center; color: #94a3b8;">
+                <ion-icon name="hourglass-outline" style="font-size: 24px; animation: spin 1s linear infinite;"></ion-icon>
+                <p style="margin-top: 8px; font-size: 12px;">Carregando pontos de medição...</p>
+            </div>`;
+
+        $.ajax({
+            url: 'bd/entidade/getItensValor.php',
+            type: 'GET',
+            data: { cdValor: cdValor },
+            dataType: 'json',
+            success: function (response) {
+                if (response.success) {
+                    // Guardar no cache
+                    _itensCache[cdValor] = response.data;
+                    // Renderizar
+                    renderizarItensValor(cdValor, response.data, response.temNrOrdem);
+                    body.dataset.loaded = '1';
+
+                    // Atualizar badge de contagem
+                    const badge = document.getElementById('badge-count-' + cdValor);
+                    if (badge) {
+                        badge.textContent = response.total + ' Ponto(s) de Medição';
+                    }
+
+                    // Re-inicializar drag and drop para os novos elementos
+                    initDragAndDrop();
+
+                    // Re-aplicar filtros se houver um ativo
+                    const filtroBusca = document.getElementById('filtroBusca');
+                    if (filtroBusca && filtroBusca.value.trim()) {
+                        aplicarFiltrosItensCarregados(cdValor);
+                    }
+                } else {
+                    body.innerHTML = `
+                        <div class="empty-state" style="padding: 24px;">
+                            <ion-icon name="alert-circle-outline" style="color: #ef4444;"></ion-icon>
+                            <h3>Erro ao carregar</h3>
+                            <p>${response.message || 'Tente novamente'}</p>
+                        </div>`;
+                }
+            },
+            error: function () {
+                body.innerHTML = `
+                    <div class="empty-state" style="padding: 24px;">
+                        <ion-icon name="wifi-outline" style="color: #ef4444;"></ion-icon>
+                        <h3>Erro de comunicação</h3>
+                        <p>Não foi possível carregar os pontos de medição</p>
+                    </div>`;
+            }
+        });
+    }
+
+    /**
+     * Renderiza os itens (pontos de medição) dentro do valor-card-body.
+     * Gera o mesmo HTML que antes era gerado pelo PHP.
+     * @param {int} cdValor - CD_CHAVE do ENTIDADE_VALOR
+     * @param {Array} itens - Array de objetos com dados dos itens
+     * @param {boolean} temNrOrdem - Se a coluna NR_ORDEM existe
+     */
+    function renderizarItensValor(cdValor, itens, temNrOrdem) {
+        const body = document.getElementById('valor-body-' + cdValor);
+        if (!body) return;
+
+        if (!itens || itens.length === 0) {
+            body.innerHTML = `
+                <div class="empty-state" style="padding: 24px;">
+                    <ion-icon name="location-outline"></ion-icon>
+                    <h3>Nenhum ponto vinculado</h3>
+                    <p>Adicione pontos de medição a esta unidade operacional</p>
+                </div>`;
+            return;
+        }
+
+        // Buscar o cdTipo do card pai para o botão de gráfico
+        const valorCard = document.getElementById('valor-' + cdValor);
+        const tipoCard = valorCard ? valorCard.closest('.tipo-card') : null;
+        const cdTipo = tipoCard ? tipoCard.id.replace('tipo-', '') : '';
+        const valorEntidadeId = valorCard ? (valorCard.querySelector('.valor-id')?.textContent?.replace('ID: ', '').trim() || '') : '';
+
+        let html = '<div class="itens-sortable" data-valor-cd="' + cdValor + '">';
+
+        itens.forEach(function (item) {
+            const pontoLabel = (item.pontoCodigo || '') + ' ' + (item.pontoNome || '');
+            const pontoLabelJson = JSON.stringify(pontoLabel).replace(/'/g, "\\'");
+            const operacao = item.operacao;
+            const draggable = (_podeEditar && temNrOrdem) ? 'draggable="true"' : '';
+
+            html += `
+                <div class="item-row ${item.expirado ? 'expired' : ''}" data-item-cd="${item.cd}" ${draggable}
+                    data-ponto-nome="${(item.pontoNome || '').toLowerCase()}"
+                    data-ponto-codigo="${(item.pontoCodigo || '').toLowerCase()}"
+                    data-tag-vazao="${(item.tagVazao || '').toLowerCase()}"
+                    data-tag-pressao="${(item.tagPressao || '').toLowerCase()}"
+                    data-tag-volume="${(item.tagVolume || '').toLowerCase()}"
+                    data-tag-reservatorio="${(item.tagReservatorio || '').toLowerCase()}"
+                    data-tag-temp-agua="${(item.tagTempAgua || '').toLowerCase()}"
+                    data-tag-temp-ambiente="${(item.tagTempAmbiente || '').toLowerCase()}">`;
+
+            // Drag handle
+            if (_podeEditar && temNrOrdem) {
+                html += `<div class="item-drag-handle" title="Arraste para reordenar">
+                            <ion-icon name="reorder-three-outline"></ion-icon>
+                         </div>`;
+            }
+
+            html += `<div class="item-row-left">
+                        <div class="item-icons">
+                            <ion-icon name="location-outline" class="icon-location"></ion-icon>`;
+
+            // Ícone de operação (+/-)
+            if (operacao !== null && operacao !== '' && operacao !== undefined) {
+                const iconName = operacao == 1 ? 'add-circle' : 'remove-circle';
+                html += `<ion-icon name="${iconName}" class="icon-operacao operacao-${operacao}"></ion-icon>`;
+            }
+
+            html += `</div>
+                     <div class="item-info">
+                        <h5>
+                            <strong>${escapeHtml(item.pontoCodigo || '')}</strong>
+                            ${escapeHtml(item.pontoNome || 'Ponto #' + item.cdPonto)}
+                        </h5>
+                        <span>${item.periodoTexto}</span>`;
+
+            // TAGs
+            if (item.tags && item.tags.length > 0) {
+                html += `<div class="item-tags">
+                            <ion-icon name="pricetag-outline"></ion-icon>
+                            ${escapeHtml(item.tags.join(' | '))}
+                         </div>`;
+            }
+
+            html += `</div></div>`; // fecha item-row-left
+
+            // Botões de ação
+            html += `<div class="item-row-right">
+                        <button class="btn-action view"
+                            onclick="window.open('pontoMedicaoView.php?id=${item.cdPonto}', '_blank')"
+                            title="Ver Ponto">
+                            <ion-icon name="eye-outline"></ion-icon>
+                        </button>
+                        <button class="btn-action chart"
+                            onclick="abrirGraficoPonto(${cdTipo}, ${cdValor}, '${valorEntidadeId}', ${item.cdPonto})"
+                            title="Ver Gráfico">
+                            <ion-icon name="stats-chart-outline"></ion-icon>
+                        </button>`;
+
+            if (_podeEditar) {
+                html += `<button class="btn-action edit"
+                            onclick="abrirModalItem(${item.cd}, ${item.cdPonto}, '${item.dtInicioVal || ''}', '${item.dtFimVal || ''}', ${cdValor}, ${pontoLabelJson}, '${operacao || ''}')"
+                            title="Editar">
+                            <ion-icon name="pencil-outline"></ion-icon>
+                         </button>
+                         <button class="btn-action delete"
+                            onclick="excluirItem(${item.cd}, ${cdValor})"
+                            title="Excluir">
+                            <ion-icon name="trash-outline"></ion-icon>
+                         </button>`;
+            }
+
+            html += `</div>`; // fecha item-row-right
+            html += `</div>`; // fecha item-row
+        });
+
+        html += '</div>'; // fecha itens-sortable
+        body.innerHTML = html;
+    }
+
+    /**
+     * Escape de HTML para prevenir XSS
+     */
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
+    }
+
+    /**
+     * Aplica filtros nos itens recém-carregados de um valor específico.
+     * Se o match foi no tipo ou valor pai, TODOS os itens ficam visíveis.
+     * Se o match foi nos itens, só mostra os que correspondem.
+     */
+    function aplicarFiltrosItensCarregados(cdValor) {
+        const termo = normalizarTexto(document.getElementById('filtroBusca').value.trim());
+        if (!termo) return;
+
+        const valorCard = document.getElementById('valor-' + cdValor);
+        if (!valorCard) return;
+
+        // Verificar se o match é no valor ou no tipo pai (herança)
+        const valorNome = normalizarTexto(valorCard.dataset.valorNome || '');
+        const valorId = normalizarTexto(valorCard.dataset.valorId || '');
+        const tipoCard = valorCard.closest('.tipo-card');
+        const tipoNome = tipoCard ? normalizarTexto(tipoCard.dataset.tipoNome || '') : '';
+        const tipoId = tipoCard ? normalizarTexto(tipoCard.dataset.tipoId || '') : '';
+
+        const matchNoValor = valorNome.includes(termo) || valorId.includes(termo);
+        const matchNoTipo = tipoNome.includes(termo) || tipoId.includes(termo);
+
+        const itensRows = valorCard.querySelectorAll('.item-row');
+
+        if (matchNoValor || matchNoTipo) {
+            // Match herdado do pai: TODOS os itens ficam visíveis
+            itensRows.forEach(itemRow => {
+                itemRow.classList.remove('filtro-oculto');
+            });
+        } else {
+            // Match nos itens: só mostra os que correspondem
+            itensRows.forEach(itemRow => {
+                const match = verificarMatchItem(itemRow, termo);
+                if (!match) {
+                    itemRow.classList.add('filtro-oculto');
+                } else {
+                    itemRow.classList.add('filtro-match', 'filtro-match-direto');
+                }
+            });
+        }
+    }
+
+    /**
+     * Verifica se um item-row corresponde ao termo de busca.
+     * @param {HTMLElement} itemRow - Elemento .item-row
+     * @param {string} termo - Termo normalizado
+     * @returns {boolean}
+     */
+    function verificarMatchItem(itemRow, termo) {
+        const campos = [
+            'pontoNome', 'pontoCodigo', 'tagVazao', 'tagPressao',
+            'tagVolume', 'tagReservatorio', 'tagTempAgua', 'tagTempAmbiente'
+        ];
+        return campos.some(c => normalizarTexto(itemRow.dataset[c] || '').includes(termo));
     }
 
     // ============================================

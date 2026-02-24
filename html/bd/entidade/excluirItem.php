@@ -1,6 +1,10 @@
 <?php
 /**
- * SIMP - Excluir Item de Entidade
+ * SIMP - Excluir Item de Entidade (Ponto vinculado a uma Unidade Operacional)
+ * 
+ * Remove o vínculo de um ponto de medição com uma unidade operacional.
+ * Também remove registros dependentes em FORMULA_ITEM_PONTO_MEDICAO
+ * para evitar conflito com FK_FORMULA_A_ENTIDADE__ENTIDADE.
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -37,22 +41,48 @@ try {
         }
     } catch (Exception $e) {}
 
-    $sql = "DELETE FROM SIMP.dbo.ENTIDADE_VALOR_ITEM WHERE CD_CHAVE = ?";
-    $stmt = $pdoSIMP->prepare($sql);
-    $stmt->execute([$cd]);
+    // Iniciar transação para garantir integridade
+    $pdoSIMP->beginTransaction();
 
-    // Log (isolado)
     try {
-        @include_once '../logHelper.php';
-        if (function_exists('registrarLogDelete')) {
-            registrarLogDelete('Cadastro de Entidade', 'Vínculo Ponto-Entidade', $cd, $identificador, $dadosExcluidos);
-        }
-    } catch (Exception $logEx) {}
+        // 1) Excluir registros dependentes em FORMULA_ITEM_PONTO_MEDICAO
+        //    que referenciam este item via FK_FORMULA_A_ENTIDADE__ENTIDADE
+        $sqlFormula = "DELETE FROM SIMP.dbo.FORMULA_ITEM_PONTO_MEDICAO WHERE CD_ENTIDADE_VALOR_ITEM = ?";
+        $stmtFormula = $pdoSIMP->prepare($sqlFormula);
+        $stmtFormula->execute([$cd]);
+        $formulasExcluidas = $stmtFormula->rowCount();
 
-    echo json_encode([
-        'success' => true,
-        'message' => 'Vínculo removido com sucesso!'
-    ]);
+        // 2) Agora excluir o item propriamente dito
+        $sql = "DELETE FROM SIMP.dbo.ENTIDADE_VALOR_ITEM WHERE CD_CHAVE = ?";
+        $stmt = $pdoSIMP->prepare($sql);
+        $stmt->execute([$cd]);
+
+        // Confirmar transação
+        $pdoSIMP->commit();
+
+        // Incluir info de fórmulas removidas no log
+        if ($dadosExcluidos) {
+            $dadosExcluidos['formulas_excluidas'] = $formulasExcluidas;
+        }
+
+        // Log (isolado para não impedir a operação principal)
+        try {
+            @include_once '../logHelper.php';
+            if (function_exists('registrarLogDelete')) {
+                registrarLogDelete('Cadastro de Entidade', 'Vínculo Ponto-Entidade', $cd, $identificador, $dadosExcluidos);
+            }
+        } catch (Exception $logEx) {}
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Vínculo removido com sucesso!'
+        ]);
+
+    } catch (Exception $e) {
+        // Rollback em caso de erro
+        $pdoSIMP->rollBack();
+        throw $e;
+    }
 
 } catch (Exception $e) {
     // Log de erro (isolado)
