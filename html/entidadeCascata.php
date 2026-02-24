@@ -57,1325 +57,7 @@ try {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jerosoler/Drawflow@0.0.59/dist/drawflow.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-<style>
-    /* ============================================
-   SIMP — Cadastro em Cascata v3 (Flowchart)
-   Padrão visual SIMP (slate/navy)
-   ============================================ */
-
-    /* --- Container --- */
-    .page-container {
-        padding: 24px;
-        max-width: 1800px;
-        margin: 0 auto
-    }
-
-    /* --- Header padrão SIMP --- */
-    .page-header {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
-        border-radius: 16px;
-        padding: 24px 28px;
-        margin-bottom: 24px;
-        color: #fff
-    }
-
-    .page-header-content {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap
-    }
-
-    .page-header-icon {
-        width: 52px;
-        height: 52px;
-        background: rgba(255, 255, 255, .15);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        flex-shrink: 0
-    }
-
-    .page-header h1 {
-        font-size: 20px;
-        font-weight: 700;
-        margin: 0 0 2px;
-        color: #fff
-    }
-
-    .page-header-subtitle {
-        font-size: 12px;
-        color: rgba(255, 255, 255, .7);
-        margin: 0
-    }
-
-    /* --- Stats --- */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 14px;
-        margin-bottom: 20px
-    }
-
-    .stat-card {
-        background: #fff;
-        border-radius: 12px;
-        padding: 14px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        border: 1px solid #e2e8f0;
-        transition: transform .2s, box-shadow .2s
-    }
-
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, .08)
-    }
-
-    .stat-card-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        color: #fff;
-        flex-shrink: 0
-    }
-
-    .stat-card-icon.nos {
-        background: linear-gradient(135deg, #3b82f6, #2563eb)
-    }
-
-    .stat-card-icon.raizes {
-        background: linear-gradient(135deg, #10b981, #059669)
-    }
-
-    .stat-card-icon.pontos {
-        background: linear-gradient(135deg, #f59e0b, #d97706)
-    }
-
-    .stat-card-icon.conexoes {
-        background: linear-gradient(135deg, #8b5cf6, #7c3aed)
-    }
-
-    .stat-card-icon.niveis {
-        background: linear-gradient(135deg, #06b6d4, #0891b2)
-    }
-
-    .stat-card-info h3 {
-        font-size: 22px;
-        font-weight: 700;
-        margin: 0;
-        color: #1e293b;
-        line-height: 1
-    }
-
-    .stat-card-info p {
-        font-size: 11px;
-        margin: 3px 0 0;
-        color: #64748b
-    }
-
-    /* --- Layout principal: sidebar + canvas --- */
-    .flow-layout {
-        display: grid;
-        grid-template-columns: 280px 1fr;
-        gap: 0;
-        height: calc(100vh - 280px);
-        min-height: 500px;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #e2e8f0;
-        background: #fff
-    }
-
-    /* --- Sidebar esquerda --- */
-    .flow-sidebar {
-        background: #f8fafc;
-        border-right: 1px solid #e2e8f0;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden
-    }
-
-    .sidebar-header {
-        padding: 12px 14px;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: #fff
-    }
-
-    .sidebar-header h3 {
-        margin: 0;
-        font-size: 13px;
-        color: #1e293b;
-        font-weight: 600;
-        flex: 1
-    }
-
-    .sidebar-search {
-        padding: 8px 12px;
-        border-bottom: 1px solid #e2e8f0
-    }
-
-    .sidebar-search input {
-        width: 100%;
-        padding: 7px 10px 7px 30px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 12px;
-        outline: none;
-        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") 8px center no-repeat;
-        transition: border-color .2s;
-        box-sizing: border-box
-    }
-
-    .sidebar-search input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, .1)
-    }
-
-    .sidebar-list {
-        flex: 1;
-        overflow-y: auto;
-        padding: 6px
-    }
-
-    .sidebar-node {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 10px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background .15s;
-        margin-bottom: 1px;
-        font-size: 12px
-    }
-
-    .sidebar-node:hover {
-        background: #e2e8f0
-    }
-
-    .sidebar-node.selected {
-        background: #dbeafe;
-        border: 1px solid #93c5fd
-    }
-
-    .sidebar-node.inactive {
-        opacity: .35;
-        text-decoration: line-through
-    }
-
-    .sidebar-node .sn-icon {
-        width: 22px;
-        height: 22px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        color: #fff;
-        flex-shrink: 0
-    }
-
-    .sidebar-node .sn-name {
-        flex: 1;
-        color: #334155;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-weight: 500
-    }
-
-    .sidebar-node .sn-badge {
-        font-size: 9px;
-        padding: 1px 6px;
-        border-radius: 100px;
-        background: #e2e8f0;
-        color: #64748b;
-        white-space: nowrap
-    }
-
-    .sidebar-node .sn-indent {
-        flex-shrink: 0
-    }
-
-    /* --- Toolbar canvas --- */
-    .canvas-toolbar {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 14px;
-        border-bottom: 1px solid #e2e8f0;
-        background: #fff;
-        flex-wrap: wrap
-    }
-
-    .btn-cv {
-        padding: 7px 14px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        background: #fff;
-        cursor: pointer;
-        font-size: 12px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        color: #475569;
-        transition: all .2s;
-        white-space: nowrap;
-        font-weight: 500
-    }
-
-    .btn-cv:hover {
-        background: #f1f5f9;
-        border-color: #3b82f6;
-        color: #2563eb
-    }
-
-    .btn-cv.primary {
-        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
-        color: #fff;
-        border-color: transparent
-    }
-
-    .btn-cv.primary:hover {
-        box-shadow: 0 4px 12px rgba(30, 58, 95, .3);
-        transform: translateY(-1px)
-    }
-
-    .btn-cv.danger {
-        color: #dc2626;
-        border-color: #fecaca
-    }
-
-    .btn-cv.danger:hover {
-        background: #fef2f2;
-        border-color: #dc2626
-    }
-
-    .toolbar-sep {
-        width: 1px;
-        height: 24px;
-        background: #e2e8f0;
-        flex-shrink: 0
-    }
-
-    .toolbar-zoom {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-        margin-left: auto
-    }
-
-    .toolbar-zoom button {
-        width: 28px;
-        height: 28px;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        background: #fff;
-        cursor: pointer;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #64748b
-    }
-
-    .toolbar-zoom button:hover {
-        background: #f1f5f9;
-        border-color: #3b82f6;
-        color: #2563eb
-    }
-
-    .toolbar-zoom span {
-        font-size: 11px;
-        color: #64748b;
-        min-width: 40px;
-        text-align: center
-    }
-
-    /* --- Canvas Drawflow --- */
-    .canvas-area {
-        flex: 1;
-        position: relative;
-        overflow: hidden
-    }
-
-    .canvas-wrapper {
-        display: flex;
-        flex-direction: column;
-        height: 100%
-    }
-
-    /* Override estilos Drawflow para padrão SIMP */
-    #drawflowCanvas {
-        height: 100%;
-        width: 100%;
-        background-color: #f8fafc;
-        background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
-        background-size: 24px 24px
-    }
-
-    /* Nó customizado Drawflow */
-    .drawflow .drawflow-node {
-        background: #fff;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        min-width: 200px;
-        max-width: 260px;
-        padding: 0;
-        font-family: 'Inter', sans-serif;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
-        transition: border-color .2s, box-shadow .2s
-    }
-
-    .drawflow .drawflow-node:hover {
-        border-color: #3b82f6;
-        box-shadow: 0 4px 16px rgba(59, 130, 246, .15)
-    }
-
-    .drawflow .drawflow-node.selected {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, .2)
-    }
-
-    .drawflow .drawflow-node .drawflow_content_node {
-        padding: 0;
-        display: block
-    }
-
-    /* Cabeçalho do nó (colorido) */
-    .df-node-head {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 14px;
-        border-radius: 10px 10px 0 0;
-        color: #fff;
-        font-size: 13px;
-        font-weight: 600;
-        overflow: hidden
-    }
-
-    .df-node-head ion-icon {
-        font-size: 16px;
-        flex-shrink: 0;
-        opacity: .85
-    }
-
-    .df-node-head span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap
-    }
-
-    /* Corpo do nó */
-    .df-node-body {
-        padding: 8px 12px 10px
-    }
-
-    /* Linha de informação */
-    .df-node-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 6px;
-        padding: 3px 0;
-        border-bottom: 1px solid #f1f5f9
-    }
-
-    .df-node-row:last-child {
-        border-bottom: none
-    }
-
-    .df-label {
-        font-size: 10px;
-        color: #94a3b8;
-        font-weight: 500;
-        flex-shrink: 0
-    }
-
-    .df-value {
-        font-size: 11px;
-        color: #334155;
-        font-weight: 500;
-        text-align: right;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap
-    }
-
-    .df-tag {
-        font-size: 9px;
-        color: #fff;
-        padding: 2px 8px;
-        border-radius: 100px;
-        font-weight: 600;
-        letter-spacing: .3px
-    }
-
-    /* Bloco ponto de medição */
-    .df-node-ponto {
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        border-radius: 8px;
-        padding: 6px 8px;
-        margin: 6px 0 2px
-    }
-
-    .df-ponto-head {
-        font-size: 9px;
-        font-weight: 600;
-        color: #15803d;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-bottom: 3px
-    }
-
-    .df-ponto-head ion-icon {
-        font-size: 11px
-    }
-
-    .df-ponto-codigo {
-        font-size: 11px;
-        font-weight: 700;
-        color: #166534;
-        font-family: 'Courier New', monospace;
-        letter-spacing: .5px
-    }
-
-    .df-ponto-nome {
-        font-size: 10px;
-        color: #4ade80;
-        margin-top: 1px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap
-    }
-
-    /* Bloco Sistema de Água no nó */
-    .df-node-sistema {
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        border-radius: 8px;
-        padding: 6px 8px;
-        margin: 6px 0 2px
-    }
-
-    .df-sistema-head {
-        font-size: 9px;
-        font-weight: 600;
-        color: #1e40af;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-bottom: 3px
-    }
-
-    .df-sistema-head ion-icon {
-        font-size: 11px
-    }
-
-    .df-sistema-nome {
-        font-size: 10px;
-        font-weight: 700;
-        color: #1e3a8a
-    }
-
-    /* Badge inativo */
-    .df-node-inactive {
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        border-radius: 6px;
-        padding: 4px 8px;
-        margin-top: 6px;
-        font-size: 10px;
-        color: #dc2626;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        justify-content: center
-    }
-
-    .df-node-inactive ion-icon {
-        font-size: 13px
-    }
-
-    /* Nó inativo: opacidade */
-    .drawflow .drawflow-node.inactive {
-        opacity: .5
-    }
-
-    .drawflow .drawflow-node.inactive:hover {
-        opacity: .75
-    }
-
-    /* Portas de conexão Drawflow */
-    .drawflow .drawflow-node .input,
-    .drawflow .drawflow-node .output {
-        width: 14px;
-        height: 14px;
-        border: 2px solid #94a3b8;
-        background: #fff;
-        border-radius: 50%;
-        transition: all .2s
-    }
-
-    .drawflow .drawflow-node .input:hover,
-    .drawflow .drawflow-node .output:hover {
-        border-color: #2563eb;
-        background: #dbeafe;
-        transform: scale(1.3)
-    }
-
-    .drawflow .drawflow-node .output {
-        border-color: #3b82f6;
-        background: #eff6ff
-    }
-
-    /* Linhas de conexão */
-    .drawflow .connection .main-path {
-        stroke: #93c5fd;
-        stroke-width: 2.5;
-        fill: none
-    }
-
-    .drawflow .connection .main-path:hover {
-        stroke: #2563eb;
-        stroke-width: 3.5
-    }
-
-    /* --- Painel editor lateral (dentro do canvas) --- */
-    .node-editor {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 320px;
-        max-height: calc(100% - 20px);
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, .12);
-        z-index: 100;
-        overflow-y: auto;
-        display: none
-    }
-
-    .node-editor.visible {
-        display: block;
-        animation: slideIn .2s ease
-    }
-
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateX(10px)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateX(0)
-        }
-    }
-
-    .ne-header {
-        padding: 12px 14px;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: #f8fafc;
-        border-radius: 12px 12px 0 0
-    }
-
-    .ne-header h4 {
-        margin: 0;
-        font-size: 13px;
-        color: #1e293b;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-weight: 600
-    }
-
-    .ne-close {
-        width: 28px;
-        height: 28px;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        font-size: 16px;
-        color: #94a3b8;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center
-    }
-
-    .ne-close:hover {
-        background: #e2e8f0;
-        color: #334155
-    }
-
-    .ne-body {
-        padding: 14px
-    }
-
-    .ne-body .fg {
-        margin-bottom: 12px
-    }
-
-    .ne-body .fg label {
-        display: block;
-        font-size: 11px;
-        font-weight: 600;
-        color: #475569;
-        margin-bottom: 3px
-    }
-
-    .ne-body .fg input,
-    .ne-body .fg select,
-    .ne-body .fg textarea {
-        width: 100%;
-        padding: 8px 10px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 12px;
-        outline: none;
-        transition: border-color .2s;
-        box-sizing: border-box;
-        color: #334155
-    }
-
-    .ne-body .fg input:focus,
-    .ne-body .fg select:focus,
-    .ne-body .fg textarea:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, .1)
-    }
-
-    .ne-body .fr {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px
-    }
-
-    .ne-footer {
-        padding: 10px 14px;
-        border-top: 1px solid #e2e8f0;
-        display: flex;
-        gap: 6px;
-        justify-content: flex-end
-    }
-
-    .ne-footer button {
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        transition: all .2s;
-        font-weight: 500;
-        border: 1px solid #e2e8f0
-    }
-
-    .ne-footer .btn-save {
-        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
-        color: #fff;
-        border-color: transparent
-    }
-
-    .ne-footer .btn-save:hover {
-        box-shadow: 0 4px 12px rgba(30, 58, 95, .3)
-    }
-
-    .ne-footer .btn-cancel {
-        background: #fff;
-        color: #64748b
-    }
-
-    .ne-footer .btn-cancel:hover {
-        background: #f1f5f9
-    }
-
-    .ponto-box {
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        border-radius: 8px;
-        padding: 10px;
-        margin-top: 4px
-    }
-
-    .ponto-box legend {
-        font-size: 10px;
-        font-weight: 600;
-        color: #15803d;
-        margin-bottom: 6px;
-        display: flex;
-        align-items: center;
-        gap: 4px
-    }
-
-    /* --- Modal padrão SIMP --- */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, .5);
-        z-index: 10000;
-        align-items: center;
-        justify-content: center
-    }
-
-    .modal-overlay.active {
-        display: flex
-    }
-
-    .modal-content {
-        background: #fff;
-        border-radius: 16px;
-        width: 90%;
-        max-width: 600px;
-        max-height: 80vh;
-        overflow-y: auto;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, .2)
-    }
-
-    .modal-header {
-        padding: 16px 20px;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
-        color: #fff;
-        border-radius: 16px 16px 0 0
-    }
-
-    .modal-header h3 {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 600
-    }
-
-    .modal-close {
-        width: 32px;
-        height: 32px;
-        border: none;
-        background: rgba(255, 255, 255, .15);
-        cursor: pointer;
-        font-size: 18px;
-        color: #fff;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center
-    }
-
-    .modal-close:hover {
-        background: rgba(255, 255, 255, .25)
-    }
-
-    .modal-body {
-        padding: 16px 20px
-    }
-
-    .nivel-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        margin-bottom: 8px;
-        background: #fff;
-        transition: all .2s
-    }
-
-    .nivel-item:hover {
-        background: #f8fafc
-    }
-
-    .nivel-item .ni-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 16px;
-        flex-shrink: 0
-    }
-
-    .nivel-item .ni-info {
-        flex: 1
-    }
-
-    .nivel-item .ni-info strong {
-        font-size: 13px;
-        color: #1e293b
-    }
-
-    .nivel-item .ni-info small {
-        display: block;
-        color: #64748b;
-        font-size: 11px;
-        margin-top: 2px
-    }
-
-    .nivel-form {
-        border: 2px dashed #e2e8f0;
-        border-radius: 10px;
-        padding: 14px;
-        margin-top: 14px
-    }
-
-    .nivel-form .nf-row {
-        display: grid;
-        grid-template-columns: 1fr 100px 70px;
-        gap: 8px;
-        align-items: end
-    }
-
-    .nivel-form input,
-    .nivel-form select {
-        padding: 8px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 13px;
-        color: #334155
-    }
-
-    /* Wizard */
-    .wizard-templates {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 12px
-    }
-
-    .wizard-card {
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 16px;
-        cursor: pointer;
-        transition: all .2s;
-        background: #fff
-    }
-
-    .wizard-card:hover {
-        border-color: #3b82f6;
-        box-shadow: 0 4px 14px rgba(59, 130, 246, .12);
-        transform: translateY(-2px)
-    }
-
-    .wizard-card.selected {
-        border-color: #2563eb;
-        background: #eff6ff
-    }
-
-    .wizard-card-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        color: #fff;
-        margin-bottom: 8px
-    }
-
-    .wizard-card h4 {
-        margin: 0 0 4px;
-        font-size: 13px;
-        color: #1e293b;
-        font-weight: 600
-    }
-
-    .wizard-card p {
-        margin: 0;
-        font-size: 10px;
-        color: #64748b;
-        line-height: 1.4
-    }
-
-    .wizard-card .wizard-preview {
-        margin-top: 8px;
-        padding: 6px;
-        background: #f8fafc;
-        border-radius: 6px;
-        font-size: 9px;
-        color: #475569;
-        font-family: monospace;
-        line-height: 1.5;
-        white-space: pre
-    }
-
-    .wizard-footer {
-        display: flex;
-        gap: 8px;
-        justify-content: flex-end;
-        padding: 14px 20px;
-        border-top: 1px solid #e2e8f0
-    }
-
-    .wizard-footer button {
-        padding: 9px 20px;
-        border-radius: 8px;
-        font-size: 13px;
-        cursor: pointer;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: all .2s
-    }
-
-    .wizard-footer .btn-wiz-ok {
-        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
-        color: #fff;
-        border: none
-    }
-
-    .wizard-footer .btn-wiz-cancel {
-        background: #fff;
-        color: #64748b;
-        border: 1px solid #e2e8f0
-    }
-
-    /* --- Toast --- */
-    .toast-box {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 99999
-    }
-
-    .toast-msg {
-        padding: 12px 20px;
-        border-radius: 10px;
-        margin-bottom: 8px;
-        font-size: 13px;
-        color: #fff;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, .15);
-        animation: tIn .3s ease;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 500
-    }
-
-    .toast-msg.ok {
-        background: #059669
-    }
-
-    .toast-msg.err {
-        background: #dc2626
-    }
-
-    .toast-msg.inf {
-        background: #2563eb
-    }
-
-    @keyframes tIn {
-        from {
-            opacity: 0;
-            transform: translateY(-8px)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0)
-        }
-    }
-
-    /* --- Select2 --- */
-    .select2-container {
-        width: 100% !important
-    }
-
-    .select2-container--default .select2-selection--single {
-        height: 34px !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 8px !important
-    }
-
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 32px !important;
-        font-size: 12px;
-        color: #334155
-    }
-
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 32px !important
-    }
-
-    .select2-container--default .select2-selection--multiple {
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 8px !important;
-        min-height: 34px !important;
-        font-size: 12px
-    }
-
-    .select2-container--default .select2-selection--multiple .select2-selection__choice {
-        background: #eff6ff !important;
-        border: 1px solid #bfdbfe !important;
-        border-radius: 6px !important;
-        font-size: 11px;
-        color: #1e40af;
-        padding: 2px 6px
-    }
-
-    /* --- Toolbar seletor sistema (Select2) --- */
-    .toolbar-sistema {
-        min-width: 260px
-    }
-
-    .toolbar-sistema .select2-container {
-        width: 100% !important
-    }
-
-    .toolbar-sistema .select2-container--default .select2-selection--single {
-        height: 36px !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 8px !important;
-        background: #fff !important
-    }
-
-    .toolbar-sistema .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 34px !important;
-        font-size: 12px;
-        color: #334155;
-        padding-left: 12px
-    }
-
-    .toolbar-sistema .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 34px !important
-    }
-
-    /* Dropdown aberto */
-    .select2-results__option {
-        font-size: 13px;
-        padding: 8px 12px;
-        color: #334155
-    }
-
-    .select2-results__option--highlighted {
-        background: #1e3a5f !important;
-        color: #fff !important
-    }
-
-    .select2-results__option .sis-opt-nome {
-        font-weight: 600;
-        display: block;
-        line-height: 1.3
-    }
-
-    .select2-results__option .sis-opt-qtd {
-        font-size: 11px;
-        color: #94a3b8;
-        font-weight: 400
-    }
-
-    .select2-results__option--highlighted .sis-opt-qtd {
-        color: #cbd5e1
-    }
-
-    .select2-search--dropdown .select2-search__field {
-        padding: 8px 12px !important;
-        font-size: 13px !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 6px !important
-    }
-
-    /* --- Sidebar filtros --- */
-    .sidebar-filters {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 4px;
-        padding: 6px 12px;
-        border-bottom: 1px solid #e2e8f0
-    }
-
-    .sidebar-filters select {
-        padding: 5px 6px;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        font-size: 10px;
-        color: #475569;
-        background: #fff;
-        cursor: pointer;
-        outline: none
-    }
-
-    .sidebar-filters select:focus {
-        border-color: #3b82f6
-    }
-
-    /* Nó compartilhado: destaque visual quando recebe conexão de outro sistema */
-    .drawflow .drawflow-node.shared-node {
-        border-style: dashed;
-        border-color: #f59e0b
-    }
-
-    /* --- Multi-seleção de nós --- */
-    .drawflow .drawflow-node.multi-selected {
-        border-color: #f59e0b !important;
-        box-shadow: 0 0 0 3px rgba(245, 158, 11, .3) !important;
-    }
-
-    .multi-sel-badge {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: #f59e0b;
-        color: #fff;
-        font-size: 12px;
-        font-weight: 700;
-        padding: 5px 14px;
-        border-radius: 20px;
-        z-index: 90;
-        display: none;
-        align-items: center;
-        gap: 6px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
-        pointer-events: none;
-    }
-
-    .multi-sel-badge.visible {
-        display: flex;
-    }
-
-    /* --- Responsivo --- */
-    @media(max-width:1024px) {
-        .flow-layout {
-            grid-template-columns: 1fr;
-            height: auto
-        }
-
-        .flow-sidebar {
-            max-height: 200px
-        }
-
-        .node-editor {
-            position: static;
-            width: 100%;
-            max-height: none;
-            border-radius: 0;
-            border: none;
-            border-top: 1px solid #e2e8f0
-        }
-    }
-
-    @media(max-width:768px) {
-        .page-container {
-            padding: 14px
-        }
-
-        .page-header {
-            padding: 18px
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr 1fr
-        }
-
-        .canvas-toolbar {
-            flex-direction: column;
-            align-items: stretch
-        }
-
-        .toolbar-zoom {
-            margin-left: 0;
-            justify-content: center
-        }
-    }
-
-    @media(max-width:480px) {
-        .stats-grid {
-            grid-template-columns: 1fr
-        }
-
-        .page-header h1 {
-            font-size: 17px
-        }
-    }
-
-    /* --- Modo Maximizado (fullscreen do flowchart) --- */
-    body.flowchart-maximizado {
-        padding: 0 !important;
-        overflow: hidden;
-    }
-
-    body.flowchart-maximizado .modern-header {
-        display: none !important;
-    }
-
-    body.flowchart-maximizado #modernSidebar {
-        display: none !important;
-    }
-
-    body.flowchart-maximizado .page-container {
-        padding: 0;
-        max-width: none;
-        margin: 0;
-    }
-
-    body.flowchart-maximizado .page-header {
-        display: none !important;
-    }
-
-    body.flowchart-maximizado .stats-grid {
-        display: none !important;
-    }
-
-    body.flowchart-maximizado .flow-layout {
-        height: 100vh !important;
-        border-radius: 0;
-        border: none;
-    }
-
-    /* Botão maximizar */
-    .btn-cv.maximizar {
-        color: #64748b;
-        border-color: #e2e8f0;
-    }
-
-    .btn-cv.maximizar:hover {
-        color: #2563eb;
-        border-color: #3b82f6;
-        background: #eff6ff;
-    }
-
-    body.flowchart-maximizado .btn-cv.maximizar {
-        color: #ef4444;
-        border-color: #fecaca;
-        background: #fef2f2;
-    }
-
-    body.flowchart-maximizado .btn-cv.maximizar:hover {
-        color: #dc2626;
-        border-color: #ef4444;
-        background: #fee2e2;
-    }
-</style>
+<link rel="stylesheet" href="style/css/entidadeCascata.css">
 
 <!-- ============================================
      HTML
@@ -1555,6 +237,29 @@ try {
                                     name="checkmark-outline"></ion-icon> Salvar</button>
                         </div>
                     <?php endif; ?>
+                </div>
+
+                <!-- Painel editor de conexão (diâmetro/rótulo) -->
+                <div class="conn-editor" id="connEditor">
+                    <h4><ion-icon name="git-branch-outline"></ion-icon> Editar Conexão</h4>
+                    <input type="hidden" id="ceCd">
+                    <div class="ce-info" id="ceInfo">Origem → Destino</div>
+                    <div class="ce-row">
+                        <label>Diâmetro da Rede (mm)</label>
+                        <input type="number" id="ceDiametro" placeholder="Ex: 600" step="0.01" min="0">
+                    </div>
+                    <div class="ce-row">
+                        <label>Rótulo</label>
+                        <input type="text" id="ceRotulo" placeholder="Ex: Adutora DN600" maxlength="100">
+                    </div>
+                    <div class="ce-btns">
+                        <button class="btn-cv" onclick="fecharConnEditor()"><ion-icon name="close-outline"></ion-icon>
+                            Fechar</button>
+                        <?php if ($podeEditar): ?>
+                            <button class="btn-cv primary" onclick="salvarConnEditor()"><ion-icon
+                                    name="checkmark-outline"></ion-icon> Salvar</button>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1849,6 +554,10 @@ try {
         /* Nó movido: salvar posição com debounce */
         editor.on('nodeMoved', function (dfId) {
             if (sincronizando) return;
+
+            /* Atualizar labels em tempo real durante o arrasto */
+            renderizarLabelsConexoes();
+
             var cd = dfToSimp[dfId];
             if (!cd) return;
             var info = editor.getNodeFromId(dfId);
@@ -2184,6 +893,9 @@ try {
         });
 
         sincronizando = false;
+
+        /* Renderizar labels de diâmetro nas conexões */
+        setTimeout(function () { renderizarLabelsConexoes(); }, 100);
     }
 
     /* ============================================
@@ -2608,11 +1320,12 @@ try {
         fd.append('cdOrigem', cdOrigem);
         fd.append('cdDestino', cdDestino);
         fd.append('rotulo', '');
+        fd.append('diametroRede', '');
         fetch('bd/entidadeCascata/salvarConexao.php', { method: 'POST', body: fd })
             .then(function (r) { return r.json() })
             .then(function (d) {
                 if (d.success) { toast('Conexão criada', 'ok'); recarregarConexoes(); }
-                else { toast(d.message, 'err'); carregarDados(); /* reverter visual */ }
+                else { toast(d.message, 'err'); carregarDados(); }
             }).catch(function () { toast('Erro ao criar conexão', 'err') });
     }
 
@@ -2637,6 +1350,7 @@ try {
                 conexoes = d.conexoes;
                 document.getElementById('stConexoes').textContent = d.total || conexoes.length;
                 atualizarContagemSistemas();
+                renderizarLabelsConexoes();
             }
         }).catch(function () { });
     }
@@ -2706,6 +1420,190 @@ try {
         }
     });
 
+    /* ============================================
+       Editor de Conexão (diâmetro/rótulo)
+       ============================================ */
+    var connSelecionada = null; // Objeto da conexão selecionada
+
+    /** Abrir editor de conexão ao clicar no label ou na linha */
+    function abrirConnEditor(cdConexao, posX, posY) {
+        var cx = conexoes.find(function (c) { return c.CD_CHAVE == cdConexao; });
+        if (!cx) return;
+        connSelecionada = cx;
+
+        document.getElementById('ceCd').value = cx.CD_CHAVE;
+        document.getElementById('ceDiametro').value = cx.VL_DIAMETRO_REDE || '';
+        document.getElementById('ceRotulo').value = cx.DS_ROTULO || '';
+
+        /* Info: nomes origem → destino */
+        var nomeOrig = cx.DS_ORIGEM || 'Nó ' + cx.CD_NODO_ORIGEM;
+        var nomeDest = cx.DS_DESTINO || 'Nó ' + cx.CD_NODO_DESTINO;
+        document.getElementById('ceInfo').textContent = nomeOrig + ' → ' + nomeDest;
+
+        /* Posicionar perto do clique, dentro do canvas */
+        var editorEl = document.getElementById('connEditor');
+        var canvasArea = document.querySelector('.canvas-area');
+        var rect = canvasArea.getBoundingClientRect();
+
+        var x = posX - rect.left;
+        var y = posY - rect.top;
+
+        /* Garantir que não saia da área visível */
+        if (x + 290 > canvasArea.offsetWidth) x = canvasArea.offsetWidth - 290;
+        if (y + 200 > canvasArea.offsetHeight) y = canvasArea.offsetHeight - 210;
+        if (x < 10) x = 10;
+        if (y < 10) y = 10;
+
+        editorEl.style.left = x + 'px';
+        editorEl.style.top = y + 'px';
+        editorEl.classList.add('visible');
+
+        setTimeout(function () { document.getElementById('ceDiametro').focus(); }, 100);
+    }
+
+    /** Fechar editor de conexão */
+    function fecharConnEditor() {
+        document.getElementById('connEditor').classList.remove('visible');
+        connSelecionada = null;
+    }
+
+    /** Salvar diâmetro/rótulo da conexão */
+    function salvarConnEditor() {
+        if (!connSelecionada) return;
+        var cd = document.getElementById('ceCd').value;
+        var diametro = document.getElementById('ceDiametro').value;
+        var rotulo = document.getElementById('ceRotulo').value.trim();
+
+        var fd = new FormData();
+        fd.append('cd', cd);
+        fd.append('cdOrigem', connSelecionada.CD_NODO_ORIGEM);
+        fd.append('cdDestino', connSelecionada.CD_NODO_DESTINO);
+        fd.append('rotulo', rotulo);
+        fd.append('cor', connSelecionada.DS_COR || '#1565C0');
+        fd.append('diametroRede', diametro);
+
+        fetch('bd/entidadeCascata/salvarConexao.php', { method: 'POST', body: fd })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.success) {
+                    toast('Conexão atualizada!', 'ok');
+                    fecharConnEditor();
+                    recarregarConexoes();
+                    /* Redesenhar labels */
+                    setTimeout(function () { renderizarLabelsConexoes(); }, 300);
+                } else toast(d.message, 'err');
+            }).catch(function () { toast('Erro ao salvar conexão', 'err'); });
+    }
+
+   /**
+     * Renderiza labels de diâmetro/rótulo sobre as conexões.
+     * Recalcula posição com base no ponto médio ATUAL dos nós,
+     * mantendo o label sempre acompanhando a linha de conexão.
+     */
+    function renderizarLabelsConexoes() {
+        var container = document.getElementById('drawflowCanvas');
+        var precanvas = container.querySelector('.drawflow');
+        if (!precanvas) return;
+
+        /* Remover labels anteriores */
+        precanvas.querySelectorAll('.connection-label').forEach(function (el) { el.remove(); });
+
+        conexoes.forEach(function (cx) {
+            var diametro = cx.VL_DIAMETRO_REDE;
+            var rotulo = cx.DS_ROTULO;
+            if (!diametro && !rotulo) return;
+
+            var dfOut = simpToDf[cx.CD_NODO_ORIGEM];
+            var dfIn = simpToDf[cx.CD_NODO_DESTINO];
+            if (!dfOut || !dfIn) return;
+
+            /* Posição REAL do nó no DOM (inclui arrasto em andamento) */
+            var elOut = document.getElementById('node-' + dfOut);
+            var elIn = document.getElementById('node-' + dfIn);
+            if (!elOut || !elIn) return;
+
+            /* Extrair translate do style (Drawflow usa transform ou left/top) */
+            var posOut = obterPosicaoNo(elOut);
+            var posIn = obterPosicaoNo(elIn);
+
+            /* Ponto médio + offset para centralizar sobre a linha */
+            var midX = (posOut.x + posIn.x) / 2 + 100;
+            var midY = (posOut.y + posIn.y) / 2 + 20;
+
+            /* Montar texto */
+            var texto = '';
+            if (rotulo && diametro) texto = rotulo + ' — DN' + parseFloat(diametro);
+            else if (diametro) texto = 'DN' + parseFloat(diametro);
+            else if (rotulo) texto = rotulo;
+            if (!texto) return;
+
+            var label = document.createElement('div');
+            label.className = 'connection-label';
+            label.innerHTML = '<ion-icon name="resize-outline"></ion-icon> ' + esc(texto);
+            label.style.left = midX + 'px';
+            label.style.top = midY + 'px';
+            label.dataset.cdConexao = cx.CD_CHAVE;
+
+            label.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                abrirConnEditor(cx.CD_CHAVE, ev.clientX, ev.clientY);
+            });
+
+            precanvas.appendChild(label);
+        });
+    }
+
+    /**
+     * Obtém posição real de um nó Drawflow no canvas (left/top do style).
+     * Drawflow define a posição via style.left e style.top no elemento do nó.
+     */
+    function obterPosicaoNo(el) {
+        return {
+            x: parseFloat(el.style.left) || 0,
+            y: parseFloat(el.style.top) || 0
+        };
+    }
+
+    /**
+     * Detectar clique nas linhas SVG de conexão para abrir editor.
+     * As linhas do Drawflow são <svg><path class="main-path">.
+     */
+    function inicializarCliqueConexoes() {
+        var container = document.getElementById('drawflowCanvas');
+        container.addEventListener('click', function (ev) {
+            var path = ev.target.closest('.main-path');
+            if (!path) return;
+
+            /* Identificar a conexão pelo elemento pai .connection */
+            var connEl = path.closest('.connection');
+            if (!connEl) return;
+
+            /* Extrair IDs de origem/destino do atributo class */
+            var classes = connEl.classList;
+            var dfOut = null, dfIn = null;
+            classes.forEach(function (cls) {
+                var mOut = cls.match(/^node_out_node-(\d+)$/);
+                var mIn = cls.match(/^node_in_node-(\d+)$/);
+                if (mOut) dfOut = parseInt(mOut[1]);
+                if (mIn) dfIn = parseInt(mIn[1]);
+            });
+
+            if (!dfOut || !dfIn) return;
+
+            var cdOrigem = dfToSimp[dfOut];
+            var cdDestino = dfToSimp[dfIn];
+            if (!cdOrigem || !cdDestino) return;
+
+            /* Encontrar conexão no array */
+            var cx = conexoes.find(function (c) {
+                return c.CD_NODO_ORIGEM == cdOrigem && c.CD_NODO_DESTINO == cdDestino;
+            });
+            if (!cx) return;
+
+            abrirConnEditor(cx.CD_CHAVE, ev.clientX, ev.clientY);
+        });
+    }
+
     /* Zoom com scroll do mouse (sem precisar de Ctrl) */
     document.getElementById('drawflowCanvas').addEventListener('wheel', function (e) {
         e.preventDefault();
@@ -2716,6 +1614,14 @@ try {
         }
         document.getElementById('zoomLabel').textContent = Math.round(editor.zoom * 100) + '%';
     }, { passive: false });
+
+    /* Inicializar clique nas conexões para editar diâmetro */
+    inicializarCliqueConexoes();
+
+    /* Re-renderizar labels ao fazer zoom */
+        editor.on('zoom', function () {
+            renderizarLabelsConexoes();
+        });
 
     /* ============================================
        Selects de Nível
@@ -3022,6 +1928,8 @@ try {
             document.querySelectorAll('.modal-overlay.active').forEach(function (m) { m.classList.remove('active') });
             fecharEditor();
         }
+        /* Fechar editor de conexão */
+        if (e.key === 'Escape') fecharConnEditor();
         /* Delete/Backspace: excluir nó selecionado */
         if ((e.key === 'Delete' || e.key === 'Backspace') && noSelecionadoCd && podeEditar) {
             /* Não excluir se foco em input */

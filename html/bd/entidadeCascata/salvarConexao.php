@@ -4,14 +4,15 @@
  * Cria ligação dirigida: nó origem → nó destino (fluxo físico da água).
  * 
  * POST params:
- *   - cd (int|null)        : CD_CHAVE (null = nova conexão)
- *   - cdOrigem (int)       : CD_NODO_ORIGEM
- *   - cdDestino (int)      : CD_NODO_DESTINO
- *   - rotulo (string|null) : DS_ROTULO (ex: "Adutora DN600")
- *   - cor (string|null)    : DS_COR (hex, default #1565C0)
+ *   - cd (int|null)           : CD_CHAVE (null = nova conexão)
+ *   - cdOrigem (int)          : CD_NODO_ORIGEM
+ *   - cdDestino (int)         : CD_NODO_DESTINO
+ *   - rotulo (string|null)    : DS_ROTULO (ex: "Adutora DN600")
+ *   - cor (string|null)       : DS_COR (hex, default #1565C0)
+ *   - diametroRede (float|null) : VL_DIAMETRO_REDE (mm)
  * 
  * @author Bruno - CESAN
- * @version 1.0
+ * @version 1.1 — Adicionado diâmetro da rede
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -29,11 +30,12 @@ try {
         throw new Exception('Conexão não estabelecida');
     }
 
-    $cd        = isset($_POST['cd']) && $_POST['cd'] !== '' ? (int)$_POST['cd'] : null;
-    $cdOrigem  = isset($_POST['cdOrigem']) ? (int)$_POST['cdOrigem'] : 0;
-    $cdDestino = isset($_POST['cdDestino']) ? (int)$_POST['cdDestino'] : 0;
-    $rotulo    = isset($_POST['rotulo']) ? trim($_POST['rotulo']) : null;
-    $cor       = isset($_POST['cor']) && $_POST['cor'] !== '' ? trim($_POST['cor']) : '#1565C0';
+    $cd            = isset($_POST['cd']) && $_POST['cd'] !== '' ? (int)$_POST['cd'] : null;
+    $cdOrigem      = isset($_POST['cdOrigem']) ? (int)$_POST['cdOrigem'] : 0;
+    $cdDestino     = isset($_POST['cdDestino']) ? (int)$_POST['cdDestino'] : 0;
+    $rotulo        = isset($_POST['rotulo']) ? trim($_POST['rotulo']) : null;
+    $cor           = isset($_POST['cor']) && $_POST['cor'] !== '' ? trim($_POST['cor']) : '#1565C0';
+    $diametroRede  = isset($_POST['diametroRede']) && $_POST['diametroRede'] !== '' ? (float)$_POST['diametroRede'] : null;
 
     // --------------------------------------------------
     // Validações
@@ -76,19 +78,21 @@ try {
     // --------------------------------------------------
     if ($cd !== null) {
         $sql = "UPDATE SIMP.dbo.ENTIDADE_NODO_CONEXAO SET
-                    CD_NODO_ORIGEM  = :cdOrigem,
-                    CD_NODO_DESTINO = :cdDestino,
-                    DS_ROTULO       = :rotulo,
-                    DS_COR          = :cor,
-                    DT_ATUALIZACAO  = GETDATE()
+                    CD_NODO_ORIGEM    = :cdOrigem,
+                    CD_NODO_DESTINO   = :cdDestino,
+                    DS_ROTULO         = :rotulo,
+                    DS_COR            = :cor,
+                    VL_DIAMETRO_REDE  = :diametroRede,
+                    DT_ATUALIZACAO    = GETDATE()
                 WHERE CD_CHAVE = :cd";
         $stmt = $pdoSIMP->prepare($sql);
         $stmt->execute([
-            ':cdOrigem'  => $cdOrigem,
-            ':cdDestino' => $cdDestino,
-            ':rotulo'    => $rotulo,
-            ':cor'       => $cor,
-            ':cd'        => $cd
+            ':cdOrigem'      => $cdOrigem,
+            ':cdDestino'     => $cdDestino,
+            ':rotulo'        => $rotulo,
+            ':cor'           => $cor,
+            ':diametroRede'  => $diametroRede,
+            ':cd'            => $cd
         ]);
 
         // Log isolado
@@ -106,48 +110,36 @@ try {
         ], JSON_UNESCAPED_UNICODE);
 
     } else {
-        // Calcular próxima ordem
-        $stmtOrdem = $pdoSIMP->query("SELECT ISNULL(MAX(NR_ORDEM),0)+1 AS PROX FROM SIMP.dbo.ENTIDADE_NODO_CONEXAO");
-        $ordem = (int)$stmtOrdem->fetch(PDO::FETCH_ASSOC)['PROX'];
-
         $sql = "INSERT INTO SIMP.dbo.ENTIDADE_NODO_CONEXAO 
-                (CD_NODO_ORIGEM, CD_NODO_DESTINO, DS_ROTULO, DS_COR, NR_ORDEM)
-                VALUES (:cdOrigem, :cdDestino, :rotulo, :cor, :ordem)";
+                    (CD_NODO_ORIGEM, CD_NODO_DESTINO, DS_ROTULO, DS_COR, VL_DIAMETRO_REDE, NR_ORDEM, OP_ATIVO, DT_CADASTRO)
+                VALUES 
+                    (:cdOrigem, :cdDestino, :rotulo, :cor, :diametroRede, 0, 1, GETDATE())";
         $stmt = $pdoSIMP->prepare($sql);
         $stmt->execute([
-            ':cdOrigem'  => $cdOrigem,
-            ':cdDestino' => $cdDestino,
-            ':rotulo'    => $rotulo,
-            ':cor'       => $cor,
-            ':ordem'     => $ordem
+            ':cdOrigem'      => $cdOrigem,
+            ':cdDestino'     => $cdDestino,
+            ':rotulo'        => $rotulo,
+            ':cor'           => $cor,
+            ':diametroRede'  => $diametroRede
         ]);
-
-        $stmtId = $pdoSIMP->query("SELECT SCOPE_IDENTITY() AS ID");
-        $novoId = $stmtId->fetch(PDO::FETCH_ASSOC)['ID'];
+        $novoCd = $pdoSIMP->lastInsertId();
 
         // Log isolado
         try {
             @include_once '../logHelper.php';
             if (function_exists('registrarLogInsert')) {
-                registrarLogInsert('Cadastro Cascata', 'Conexão Fluxo', $novoId, $rotulo ?: "Conexão $cdOrigem→$cdDestino", $_POST);
+                registrarLogInsert('Cadastro Cascata', 'Conexão Fluxo', $novoCd, $rotulo ?: "Conexão $cdOrigem→$cdDestino", $_POST);
             }
         } catch (Exception $logEx) {}
 
         echo json_encode([
             'success' => true,
             'message' => 'Conexão criada com sucesso!',
-            'cd'      => (int)$novoId
+            'cd'      => $novoCd
         ], JSON_UNESCAPED_UNICODE);
     }
 
 } catch (Exception $e) {
-    try {
-        @include_once '../logHelper.php';
-        if (function_exists('registrarLogErro')) {
-            registrarLogErro('Cadastro Cascata', 'Conexão', $e->getMessage(), $_POST);
-        }
-    } catch (Exception $logEx) {}
-
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()

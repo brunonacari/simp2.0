@@ -502,6 +502,10 @@ $letrasTipoMedidor = [
                         <input type="checkbox" id="chkTensorFlow" checked onchange="toggleLinhaGrafico('tensorflow')">
                         <span class="controle-cor" style="background:#ef4444;"></span>
                         <span class="controle-label">TensorFlow</span>
+                        <!-- Ícone indicador de modelo treinado (visível somente se não for fallback) -->
+                        <ion-icon name="checkmark-circle" id="iconTensorFlowTreinado"
+                            style="display:none;color:#22c55e;font-size:14px;margin-left:2px;"
+                            title="Modelo treinado para este ponto"></ion-icon>
                     </label>
                 </div>
 
@@ -4176,6 +4180,13 @@ $letrasTipoMedidor = [
                             // Mostrar controle do checkbox TensorFlow no gráfico
                             const ctrlTF = document.getElementById('controleTensorFlow');
                             if (ctrlTF) ctrlTF.style.display = '';
+
+                            // Exibir ícone de modelo treinado apenas se NÃO for fallback estatístico
+                            const iconTreinado = document.getElementById('iconTensorFlowTreinado');
+                            if (iconTreinado) {
+                                const isTreinado = data.modelo && data.modelo !== 'statistical_fallback';
+                                iconTreinado.style.display = isTreinado ? 'inline-block' : 'none';
+                            }
 
                             // Re-renderizar gráfico com linha TensorFlow
                             if (validacaoDadosAtuais) {
