@@ -2498,7 +2498,39 @@ $letrasTipoMedidor = [
                     }
                 });
 
-                // Plugin para fundo alternado por dia
+                // Nomes abreviados dos dias da semana (pt-BR)
+                // Índice JS: 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb
+                const nomesDiaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'S\u00e1b'];
+
+                // Cores de fundo por dia da semana (suaves para não poluir o gráfico)
+                const coresDiaSemana = [
+                    'rgba(239, 68, 68, 0.08)',   // Dom - vermelho suave
+                    'rgba(59, 130, 246, 0.08)',  // Seg - azul
+                    'rgba(16, 185, 129, 0.08)', // Ter - verde
+                    'rgba(245, 158, 11, 0.08)', // Qua - âmbar
+                    'rgba(139, 92, 246, 0.08)', // Qui - roxo
+                    'rgba(6, 182, 212, 0.08)',  // Sex - ciano
+                    'rgba(236, 72, 153, 0.08)'  // Sáb - rosa
+                ];
+
+                // Cores do texto de fundo (mais intensas para legibilidade)
+                const coresTextoDiaSemana = [
+                    'rgba(239, 68, 68, 0.22)',   // Dom
+                    'rgba(59, 130, 246, 0.22)',  // Seg
+                    'rgba(16, 185, 129, 0.22)', // Ter
+                    'rgba(245, 158, 11, 0.22)', // Qua
+                    'rgba(139, 92, 246, 0.22)', // Qui
+                    'rgba(6, 182, 212, 0.22)',  // Sex
+                    'rgba(236, 72, 153, 0.22)'  // Sáb
+                ];
+
+                // Pré-calcular dia da semana (0-6) para cada dia do período
+                const diasDaSemana = dias.map(diaStr => {
+                    const d = new Date(diaStr + 'T12:00:00');
+                    return d.getDay(); // 0=Dom ... 6=Sáb
+                });
+
+                // Plugin para fundo colorido por dia da semana + label com data
                 const dayBandsPlugin = {
                     id: 'dayBands',
                     beforeDraw: function (chart) {
@@ -2522,13 +2554,41 @@ $letrasTipoMedidor = [
                                         ? xScale.getPixelForValue(i)
                                         : xScale.right;
 
-                                    // Cores alternadas: azul claro / branco (mais contraste)
-                                    if (diaAtual % 2 === 0) {
-                                        ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
-                                    } else {
-                                        ctx.fillStyle = 'rgba(30, 58, 95, 0.06)';
-                                    }
+                                    // Obter dia da semana para cor específica
+                                    const diaSemanaIdx = diasDaSemana[diaAtual]; // 0=Dom...6=Sáb
+
+                                    // Preencher fundo com cor do dia da semana
+                                    ctx.fillStyle = coresDiaSemana[diaSemanaIdx];
                                     ctx.fillRect(inicioX, yScale.top, fimX - inicioX, yScale.bottom - yScale.top);
+
+                                    // =============================================
+                                    // Label de fundo: "Seg 14/01" rotacionado -90°
+                                    // Visível mesmo ao dar zoom, identifica o dia
+                                    // =============================================
+                                    const larguraBanda = fimX - inicioX;
+                                    const alturaBanda = yScale.bottom - yScale.top;
+                                    const centroX = inicioX + larguraBanda / 2;
+                                    const centroY = yScale.top + alturaBanda / 2;
+
+                                    // Formatar data DD/MM
+                                    const partesDia = dias[diaAtual].split('-');
+                                    const dataFormatada = partesDia[2] + '/' + partesDia[1];
+                                    const nomeDia = nomesDiaSemana[diaSemanaIdx];
+                                    const textoLabel = nomeDia + ' ' + dataFormatada;
+
+                                    // Tamanho da fonte proporcional (entre 9px e 16px)
+                                    const fontSizeMax = Math.min(larguraBanda * 0.7, alturaBanda * 0.08);
+                                    const fontSize = Math.max(9, Math.min(fontSizeMax, 16));
+
+                                    ctx.save();
+                                    ctx.translate(centroX, centroY);
+                                    ctx.rotate(-Math.PI / 2); // Texto vertical
+                                    ctx.font = 'bold ' + fontSize + 'px sans-serif';
+                                    ctx.fillStyle = coresTextoDiaSemana[diaSemanaIdx];
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(textoLabel, 0, 0);
+                                    ctx.restore();
                                 }
 
                                 // Iniciar nova banda
@@ -2567,13 +2627,15 @@ $letrasTipoMedidor = [
                         animation: { duration: 300 },
                         plugins: {
                             legend: {
-                                display: true,
-                                position: 'top',
                                 labels: {
-                                    boxWidth: 12,
-                                    padding: 8,
-                                    font: { size: 11 }
+                                    color: 'transparent',
+                                    boxWidth: 0,
+                                    padding: 0,
+                                    font: { size: 0 }
                                 }
+                            },
+                            datalabels: {
+                                display: false
                             },
                             tooltip: {
                                 callbacks: {
@@ -2675,6 +2737,11 @@ $letrasTipoMedidor = [
                     },
                     plugins: [dayBandsPlugin]
                 });
+                // Forçar remoção da legenda após criação
+                if (graficoPopupInstance.legend) {
+                    graficoPopupInstance.legend.options.display = false;
+                    graficoPopupInstance.update('none');
+                }
             }
 
             /**

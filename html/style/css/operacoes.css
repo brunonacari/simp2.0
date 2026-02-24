@@ -1684,6 +1684,18 @@ input[type="date"].form-control {
     height: 100% !important;
 }
 
+/* Legenda invisível no gráfico popup */
+.grafico-popup-container canvas+div,
+.grafico-popup-container .chartjs-legend {
+    color: transparent !important;
+}
+
+/* Ocultar legenda do gráfico popup de médias horárias */
+.grafico-popup-container .chartjs-legend,
+.grafico-popup-container [class*="legend"] {
+    display: none !important;
+}
+
 .grafico-popup-loading {
     display: flex;
     align-items: center;

@@ -1235,6 +1235,34 @@ try {
         border-color: #f59e0b
     }
 
+    /* --- Multi-seleção de nós --- */
+    .drawflow .drawflow-node.multi-selected {
+        border-color: #f59e0b !important;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, .3) !important;
+    }
+
+    .multi-sel-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: #f59e0b;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 5px 14px;
+        border-radius: 20px;
+        z-index: 90;
+        display: none;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+        pointer-events: none;
+    }
+
+    .multi-sel-badge.visible {
+        display: flex;
+    }
+
     /* --- Responsivo --- */
     @media(max-width:1024px) {
         .flow-layout {
@@ -1454,8 +1482,9 @@ try {
                     <button class="btn-cv" onclick="abrirWizard()"><ion-icon name="flash-outline"></ion-icon>
                         Wizard</button>
                     <span class="toolbar-sep"></span>
-                    <button class="btn-cv danger" onclick="excluirSelecionado()" id="btnExcluir"
-                        style="display:none;"><ion-icon name="trash-outline"></ion-icon> Excluir</button>
+                    <button class="btn-cv danger" onclick="excluirSelecionados()" id="btnExcluir"
+                        style="display:none;"><ion-icon name="trash-outline"></ion-icon> <span
+                            id="btnExcluirTxt">Excluir</span></button>
                     <button class="btn-cv" onclick="restaurarSelecionado()" id="btnRestaurar"
                         style="display:none;"><ion-icon name="refresh-outline"></ion-icon> Restaurar</button>
                 <?php endif; ?>
@@ -1473,6 +1502,11 @@ try {
 
             <!-- Canvas Drawflow -->
             <div class="canvas-area">
+                <!-- Badge de multi-seleção -->
+                <div class="multi-sel-badge" id="multiSelBadge">
+                    <ion-icon name="checkmark-done-outline"></ion-icon>
+                    <span id="multiSelCount">0</span> nó(s) selecionado(s)
+                </div>
                 <div id="drawflowCanvas"></div>
 
                 <!-- Painel editor do nó selecionado -->
@@ -1664,6 +1698,7 @@ try {
     var dfToSimp = {};                // Drawflow ID → SIMP CD_CHAVE
     var simpToDf = {};                // SIMP CD_CHAVE → Drawflow ID
     var noSelecionadoCd = null;       // CD_CHAVE do nó selecionado no editor
+    var nosSelecionados = [];          // Array de CD_CHAVEs selecionados (multi-seleção com Ctrl)
     var sincronizando = false;        // Flag para evitar loops de eventos
     var posDebounce = {};             // Debounce para salvar posição
 
@@ -1743,18 +1778,73 @@ try {
 
         /* --- Eventos --- */
 
-        /* Nó selecionado: abrir editor lateral */
+        /**
+         * Nó selecionado — suporte a multi-seleção com Ctrl/Cmd
+         * Ctrl+Click: adiciona/remove do conjunto de selecionados
+         * Click simples: seleciona apenas este nó (limpa anteriores)
+         */
         editor.on('nodeSelected', function (dfId) {
             var cd = dfToSimp[dfId];
-            if (cd) abrirEditor(cd);
-            atualizarBotoesToolbar(cd);
+            if (!cd) return;
+
+            /* Verificar se Ctrl (ou Cmd no Mac) estava pressionado */
+            var ctrlPressed = window._lastClickCtrl || false;
+
+            if (ctrlPressed) {
+                /* Toggle: se já está na lista, remove; senão, adiciona */
+                var idx = nosSelecionados.indexOf(cd);
+                if (idx >= 0) {
+                    nosSelecionados.splice(idx, 1);
+                    removerClasseMultiSel(cd);
+                    /* Se removeu o último do editor, fecha */
+                    if (noSelecionadoCd == cd) {
+                        noSelecionadoCd = nosSelecionados.length > 0 ? nosSelecionados[nosSelecionados.length - 1] : null;
+                        if (noSelecionadoCd) abrirEditor(noSelecionadoCd);
+                        else fecharEditor();
+                    }
+                } else {
+                    nosSelecionados.push(cd);
+                    adicionarClasseMultiSel(cd);
+                    noSelecionadoCd = cd;
+                    abrirEditor(cd);
+                }
+            } else {
+                /* Clique simples: limpa seleção anterior */
+                limparMultiSelecao();
+                nosSelecionados = [cd];
+                noSelecionadoCd = cd;
+                adicionarClasseMultiSel(cd);
+                abrirEditor(cd);
+            }
+
+            atualizarBadgeMultiSel();
+            atualizarBotoesToolbar(noSelecionadoCd);
         });
 
-        /* Nó deselecionado: fechar editor */
+        /* Nó deselecionado (clique no canvas vazio) */
         editor.on('nodeUnselected', function () {
-            fecharEditor();
-            atualizarBotoesToolbar(null);
+            /* Só limpa se NÃO estiver segurando Ctrl */
+            if (!window._lastClickCtrl) {
+                limparMultiSelecao();
+                nosSelecionados = [];
+                noSelecionadoCd = null;
+                fecharEditor();
+                atualizarBadgeMultiSel();
+                atualizarBotoesToolbar(null);
+            }
         });
+
+        /**
+         * Capturar estado do Ctrl/Cmd em cada clique no canvas
+         * Necessário porque Drawflow não passa o evento original
+         */
+        container.addEventListener('mousedown', function (ev) {
+            window._lastClickCtrl = ev.ctrlKey || ev.metaKey;
+        }, true);
+        container.addEventListener('mouseup', function () {
+            /* Limpar flag após processamento dos eventos Drawflow */
+            setTimeout(function () { window._lastClickCtrl = false; }, 50);
+        }, true);
 
         /* Nó movido: salvar posição com debounce */
         editor.on('nodeMoved', function (dfId) {
@@ -1794,6 +1884,45 @@ try {
             if (ev.target.closest('.drawflow-node')) return;
             abrirModalCriarNo();
         });
+    }
+
+    /* ============================================
+       Multi-seleção — Funções auxiliares
+       ============================================ */
+
+    /** Adiciona classe visual de multi-seleção ao nó */
+    function adicionarClasseMultiSel(cd) {
+        var dfId = simpToDf[cd];
+        if (!dfId) return;
+        var el = document.getElementById('node-' + dfId);
+        if (el) el.classList.add('multi-selected');
+    }
+
+    /** Remove classe visual de multi-seleção do nó */
+    function removerClasseMultiSel(cd) {
+        var dfId = simpToDf[cd];
+        if (!dfId) return;
+        var el = document.getElementById('node-' + dfId);
+        if (el) el.classList.remove('multi-selected');
+    }
+
+    /** Limpa toda a seleção visual */
+    function limparMultiSelecao() {
+        document.querySelectorAll('.drawflow-node.multi-selected').forEach(function (el) {
+            el.classList.remove('multi-selected');
+        });
+    }
+
+    /** Atualiza o badge indicador de quantidade selecionada */
+    function atualizarBadgeMultiSel() {
+        var badge = document.getElementById('multiSelBadge');
+        var count = document.getElementById('multiSelCount');
+        if (nosSelecionados.length > 1) {
+            count.textContent = nosSelecionados.length;
+            badge.classList.add('visible');
+        } else {
+            badge.classList.remove('visible');
+        }
     }
 
     /* ============================================
@@ -2289,28 +2418,111 @@ try {
             }).catch(function () { toast('Erro', 'err') });
     }
 
-    /** Excluir nó ou conexão selecionada */
-    function excluirSelecionado() {
-        if (!noSelecionadoCd) { toast('Selecione um nó primeiro', 'inf'); return; }
-        var no = flat.find(function (n) { return n.CD_CHAVE == noSelecionadoCd });
-        if (!no) return;
+    /**
+     * Excluir nós selecionados (suporte a multi-seleção)
+     * - 1 nó: comportamento original (soft/cascade)
+     * - Vários nós: confirmação em lote, exclusão sequencial
+     */
+    function excluirSelecionados() {
+        if (!nosSelecionados.length) { toast('Selecione ao menos um nó', 'inf'); return; }
 
-        var jaInativo = no.OP_ATIVO == 0;
-        var msg = jaInativo
-            ? 'EXCLUIR PERMANENTEMENTE "' + no.DS_NOME + '" e seus descendentes?\n\nEssa ação não pode ser desfeita!'
-            : 'Desativar "' + no.DS_NOME + '" e seus descendentes?';
+        /* === Exclusão de um único nó (comportamento original) === */
+        if (nosSelecionados.length === 1) {
+            var cd = nosSelecionados[0];
+            var no = flat.find(function (n) { return n.CD_CHAVE == cd; });
+            if (!no) return;
+
+            var jaInativo = no.OP_ATIVO == 0;
+            var msg = jaInativo
+                ? 'EXCLUIR PERMANENTEMENTE "' + no.DS_NOME + '" e seus descendentes?\n\nEssa ação não pode ser desfeita!'
+                : 'Desativar "' + no.DS_NOME + '" e seus descendentes?';
+
+            if (!confirm(msg)) return;
+
+            var fd = new FormData();
+            fd.append('cd', cd);
+            fd.append('modo', jaInativo ? 'cascade' : 'soft');
+            fetch('bd/entidadeCascata/excluirNodo.php', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d.success) {
+                        toast(d.message, 'ok');
+                        limparSelecaoCompleta();
+                        carregarDados();
+                    } else toast(d.message, 'err');
+                }).catch(function () { toast('Erro ao excluir', 'err'); });
+            return;
+        }
+
+        /* === Exclusão em lote (múltiplos nós) === */
+        var nomes = [];
+        var ativos = [];
+        var inativos = [];
+
+        nosSelecionados.forEach(function (cd) {
+            var no = flat.find(function (n) { return n.CD_CHAVE == cd; });
+            if (!no) return;
+            nomes.push('• ' + no.DS_NOME);
+            if (no.OP_ATIVO == 0) inativos.push(cd);
+            else ativos.push(cd);
+        });
+
+        /* Montar mensagem de confirmação */
+        var msg = 'Excluir ' + nosSelecionados.length + ' nó(s) selecionado(s)?\n\n' + nomes.join('\n');
+        if (ativos.length > 0 && inativos.length > 0) {
+            msg += '\n\n⚠ ' + ativos.length + ' ativo(s) serão desativados e ' + inativos.length + ' inativo(s) serão excluídos permanentemente.';
+        } else if (inativos.length > 0) {
+            msg += '\n\n⚠ EXCLUSÃO PERMANENTE — esta ação não pode ser desfeita!';
+        }
 
         if (!confirm(msg)) return;
 
-        var fd = new FormData();
-        fd.append('cd', noSelecionadoCd);
-        fd.append('modo', jaInativo ? 'cascade' : 'soft');
-        fetch('bd/entidadeCascata/excluirNodo.php', { method: 'POST', body: fd })
-            .then(function (r) { return r.json() })
-            .then(function (d) {
-                if (d.success) { toast(d.message, 'ok'); fecharEditor(); carregarDados(); }
-                else toast(d.message, 'err');
-            }).catch(function () { toast('Erro', 'err') });
+        /* Processar exclusões sequencialmente */
+        var fila = nosSelecionados.slice(); // Cópia do array
+        var sucesso = 0;
+        var erros = 0;
+
+        function processarProximo() {
+            if (fila.length === 0) {
+                /* Todas processadas — exibir resultado */
+                if (sucesso > 0) toast(sucesso + ' nó(s) excluído(s) com sucesso', 'ok');
+                if (erros > 0) toast(erros + ' nó(s) com erro na exclusão', 'err');
+                limparSelecaoCompleta();
+                carregarDados();
+                return;
+            }
+
+            var cd = fila.shift();
+            var no = flat.find(function (n) { return n.CD_CHAVE == cd; });
+            var modo = (no && no.OP_ATIVO == 0) ? 'cascade' : 'soft';
+
+            var fd = new FormData();
+            fd.append('cd', cd);
+            fd.append('modo', modo);
+
+            fetch('bd/entidadeCascata/excluirNodo.php', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d.success) sucesso++;
+                    else erros++;
+                    processarProximo();
+                }).catch(function () {
+                    erros++;
+                    processarProximo();
+                });
+        }
+
+        processarProximo();
+    }
+
+    /** Limpa toda a seleção e fecha o editor */
+    function limparSelecaoCompleta() {
+        limparMultiSelecao();
+        nosSelecionados = [];
+        noSelecionadoCd = null;
+        fecharEditor();
+        atualizarBadgeMultiSel();
+        atualizarBotoesToolbar(null);
     }
 
     /** Restaurar nó desativado */
@@ -2330,26 +2542,40 @@ try {
             }).catch(function () { toast('Erro', 'err') });
     }
 
-    /** Botões Excluir/Restaurar na toolbar */
+    /** Botões Excluir/Restaurar na toolbar (suporte multi-seleção) */
     function atualizarBotoesToolbar(cd) {
         var btnExcl = document.getElementById('btnExcluir');
         var btnRest = document.getElementById('btnRestaurar');
+        var btnTxt = document.getElementById('btnExcluirTxt');
         if (!btnExcl) return;
-        if (!cd) {
+
+        /* Nenhum selecionado */
+        if (!nosSelecionados.length) {
             btnExcl.style.display = 'none';
             btnRest.style.display = 'none';
             return;
         }
-        var no = flat.find(function (n) { return n.CD_CHAVE == cd });
+
+        /* Multi-seleção (2+) */
+        if (nosSelecionados.length > 1) {
+            btnExcl.style.display = 'flex';
+            btnTxt.textContent = 'Excluir (' + nosSelecionados.length + ')';
+            btnExcl.title = 'Excluir ' + nosSelecionados.length + ' nós selecionados';
+            btnRest.style.display = 'none'; /* Restaurar em lote não suportado por enquanto */
+            return;
+        }
+
+        /* Seleção única — comportamento original */
+        var no = flat.find(function (n) { return n.CD_CHAVE == cd; });
         if (!no) return;
         if (no.OP_ATIVO == 0) {
             btnExcl.style.display = 'flex';
-            btnExcl.innerHTML = '<ion-icon name="trash-outline"></ion-icon> Excluir Definitivo';
+            btnTxt.textContent = 'Excluir Definitivo';
             btnExcl.title = 'Exclusão física permanente';
             btnRest.style.display = 'flex';
         } else {
             btnExcl.style.display = 'flex';
-            btnExcl.innerHTML = '<ion-icon name="trash-outline"></ion-icon> Excluir';
+            btnTxt.textContent = 'Excluir';
             btnExcl.title = 'Desativar nó';
             btnRest.style.display = 'none';
         }
@@ -2800,7 +3026,7 @@ try {
         if ((e.key === 'Delete' || e.key === 'Backspace') && noSelecionadoCd && podeEditar) {
             /* Não excluir se foco em input */
             if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;
-            excluirSelecionado();
+            excluirSelecionados();
         }
     });
 
