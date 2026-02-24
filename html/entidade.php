@@ -785,6 +785,17 @@ try {
         border-color: #fca5a5;
     }
 
+    /* Highlight amarelo para itens que também atendem ao filtro */
+    .item-row.item-match-highlight {
+        background: #fef9c3 !important;
+        border-color: #facc15 !important;
+        box-shadow: 0 0 0 1px #facc15;
+    }
+
+    .item-row.item-match-highlight:hover {
+        background: #fef08a !important;
+    }
+
     /* Spinner para lazy load */
     @keyframes spin {
         from {
@@ -1101,8 +1112,7 @@ try {
     }
 
     // ============================================
-    // Sistema de Filtros - VERSÃO 3 CORRIGIDA
-    // Substituir a função aplicarFiltros() em entidade.php
+    // FUNCAO 1: aplicarFiltros - SUBSTITUIR TODA
     // ============================================
 
     function aplicarFiltros() {
@@ -1122,6 +1132,10 @@ try {
         document.querySelectorAll('.filtro-match, .filtro-match-direto').forEach(el => {
             el.classList.remove('filtro-match', 'filtro-match-direto');
         });
+        // Limpar highlight amarelo dos itens
+        document.querySelectorAll('.item-match-highlight').forEach(el => {
+            el.classList.remove('item-match-highlight');
+        });
 
         tipoCards.forEach(tipoCard => {
             const tipoNome = normalizarTexto(tipoCard.dataset.tipoNome || '');
@@ -1138,7 +1152,7 @@ try {
                 return;
             }
 
-            // Se não há busca textual e não há filtro de favoritos, mostrar tipo e processar valores
+            // Se nao ha busca textual e nao ha filtro de favoritos, mostrar tipo e processar valores
             if (!termoBusca && filtroFavoritos === 'todos' && filtroDescarte === 'todos') {
                 tipoCard.classList.remove('filtro-oculto');
                 totalTiposVisiveis++;
@@ -1154,7 +1168,7 @@ try {
                 return;
             }
 
-            // Verificar se o Tipo dá match direto
+            // Verificar se o Tipo da match direto
             let tipoMatchDireto = termoBusca && (tipoNome.includes(termoBusca) || tipoId.includes(termoBusca));
             let tipoTemFilhoVisivel = false;
 
@@ -1170,65 +1184,86 @@ try {
                     return;
                 }
 
-                // Verificar se Valor/Unidade dá match direto
+                // Verificar se Valor/Unidade da match direto
                 let valorMatchDireto = termoBusca && (valorNome.includes(termoBusca) || valorId.includes(termoBusca));
                 let valorTemFilhoVisivel = false;
 
-                // Verificar itens dentro do valor (se já carregados via lazy load)
+                // Verificar itens dentro do valor (se ja carregados via lazy load)
                 const cdValor = valorCard.id.replace('valor-', '');
                 const body = document.getElementById('valor-body-' + cdValor);
                 const itensCarregados = body && body.dataset.loaded === '1';
                 const itens = valorCard.querySelectorAll('.item-row');
 
+                // Se itens ja carregados, processar visibilidade e highlight
                 if (itensCarregados && itens.length > 0) {
+                    // Match herdado do pai (tipo ou valor)?
+                    const matchPai = valorMatchDireto || tipoMatchDireto;
+
                     itens.forEach(itemRow => {
-                        itemRow.classList.remove('filtro-oculto', 'filtro-match', 'filtro-match-direto');
-                        // Remover badges anteriores
+                        itemRow.classList.remove('filtro-oculto', 'filtro-match', 'filtro-match-direto', 'item-match-highlight');
                         itemRow.querySelectorAll('.badge-match').forEach(b => b.remove());
 
-                        let itemVisivel = !termoBusca; // Se não tem busca, todos visíveis
+                        if (!termoBusca) {
+                            // Sem busca: todos visiveis
+                            valorTemFilhoVisivel = true;
+                            totalItensVisiveis++;
+                            return;
+                        }
 
-                        if (termoBusca) {
-                            // FIX: usar termoBusca (não "termo")
-                            const itemMatch = verificarMatchItem(itemRow, termoBusca);
+                        const itemMatch = verificarMatchItem(itemRow, termoBusca);
 
+                        if (matchPai) {
+                            // Match no pai: TODOS os itens ficam visiveis
+                            valorTemFilhoVisivel = true;
+                            totalItensVisiveis++;
+
+                            // Se o item TAMBEM atende ao filtro, highlight amarelo
                             if (itemMatch) {
-                                itemVisivel = true;
-                                itemRow.classList.add('filtro-match', 'filtro-match-direto');
+                                itemRow.classList.add('item-match-highlight', 'filtro-match', 'filtro-match-direto');
                                 const campo = getMatchField(itemRow, termoBusca);
                                 adicionarBadgeMatchItem(itemRow, 'ponto', campo);
                             }
-                        }
-
-                        if (!itemVisivel) {
-                            itemRow.classList.add('filtro-oculto');
-                        } else {
+                        } else if (itemMatch) {
+                            // Match direto no item (sem match no pai)
+                            itemRow.classList.add('filtro-match', 'filtro-match-direto', 'item-match-highlight');
+                            const campo = getMatchField(itemRow, termoBusca);
+                            adicionarBadgeMatchItem(itemRow, 'ponto', campo);
                             valorTemFilhoVisivel = true;
                             totalItensVisiveis++;
+                        } else {
+                            // Sem match: marca para decisão posterior
+                            itemRow.classList.add('filtro-sem-match');
                         }
                     });
-                }
 
-                // Expandir valor se tem item com match
-                if (valorTemFilhoVisivel && termoBusca) {
-                    valorCard.classList.add('expanded');
-                    // Carregar itens se ainda não carregou (para mostrar os matches)
-                    if (!itensCarregados) {
-                        carregarItensValor(cdValor);
+                    // Se algum item deu match, mostrar TODOS os irmãos (contexto completo)
+                    // Caso contrário, esconder todos
+                    if (valorTemFilhoVisivel) {
+                        // Contabilizar os itens sem match que ficaram visíveis
+                        valorCard.querySelectorAll('.item-row.filtro-sem-match').forEach(ir => {
+                            ir.classList.remove('filtro-sem-match');
+                            totalItensVisiveis++;
+                        });
+                    } else {
+                        valorCard.querySelectorAll('.item-row.filtro-sem-match').forEach(ir => {
+                            ir.classList.remove('filtro-sem-match');
+                            ir.classList.add('filtro-oculto');
+                        });
                     }
                 }
-
-                // Valor visível se: ele mesmo deu match OU tem filho visível OU tipo deu match
-                let valorVisivel = valorMatchDireto || valorTemFilhoVisivel || tipoMatchDireto || !termoBusca;
 
                 // Verificar se servidor indicou match de itens neste valor (lazy load)
                 const itemMatchServidor = valorCard.hasAttribute('data-item-match');
                 if (itemMatchServidor && termoBusca) {
                     valorTemFilhoVisivel = true;
-                    valorVisivel = true;
-                    const totalMatchServidor = parseInt(valorCard.getAttribute('data-item-match') || '0');
-                    totalItensVisiveis += totalMatchServidor;
+                    if (!itensCarregados) {
+                        const totalMatchServidor = parseInt(valorCard.getAttribute('data-item-match') || '0');
+                        totalItensVisiveis += totalMatchServidor;
+                    }
                 }
+
+                // Valor visivel se: ele mesmo deu match OU tem filho visivel OU tipo deu match
+                let valorVisivel = valorMatchDireto || valorTemFilhoVisivel || tipoMatchDireto || !termoBusca;
 
                 // Mas apenas se passar pelo filtro de favoritos
                 if (filtroFavoritos === 'favoritos' && !isFavorito) {
@@ -1244,24 +1279,17 @@ try {
                         if (valorMatchDireto) {
                             valorCard.classList.add('filtro-match', 'filtro-match-direto');
                             adicionarBadgeMatchValor(valorCard, 'unidade');
-                            // Match direto no valor: expandir e carregar itens
+                            // Match direto no valor: expandir
                             valorCard.classList.add('expanded');
-                            if (!itensCarregados) {
-                                carregarItensValor(cdValor);
-                            }
                         } else if (tipoMatchDireto) {
                             valorCard.classList.add('filtro-match');
                             adicionarBadgeMatchValor(valorCard, 'tipo');
-                            // Match no tipo: NÃO expandir automaticamente
-                            // (pode ter centenas de valores - usuário expande manualmente)
+                            // Match no tipo: NAO expandir (pode ter centenas)
                         }
 
-                        // Match nos itens (server-side): expandir e carregar
+                        // Match nos itens (server-side): expandir
                         if (itemMatchServidor) {
                             valorCard.classList.add('expanded');
-                            if (!itensCarregados) {
-                                carregarItensValor(cdValor);
-                            }
                         }
                     }
                 } else {
@@ -1269,7 +1297,7 @@ try {
                 }
             });
 
-            // Tipo visível se: ele mesmo deu match ou tem filho visível
+            // Tipo visivel se: ele mesmo deu match ou tem filho visivel
             if (tipoMatchDireto || tipoTemFilhoVisivel) {
                 tipoCard.classList.remove('filtro-oculto');
                 totalTiposVisiveis++;
@@ -1279,7 +1307,7 @@ try {
                     adicionarBadgeMatchTipo(tipoCard, 'tipo');
                 }
 
-                // Expandir tipo se tem valor visível
+                // Expandir tipo se tem valor visivel
                 if (tipoTemFilhoVisivel && termoBusca) {
                     tipoCard.classList.add('expanded');
                 }
@@ -1290,6 +1318,30 @@ try {
 
         // Atualizar contagem de resultados
         atualizarContagemFiltro(termoBusca, filtroDescarte, filtroFavoritos, totalTiposVisiveis, totalValoresVisiveis, totalItensVisiveis);
+
+        // PASSO FINAL: Disparar lazy load para todos os valores expandidos que ainda nao carregaram
+        // Executa apos um pequeno delay para garantir que o DOM ja foi atualizado
+        setTimeout(carregarItensValoresExpandidos, 50);
+    }
+
+    // ============================================
+    // FUNCAO 2: carregarItensValoresExpandidos - ADICIONAR LOGO APOS aplicarFiltros
+    // ============================================
+
+    /**
+     * Percorre todos os valor-cards expandidos e dispara o lazy load
+     * para os que ainda nao tiveram seus itens carregados.
+     * Chamado ao final de aplicarFiltros() para garantir carregamento.
+     */
+    function carregarItensValoresExpandidos() {
+        const valoresExpandidos = document.querySelectorAll('.valor-card.expanded:not(.filtro-oculto)');
+        valoresExpandidos.forEach(valorCard => {
+            const cdValor = valorCard.id.replace('valor-', '');
+            const body = document.getElementById('valor-body-' + cdValor);
+            if (body && body.dataset.loaded !== '1') {
+                carregarItensValor(cdValor);
+            }
+        });
     }
 
     // Criar elemento badge
@@ -2328,10 +2380,14 @@ try {
         return div.innerHTML;
     }
 
+    // ============================================
+    // FUNCAO 3: aplicarFiltrosItensCarregados - SUBSTITUIR TODA
+    // ============================================
+
     /**
-     * Aplica filtros nos itens recém-carregados de um valor específico.
-     * Se o match foi no tipo ou valor pai, TODOS os itens ficam visíveis.
-     * Se o match foi nos itens, só mostra os que correspondem.
+     * Aplica filtros nos itens recem-carregados de um valor especifico.
+     * Se o match foi no tipo ou valor pai, TODOS os itens ficam visiveis.
+     * Itens que TAMBEM atendem ao filtro recebem highlight amarelo.
      */
     function aplicarFiltrosItensCarregados(cdValor) {
         const termo = normalizarTexto(document.getElementById('filtroBusca').value.trim());
@@ -2340,7 +2396,7 @@ try {
         const valorCard = document.getElementById('valor-' + cdValor);
         if (!valorCard) return;
 
-        // Verificar se o match é no valor ou no tipo pai (herança)
+        // Verificar se o match eh no valor ou no tipo pai (heranca)
         const valorNome = normalizarTexto(valorCard.dataset.valorNome || '');
         const valorId = normalizarTexto(valorCard.dataset.valorId || '');
         const tipoCard = valorCard.closest('.tipo-card');
@@ -2349,23 +2405,46 @@ try {
 
         const matchNoValor = valorNome.includes(termo) || valorId.includes(termo);
         const matchNoTipo = tipoNome.includes(termo) || tipoId.includes(termo);
+        const matchPai = matchNoValor || matchNoTipo;
 
         const itensRows = valorCard.querySelectorAll('.item-row');
 
-        if (matchNoValor || matchNoTipo) {
-            // Match herdado do pai: TODOS os itens ficam visíveis
-            itensRows.forEach(itemRow => {
-                itemRow.classList.remove('filtro-oculto');
+        itensRows.forEach(itemRow => {
+            // Limpar estado anterior
+            itemRow.classList.remove('filtro-oculto', 'filtro-match', 'filtro-match-direto', 'item-match-highlight');
+            itemRow.querySelectorAll('.badge-match').forEach(b => b.remove());
+
+            const itemMatch = verificarMatchItem(itemRow, termo);
+
+            if (matchPai) {
+                // Match herdado do pai: TODOS os itens ficam visiveis
+                // Se o item TAMBEM atende ao filtro, highlight amarelo
+                if (itemMatch) {
+                    itemRow.classList.add('item-match-highlight', 'filtro-match', 'filtro-match-direto');
+                    const campo = getMatchField(itemRow, termo);
+                    adicionarBadgeMatchItem(itemRow, 'ponto', campo);
+                }
+            } else if (itemMatch) {
+                // Match direto no item
+                itemRow.classList.add('item-match-highlight', 'filtro-match', 'filtro-match-direto');
+                const campo = getMatchField(itemRow, termo);
+                adicionarBadgeMatchItem(itemRow, 'ponto', campo);
+            } else {
+                // Sem match direto: marca para decisão posterior
+                itemRow.classList.add('filtro-sem-match');
+            }
+        });
+
+        // Se algum item deu match OU match no pai, mostrar TODOS os irmãos
+        const algumMatch = matchPai || valorCard.querySelector('.item-row.item-match-highlight');
+        if (algumMatch) {
+            valorCard.querySelectorAll('.item-row.filtro-sem-match').forEach(ir => {
+                ir.classList.remove('filtro-sem-match');
             });
         } else {
-            // Match nos itens: só mostra os que correspondem
-            itensRows.forEach(itemRow => {
-                const match = verificarMatchItem(itemRow, termo);
-                if (!match) {
-                    itemRow.classList.add('filtro-oculto');
-                } else {
-                    itemRow.classList.add('filtro-match', 'filtro-match-direto');
-                }
+            valorCard.querySelectorAll('.item-row.filtro-sem-match').forEach(ir => {
+                ir.classList.remove('filtro-sem-match');
+                ir.classList.add('filtro-oculto');
             });
         }
     }
