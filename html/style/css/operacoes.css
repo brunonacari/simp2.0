@@ -1997,8 +1997,9 @@ input[type="date"].form-control {
     background: #8b5cf6;
 }
 
+/* Legenda TensorFlow com listra (padrão tracejado igual ao sugeridos) */
 .controle-cor.tensorflow {
-    background: #ef4444;
+    background: repeating-linear-gradient(90deg, #ef4444, #fffbeb 4px, transparent 4px, transparent 8px);
 }
 
 .grafico-controle-item .controle-label {

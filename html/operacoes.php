@@ -500,7 +500,7 @@ $letrasTipoMedidor = [
                     </label>
                     <label class="grafico-controle-item" id="controleTensorFlow" style="display:none;">
                         <input type="checkbox" id="chkTensorFlow" checked onchange="toggleLinhaGrafico('tensorflow')">
-                        <span class="controle-cor" style="background:#ef4444;"></span>
+                        <span class="controle-cor tensorflow"></span>
                         <span class="controle-label">TensorFlow</span>
                         <!-- Ícone indicador de modelo treinado (visível somente se não for fallback) -->
                         <ion-icon name="checkmark-circle" id="iconTensorFlowTreinado"
@@ -524,7 +524,7 @@ $letrasTipoMedidor = [
                     </button>
                 </div>
 
-                <!-- àârea de valores sugeridos -->
+                <!-- Área de valores sugeridos -->
                 <div class="valores-sugeridos-container" id="valoresSugeridosContainer" style="display: none;">
                     <div class="valores-sugeridos-header">
                         <h4><ion-icon name="analytics-outline"></ion-icon> Valores Sugeridos</h4>
