@@ -1010,17 +1010,75 @@
 
  /* ========================================
    Grid de campos dinâmicos do modal Instrumentos
-   Força inline-block nos form-group gerados via JS
+   Usa CSS Grid para alinhamento consistente
    ======================================== */
 #instrCampos {
+    display: flex;
+    flex-wrap: wrap;
     margin: 0 -6px;
 }
+
 #instrCampos .form-group {
-    display: inline-block !important;
-    vertical-align: top !important;
     box-sizing: border-box !important;
     padding: 0 6px !important;
     margin-bottom: 12px !important;
+    /* Tamanho padrão: 3 colunas (33.33%) */
+    flex: 0 0 33.333%;
+    max-width: 33.333%;
+}
+
+/* Classes col geradas pelo instrInput */
+#instrCampos .form-group.col-4 {
+    flex: 0 0 33.333%;
+    max-width: 33.333%;
+}
+
+#instrCampos .form-group.col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+}
+
+#instrCampos .form-group.col-8 {
+    flex: 0 0 66.666%;
+    max-width: 66.666%;
+}
+
+#instrCampos .form-group.col-12 {
+    flex: 0 0 100%;
+    max-width: 100%;
+}
+
+/* Responsivo: 2 colunas em tablets */
+@media (max-width: 768px) {
+    #instrCampos .form-group,
+    #instrCampos .form-group.col-4,
+    #instrCampos .form-group.col-6 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    #instrCampos .form-group.col-8,
+    #instrCampos .form-group.col-12 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+/* Responsivo: 1 coluna no mobile */
+@media (max-width: 480px) {
+    #instrCampos .form-group,
+    #instrCampos .form-group.col-4,
+    #instrCampos .form-group.col-6,
+    #instrCampos .form-group.col-8 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+/* Override do width inline dos selects para respeitar o flex */
+#instrCampos .form-group[style] {
+    flex: unset !important;
+    max-width: none !important;
 }
 
  /* Cabeçalho modal Instrumentos - padrão gradiente azul */
@@ -1045,149 +1103,237 @@
  }
 
  #modalInstrumento .modal-header {
-    border-radius: 12px 12px 0 0;
-}
+     border-radius: 12px 12px 0 0;
+ }
 
-/* ========================================
+ /* ========================================
+   Responsividade do Modal Instrumentos
+   Garante scroll interno e adaptação em telas menores
+   ======================================== */
+ #modalInstrumento .modal {
+     display: flex;
+     flex-direction: column;
+     max-height: 90vh;
+     overflow: hidden !important;
+     /* Override do visible para conter o conteúdo */
+ }
+
+ #modalInstrumento .modal-body {
+     overflow-y: auto !important;
+     /* Scroll vertical no body */
+     overflow-x: hidden !important;
+     flex: 1;
+     min-height: 0;
+     /* Permite flex shrink corretamente */
+     max-height: calc(90vh - 140px);
+     /* Desconta header + footer */
+ }
+
+ #modalInstrumento .modal-footer {
+     flex-shrink: 0;
+     /* Footer sempre visível, nunca encolhe */
+ }
+
+ /* Em telas pequenas, modal ocupa mais espaço */
+ @media (max-width: 768px) {
+     #modalInstrumento .modal {
+         max-width: 95% !important;
+         max-height: 95vh;
+         margin: 10px auto;
+     }
+
+     #modalInstrumento .modal-body {
+         max-height: calc(95vh - 130px);
+         padding: 16px;
+     }
+
+     /* Campos em coluna única no mobile */
+     #instrCampos .form-group {
+         width: 100% !important;
+     }
+ }
+
+ @media (max-width: 480px) {
+     #modalInstrumento .modal {
+         max-width: 100% !important;
+         max-height: 100vh;
+         border-radius: 0;
+         margin: 0;
+     }
+
+     #modalInstrumento .modal-header {
+         border-radius: 0;
+     }
+
+     #modalInstrumento .modal-body {
+         max-height: calc(100vh - 120px);
+         padding: 12px;
+     }
+ }
+
+ /* ========================================
    Select2 dentro do modal de Instrumentos
    Padrão idêntico ao pontoMedicao.php
    ======================================== */
-#modalInstrumento .select2-container {
-    width: 100% !important;
-}
-#modalInstrumento .select2-container--default .select2-selection--single {
-    height: 42px;
-    padding: 6px 12px;
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    transition: all 0.2s ease;
-}
-#modalInstrumento .select2-container--default .select2-selection--single:hover {
-    border-color: #cbd5e1;
-}
-#modalInstrumento .select2-container--default .select2-selection--single .select2-selection__rendered {
-    line-height: 1;
-    padding-left: 0;
-    padding-right: 28px;
-    color: #334155;
-}
-#modalInstrumento .select2-container--default .select2-selection--single .select2-selection__placeholder {
-    color: #94a3b8;
-}
-#modalInstrumento .select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: 42px;
-    right: 10px;
-}
-#modalInstrumento .select2-container--default.select2-container--focus .select2-selection--single,
-#modalInstrumento .select2-container--default.select2-container--open .select2-selection--single {
-    background-color: #ffffff;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-#modalInstrumento .select2-container--default .select2-selection--single .select2-selection__clear {
-    color: #94a3b8;
-    font-size: 18px;
-    margin-right: 8px;
-    cursor: pointer;
-}
-#modalInstrumento .select2-container--default .select2-selection--single .select2-selection__clear:hover {
-    color: #ef4444;
-}
+ #modalInstrumento .select2-container {
+     width: 100% !important;
+ }
 
-/* Select2 dropdown (renderiza no body, fora do modal) */
-.select2-dropdown {
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
-    overflow: hidden;
-    margin-top: 4px;
-}
-.select2-search--dropdown {
-    padding: 10px;
-}
-.select2-search--dropdown .select2-search__field {
-    padding: 10px 14px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 13px;
-    font-family: inherit;
-    outline: none;
-    width: 100%;
-    box-sizing: border-box;
-    transition: all 0.2s ease;
-}
-.select2-search--dropdown .select2-search__field:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-.select2-results__options {
-    max-height: 250px;
-    overflow-y: auto;
-}
-.select2-container--default .select2-results__option {
-    padding: 10px 14px;
-    font-size: 13px;
-    color: #334155;
-    transition: background 0.15s ease;
-}
-.select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background-color: #3b82f6;
-    color: #ffffff;
-}
-.select2-container--default .select2-results__option[aria-selected="true"] {
-    background-color: #eff6ff;
-    color: #1e40af;
-}
-.select2-results__message {
-    padding: 12px 14px;
-    color: #64748b;
-    font-size: 13px;
-}
+ #modalInstrumento .select2-container--default .select2-selection--single {
+     height: 42px;
+     padding: 6px 12px;
+     background-color: #f8fafc;
+     border: 1px solid #e2e8f0;
+     border-radius: 10px;
+     font-size: 13px;
+     display: flex;
+     align-items: center;
+     transition: all 0.2s ease;
+ }
 
-/* Select2 no filtro de instrumentos */
-.filters-grid .select2-container--default .select2-selection--single {
-    height: 42px;
-    padding: 6px 12px;
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    transition: all 0.2s ease;
-}
-.filters-grid .select2-container--default .select2-selection--single:hover {
-    border-color: #cbd5e1;
-}
-.filters-grid .select2-container--default .select2-selection--single .select2-selection__rendered {
-    line-height: 1;
-    padding-left: 0;
-    padding-right: 28px;
-    color: #334155;
-}
-.filters-grid .select2-container--default .select2-selection--single .select2-selection__placeholder {
-    color: #94a3b8;
-}
-.filters-grid .select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: 42px;
-    right: 10px;
-}
-.filters-grid .select2-container--default.select2-container--focus .select2-selection--single,
-.filters-grid .select2-container--default.select2-container--open .select2-selection--single {
-    background-color: #ffffff;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-.filters-grid .select2-container--default .select2-selection--single .select2-selection__clear {
-    color: #94a3b8;
-    font-size: 18px;
-    margin-right: 8px;
-    cursor: pointer;
-}
-.filters-grid .select2-container--default .select2-selection--single .select2-selection__clear:hover {
-    color: #ef4444;
-}
+ #modalInstrumento .select2-container--default .select2-selection--single:hover {
+     border-color: #cbd5e1;
+ }
+
+ #modalInstrumento .select2-container--default .select2-selection--single .select2-selection__rendered {
+     line-height: 1;
+     padding-left: 0;
+     padding-right: 28px;
+     color: #334155;
+ }
+
+ #modalInstrumento .select2-container--default .select2-selection--single .select2-selection__placeholder {
+     color: #94a3b8;
+ }
+
+ #modalInstrumento .select2-container--default .select2-selection--single .select2-selection__arrow {
+     height: 42px;
+     right: 10px;
+ }
+
+ #modalInstrumento .select2-container--default.select2-container--focus .select2-selection--single,
+ #modalInstrumento .select2-container--default.select2-container--open .select2-selection--single {
+     background-color: #ffffff;
+     border-color: #3b82f6;
+     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+ }
+
+ #modalInstrumento .select2-container--default .select2-selection--single .select2-selection__clear {
+     color: #94a3b8;
+     font-size: 18px;
+     margin-right: 8px;
+     cursor: pointer;
+ }
+
+ #modalInstrumento .select2-container--default .select2-selection--single .select2-selection__clear:hover {
+     color: #ef4444;
+ }
+
+ /* Select2 dropdown (renderiza no body, fora do modal) */
+ .select2-dropdown {
+     border: 1px solid #e2e8f0;
+     border-radius: 10px;
+     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+     overflow: hidden;
+     margin-top: 4px;
+ }
+
+ .select2-search--dropdown {
+     padding: 10px;
+ }
+
+ .select2-search--dropdown .select2-search__field {
+     padding: 10px 14px;
+     border: 1px solid #e2e8f0;
+     border-radius: 8px;
+     font-size: 13px;
+     font-family: inherit;
+     outline: none;
+     width: 100%;
+     box-sizing: border-box;
+     transition: all 0.2s ease;
+ }
+
+ .select2-search--dropdown .select2-search__field:focus {
+     border-color: #3b82f6;
+     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+ }
+
+ .select2-results__options {
+     max-height: 250px;
+     overflow-y: auto;
+ }
+
+ .select2-container--default .select2-results__option {
+     padding: 10px 14px;
+     font-size: 13px;
+     color: #334155;
+     transition: background 0.15s ease;
+ }
+
+ .select2-container--default .select2-results__option--highlighted[aria-selected] {
+     background-color: #3b82f6;
+     color: #ffffff;
+ }
+
+ .select2-container--default .select2-results__option[aria-selected="true"] {
+     background-color: #eff6ff;
+     color: #1e40af;
+ }
+
+ .select2-results__message {
+     padding: 12px 14px;
+     color: #64748b;
+     font-size: 13px;
+ }
+
+ /* Select2 no filtro de instrumentos */
+ .filters-grid .select2-container--default .select2-selection--single {
+     height: 42px;
+     padding: 6px 12px;
+     background-color: #f8fafc;
+     border: 1px solid #e2e8f0;
+     border-radius: 10px;
+     font-size: 13px;
+     display: flex;
+     align-items: center;
+     transition: all 0.2s ease;
+ }
+
+ .filters-grid .select2-container--default .select2-selection--single:hover {
+     border-color: #cbd5e1;
+ }
+
+ .filters-grid .select2-container--default .select2-selection--single .select2-selection__rendered {
+     line-height: 1;
+     padding-left: 0;
+     padding-right: 28px;
+     color: #334155;
+ }
+
+ .filters-grid .select2-container--default .select2-selection--single .select2-selection__placeholder {
+     color: #94a3b8;
+ }
+
+ .filters-grid .select2-container--default .select2-selection--single .select2-selection__arrow {
+     height: 42px;
+     right: 10px;
+ }
+
+ .filters-grid .select2-container--default.select2-container--focus .select2-selection--single,
+ .filters-grid .select2-container--default.select2-container--open .select2-selection--single {
+     background-color: #ffffff;
+     border-color: #3b82f6;
+     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+ }
+
+ .filters-grid .select2-container--default .select2-selection--single .select2-selection__clear {
+     color: #94a3b8;
+     font-size: 18px;
+     margin-right: 8px;
+     cursor: pointer;
+ }
+
+ .filters-grid .select2-container--default .select2-selection--single .select2-selection__clear:hover {
+     color: #ef4444;
+ }
