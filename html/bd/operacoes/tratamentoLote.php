@@ -101,7 +101,10 @@ try {
             if (!$cdPendencia) {
                 retornarJSON_TL(['success' => false, 'error' => 'cd_pendencia obrigatorio']);
             }
-            $resultado = aplicarTratamento($pdoSIMP, $cdPendencia, 1, null, $cdUsuario, null);
+            // A2★: metodo de correcao e score de aderencia (opcionais)
+            $metodoCorrecao = isset($dados['metodo_correcao']) ? trim($dados['metodo_correcao']) : null;
+            $scoreAderencia = isset($dados['score_aderencia']) ? floatval($dados['score_aderencia']) : null;
+            $resultado = aplicarTratamento($pdoSIMP, $cdPendencia, 1, null, $cdUsuario, null, $metodoCorrecao, $scoreAderencia);
             retornarJSON_TL($resultado);
             break;
 
@@ -114,7 +117,10 @@ try {
             if (!$cdPendencia || $valorAjuste === null) {
                 retornarJSON_TL(['success' => false, 'error' => 'cd_pendencia e valor obrigatorios']);
             }
-            $resultado = aplicarTratamento($pdoSIMP, $cdPendencia, 2, $valorAjuste, $cdUsuario, null);
+            // A2★: metodo de correcao e score de aderencia (opcionais)
+            $metodoCorrecao = isset($dados['metodo_correcao']) ? trim($dados['metodo_correcao']) : 'manual';
+            $scoreAderencia = isset($dados['score_aderencia']) ? floatval($dados['score_aderencia']) : null;
+            $resultado = aplicarTratamento($pdoSIMP, $cdPendencia, 2, $valorAjuste, $cdUsuario, null, $metodoCorrecao, $scoreAderencia);
             retornarJSON_TL($resultado);
             break;
 
@@ -174,6 +180,31 @@ try {
                 retornarJSON_TL(['success' => false, 'error' => 'cd_pendencia obrigatorio']);
             }
             $resultado = obterDetalhe($pdoSIMP, $cdPendencia);
+            retornarJSON_TL($resultado);
+            break;
+
+        // ----------------------------------------
+        // LISTAR AGRUPADO — 1 linha por ponto/dia
+        // ----------------------------------------
+        case 'listar_agrupado':
+            $resultado = listarPendenciasAgrupado($pdoSIMP, $dados);
+            retornarJSON_TL($resultado);
+            break;
+
+        // ----------------------------------------
+        // APROVAR GRUPO — Todas ou horas selecionadas
+        // ----------------------------------------
+        case 'aprovar_grupo':
+            $cdPonto = intval($dados['cd_ponto'] ?? 0);
+            $dtRef = trim($dados['dt_referencia'] ?? '');
+            $metodo = trim($dados['metodo'] ?? 'AUTO');
+            $horasIds = $dados['ids'] ?? [];  // array de CD_CHAVE (vazio = todas)
+
+            if (!$cdPonto || empty($dtRef)) {
+                retornarJSON_TL(['success' => false, 'error' => 'cd_ponto e dt_referencia obrigatorios']);
+            }
+
+            $resultado = aprovarGrupo($pdoSIMP, $cdPonto, $dtRef, $metodo, $horasIds, $cdUsuario);
             retornarJSON_TL($resultado);
             break;
 
@@ -437,6 +468,8 @@ function listarPendencias(PDO $pdo, array $filtros): array
 /**
  * Aplica tratamento em uma pendencia individual.
  * Chama a SP_APLICAR_TRATAMENTO do banco.
+ *
+ * A2★: Aceita metodo de correcao e score de aderencia opcionais. 
  */
 function aplicarTratamento(
     PDO $pdo,
@@ -444,7 +477,9 @@ function aplicarTratamento(
     int $idAcao,
     ?float $valorAplicado,
     int $cdUsuario,
-    ?string $justificativa
+    ?string $justificativa,
+    ?string $metodoCorrecao = null,
+    ?float $scoreAderencia = null
 ): array {
 
     try {
@@ -453,7 +488,9 @@ function aplicarTratamento(
                     @ID_ACAO = ?, 
                     @VL_VALOR_APLICADO = ?, 
                     @CD_USUARIO = ?, 
-                    @DS_JUSTIFICATIVA = ?";
+                    @DS_JUSTIFICATIVA = ?,
+                    @DS_METODO_CORRECAO = ?,
+                    @VL_SCORE_ADERENCIA = ?";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -461,7 +498,9 @@ function aplicarTratamento(
             $idAcao,
             $valorAplicado,
             $cdUsuario,
-            $justificativa
+            $justificativa,
+            $metodoCorrecao,
+            $scoreAderencia
         ]);
 
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -645,7 +684,7 @@ function obterEstatisticas(PDO $pdo, ?string $dataRef): array
         'por_tipo_medidor' => $porTipoMedidor,
         'por_severidade' => $porSeveridade,
         'datas_disponiveis' => $datasDisponiveis,
-        'dt_ultimo_batch'   => $dtUltimoBatch
+        'dt_ultimo_batch' => $dtUltimoBatch
     ];
 }
 
@@ -706,5 +745,336 @@ function obterDetalhe(PDO $pdo, int $cdPendencia): array
         'pendencia' => $pendencia,
         'scores' => $scores,
         'outras_horas' => $outrasHoras
+    ];
+}
+
+/**
+ * Lista pendencias agrupadas por CD_PONTO_MEDICAO + DT_REFERENCIA.
+ * Cada linha retorna: ponto, data, lista de horas anomalas, 
+ * severidade maxima, confianca media, contadores de status, etc.
+ *
+ * Usa os mesmos filtros da listarPendencias original.
+ *
+ * @param PDO   $pdo     Conexao com banco
+ * @param array $filtros Filtros do frontend
+ * @return array         Resposta JSON com grupos
+ */
+function listarPendenciasAgrupado(PDO $pdo, array $filtros): array
+{
+    // ---- Parametros de paginacao ----
+    $pagina = max(1, intval($filtros['pagina'] ?? 1));
+    $limite = min(200, max(10, intval($filtros['limite'] ?? 50)));
+    $offset = ($pagina - 1) * $limite;
+
+    // ---- Construir WHERE (mesma logica da listarPendencias) ----
+    $where = [];
+    $params = [];
+
+    // Filtro de data
+    if (!empty($filtros['data'])) {
+        $where[] = "P.DT_REFERENCIA = :data";
+        $params[':data'] = $filtros['data'];
+    } elseif (!empty($filtros['data_inicio']) && !empty($filtros['data_fim'])) {
+        $where[] = "P.DT_REFERENCIA BETWEEN :dt_ini AND :dt_fim";
+        $params[':dt_ini'] = $filtros['data_inicio'];
+        $params[':dt_fim'] = $filtros['data_fim'];
+    }
+
+    // Status
+    if (isset($filtros['status']) && $filtros['status'] !== '' && $filtros['status'] !== 'todos') {
+        $where[] = "P.ID_STATUS = :status";
+        $params[':status'] = intval($filtros['status']);
+    }
+
+    // Classe de anomalia
+    if (!empty($filtros['classe'])) {
+        $where[] = "P.ID_CLASSE_ANOMALIA = :classe";
+        $params[':classe'] = intval($filtros['classe']);
+    }
+
+    // Tipo de anomalia
+    if (!empty($filtros['tipo_anomalia'])) {
+        $where[] = "P.ID_TIPO_ANOMALIA = :tipo_anom";
+        $params[':tipo_anom'] = intval($filtros['tipo_anomalia']);
+    }
+
+    // Tipo de medidor
+    if (!empty($filtros['tipo_medidor'])) {
+        $where[] = "P.ID_TIPO_MEDIDOR = :tipo_med";
+        $params[':tipo_med'] = intval($filtros['tipo_medidor']);
+    }
+
+    // Unidade
+    if (!empty($filtros['unidade'])) {
+        $where[] = "L.CD_UNIDADE = :unidade";
+        $params[':unidade'] = $filtros['unidade'];
+    }
+
+    // Confianca minima
+    if (!empty($filtros['confianca_min'])) {
+        $where[] = "P.VL_CONFIANCA >= :conf_min";
+        $params[':conf_min'] = floatval($filtros['confianca_min']);
+    }
+
+    // Busca textual
+    if (!empty($filtros['busca'])) {
+        $termo = '%' . $filtros['busca'] . '%';
+        $where[] = "(PM.DS_NOME LIKE :busca OR CAST(PM.CD_PONTO_MEDICAO AS VARCHAR) LIKE :busca2
+                     OR PM.DS_TAG_VAZAO LIKE :busca3 OR PM.DS_TAG_PRESSAO LIKE :busca4)";
+        $params[':busca'] = $termo;
+        $params[':busca2'] = $termo;
+        $params[':busca3'] = $termo;
+        $params[':busca4'] = $termo;
+    }
+
+    $whereClause = count($where) > 0 ? 'WHERE ' . implode(' AND ', $where) : '';
+
+    // ---- Ordenacao ----
+    $orderMap = [
+        'ponto' => 'DS_PONTO_NOME',
+        'data' => 'DT_REFERENCIA',
+        'tipo' => 'ID_TIPO_MEDIDOR',
+        'severidade' => 'NR_SEV_ORDEM',
+        'confianca' => 'VL_CONFIANCA_MEDIA',
+        'qtd_horas' => 'QTD_HORAS'
+    ];
+    $campoOrd = $orderMap[$filtros['ordenar'] ?? ''] ?? 'DT_REFERENCIA';
+    $direcaoOrd = strtoupper($filtros['direcao'] ?? 'DESC') === 'ASC' ? 'ASC' : 'DESC';
+
+    // ---- Query de contagem (grupos distintos) ----
+    $sqlCount = "
+        SELECT COUNT(*) AS TOTAL FROM (
+            SELECT P.CD_PONTO_MEDICAO, P.DT_REFERENCIA
+            FROM SIMP.dbo.IA_PENDENCIA_TRATAMENTO P
+            INNER JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = P.CD_PONTO_MEDICAO
+            LEFT JOIN SIMP.dbo.LOCALIDADE L ON L.CD_CHAVE = PM.CD_LOCALIDADE
+            $whereClause
+            GROUP BY P.CD_PONTO_MEDICAO, P.DT_REFERENCIA
+        ) AS GRUPOS
+    ";
+    $stmtCount = $pdo->prepare($sqlCount);
+    $stmtCount->execute($params);
+    $total = intval($stmtCount->fetchColumn());
+
+    if ($total === 0) {
+        return [
+            'success' => true,
+            'grupos' => [],
+            'total' => 0,
+            'pagina' => $pagina,
+            'limite' => $limite,
+            'paginas' => 0
+        ];
+    }
+
+    // ---- Query principal agrupada ----
+    $sql = "
+        SELECT 
+            P.CD_PONTO_MEDICAO,
+            P.DT_REFERENCIA,
+            P.ID_TIPO_MEDIDOR,
+            PM.DS_NOME AS DS_PONTO_NOME,
+
+            -- Codigo formatado (usa dados do primeiro registro do grupo)
+            ISNULL(CAST(L.CD_LOCALIDADE AS VARCHAR), '000') + '-' +
+            RIGHT('000000' + CAST(P.CD_PONTO_MEDICAO AS VARCHAR), 6) + '-' +
+            CASE P.ID_TIPO_MEDIDOR
+                WHEN 1 THEN 'M' WHEN 2 THEN 'E' WHEN 4 THEN 'P' WHEN 6 THEN 'R' WHEN 8 THEN 'H' ELSE 'X'
+            END + '-' +
+            ISNULL(CAST(L.CD_UNIDADE AS VARCHAR), '00') AS DS_CODIGO_FORMATADO,
+
+            -- Unidade e localidade
+            L.CD_UNIDADE,
+            U.DS_NOME AS DS_UNIDADE,
+            L.DS_NOME AS DS_LOCALIDADE,
+
+            -- Agregacoes do grupo
+            COUNT(*)                                                AS QTD_HORAS,
+            SUM(CASE WHEN P.ID_STATUS = 0 THEN 1 ELSE 0 END)     AS QTD_PENDENTES,
+            SUM(CASE WHEN P.ID_STATUS IN (1,2) THEN 1 ELSE 0 END) AS QTD_TRATADAS,
+            SUM(CASE WHEN P.ID_STATUS = 3 THEN 1 ELSE 0 END)     AS QTD_IGNORADAS,
+
+            -- Severidade maxima do grupo (critica > alta > media > baixa)
+            CASE 
+                WHEN MAX(CASE WHEN P.DS_SEVERIDADE = 'critica' THEN 4
+                              WHEN P.DS_SEVERIDADE = 'alta'    THEN 3
+                              WHEN P.DS_SEVERIDADE = 'media'   THEN 2
+                              ELSE 1 END) = 4 THEN 'critica'
+                WHEN MAX(CASE WHEN P.DS_SEVERIDADE = 'critica' THEN 4
+                              WHEN P.DS_SEVERIDADE = 'alta'    THEN 3
+                              WHEN P.DS_SEVERIDADE = 'media'   THEN 2
+                              ELSE 1 END) = 3 THEN 'alta'
+                WHEN MAX(CASE WHEN P.DS_SEVERIDADE = 'critica' THEN 4
+                              WHEN P.DS_SEVERIDADE = 'alta'    THEN 3
+                              WHEN P.DS_SEVERIDADE = 'media'   THEN 2
+                              ELSE 1 END) = 2 THEN 'media'
+                ELSE 'baixa'
+            END AS DS_SEVERIDADE_MAX,
+
+            -- Ordem numerica da severidade (para ordenacao)
+            MAX(CASE WHEN P.DS_SEVERIDADE = 'critica' THEN 4
+                     WHEN P.DS_SEVERIDADE = 'alta'    THEN 3
+                     WHEN P.DS_SEVERIDADE = 'media'   THEN 2
+                     ELSE 1 END) AS NR_SEV_ORDEM,
+
+            -- Classe predominante (1=tecnica, 2=operacional)
+            CASE 
+                WHEN SUM(CASE WHEN P.ID_CLASSE_ANOMALIA = 2 THEN 1 ELSE 0 END) > 0 THEN 2
+                ELSE 1
+            END AS ID_CLASSE_PREDOMINANTE,
+
+            -- Confianca media do grupo (apenas pendentes)
+            CAST(AVG(CASE WHEN P.ID_STATUS = 0 THEN P.VL_CONFIANCA END) AS DECIMAL(5,4)) AS VL_CONFIANCA_MEDIA,
+
+            -- Horas anomalas concatenadas (ex: '0,3,5,14,22')
+            STRING_AGG(CAST(P.NR_HORA AS VARCHAR), ',') WITHIN GROUP (ORDER BY P.NR_HORA) AS DS_HORAS,
+
+            -- IDs das pendencias concatenados (ex: '101,102,105')
+            STRING_AGG(CAST(P.CD_CHAVE AS VARCHAR), ',') WITHIN GROUP (ORDER BY P.NR_HORA) AS DS_IDS,
+
+            -- Status por hora concatenados (ex: '0,0,1,0,3')
+            STRING_AGG(CAST(P.ID_STATUS AS VARCHAR), ',') WITHIN GROUP (ORDER BY P.NR_HORA) AS DS_STATUS_HORAS,
+
+            -- Tipos de anomalia por hora (ex: '1,3,1,4,2')
+            STRING_AGG(CAST(P.ID_TIPO_ANOMALIA AS VARCHAR), ',') WITHIN GROUP (ORDER BY P.NR_HORA) AS DS_TIPOS_HORAS,
+
+            -- Valores reais por hora (ex: '12.5,0.0,null,45.2')
+            STRING_AGG(ISNULL(CAST(P.VL_REAL AS VARCHAR), 'null'), ',') WITHIN GROUP (ORDER BY P.NR_HORA) AS DS_VALORES_REAIS,
+
+            -- Valores sugeridos por hora (ex: '15.3,12.1,null,42.0')
+            STRING_AGG(ISNULL(CAST(P.VL_SUGERIDO AS VARCHAR), 'null'), ',') WITHIN GROUP (ORDER BY P.NR_HORA) AS DS_VALORES_SUGERIDOS,
+
+            -- Prioridade hidraulica (para ordenacao secundaria)
+            CASE P.ID_TIPO_MEDIDOR
+                WHEN 6 THEN 1 WHEN 1 THEN 2 WHEN 2 THEN 3 WHEN 4 THEN 4 ELSE 9
+            END AS NR_PRIORIDADE_HIDRAULICA
+
+        FROM SIMP.dbo.IA_PENDENCIA_TRATAMENTO P
+        INNER JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = P.CD_PONTO_MEDICAO
+        LEFT JOIN SIMP.dbo.LOCALIDADE L ON L.CD_CHAVE = PM.CD_LOCALIDADE
+        LEFT JOIN SIMP.dbo.UNIDADE U ON U.CD_UNIDADE = L.CD_UNIDADE
+        $whereClause
+        GROUP BY 
+            P.CD_PONTO_MEDICAO, P.DT_REFERENCIA, P.ID_TIPO_MEDIDOR,
+            PM.DS_NOME, L.CD_LOCALIDADE, L.CD_UNIDADE, L.DS_NOME, U.DS_NOME
+        ORDER BY $campoOrd $direcaoOrd, NR_PRIORIDADE_HIDRAULICA ASC
+        OFFSET $offset ROWS FETCH NEXT $limite ROWS ONLY
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    return [
+        'success' => true,
+        'grupos' => $grupos,
+        'total' => $total,
+        'pagina' => $pagina,
+        'limite' => $limite,
+        'paginas' => ceil($total / $limite)
+    ];
+}
+
+
+// ============================================================
+// FUNCAO 2: APROVAR GRUPO (TODAS OU HORAS SELECIONADAS)
+// ============================================================
+
+/**
+ * Aprova pendencias de um ponto/dia — todas ou apenas as horas selecionadas.
+ *
+ * Se $horasIds estiver vazio, busca TODAS as pendentes do ponto/dia.
+ * O parametro $metodo registra qual metodo de correcao foi usado (informativo).
+ *
+ * @param PDO    $pdo       Conexao com banco
+ * @param int    $cdPonto   Codigo do ponto de medicao
+ * @param string $dtRef     Data de referencia (YYYY-MM-DD)
+ * @param string $metodo    Metodo de correcao (AUTO, PCHIP, MEDIA, PROPHET)
+ * @param array  $horasIds  Array de CD_CHAVE especificos (vazio = todas)
+ * @param int    $cdUsuario Codigo do usuario logado
+ * @return array            Resposta JSON
+ */
+function aprovarGrupo(
+    PDO $pdo,
+    int $cdPonto,
+    string $dtRef,
+    string $metodo,
+    array $horasIds,
+    int $cdUsuario
+): array {
+
+    // Se nao passou IDs especificos, buscar todas as pendentes do ponto/dia
+    if (empty($horasIds)) {
+        $sqlBusca = "
+            SELECT CD_CHAVE
+            FROM SIMP.dbo.IA_PENDENCIA_TRATAMENTO
+            WHERE CD_PONTO_MEDICAO = ?
+              AND DT_REFERENCIA = ?
+              AND ID_STATUS = 0
+            ORDER BY NR_HORA
+        ";
+        $stmtBusca = $pdo->prepare($sqlBusca);
+        $stmtBusca->execute([$cdPonto, $dtRef]);
+        $horasIds = array_column($stmtBusca->fetchAll(PDO::FETCH_ASSOC), 'CD_CHAVE');
+
+        if (empty($horasIds)) {
+            return ['success' => false, 'error' => 'Nenhuma pendencia pendente encontrada para este ponto/dia'];
+        }
+    }
+
+    // Aplicar tratamento em cada pendencia
+    $sucesso = 0;
+    $erros = 0;
+    $detalhes = [];
+
+    foreach ($horasIds as $idPendencia) {
+        $cdPendencia = intval($idPendencia);
+        if ($cdPendencia <= 0)
+            continue;
+
+        // Buscar valor sugerido da pendencia para usar como valor aplicado
+        $sqlValor = "SELECT VL_SUGERIDO FROM SIMP.dbo.IA_PENDENCIA_TRATAMENTO WHERE CD_CHAVE = ? AND ID_STATUS = 0";
+        $stmtValor = $pdo->prepare($sqlValor);
+        $stmtValor->execute([$cdPendencia]);
+        $rowValor = $stmtValor->fetch(PDO::FETCH_ASSOC);
+
+        if (!$rowValor) {
+            $erros++;
+            $detalhes[] = "Pendencia #$cdPendencia: ja tratada ou nao encontrada";
+            continue;
+        }
+
+        // Aprovar (acao = 1)
+        $res = aplicarTratamento($pdo, $cdPendencia, 1, null, $cdUsuario, null);
+
+        if ($res['success']) {
+            $sucesso++;
+
+            // Registrar metodo de correcao usado (se coluna existir)
+            try {
+                $sqlMetodo = "
+                    UPDATE SIMP.dbo.IA_PENDENCIA_TRATAMENTO 
+                    SET DS_METODO_CORRECAO = ?
+                    WHERE CD_CHAVE = ?
+                ";
+                $stmtMetodo = $pdo->prepare($sqlMetodo);
+                $stmtMetodo->execute([$metodo, $cdPendencia]);
+            } catch (\Exception $e) {
+                // Coluna pode nao existir ainda — silenciar
+            }
+        } else {
+            $erros++;
+            $detalhes[] = "Pendencia #$cdPendencia: " . ($res['error'] ?? 'Erro desconhecido');
+        }
+    }
+
+    return [
+        'success' => true,
+        'total' => count($horasIds),
+        'sucesso' => $sucesso,
+        'erros' => $erros,
+        'detalhes' => $detalhes,
+        'metodo' => $metodo,
+        'message' => "$sucesso hora(s) tratada(s) com metodo $metodo" . ($erros > 0 ? ", $erros erro(s)" : '')
     ];
 }

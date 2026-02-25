@@ -2049,3 +2049,546 @@ GROUP BY t.name
 ORDER BY t.name;
 
 GO
+
+
+
+
+-- =============================================================================================================================
+-- =============================================================================================================================
+
+
+-- ============================================================
+-- SIMP 2.0 - Fase A2★: Multiplos Metodos de Correcao
+-- ============================================================
+--
+-- Objetivo: Permitir que o operador escolha entre 4 metodos de
+-- correcao (XGBoost Rede, PCHIP, Media Movel, Prophet), cada um
+-- com score de aderencia calculado, e registrar qual metodo foi
+-- usado no tratamento.
+--
+-- Alteracoes:
+--   1. ADD 2 colunas na IA_PENDENCIA_TRATAMENTO
+--   2. Recriar view VW_PENDENCIA_TRATAMENTO (inclui novas colunas)
+--   3. Atualizar SP_APLICAR_TRATAMENTO (aceita metodo + score)
+--   4. Atualizar SP_APLICAR_TRATAMENTO_MASSA (aceita metodo)
+--
+-- Dependencias: Fase A2 ja instalada (tabela + view + SPs existem)
+--
+-- @author  Bruno - CESAN
+-- @version 1.0 - Fase A2★
+-- @date    2026-02
+-- ============================================================
+
+USE [SIMP]
+GO
+
+PRINT '================================================';
+PRINT 'SIMP 2.0 - FASE A2★: METODOS DE CORRECAO';
+PRINT '================================================';
+PRINT '';
+
+-- ============================================================
+-- PARTE 1: NOVAS COLUNAS
+-- ============================================================
+
+PRINT 'Adicionando colunas de metodo de correcao...';
+
+-- DS_METODO_CORRECAO: qual metodo o operador escolheu
+IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'IA_PENDENCIA_TRATAMENTO' AND COLUMN_NAME = 'DS_METODO_CORRECAO'
+)
+BEGIN
+    ALTER TABLE dbo.IA_PENDENCIA_TRATAMENTO
+        ADD DS_METODO_CORRECAO VARCHAR(30) NULL;
+    -- Valores: 'xgboost_rede', 'pchip', 'media_movel', 'prophet', 'manual', 'auto'
+    PRINT '  - Coluna DS_METODO_CORRECAO adicionada.';
+END
+ELSE
+    PRINT '  - Coluna DS_METODO_CORRECAO ja existe.';
+GO
+
+-- VL_SCORE_ADERENCIA: score do metodo escolhido (0.00 a 10.00)
+IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'IA_PENDENCIA_TRATAMENTO' AND COLUMN_NAME = 'VL_SCORE_ADERENCIA'
+)
+BEGIN
+    ALTER TABLE dbo.IA_PENDENCIA_TRATAMENTO
+        ADD VL_SCORE_ADERENCIA DECIMAL(5,2) NULL;
+    PRINT '  - Coluna VL_SCORE_ADERENCIA adicionada.';
+END
+ELSE
+    PRINT '  - Coluna VL_SCORE_ADERENCIA ja existe.';
+GO
+
+PRINT '';
+
+-- ============================================================
+-- PARTE 2: RECRIAR VIEW (inclui novas colunas)
+-- ============================================================
+
+PRINT 'Recriando view VW_PENDENCIA_TRATAMENTO...';
+GO
+
+IF EXISTS (SELECT * FROM sys.views WHERE name = 'VW_PENDENCIA_TRATAMENTO')
+    DROP VIEW dbo.VW_PENDENCIA_TRATAMENTO;
+GO
+
+CREATE VIEW [dbo].[VW_PENDENCIA_TRATAMENTO] AS
+SELECT
+    -- =============================================
+    -- Pendencia
+    -- =============================================
+    P.CD_CHAVE,
+    P.CD_PONTO_MEDICAO,
+    P.DT_REFERENCIA,
+    P.NR_HORA,
+    P.ID_TIPO_ANOMALIA,
+    P.ID_CLASSE_ANOMALIA,
+    P.DS_SEVERIDADE,
+    P.VL_REAL,
+    P.VL_SUGERIDO,
+    P.VL_MEDIA_HISTORICA,
+    P.VL_PREDICAO_XGBOOST,
+    P.VL_CONFIANCA,
+    P.VL_ZSCORE,
+    P.DS_DESCRICAO,
+    P.DS_METODO_DETECCAO,
+    P.ID_STATUS,
+    P.VL_VALOR_APLICADO,
+    P.CD_USUARIO_ACAO,
+    P.DT_ACAO,
+    P.DS_JUSTIFICATIVA,
+    P.DT_GERACAO,
+    P.ID_TIPO_MEDIDOR,
+    P.QTD_VIZINHOS_ANOMALOS,
+    P.OP_EVENTO_PROPAGADO,
+
+    -- =============================================
+    -- A2★: Metodo de correcao e score de aderencia
+    -- =============================================
+    P.DS_METODO_CORRECAO,
+    P.VL_SCORE_ADERENCIA,
+
+    -- =============================================
+    -- Ponto de Medicao
+    -- =============================================
+    PM.DS_NOME AS DS_PONTO_NOME,
+    PM.DS_TAG_VAZAO,
+    PM.DS_TAG_PRESSAO,
+    PM.DS_TAG_RESERVATORIO,
+
+    -- =============================================
+    -- Localidade e Unidade
+    -- =============================================
+    L.CD_LOCALIDADE AS CD_LOCALIDADE_CODIGO,
+    L.DS_NOME AS DS_LOCALIDADE,
+    L.CD_UNIDADE,
+    U.DS_NOME AS DS_UNIDADE,
+
+    -- =============================================
+    -- Codigo formatado: LOCALIDADE-CD_PONTO(6dig)-LETRA-UNIDADE
+    -- =============================================
+    ISNULL(CAST(L.CD_LOCALIDADE AS VARCHAR), '000') + '-' +
+    RIGHT('000000' + CAST(PM.CD_PONTO_MEDICAO AS VARCHAR), 6) + '-' +
+    CASE P.ID_TIPO_MEDIDOR
+        WHEN 1 THEN 'M'
+        WHEN 2 THEN 'E'
+        WHEN 4 THEN 'P'
+        WHEN 6 THEN 'R'
+        WHEN 8 THEN 'H'
+        ELSE 'X'
+    END + '-' +
+    ISNULL(CAST(L.CD_UNIDADE AS VARCHAR), '00') AS DS_CODIGO_FORMATADO,
+
+    -- =============================================
+    -- Descricoes de tipo
+    -- =============================================
+    CASE P.ID_TIPO_ANOMALIA
+        WHEN 1 THEN 'Valor zerado'
+        WHEN 2 THEN 'Sensor travado'
+        WHEN 3 THEN 'Spike (extremo)'
+        WHEN 4 THEN 'Desvio estatistico'
+        WHEN 5 THEN 'Padrao incomum'
+        WHEN 6 THEN 'Desvio do modelo'
+        WHEN 7 THEN 'Gap comunicacao'
+        WHEN 8 THEN 'Fora de faixa'
+        ELSE 'Desconhecido'
+    END AS DS_TIPO_ANOMALIA,
+
+    CASE P.ID_CLASSE_ANOMALIA
+        WHEN 1 THEN 'Correcao tecnica'
+        WHEN 2 THEN 'Evento operacional'
+        ELSE 'Nao classificada'
+    END AS DS_CLASSE_ANOMALIA,
+
+    CASE P.ID_STATUS
+        WHEN 0 THEN 'Pendente'
+        WHEN 1 THEN 'Aprovada'
+        WHEN 2 THEN 'Ajustada'
+        WHEN 3 THEN 'Ignorada'
+        WHEN 4 THEN 'Auto-aprovada'
+        WHEN 9 THEN 'Expirada'
+        ELSE 'Desconhecido'
+    END AS DS_STATUS_NOME,
+
+    -- Badge de confianca
+    CASE
+        WHEN P.VL_CONFIANCA >= 0.95 THEN 'alta'
+        WHEN P.VL_CONFIANCA >= 0.85 THEN 'confiavel'
+        WHEN P.VL_CONFIANCA >= 0.70 THEN 'atencao'
+        ELSE 'baixa'
+    END AS DS_BADGE_CONFIANCA,
+
+    -- Tipo de medidor por extenso
+    CASE P.ID_TIPO_MEDIDOR
+        WHEN 1 THEN 'Macromedidor'
+        WHEN 2 THEN 'Pitometrica'
+        WHEN 4 THEN 'Pressao'
+        WHEN 6 THEN 'Reservatorio'
+        WHEN 8 THEN 'Hidrometro'
+        ELSE 'Outro'
+    END AS DS_TIPO_MEDIDOR_NOME,
+
+    -- Prioridade hidraulica (reservatorio > macro > pressao)
+    CASE P.ID_TIPO_MEDIDOR
+        WHEN 6 THEN 1
+        WHEN 1 THEN 2
+        WHEN 2 THEN 3
+        WHEN 4 THEN 4
+        WHEN 8 THEN 5
+        ELSE 9
+    END AS NR_PRIORIDADE_HIDRAULICA,
+
+    -- Hora formatada
+    RIGHT('0' + CAST(P.NR_HORA AS VARCHAR), 2) + ':00' AS DS_HORA_FORMATADA,
+
+    -- A2★: Nome legivel do metodo de correcao
+    CASE P.DS_METODO_CORRECAO
+        WHEN 'xgboost_rede'  THEN 'XGBoost Rede'
+        WHEN 'pchip'         THEN 'PCHIP'
+        WHEN 'media_movel'   THEN 'Media Movel'
+        WHEN 'prophet'       THEN 'Prophet'
+        WHEN 'manual'        THEN 'Manual'
+        WHEN 'auto'          THEN 'AUTO'
+        ELSE NULL
+    END AS DS_METODO_CORRECAO_NOME,
+
+    -- Metricas do dia
+    IM.PERC_COBERTURA,
+    IM.DS_STATUS AS DS_STATUS_DIA,
+
+    -- Nodo do grafo
+    EN.CD_CHAVE AS CD_NODO,
+    EN.DS_NOME AS DS_NODO_NOME
+
+FROM [dbo].[IA_PENDENCIA_TRATAMENTO] P
+
+INNER JOIN [dbo].[PONTO_MEDICAO] PM
+    ON PM.CD_PONTO_MEDICAO = P.CD_PONTO_MEDICAO
+
+LEFT JOIN [dbo].[LOCALIDADE] L
+    ON L.CD_CHAVE = PM.CD_LOCALIDADE
+
+LEFT JOIN [dbo].[UNIDADE] U
+    ON U.CD_UNIDADE = L.CD_UNIDADE
+
+LEFT JOIN [dbo].[IA_METRICAS_DIARIAS] IM
+    ON IM.CD_PONTO_MEDICAO = P.CD_PONTO_MEDICAO
+    AND IM.DT_REFERENCIA = P.DT_REFERENCIA
+
+LEFT JOIN [dbo].[ENTIDADE_NODO] EN
+    ON EN.CD_PONTO_MEDICAO = PM.CD_PONTO_MEDICAO
+    AND EN.OP_ATIVO = 1;
+GO
+
+PRINT '  - View recriada com sucesso.';
+PRINT '';
+
+-- ============================================================
+-- PARTE 3: ATUALIZAR SP_APLICAR_TRATAMENTO (novos parametros)
+-- ============================================================
+
+-- ============================================================
+-- PATCH: Corrigir SP_APLICAR_TRATAMENTO v2.1 (colunas corretas)
+-- ============================================================
+USE [SIMP]
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[SP_APLICAR_TRATAMENTO]
+    @CD_PENDENCIA        BIGINT,
+    @ID_ACAO             TINYINT,
+    @VL_VALOR_APLICADO   DECIMAL(18,4) = NULL,
+    @CD_USUARIO          INT,
+    @DS_JUSTIFICATIVA    VARCHAR(500) = NULL,
+    @DS_METODO_CORRECAO  VARCHAR(30)  = NULL,
+    @VL_SCORE_ADERENCIA  DECIMAL(5,2) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM IA_PENDENCIA_TRATAMENTO WHERE CD_CHAVE = @CD_PENDENCIA AND ID_STATUS = 0)
+    BEGIN
+        RAISERROR('Pendencia nao encontrada ou ja tratada.', 16, 1);
+        RETURN;
+    END
+
+    IF @ID_ACAO = 3 AND (ISNULL(@DS_JUSTIFICATIVA, '') = '')
+    BEGIN
+        RAISERROR('Justificativa obrigatoria para ignorar pendencia.', 16, 1);
+        RETURN;
+    END
+
+    DECLARE @CD_PONTO INT, @DT_REF DATE, @NR_HORA TINYINT,
+            @VL_SUGERIDO DECIMAL(18,4), @ID_TIPO_MEDIDOR TINYINT,
+            @DS_TIPO_ANOMALIA VARCHAR(50), @DS_PONTO_NOME VARCHAR(200);
+
+    SELECT
+        @CD_PONTO = P.CD_PONTO_MEDICAO,
+        @DT_REF = P.DT_REFERENCIA,
+        @NR_HORA = P.NR_HORA,
+        @VL_SUGERIDO = P.VL_SUGERIDO,
+        @ID_TIPO_MEDIDOR = P.ID_TIPO_MEDIDOR,
+        @DS_TIPO_ANOMALIA = CASE P.ID_TIPO_ANOMALIA
+            WHEN 1 THEN 'Valor zerado' WHEN 2 THEN 'Sensor travado'
+            WHEN 3 THEN 'Spike' WHEN 4 THEN 'Desvio estatistico'
+            WHEN 5 THEN 'Padrao incomum' WHEN 6 THEN 'Desvio modelo'
+            WHEN 7 THEN 'Gap comunicacao' WHEN 8 THEN 'Fora de faixa'
+            ELSE 'Anomalia' END,
+        @DS_PONTO_NOME = PM.DS_NOME
+    FROM IA_PENDENCIA_TRATAMENTO P
+    INNER JOIN PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = P.CD_PONTO_MEDICAO
+    WHERE P.CD_CHAVE = @CD_PENDENCIA;
+
+    DECLARE @VALOR_FINAL DECIMAL(18,4);
+    SET @VALOR_FINAL = CASE @ID_ACAO
+        WHEN 1 THEN @VL_SUGERIDO
+        WHEN 2 THEN @VL_VALOR_APLICADO
+        ELSE NULL
+    END;
+
+    DECLARE @DS_OBS VARCHAR(500);
+    SET @DS_OBS = 'Tratamento Lote IA - ' +
+        CASE @ID_ACAO
+            WHEN 1 THEN 'Aprovado (valor sugerido)'
+            WHEN 2 THEN 'Ajustado manualmente'
+            WHEN 3 THEN 'Ignorado'
+            ELSE '' END +
+        ' | Anomalia: ' + @DS_TIPO_ANOMALIA +
+        ' | Pendencia #' + CAST(@CD_PENDENCIA AS VARCHAR) +
+        CASE WHEN @DS_METODO_CORRECAO IS NOT NULL
+            THEN ' | Metodo: ' + @DS_METODO_CORRECAO
+            ELSE '' END;
+
+    DECLARE @TOTAL_INATIVADOS INT = 0;
+    DECLARE @TOTAL_INSERIDOS INT = 0;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- 1. ATUALIZAR PENDENCIA
+        UPDATE IA_PENDENCIA_TRATAMENTO
+        SET ID_STATUS            = @ID_ACAO,
+            VL_VALOR_APLICADO    = @VALOR_FINAL,
+            CD_USUARIO_ACAO      = @CD_USUARIO,
+            DT_ACAO              = GETDATE(),
+            DS_JUSTIFICATIVA     = @DS_JUSTIFICATIVA,
+            DS_METODO_CORRECAO   = @DS_METODO_CORRECAO,
+            VL_SCORE_ADERENCIA   = @VL_SCORE_ADERENCIA
+        WHERE CD_CHAVE = @CD_PENDENCIA;
+
+        -- 2. Se aprovado/ajustado: inativar + inserir
+        IF @ID_ACAO IN (1, 2) AND @VALOR_FINAL IS NOT NULL
+        BEGIN
+            DECLARE @DT_HORA_INI DATETIME, @DT_HORA_FIM DATETIME;
+            SET @DT_HORA_INI = DATEADD(HOUR, @NR_HORA, CAST(@DT_REF AS DATETIME));
+            SET @DT_HORA_FIM = DATEADD(SECOND, 3599, @DT_HORA_INI);
+
+            -- 2a. Inativar existentes
+            UPDATE REGISTRO_VAZAO_PRESSAO
+            SET ID_SITUACAO = 2
+            WHERE CD_PONTO_MEDICAO = @CD_PONTO
+              AND DT_LEITURA >= @DT_HORA_INI
+              AND DT_LEITURA <= @DT_HORA_FIM
+              AND ID_SITUACAO = 1;
+
+            SET @TOTAL_INATIVADOS = @@ROWCOUNT;
+
+            -- 2b. Inserir 60 registros (1/min) com colunas corretas por tipo
+            DECLARE @MINUTO INT = 0;
+            DECLARE @DT_LEITURA DATETIME;
+
+            WHILE @MINUTO < 60
+            BEGIN
+                SET @DT_LEITURA = DATEADD(MINUTE, @MINUTO, @DT_HORA_INI);
+
+                IF @ID_TIPO_MEDIDOR IN (1, 2, 8)
+                BEGIN
+                    INSERT INTO REGISTRO_VAZAO_PRESSAO
+                    (CD_PONTO_MEDICAO, DT_LEITURA, DT_EVENTO_MEDICAO,
+                     VL_VAZAO_EFETIVA, ID_SITUACAO,
+                     ID_TIPO_REGISTRO, ID_TIPO_MEDICAO, ID_TIPO_VAZAO,
+                     CD_USUARIO_RESPONSAVEL, CD_USUARIO_ULTIMA_ATUALIZACAO,
+                     DT_ULTIMA_ATUALIZACAO, DS_OBSERVACAO)
+                    VALUES
+                    (@CD_PONTO, @DT_LEITURA, GETDATE(),
+                     @VALOR_FINAL, 1,
+                     2, 2, 1,
+                     @CD_USUARIO, @CD_USUARIO,
+                     GETDATE(), @DS_OBS);
+                END
+                ELSE IF @ID_TIPO_MEDIDOR = 4
+                BEGIN
+                    INSERT INTO REGISTRO_VAZAO_PRESSAO
+                    (CD_PONTO_MEDICAO, DT_LEITURA, DT_EVENTO_MEDICAO,
+                     VL_PRESSAO, ID_SITUACAO,
+                     ID_TIPO_REGISTRO, ID_TIPO_MEDICAO, ID_TIPO_VAZAO,
+                     CD_USUARIO_RESPONSAVEL, CD_USUARIO_ULTIMA_ATUALIZACAO,
+                     DT_ULTIMA_ATUALIZACAO, DS_OBSERVACAO)
+                    VALUES
+                    (@CD_PONTO, @DT_LEITURA, GETDATE(),
+                     @VALOR_FINAL, 1,
+                     2, 2, 1,
+                     @CD_USUARIO, @CD_USUARIO,
+                     GETDATE(), @DS_OBS);
+                END
+                ELSE IF @ID_TIPO_MEDIDOR = 6
+                BEGIN
+                    INSERT INTO REGISTRO_VAZAO_PRESSAO
+                    (CD_PONTO_MEDICAO, DT_LEITURA, DT_EVENTO_MEDICAO,
+                     VL_RESERVATORIO, ID_SITUACAO,
+                     ID_TIPO_REGISTRO, ID_TIPO_MEDICAO, ID_TIPO_VAZAO,
+                     CD_USUARIO_RESPONSAVEL, CD_USUARIO_ULTIMA_ATUALIZACAO,
+                     DT_ULTIMA_ATUALIZACAO, DS_OBSERVACAO)
+                    VALUES
+                    (@CD_PONTO, @DT_LEITURA, GETDATE(),
+                     @VALOR_FINAL, 1,
+                     2, 2, 1,
+                     @CD_USUARIO, @CD_USUARIO,
+                     GETDATE(), @DS_OBS);
+                END
+
+                SET @TOTAL_INSERIDOS = @TOTAL_INSERIDOS + 1;
+                SET @MINUTO = @MINUTO + 1;
+            END
+
+            -- 2c. Enfileirar reprocessamento
+            IF EXISTS (SELECT 1 FROM sys.procedures WHERE name = 'SP_ENFILEIRAR_REPROCESSAMENTO')
+            BEGIN
+                EXEC SP_ENFILEIRAR_REPROCESSAMENTO
+                    @DT_REFERENCIA = @DT_REF,
+                    @DS_ORIGEM = 'TRATAMENTO_LOTE',
+                    @CD_USUARIO = @CD_USUARIO;
+            END
+        END
+
+        COMMIT TRANSACTION;
+
+        SELECT
+            @CD_PENDENCIA AS CD_PENDENCIA,
+            @ID_ACAO AS ID_ACAO,
+            @VALOR_FINAL AS VL_APLICADO,
+            @TOTAL_INATIVADOS AS TOTAL_INATIVADOS,
+            @TOTAL_INSERIDOS AS TOTAL_INSERIDOS,
+            @DS_PONTO_NOME AS DS_PONTO_NOME,
+            @NR_HORA AS NR_HORA,
+            @DS_METODO_CORRECAO AS DS_METODO_CORRECAO,
+            @VL_SCORE_ADERENCIA AS VL_SCORE_ADERENCIA,
+            'OK' AS RESULTADO;
+
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END
+GO
+
+PRINT 'SP_APLICAR_TRATAMENTO v2.1 corrigida com sucesso!';
+GO
+
+-- ============================================================
+-- PARTE 4: ATUALIZAR SP_APLICAR_TRATAMENTO_MASSA
+-- ============================================================
+
+PRINT 'Atualizando SP_APLICAR_TRATAMENTO_MASSA (v2.1)...';
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[SP_APLICAR_TRATAMENTO_MASSA]
+    @IDS                 VARCHAR(MAX),
+    @ID_ACAO             TINYINT,
+    @CD_USUARIO          INT,
+    @DS_JUSTIFICATIVA    VARCHAR(500) = NULL,
+    @DS_METODO_CORRECAO  VARCHAR(30)  = NULL  -- A2★: metodo para aprovar em massa
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Pendencias TABLE (CD_CHAVE BIGINT);
+    INSERT INTO @Pendencias
+    SELECT CAST(value AS BIGINT)
+    FROM STRING_SPLIT(@IDS, ',')
+    WHERE ISNUMERIC(value) = 1;
+
+    DECLARE @Total INT = (SELECT COUNT(*) FROM @Pendencias);
+    DECLARE @Sucesso INT = 0;
+    DECLARE @Erro INT = 0;
+
+    DECLARE @CD BIGINT;
+    DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
+        SELECT CD_CHAVE FROM @Pendencias;
+
+    OPEN cur;
+    FETCH NEXT FROM cur INTO @CD;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        BEGIN TRY
+            EXEC SP_APLICAR_TRATAMENTO
+                @CD_PENDENCIA       = @CD,
+                @ID_ACAO            = @ID_ACAO,
+                @VL_VALOR_APLICADO  = NULL,
+                @CD_USUARIO         = @CD_USUARIO,
+                @DS_JUSTIFICATIVA   = @DS_JUSTIFICATIVA,
+                @DS_METODO_CORRECAO = @DS_METODO_CORRECAO,
+                @VL_SCORE_ADERENCIA = NULL;
+
+            SET @Sucesso = @Sucesso + 1;
+        END TRY
+        BEGIN CATCH
+            SET @Erro = @Erro + 1;
+        END CATCH
+
+        FETCH NEXT FROM cur INTO @CD;
+    END
+
+    CLOSE cur;
+    DEALLOCATE cur;
+
+    SELECT
+        @Total AS TOTAL,
+        @Sucesso AS SUCESSO,
+        @Erro AS ERRO;
+END
+GO
+
+PRINT '  - SP_APLICAR_TRATAMENTO_MASSA v2.1 atualizada.';
+PRINT '';
+
+-- ============================================================
+-- RESUMO
+-- ============================================================
+
+PRINT '';
+PRINT '================================================';
+PRINT 'FASE A2★ - SQL CONCLUIDO';
+PRINT '================================================';
+PRINT '';
+PRINT 'Objetos alterados:';
+PRINT '  - Tabela IA_PENDENCIA_TRATAMENTO: +2 colunas (DS_METODO_CORRECAO, VL_SCORE_ADERENCIA)';
+PRINT '  - View VW_PENDENCIA_TRATAMENTO: recriada com novas colunas + DS_METODO_CORRECAO_NOME';
+PRINT '  - SP SP_APLICAR_TRATAMENTO v2.1: aceita @DS_METODO_CORRECAO e @VL_SCORE_ADERENCIA';
+PRINT '  - SP SP_APLICAR_TRATAMENTO_MASSA v2.1: aceita @DS_METODO_CORRECAO';
+PRINT '';
+GO

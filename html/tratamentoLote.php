@@ -42,1365 +42,7 @@ try {
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-<style>
-    /* ============================================
-   TRATAMENTO EM LOTE - CSS
-   ============================================ */
-    .page-container {
-        padding: 20px;
-        max-width: 1600px;
-        margin: 0 auto;
-    }
-
-    /* Header */
-    .page-header {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
-        border-radius: 14px;
-        padding: 20px 24px;
-        margin-bottom: 20px;
-        color: white;
-    }
-
-    .page-header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .page-header-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .page-header-icon {
-        width: 42px;
-        height: 42px;
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-    }
-
-    .page-header h1 {
-        font-size: 18px;
-        font-weight: 700;
-        margin: 0 0 2px 0;
-    }
-
-    .page-header p {
-        font-size: 11px;
-        color: rgba(255, 255, 255, 0.7);
-        margin: 0;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .btn-header {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 14px;
-        background: rgba(255, 255, 255, 0.15);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all .2s;
-    }
-
-    .btn-header:hover {
-        background: rgba(255, 255, 255, 0.25);
-    }
-
-    .btn-header.primary {
-        background: rgba(34, 197, 94, 0.3);
-        border-color: rgba(34, 197, 94, 0.5);
-    }
-
-    .btn-header.danger {
-        background: rgba(239, 68, 68, 0.3);
-        border-color: rgba(239, 68, 68, 0.5);
-    }
-
-    /* Stats Cards */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 16px 20px;
-        border: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        transition: all .2s;
-    }
-
-    .stat-card:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-        transform: translateY(-1px);
-    }
-
-    .stat-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        flex-shrink: 0;
-    }
-
-    .stat-icon.pendentes {
-        background: #fef3c7;
-        color: #d97706;
-    }
-
-    .stat-icon.tratadas {
-        background: #dcfce7;
-        color: #16a34a;
-    }
-
-    .stat-icon.tecnicas {
-        background: #dbeafe;
-        color: #2563eb;
-    }
-
-    .stat-icon.operacionais {
-        background: #fee2e2;
-        color: #dc2626;
-    }
-
-    .stat-icon.confianca {
-        background: #f3e8ff;
-        color: #7c3aed;
-    }
-
-    .stat-icon.pontos {
-        background: #e0f2fe;
-        color: #0284c7;
-    }
-
-    .stat-info h3 {
-        font-size: 22px;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0;
-        line-height: 1;
-    }
-
-    .stat-info p {
-        font-size: 11px;
-        color: #64748b;
-        margin: 2px 0 0;
-    }
-
-    /* Filtros */
-    .filtros-card {
-        background: white;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        padding: 16px 20px;
-        margin-bottom: 16px;
-    }
-
-    .filtros-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 12px;
-        gap: 8px;
-    }
-
-    .filtros-header h3 {
-        font-size: 13px;
-        font-weight: 600;
-        color: #334155;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .filtros-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 12px;
-        align-items: end;
-    }
-
-    .form-group label {
-        display: block;
-        font-size: 11px;
-        font-weight: 600;
-        color: #64748b;
-        margin-bottom: 4px;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 13px;
-        background: white;
-        transition: all .2s;
-        box-sizing: border-box;
-    }
-
-    .form-control:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .filtros-actions {
-        display: flex;
-        gap: 8px;
-        align-items: end;
-    }
-
-    .btn-filtrar {
-        padding: 8px 16px;
-        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        white-space: nowrap;
-        transition: all .2s;
-    }
-
-    .btn-filtrar:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
-    }
-
-    .btn-limpar {
-        padding: 8px 12px;
-        background: #f1f5f9;
-        color: #475569;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 12px;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all .2s;
-    }
-
-    .btn-limpar:hover {
-        background: #e2e8f0;
-    }
-
-    /* Barra de acoes em massa */
-    .massa-bar {
-        display: none;
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        border-radius: 10px;
-        padding: 10px 16px;
-        margin-bottom: 12px;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    .massa-bar.ativa {
-        display: flex;
-    }
-
-    .massa-bar .sel-count {
-        font-size: 13px;
-        font-weight: 600;
-        color: #1e40af;
-    }
-
-    .btn-massa {
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        border: 1px solid transparent;
-        transition: all .2s;
-    }
-
-    .btn-massa.aprovar {
-        background: #dcfce7;
-        color: #166534;
-        border-color: #bbf7d0;
-    }
-
-    .btn-massa.aprovar:hover {
-        background: #bbf7d0;
-    }
-
-    .btn-massa.ignorar {
-        background: #fee2e2;
-        color: #991b1b;
-        border-color: #fecaca;
-    }
-
-    .btn-massa.ignorar:hover {
-        background: #fecaca;
-    }
-
-    .btn-massa.limpar {
-        background: #f1f5f9;
-        color: #475569;
-        border-color: #e2e8f0;
-    }
-
-    /* Tabela */
-    .tabela-card {
-        background: white;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        overflow: hidden;
-    }
-
-    .tabela-header {
-        padding: 12px 20px;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #f8fafc;
-    }
-
-    .tabela-header h3 {
-        font-size: 13px;
-        font-weight: 600;
-        color: #334155;
-        margin: 0;
-    }
-
-    .tabela-info {
-        font-size: 11px;
-        color: #94a3b8;
-    }
-
-    .tabela-wrapper {
-        overflow-x: auto;
-    }
-
-    table.tbl-tratamento {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-    }
-
-    table.tbl-tratamento thead th {
-        padding: 10px 12px;
-        background: #f8fafc;
-        border-bottom: 2px solid #e2e8f0;
-        font-weight: 600;
-        color: #475569;
-        text-align: left;
-        white-space: nowrap;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-
-    table.tbl-tratamento tbody td {
-        padding: 10px 12px;
-        border-bottom: 1px solid #f1f5f9;
-        vertical-align: middle;
-    }
-
-    table.tbl-tratamento tbody tr:hover {
-        background: #f8fafc;
-    }
-
-    table.tbl-tratamento tbody tr.selecionada {
-        background: #eff6ff;
-    }
-
-    /* Checkbox */
-    .chk-sel {
-        width: 16px;
-        height: 16px;
-        cursor: pointer;
-        accent-color: #3b82f6;
-    }
-
-    /* Badges */
-    .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        padding: 3px 8px;
-        border-radius: 100px;
-        font-size: 10px;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .badge.critica {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .badge.alta {
-        background: #ffedd5;
-        color: #9a3412;
-    }
-
-    .badge.media {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .badge.baixa {
-        background: #f0fdf4;
-        color: #166534;
-    }
-
-    .badge.tecnica {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .badge.operacional {
-        background: #fce7f3;
-        color: #9d174d;
-    }
-
-    .badge.conf-alta {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .badge.conf-confiavel {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .badge.conf-atencao {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .badge.pendente {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .badge.aprovada {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .badge.ajustada {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .badge.ignorada {
-        background: #f1f5f9;
-        color: #64748b;
-    }
-
-    /* Acoes rapidas */
-    .acoes-rapidas {
-        display: flex;
-        gap: 4px;
-    }
-
-    .btn-acao {
-        width: 28px;
-        height: 28px;
-        border-radius: 6px;
-        border: 1px solid #e2e8f0;
-        background: white;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        transition: all .2s;
-        color: #64748b;
-    }
-
-    .btn-acao:hover {
-        transform: scale(1.1);
-    }
-
-    .btn-acao.aprovar:hover {
-        background: #dcfce7;
-        color: #16a34a;
-        border-color: #86efac;
-    }
-
-    .btn-acao.ajustar:hover {
-        background: #dbeafe;
-        color: #2563eb;
-        border-color: #93c5fd;
-    }
-
-    .btn-acao.ignorar:hover {
-        background: #fee2e2;
-        color: #dc2626;
-        border-color: #fca5a5;
-    }
-
-    .btn-acao.detalhe:hover {
-        background: #f3e8ff;
-        color: #7c3aed;
-        border-color: #c4b5fd;
-    }
-
-    /* Paginacao */
-    .paginacao {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 20px;
-        border-top: 1px solid #e2e8f0;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
-    .paginacao-info {
-        font-size: 12px;
-        color: #64748b;
-    }
-
-    .paginacao-btns {
-        display: flex;
-        gap: 4px;
-    }
-
-    .btn-pag {
-        padding: 6px 12px;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        background: white;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all .2s;
-        color: #475569;
-    }
-
-    .btn-pag:hover {
-        background: #f1f5f9;
-        border-color: #3b82f6;
-        color: #2563eb;
-    }
-
-    .btn-pag.ativa {
-        background: #1e3a5f;
-        color: white;
-        border-color: #1e3a5f;
-    }
-
-    .btn-pag:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-
-    /* Valor real vs sugerido */
-    .valor-comparacao {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    .vl-real {
-        font-weight: 600;
-        color: #dc2626;
-        font-family: 'SF Mono', monospace;
-        font-size: 12px;
-    }
-
-    .vl-sugerido {
-        font-weight: 500;
-        color: #16a34a;
-        font-family: 'SF Mono', monospace;
-        font-size: 11px;
-    }
-
-    .vl-sugerido::before {
-        content: '→ ';
-        color: #94a3b8;
-    }
-
-    /* Score bar */
-    .score-bar {
-        width: 60px;
-        height: 6px;
-        background: #e2e8f0;
-        border-radius: 3px;
-        overflow: hidden;
-        display: inline-block;
-        vertical-align: middle;
-        margin-right: 4px;
-    }
-
-    .score-bar-fill {
-        height: 100%;
-        border-radius: 3px;
-        transition: width .3s;
-    }
-
-    .score-bar-fill.alta {
-        background: #22c55e;
-    }
-
-    .score-bar-fill.confiavel {
-        background: #3b82f6;
-    }
-
-    .score-bar-fill.atencao {
-        background: #eab308;
-    }
-
-    /* Prioridade hidraulica */
-    .prioridade-icon {
-        font-size: 14px;
-        margin-right: 2px;
-    }
-
-    /* Empty state */
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #94a3b8;
-    }
-
-    .empty-state ion-icon {
-        font-size: 48px;
-        margin-bottom: 12px;
-    }
-
-    .empty-state h3 {
-        font-size: 16px;
-        color: #475569;
-        margin: 0 0 4px;
-    }
-
-    .empty-state p {
-        font-size: 13px;
-        margin: 0;
-    }
-
-    /* Loading */
-    .loading-spinner {
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        border: 2px solid #e2e8f0;
-        border-top-color: #3b82f6;
-        border-radius: 50%;
-        animation: spin .8s linear infinite;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    /* Modal */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 9000;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .modal-overlay.ativo {
-        display: flex;
-    }
-
-    .modal-box {
-        background: white;
-        border-radius: 14px;
-        width: 95%;
-        max-width: 600px;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    }
-
-    .modal-header {
-        padding: 16px 20px;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        position: sticky;
-        top: 0;
-        background: white;
-        z-index: 1;
-    }
-
-    .modal-header h3 {
-        font-size: 15px;
-        font-weight: 600;
-        color: #0f172a;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .modal-close {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        border: none;
-        background: #f1f5f9;
-        cursor: pointer;
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #64748b;
-        transition: all .2s;
-    }
-
-    .modal-close:hover {
-        background: #fee2e2;
-        color: #dc2626;
-    }
-
-    .modal-body {
-        padding: 20px;
-    }
-
-    .modal-footer {
-        padding: 12px 20px;
-        border-top: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        position: sticky;
-        bottom: 0;
-        background: white;
-    }
-
-    .btn-modal {
-        padding: 8px 18px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        border: 1px solid transparent;
-        transition: all .2s;
-    }
-
-    .btn-modal.cancelar {
-        background: #f1f5f9;
-        color: #475569;
-        border-color: #e2e8f0;
-    }
-
-    .btn-modal.confirmar {
-        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
-        color: white;
-    }
-
-    .btn-modal.confirmar:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
-    }
-
-    /* Detalhe - scores */
-    .scores-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin: 12px 0;
-    }
-
-    .score-item {
-        background: #f8fafc;
-        border-radius: 8px;
-        padding: 10px 14px;
-    }
-
-    .score-item label {
-        font-size: 10px;
-        color: #64748b;
-        text-transform: uppercase;
-        font-weight: 600;
-        letter-spacing: 0.3px;
-        display: block;
-        margin-bottom: 4px;
-    }
-
-    .score-item .score-valor {
-        font-size: 18px;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    /* Reserva GNN */
-    .gnn-placeholder {
-        background: #f8fafc;
-        border: 1px dashed #cbd5e1;
-        border-radius: 10px;
-        padding: 16px;
-        text-align: center;
-        color: #94a3b8;
-        margin-top: 12px;
-    }
-
-    .gnn-placeholder ion-icon {
-        font-size: 24px;
-        display: block;
-        margin: 0 auto 6px;
-    }
-
-    .gnn-placeholder p {
-        font-size: 11px;
-        margin: 0;
-    }
-
-    /* Tipo medidor icones */
-    .tipo-medidor-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 11px;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-weight: 500;
-    }
-
-    .tipo-medidor-badge.reservatorio {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .tipo-medidor-badge.macro {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .tipo-medidor-badge.pitometrica {
-        background: #fce7f3;
-        color: #9d174d;
-    }
-
-    .tipo-medidor-badge.pressao {
-        background: #e0f2fe;
-        color: #0369a1;
-    }
-
-    .tipo-medidor-badge.hidrometro {
-        background: #f0fdf4;
-        color: #166534;
-    }
-
-    /* Textarea justificativa */
-    .textarea-just {
-        width: 100%;
-        min-height: 80px;
-        padding: 10px 12px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 13px;
-        resize: vertical;
-        box-sizing: border-box;
-        font-family: inherit;
-    }
-
-    .textarea-just:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    /* Input valor ajuste */
-    .input-valor {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 14px;
-        font-family: 'SF Mono', monospace;
-        box-sizing: border-box;
-    }
-
-    .input-valor:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    /* Info detalhe */
-    .detalhe-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-bottom: 12px;
-    }
-
-    .detalhe-item {
-        padding: 8px 12px;
-        background: #f8fafc;
-        border-radius: 6px;
-    }
-
-    .detalhe-item label {
-        font-size: 10px;
-        color: #64748b;
-        text-transform: uppercase;
-        font-weight: 600;
-        display: block;
-        margin-bottom: 2px;
-    }
-
-    .detalhe-item span {
-        font-size: 13px;
-        font-weight: 500;
-        color: #0f172a;
-    }
-
-    /* Select2 ajustes */
-    .select2-container {
-        width: 100% !important;
-    }
-
-    .select2-container .select2-selection--single {
-        height: 36px !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 8px !important;
-    }
-
-    .select2-container .select2-selection--single .select2-selection__rendered {
-        line-height: 36px !important;
-        font-size: 13px;
-        padding-left: 12px;
-    }
-
-    .select2-container .select2-selection--single .select2-selection__arrow {
-        height: 36px !important;
-    }
-
-    .select2-dropdown {
-        border-radius: 8px !important;
-        border: 1px solid #e2e8f0 !important;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
-    }
-
-    .select2-search--dropdown .select2-search__field {
-        border-radius: 6px !important;
-        padding: 8px 10px !important;
-    }
-
-    .select2-container--open .select2-dropdown {
-        z-index: 9999;
-    }
-
-    /* Responsivo */
-    @media (max-width: 1024px) {
-        .filtros-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-
-        .stats-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    @media (max-width: 768px) {
-        .page-container {
-            padding: 14px;
-        }
-
-        .page-header-content {
-            flex-direction: column;
-            align-items: stretch;
-            text-align: center;
-        }
-
-        .header-actions {
-            justify-content: center;
-        }
-
-        .filtros-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-
-        .massa-bar {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .paginacao {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .detalhe-grid,
-        .scores-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .modal-box {
-            width: 98%;
-            max-width: none;
-            margin: 8px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .filtros-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .filtros-actions {
-            flex-direction: column;
-        }
-
-        .filtros-actions button {
-            width: 100%;
-            justify-content: center;
-        }
-    }
-
-    /* Colunas ordenaveis */
-    .th-sort {
-        cursor: pointer;
-        user-select: none;
-        white-space: nowrap;
-    }
-
-    .th-sort:hover {
-        color: #2563eb;
-        background: #eff6ff;
-    }
-
-    .th-sort .sort-icon {
-        font-size: 12px;
-        vertical-align: middle;
-        opacity: 0.4;
-        margin-left: 2px;
-    }
-
-    .th-sort.asc .sort-icon,
-    .th-sort.desc .sort-icon {
-        opacity: 1;
-        color: #2563eb;
-    }
-
-    /* Icone modelo treinado */
-    .modelo-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-        font-size: 10px;
-        color: #16a34a;
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        padding: 1px 6px;
-        border-radius: 4px;
-        margin-left: 4px;
-        vertical-align: middle;
-    }
-
-    .modelo-badge ion-icon {
-        font-size: 11px;
-    }
-
-    /* Botao validacao */
-    .btn-acao.validacao {
-        background: #fffbeb;
-        color: #b45309;
-        border-color: #fde68a;
-    }
-
-    .btn-acao.validacao:hover {
-        background: #fef3c7;
-        color: #d97706;
-        border-color: #fde68a;
-    }
-
-    /* Badge numerico de ordem de ordenacao multi-coluna */
-    .sort-order {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: #2563eb;
-        color: #fff;
-        font-size: 9px;
-        font-weight: 700;
-        margin-left: 3px;
-        vertical-align: middle;
-    }
-
-    /* Modal regras - padrao SIMP */
-    .regra-tab {
-        flex: 1;
-        padding: 10px 16px;
-        background: transparent;
-        border: none;
-        font-size: 13px;
-        font-weight: 500;
-        color: #64748b;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        transition: all .2s;
-        border-bottom: 2px solid transparent;
-        margin-bottom: -2px;
-    }
-
-    .regra-tab:hover {
-        color: #1e3a5f;
-        background: #eff6ff;
-    }
-
-    .regra-tab.active {
-        color: #1e3a5f;
-        font-weight: 600;
-        border-bottom-color: #1e3a5f;
-    }
-
-    .regra-tab ion-icon {
-        font-size: 16px;
-    }
-
-    .regra-secao {
-        margin-bottom: 20px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .regra-secao:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-    }
-
-    .regra-secao h4 {
-        margin: 0 0 10px;
-        font-size: 14px;
-        color: #1e293b;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .regra-formula {
-        background: #f1f5f9;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 8px 14px;
-        font-family: 'SF Mono', Consolas, monospace;
-        font-size: 12px;
-        color: #334155;
-        margin-bottom: 12px;
-        text-align: center;
-        font-weight: 500;
-    }
-
-    .regra-tabela {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-    }
-
-    .regra-tabela th {
-        background: #f8fafc;
-        color: #475569;
-        font-weight: 600;
-        text-align: left;
-        padding: 8px 10px;
-        border-bottom: 2px solid #e2e8f0;
-    }
-
-    .regra-tabela td {
-        padding: 7px 10px;
-        border-bottom: 1px solid #f1f5f9;
-        color: #334155;
-        vertical-align: top;
-    }
-
-    .regra-tabela tr:hover td {
-        background: #f8fafc;
-    }
-
-    .regra-badge {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
-    }
-
-    .regra-badge.amarelo {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .regra-badge.vermelho {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .regra-badge.azul {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .regra-badge.roxo {
-        background: #ede9fe;
-        color: #5b21b6;
-    }
-
-    .regra-badge.verde {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .regra-badge.laranja {
-        background: #ffedd5;
-        color: #9a3412;
-    }
-
-    .regra-badge.cinza {
-        background: #f1f5f9;
-        color: #475569;
-    }
-
-    .regra-badge-info {
-        font-size: 11px;
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-weight: 500;
-    }
-
-    .regra-badge-info.verde {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .regra-badge-info.azul {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .regra-badge-info.amarelo {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    /* Glossario */
-    .glossario-item {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        margin-bottom: 10px;
-        overflow: hidden;
-        transition: all .2s;
-    }
-
-    .glossario-item:hover {
-        border-color: #93c5fd;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
-    }
-
-    .glossario-termo {
-        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-        padding: 10px 14px;
-        font-size: 13px;
-        font-weight: 700;
-        color: #1e3a5f;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .glossario-def {
-        padding: 10px 14px;
-    }
-
-    .glossario-def p {
-        font-size: 12px;
-        color: #475569;
-        margin: 0 0 6px;
-        line-height: 1.5;
-    }
-
-    .glossario-def p:last-child {
-        margin-bottom: 0;
-    }
-
-    .glossario-formula {
-        background: #f1f5f9;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 6px 12px;
-        font-family: 'SF Mono', Consolas, monospace;
-        font-size: 12px;
-        color: #334155;
-        margin: 6px 0;
-        display: inline-block;
-    }
-
-    #modalRegras .modal-container {
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: modalSlideIn 0.3s ease;
-    overflow: hidden;
-}
-
-    .modal-overlay.active {
-        display: flex;
-    }
-</style>
+<link rel="stylesheet" href="/style/css/treinamentoLote.css" />
 
 <div class="page-container">
 
@@ -1424,10 +66,11 @@ try {
                         <ion-icon name="time-outline" style="vertical-align:middle;margin-right:2px;"></ion-icon>
                         Ultimo batch: <strong id="dtUltimoBatch">-</strong>
                     </span>
-                    <button class="btn-header" onclick="abrirRegras()" title="Regras de deteccao e classificacao">
-                        <ion-icon name="book-outline"></ion-icon>
-                        Regras
+
+                    <button type="button" class="btn-header" onclick="abrirRegras()">
+                        <ion-icon name="book-outline"></ion-icon> Regras
                     </button>
+
                     <button class="btn-header primary" onclick="executarBatch()" id="btnExecutarBatch"
                         title="Executar motor de analise para ontem">
                         <ion-icon name="play-outline"></ion-icon>
@@ -1556,16 +199,7 @@ try {
                     <option value="8">Hidrometro</option>
                 </select>
             </div>
-            <!-- Unidade -->
-            <div class="form-group">
-                <label>Unidade</label>
-                <select id="filtroUnidade" class="form-control filtro-select2">
-                    <option value="">Todas</option>
-                    <?php foreach ($unidades as $u): ?>
-                        <option value="<?= $u['CD_UNIDADE'] ?>"><?= htmlspecialchars($u['DS_NOME']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+           
             <!-- Confianca minima -->
             <div class="form-group">
                 <label>Confianca Minima</label>
@@ -1620,20 +254,20 @@ try {
                         <?php endif; ?>
                         <th class="th-sort" onclick="ordenarPor('ponto', event)">Ponto <ion-icon
                                 name="swap-vertical-outline" class="sort-icon"></ion-icon></th>
-                        <th class="th-sort" onclick="ordenarPor('data', event)">Data/Hora <ion-icon
+                        <th class="th-sort" onclick="ordenarPor('data', event)">Data <ion-icon
                                 name="swap-vertical-outline" class="sort-icon"></ion-icon></th>
                         <th class="th-sort" onclick="ordenarPor('tipo', event)">Tipo <ion-icon
+                                name="swap-vertical-outline" class="sort-icon"></ion-icon></th>
+                        <th class="th-sort" onclick="ordenarPor('qtd_horas', event)">Horas Anomalas <ion-icon
                                 name="swap-vertical-outline" class="sort-icon"></ion-icon></th>
                         <th>Classe</th>
                         <th class="th-sort" onclick="ordenarPor('severidade', event)">Severidade <ion-icon
                                 name="swap-vertical-outline" class="sort-icon"></ion-icon></th>
-                        <th>Valor Real / Sugerido</th>
                         <th class="th-sort" onclick="ordenarPor('confianca', event)">Confianca <ion-icon
                                 name="swap-vertical-outline" class="sort-icon"></ion-icon></th>
-                        <th class="th-sort" onclick="ordenarPor('status', event)">Status <ion-icon
-                                name="swap-vertical-outline" class="sort-icon"></ion-icon></th>
+                        <th>Status</th>
                         <?php if ($podeEditar): ?>
-                            <th style="width:160px">Acoes</th>
+                            <th style="width:140px">Acoes</th>
                         <?php endif; ?>
                     </tr>
                 </thead>
@@ -1663,537 +297,989 @@ try {
             nos vizinhos anomalos e propagacao de eventos quando o Graph Neural Network estiver ativo.</p>
     </div>
 
-</div><!-- .page-container -->
-
-
-<!-- ============================================
-     MODAL: DETALHE DA PENDENCIA
-     ============================================ -->
-<div class="modal-overlay" id="modalDetalhe">
-    <div class="modal-box" style="max-width:700px;">
-        <div class="modal-header">
-            <h3><ion-icon name="information-circle-outline"></ion-icon> Detalhe da Pendencia</h3>
-            <button class="modal-close" onclick="fecharModal('modalDetalhe')">&times;</button>
-        </div>
-        <div class="modal-body" id="modalDetalheBody">
-            <div style="text-align:center;padding:20px;">
-                <div class="loading-spinner"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================
-     MODAL: AJUSTAR VALOR
-     ============================================ -->
-<div class="modal-overlay" id="modalAjustar">
-    <div class="modal-box" style="max-width:440px;">
-        <div class="modal-header">
-            <h3><ion-icon name="create-outline"></ion-icon> Ajustar Valor</h3>
-            <button class="modal-close" onclick="fecharModal('modalAjustar')">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p style="font-size:12px;color:#64748b;margin:0 0 8px;">Ponto: <strong id="ajustarPonto"></strong> | Hora:
-                <strong id="ajustarHora"></strong>
-            </p>
-            <div style="display:flex;gap:12px;margin-bottom:12px;">
-                <div style="flex:1;background:#fee2e2;border-radius:8px;padding:10px;text-align:center;">
-                    <div style="font-size:10px;color:#991b1b;text-transform:uppercase;font-weight:600;">Valor Real</div>
-                    <div style="font-size:18px;font-weight:700;color:#dc2626;" id="ajustarVlReal">-</div>
-                </div>
-                <div style="flex:1;background:#dcfce7;border-radius:8px;padding:10px;text-align:center;">
-                    <div style="font-size:10px;color:#166534;text-transform:uppercase;font-weight:600;">Sugerido</div>
-                    <div style="font-size:18px;font-weight:700;color:#16a34a;" id="ajustarVlSugerido">-</div>
-                </div>
-            </div>
-            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Novo
-                valor:</label>
-            <input type="number" step="0.0001" class="input-valor" id="ajustarValorInput"
-                placeholder="Informe o valor corrigido">
-        </div>
-        <div class="modal-footer">
-            <button class="btn-modal cancelar" onclick="fecharModal('modalAjustar')">Cancelar</button>
-            <button class="btn-modal confirmar" onclick="confirmarAjuste()">Aplicar Ajuste</button>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================
-     MODAL: IGNORAR (justificativa)
-     ============================================ -->
-<div class="modal-overlay" id="modalIgnorar">
-    <div class="modal-box" style="max-width:440px;">
-        <div class="modal-header">
-            <h3><ion-icon name="eye-off-outline"></ion-icon> Ignorar Pendencia</h3>
-            <button class="modal-close" onclick="fecharModal('modalIgnorar')">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p style="font-size:12px;color:#64748b;margin:0 0 8px;" id="ignorarInfo"></p>
-            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Justificativa
-                (obrigatoria):</label>
-            <textarea class="textarea-just" id="ignorarJustificativa" placeholder="Descreva o motivo..."></textarea>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-modal cancelar" onclick="fecharModal('modalIgnorar')">Cancelar</button>
-            <button class="btn-modal confirmar" onclick="confirmarIgnorar()">Confirmar</button>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================
+    <!-- ============================================
          MODAL: REGRAS DE DETECCAO E GLOSSARIO
          ============================================ -->
-<div class="modal-overlay" id="modalRegras" onclick="if(event.target===this)fecharRegras()">
-    <div class="modal-container" style="max-width:760px;max-height:90vh;display:flex;flex-direction:column;">
+    <div class="modal-overlay" id="modalRegras" onclick="if(event.target===this)fecharRegras()">
+        <div class="modal-container" style="max-width:760px;max-height:90vh;display:flex;flex-direction:column;">
 
-        <!-- Header padrao SIMP -->
-        <div class="modal-header">
-            <h3>
-                <ion-icon name="book-outline"></ion-icon>
-                Regras de Deteccao e Glossario
-            </h3>
-            <button class="modal-close" onclick="fecharRegras()">
-                <ion-icon name="close-outline"></ion-icon>
-            </button>
-        </div>
-
-        <!-- Tabs -->
-        <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;background:#f8fafc;">
-            <button class="regra-tab active" onclick="trocarAbaRegra('regras', this)">
-                <ion-icon name="shield-checkmark-outline"></ion-icon> Regras
-            </button>
-            <button class="regra-tab" onclick="trocarAbaRegra('glossario', this)">
-                <ion-icon name="library-outline"></ion-icon> Glossario
-            </button>
-        </div>
-
-        <!-- Body scrollavel -->
-        <div class="modal-body" style="overflow-y:auto;flex:1;">
-
-            <!-- ========== ABA REGRAS ========== -->
-            <div id="abaRegras">
-
-                <!-- Tipos de Anomalia -->
-                <div class="regra-secao">
-                    <h4><ion-icon name="warning-outline" style="color:#f59e0b;"></ion-icon> Tipos de Anomalia</h4>
-                    <table class="regra-tabela">
-                        <thead>
-                            <tr>
-                                <th>Tipo</th>
-                                <th>Descricao</th>
-                                <th>Criterio de Deteccao</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="regra-badge amarelo">1</span></td>
-                                <td>Valor zerado</td>
-                                <td>Vazao = 0 em hora com historico &gt; 0 (exceto reservatorio)</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge amarelo">2</span></td>
-                                <td>Sensor travado</td>
-                                <td>Valor constante por 3+ horas consecutivas (desvio padrao = 0)</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge vermelho">3</span></td>
-                                <td>Spike (extremo)</td>
-                                <td>Valor &gt; 3x a media historica da hora ou variacao &gt; 200% entre horas</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge azul">4</span></td>
-                                <td>Desvio estatistico</td>
-                                <td>Z-score &gt; limiar dinamico (4.0 - sensibilidade x 2.5)</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge roxo">5</span></td>
-                                <td>Padrao incomum</td>
-                                <td>Autoencoder: erro de reconstrucao acima do threshold treinado</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge azul">6</span></td>
-                                <td>Desvio do modelo</td>
-                                <td>Diferenca entre valor real e predicao XGBoost &gt; 2x o MAE do modelo</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge cinza">7</span></td>
-                                <td>Gap comunicacao</td>
-                                <td>Sem registros na hora (0 de 60 minutos esperados)</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge vermelho">8</span></td>
-                                <td>Fora de faixa</td>
-                                <td>Valor fora dos limites operacionais configurados no ponto</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Classificacao -->
-                <div class="regra-secao">
-                    <h4><ion-icon name="git-branch-outline" style="color:#8b5cf6;"></ion-icon> Classificacao da Anomalia
-                    </h4>
-                    <table class="regra-tabela">
-                        <thead>
-                            <tr>
-                                <th>Classe</th>
-                                <th>Criterio</th>
-                                <th>Acao Recomendada</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="regra-badge azul">Tecnica</span></td>
-                                <td>Apenas este ponto diverge; vizinhos no grafo estao normais</td>
-                                <td>Aprovar valor sugerido (falha isolada do sensor)</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge laranja">Operacional</span></td>
-                                <td>Multiplos vizinhos tambem apresentam anomalia simultanea</td>
-                                <td>Investigar antes de tratar (pode ser evento real na rede)</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Score de Confianca -->
-                <div class="regra-secao">
-                    <h4><ion-icon name="shield-checkmark-outline" style="color:#16a34a;"></ion-icon> Score de Confianca
-                        Composto</h4>
-                    <div class="regra-formula">
-                        0.30 &times; Estatistico + 0.30 &times; Modelo + 0.20 &times; Topologico + 0.10 &times;
-                        Historico + 0.10 &times; Padrao
-                    </div>
-                    <table class="regra-tabela">
-                        <thead>
-                            <tr>
-                                <th style="width:25%">Componente</th>
-                                <th>Peso</th>
-                                <th>O que mede</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Estatistico</strong></td>
-                                <td>30%</td>
-                                <td>Z-score normalizado — quanto o valor desvia da distribuicao historica</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Modelo</strong></td>
-                                <td>30%</td>
-                                <td>Diferenca entre valor real e predicao XGBoost (se modelo treinado)</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Topologico</strong></td>
-                                <td>20%</td>
-                                <td>Consistencia com vizinhos no grafo — se vizinhos estao normais, aumenta confianca
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Historico</strong></td>
-                                <td>10%</td>
-                                <td>Frequencia deste tipo de anomalia neste ponto (anomalias recorrentes = score maior)
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Padrao</strong></td>
-                                <td>10%</td>
-                                <td>Se anomalia similar ja foi aprovada antes no mesmo contexto</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;">
-                        <div class="regra-badge-info verde">&ge; 95% — Alta (altissima certeza)</div>
-                        <div class="regra-badge-info azul">&ge; 85% — Confiavel (recomendado aprovar)</div>
-                        <div class="regra-badge-info amarelo">&ge; 70% — Atencao (revisar antes)</div>
-                    </div>
-                </div>
-
-                <!-- Severidade -->
-                <div class="regra-secao">
-                    <h4><ion-icon name="flame-outline" style="color:#ef4444;"></ion-icon> Niveis de Severidade</h4>
-                    <table class="regra-tabela">
-                        <thead>
-                            <tr>
-                                <th>Severidade</th>
-                                <th>Criterio</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="regra-badge vermelho">Critica</span></td>
-                                <td>Z-score &gt; 6 ou gap total de comunicacao</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge laranja">Alta</span></td>
-                                <td>Z-score entre 4 e 6 ou spike extremo</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge amarelo">Media</span></td>
-                                <td>Z-score entre 2.5 e 4 ou desvio moderado</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge cinza">Baixa</span></td>
-                                <td>Z-score &lt; 2.5, desvio leve detectado pelo autoencoder</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Valor Sugerido -->
-                <div class="regra-secao">
-                    <h4><ion-icon name="calculator-outline" style="color:#0891b2;"></ion-icon> Calculo do Valor Sugerido
-                    </h4>
-                    <table class="regra-tabela">
-                        <thead>
-                            <tr>
-                                <th style="width:15%">Prioridade</th>
-                                <th>Metodo</th>
-                                <th>Quando e usado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>1a</strong></td>
-                                <td>Predicao XGBoost</td>
-                                <td>Se o ponto possui modelo treinado com R&sup2; &gt; 0.5</td>
-                            </tr>
-                            <tr>
-                                <td><strong>2a</strong></td>
-                                <td>Media historica da hora</td>
-                                <td>Fallback se nao ha modelo ou predicao indisponivel</td>
-                            </tr>
-                            <tr>
-                                <td><strong>3a</strong></td>
-                                <td>Valor esperado (detector)</td>
-                                <td>Ultimo recurso — estimativa do detector de anomalias</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Prioridade Hidraulica -->
-                <div class="regra-secao">
-                    <h4><ion-icon name="water-outline" style="color:#2563eb;"></ion-icon> Prioridade Hidraulica</h4>
-                    <table class="regra-tabela">
-                        <thead>
-                            <tr>
-                                <th>Prioridade</th>
-                                <th>Tipo</th>
-                                <th>Motivo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>1a</strong></td>
-                                <td>Reservatorio</td>
-                                <td>Impacto direto no abastecimento — nivel critico afeta toda a rede</td>
-                            </tr>
-                            <tr>
-                                <td><strong>2a</strong></td>
-                                <td>Macromedidor</td>
-                                <td>Grande volume — erro afeta balanco hidrico regional</td>
-                            </tr>
-                            <tr>
-                                <td><strong>3a</strong></td>
-                                <td>Pitometrica</td>
-                                <td>Monitoramento de rede — referencia para calibracao</td>
-                            </tr>
-                            <tr>
-                                <td><strong>4a</strong></td>
-                                <td>Pressao</td>
-                                <td>Indicador indireto — complementa analise de vazao</td>
-                            </tr>
-                            <tr>
-                                <td><strong>5a</strong></td>
-                                <td>Hidrometro</td>
-                                <td>Ponto final da rede — impacto localizado</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Acoes de Tratamento -->
-                <div class="regra-secao">
-                    <h4><ion-icon name="checkmark-done-outline" style="color:#16a34a;"></ion-icon> Acoes de Tratamento
-                    </h4>
-                    <table class="regra-tabela">
-                        <thead>
-                            <tr>
-                                <th>Acao</th>
-                                <th>O que acontece</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="regra-badge verde">Aprovar</span></td>
-                                <td>Inativa 60 registros da hora + insere 60 novos com valor sugerido. Registra usuario
-                                    e observacao.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge azul">Ajustar</span></td>
-                                <td>Mesmo processo, mas com valor informado manualmente pelo operador.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="regra-badge cinza">Ignorar</span></td>
-                                <td>Mantem dados originais. Justificativa obrigatoria para auditoria.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <p style="font-size:11px;color:#94a3b8;margin-top:8px;">
-                        <ion-icon name="information-circle-outline" style="vertical-align:middle;"></ion-icon>
-                        Todas as acoes registram: usuario, data/hora, observacao detalhada. Registros tratados recebem
-                        ID_TIPO_REGISTRO = 2 (manual/IA).
-                    </p>
-                </div>
+            <!-- Header padrao SIMP -->
+            <div class="modal-header">
+                <h3>
+                    <ion-icon name="book-outline"></ion-icon>
+                    Regras de Deteccao e Glossario
+                </h3>
+                <button class="modal-close" onclick="fecharRegras()">
+                    <ion-icon name="close-outline"></ion-icon>
+                </button>
             </div>
 
-            <!-- ========== ABA GLOSSARIO ========== -->
-            <div id="abaGlossario" style="display:none;">
+            <!-- Tabs -->
+            <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;background:#f8fafc;">
+                <button class="regra-tab active" onclick="trocarAbaRegra('regras', this)">
+                    <ion-icon name="shield-checkmark-outline"></ion-icon> Regras
+                </button>
+                <button class="regra-tab" onclick="trocarAbaRegra('glossario', this)">
+                    <ion-icon name="library-outline"></ion-icon> Glossario
+                </button>
+                <button class="regra-tab" onclick="trocarAbaRegra('metodos', this)">
+                    <ion-icon name="git-compare-outline"></ion-icon> Metodos de Correcao
+                </button>
 
-                <div class="regra-secao">
-                    <h4><ion-icon name="library-outline" style="color:#6366f1;"></ion-icon> Dicionario de Termos
-                        Tecnicos</h4>
-                    <p style="font-size:12px;color:#64748b;margin-bottom:12px;">
-                        Explicacao dos termos estatisticos e de inteligencia artificial utilizados nesta tela.
-                    </p>
-                </div>
+            </div>
 
-                <div class="glossario-item">
-                    <div class="glossario-termo">Z-Score</div>
-                    <div class="glossario-def">
-                        <p>Mede quantos <strong>desvios padrao</strong> um valor esta distante da media. Exemplo: se a
-                            vazao media as 14h e 50 L/s com desvio padrao 5, um valor de 65 L/s tem Z-score = 3.0 (esta
-                            3 desvios acima da media).</p>
-                        <div class="glossario-formula">Z = (valor_real - media) / desvio_padrao</div>
-                        <p><strong>De onde vem:</strong> calculado sobre o historico de 12+ semanas da mesma hora do
-                            mesmo ponto. Quanto maior o Z-score, mais anomalo e o valor.</p>
-                        <p><strong>Limiar dinamico:</strong> <code>4.0 - sensibilidade &times; 2.5</code>. Com
-                            sensibilidade padrao (0.5), o limiar fica em 2.75.</p>
+            <!-- Body scrollavel -->
+            <div class="modal-body" style="overflow-y:auto;flex:1;">
+
+                <!-- ========== ABA REGRAS ========== -->
+                <div id="abaRegras">
+
+                    <!-- Tipos de Anomalia -->
+                    <div class="regra-secao">
+                        <h4><ion-icon name="warning-outline" style="color:#f59e0b;"></ion-icon> Tipos de Anomalia</h4>
+                        <table class="regra-tabela">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Descricao</th>
+                                    <th>Criterio de Deteccao</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="regra-badge amarelo">1</span></td>
+                                    <td>Valor zerado</td>
+                                    <td>Vazao = 0 em hora com historico &gt; 0 (exceto reservatorio)</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge amarelo">2</span></td>
+                                    <td>Sensor travado</td>
+                                    <td>Valor constante por 3+ horas consecutivas (desvio padrao = 0)</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge vermelho">3</span></td>
+                                    <td>Spike (extremo)</td>
+                                    <td>Valor &gt; 3x a media historica da hora ou variacao &gt; 200% entre horas</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge azul">4</span></td>
+                                    <td>Desvio estatistico</td>
+                                    <td>Z-score &gt; limiar dinamico (4.0 - sensibilidade x 2.5)</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge roxo">5</span></td>
+                                    <td>Padrao incomum</td>
+                                    <td>Autoencoder: erro de reconstrucao acima do threshold treinado</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge azul">6</span></td>
+                                    <td>Desvio do modelo</td>
+                                    <td>Diferenca entre valor real e predicao XGBoost &gt; 2x o MAE do modelo</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge cinza">7</span></td>
+                                    <td>Gap comunicacao</td>
+                                    <td>Sem registros na hora (0 de 60 minutos esperados)</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge vermelho">8</span></td>
+                                    <td>Fora de faixa</td>
+                                    <td>Valor fora dos limites operacionais configurados no ponto</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                </div>
 
-                <div class="glossario-item">
-                    <div class="glossario-termo">Threshold (Limiar)</div>
-                    <div class="glossario-def">
-                        <p>Valor de corte que separa "normal" de "anomalo". Se uma metrica ultrapassa o threshold, o
-                            sistema classifica como anomalia. Cada metodo tem seu proprio threshold:</p>
-                        <ul style="margin:6px 0;padding-left:20px;font-size:12px;color:#475569;">
-                            <li><strong>Z-score:</strong> limiar dinamico (tipicamente 2.75)</li>
-                            <li><strong>Autoencoder:</strong> percentil 95 do erro de reconstrucao no treino</li>
-                            <li><strong>XGBoost:</strong> 2x o MAE historico do modelo</li>
-                        </ul>
+                    <!-- Classificacao -->
+                    <div class="regra-secao">
+                        <h4><ion-icon name="git-branch-outline" style="color:#8b5cf6;"></ion-icon> Classificacao da
+                            Anomalia
+                        </h4>
+                        <table class="regra-tabela">
+                            <thead>
+                                <tr>
+                                    <th>Classe</th>
+                                    <th>Criterio</th>
+                                    <th>Acao Recomendada</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="regra-badge azul">Tecnica</span></td>
+                                    <td>Apenas este ponto diverge; vizinhos no grafo estao normais</td>
+                                    <td>Aprovar valor sugerido (falha isolada do sensor)</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge laranja">Operacional</span></td>
+                                    <td>Multiplos vizinhos tambem apresentam anomalia simultanea</td>
+                                    <td>Investigar antes de tratar (pode ser evento real na rede)</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                </div>
 
-                <div class="glossario-item">
-                    <div class="glossario-termo">Desvio Padrao</div>
-                    <div class="glossario-def">
-                        <p>Medida de <strong>dispersao</strong> dos dados em relacao a media. Desvio padrao baixo =
-                            dados concentrados; alto = dados espalhados. E a base do calculo do Z-score.</p>
+                    <!-- Score de Confianca -->
+                    <div class="regra-secao">
+                        <h4><ion-icon name="shield-checkmark-outline" style="color:#16a34a;"></ion-icon> Score de
+                            Confianca
+                            Composto</h4>
+                        <div class="regra-formula">
+                            0.30 &times; Estatistico + 0.30 &times; Modelo + 0.20 &times; Topologico + 0.10 &times;
+                            Historico + 0.10 &times; Padrao
+                        </div>
+                        <table class="regra-tabela">
+                            <thead>
+                                <tr>
+                                    <th style="width:25%">Componente</th>
+                                    <th>Peso</th>
+                                    <th>O que mede</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Estatistico</strong></td>
+                                    <td>30%</td>
+                                    <td>Z-score normalizado — quanto o valor desvia da distribuicao historica</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Modelo</strong></td>
+                                    <td>30%</td>
+                                    <td>Diferenca entre valor real e predicao XGBoost (se modelo treinado)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Topologico</strong></td>
+                                    <td>20%</td>
+                                    <td>Consistencia com vizinhos no grafo — se vizinhos estao normais, aumenta
+                                        confianca
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Historico</strong></td>
+                                    <td>10%</td>
+                                    <td>Frequencia deste tipo de anomalia neste ponto (anomalias recorrentes = score
+                                        maior)
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Padrao</strong></td>
+                                    <td>10%</td>
+                                    <td>Se anomalia similar ja foi aprovada antes no mesmo contexto</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;">
+                            <div class="regra-badge-info verde">&ge; 95% — Alta (altissima certeza)</div>
+                            <div class="regra-badge-info azul">&ge; 85% — Confiavel (recomendado aprovar)</div>
+                            <div class="regra-badge-info amarelo">&ge; 70% — Atencao (revisar antes)</div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="glossario-item">
-                    <div class="glossario-termo">XGBoost</div>
-                    <div class="glossario-def">
-                        <p>Algoritmo de <strong>machine learning</strong> baseado em arvores de decisao. Aprende padroes
-                            historicos de cada ponto (hora do dia, dia da semana, correlacoes com vizinhos) para prever
-                            o valor esperado. Se o valor real diverge muito da predicao, e detectada anomalia.</p>
-                        <p><strong>Versao atual:</strong> v6.1 com features de shift temporal, delta e encoding ciclico.
+                    <!-- Severidade -->
+                    <div class="regra-secao">
+                        <h4><ion-icon name="flame-outline" style="color:#ef4444;"></ion-icon> Niveis de Severidade</h4>
+                        <table class="regra-tabela">
+                            <thead>
+                                <tr>
+                                    <th>Severidade</th>
+                                    <th>Criterio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="regra-badge vermelho">Critica</span></td>
+                                    <td>Z-score &gt; 6 ou gap total de comunicacao</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge laranja">Alta</span></td>
+                                    <td>Z-score entre 4 e 6 ou spike extremo</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge amarelo">Media</span></td>
+                                    <td>Z-score entre 2.5 e 4 ou desvio moderado</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge cinza">Baixa</span></td>
+                                    <td>Z-score &lt; 2.5, desvio leve detectado pelo autoencoder</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Valor Sugerido -->
+                    <div class="regra-secao">
+                        <h4><ion-icon name="calculator-outline" style="color:#0891b2;"></ion-icon> Calculo do Valor
+                            Sugerido
+                        </h4>
+                        <table class="regra-tabela">
+                            <thead>
+                                <tr>
+                                    <th style="width:15%">Prioridade</th>
+                                    <th>Metodo</th>
+                                    <th>Quando e usado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>1a</strong></td>
+                                    <td>Predicao XGBoost</td>
+                                    <td>Se o ponto possui modelo treinado com R&sup2; &gt; 0.5</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>2a</strong></td>
+                                    <td>Media historica da hora</td>
+                                    <td>Fallback se nao ha modelo ou predicao indisponivel</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>3a</strong></td>
+                                    <td>Valor esperado (detector)</td>
+                                    <td>Ultimo recurso — estimativa do detector de anomalias</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Prioridade Hidraulica -->
+                    <div class="regra-secao">
+                        <h4><ion-icon name="water-outline" style="color:#2563eb;"></ion-icon> Prioridade Hidraulica</h4>
+                        <table class="regra-tabela">
+                            <thead>
+                                <tr>
+                                    <th>Prioridade</th>
+                                    <th>Tipo</th>
+                                    <th>Motivo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>1a</strong></td>
+                                    <td>Reservatorio</td>
+                                    <td>Impacto direto no abastecimento — nivel critico afeta toda a rede</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>2a</strong></td>
+                                    <td>Macromedidor</td>
+                                    <td>Grande volume — erro afeta balanco hidrico regional</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>3a</strong></td>
+                                    <td>Pitometrica</td>
+                                    <td>Monitoramento de rede — referencia para calibracao</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>4a</strong></td>
+                                    <td>Pressao</td>
+                                    <td>Indicador indireto — complementa analise de vazao</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>5a</strong></td>
+                                    <td>Hidrometro</td>
+                                    <td>Ponto final da rede — impacto localizado</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Acoes de Tratamento -->
+                    <div class="regra-secao">
+                        <h4><ion-icon name="checkmark-done-outline" style="color:#16a34a;"></ion-icon> Acoes de
+                            Tratamento
+                        </h4>
+                        <table class="regra-tabela">
+                            <thead>
+                                <tr>
+                                    <th>Acao</th>
+                                    <th>O que acontece</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="regra-badge verde">Aprovar</span></td>
+                                    <td>Inativa 60 registros da hora + insere 60 novos com valor sugerido. Registra
+                                        usuario
+                                        e observacao.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge azul">Ajustar</span></td>
+                                    <td>Mesmo processo, mas com valor informado manualmente pelo operador.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="regra-badge cinza">Ignorar</span></td>
+                                    <td>Mantem dados originais. Justificativa obrigatoria para auditoria.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p style="font-size:11px;color:#94a3b8;margin-top:8px;">
+                            <ion-icon name="information-circle-outline" style="vertical-align:middle;"></ion-icon>
+                            Todas as acoes registram: usuario, data/hora, observacao detalhada. Registros tratados
+                            recebem
+                            ID_TIPO_REGISTRO = 2 (manual/IA).
                         </p>
                     </div>
                 </div>
 
-                <div class="glossario-item">
-                    <div class="glossario-termo">Autoencoder</div>
-                    <div class="glossario-def">
-                        <p>Rede neural que aprende a <strong>comprimir e reconstruir</strong> dados normais. Quando
-                            recebe um dado anomalo, nao consegue reconstrui-lo bem, gerando erro de reconstrucao alto.
-                            Esse erro e comparado com o threshold treinado.</p>
+                <!-- ========== ABA GLOSSARIO ========== -->
+                <div id="abaGlossario" style="display:none;">
+
+                    <div class="regra-secao">
+                        <h4><ion-icon name="library-outline" style="color:#6366f1;"></ion-icon> Dicionario de Termos
+                            Tecnicos</h4>
+                        <p style="font-size:12px;color:#64748b;margin-bottom:12px;">
+                            Explicacao dos termos estatisticos e de inteligencia artificial utilizados nesta tela.
+                        </p>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">Z-Score</div>
+                        <div class="glossario-def">
+                            <p>Mede quantos <strong>desvios padrao</strong> um valor esta distante da media. Exemplo: se
+                                a
+                                vazao media as 14h e 50 L/s com desvio padrao 5, um valor de 65 L/s tem Z-score = 3.0
+                                (esta
+                                3 desvios acima da media).</p>
+                            <div class="glossario-formula">Z = (valor_real - media) / desvio_padrao</div>
+                            <p><strong>De onde vem:</strong> calculado sobre o historico de 12+ semanas da mesma hora do
+                                mesmo ponto. Quanto maior o Z-score, mais anomalo e o valor.</p>
+                            <p><strong>Limiar dinamico:</strong> <code>4.0 - sensibilidade &times; 2.5</code>. Com
+                                sensibilidade padrao (0.5), o limiar fica em 2.75.</p>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">Threshold (Limiar)</div>
+                        <div class="glossario-def">
+                            <p>Valor de corte que separa "normal" de "anomalo". Se uma metrica ultrapassa o threshold, o
+                                sistema classifica como anomalia. Cada metodo tem seu proprio threshold:</p>
+                            <ul style="margin:6px 0;padding-left:20px;font-size:12px;color:#475569;">
+                                <li><strong>Z-score:</strong> limiar dinamico (tipicamente 2.75)</li>
+                                <li><strong>Autoencoder:</strong> percentil 95 do erro de reconstrucao no treino</li>
+                                <li><strong>XGBoost:</strong> 2x o MAE historico do modelo</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">Desvio Padrao</div>
+                        <div class="glossario-def">
+                            <p>Medida de <strong>dispersao</strong> dos dados em relacao a media. Desvio padrao baixo =
+                                dados concentrados; alto = dados espalhados. E a base do calculo do Z-score.</p>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">XGBoost</div>
+                        <div class="glossario-def">
+                            <p>Algoritmo de <strong>machine learning</strong> baseado em arvores de decisao. Aprende
+                                padroes
+                                historicos de cada ponto (hora do dia, dia da semana, correlacoes com vizinhos) para
+                                prever
+                                o valor esperado. Se o valor real diverge muito da predicao, e detectada anomalia.</p>
+                            <p><strong>Versao atual:</strong> v6.1 com features de shift temporal, delta e encoding
+                                ciclico.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">Autoencoder</div>
+                        <div class="glossario-def">
+                            <p>Rede neural que aprende a <strong>comprimir e reconstruir</strong> dados normais. Quando
+                                recebe um dado anomalo, nao consegue reconstrui-lo bem, gerando erro de reconstrucao
+                                alto.
+                                Esse erro e comparado com o threshold treinado.</p>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">R&sup2; (R-quadrado)</div>
+                        <div class="glossario-def">
+                            <p>Metrica de qualidade do modelo, varia de 0 a 1. Indica quanto da variacao dos dados o
+                                modelo
+                                consegue explicar. R&sup2; = 0.85 significa que o modelo explica 85% da variabilidade.
+                                Acima
+                                de 0.7 e considerado bom para dados de telemetria.</p>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">MAE (Erro Medio Absoluto)</div>
+                        <div class="glossario-def">
+                            <p>Media das diferencas absolutas entre predicao e valor real. Exemplo: MAE = 3.5 L/s
+                                significa
+                                que o modelo erra em media 3.5 L/s. Usado como referencia para definir o threshold de
+                                anomalia do XGBoost (2x MAE).</p>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">MAPE (Erro Percentual Medio)</div>
+                        <div class="glossario-def">
+                            <p>Mesma ideia do MAE, mas em <strong>percentual</strong>. MAPE = 15% significa que o modelo
+                                erra em media 15% do valor real. Util para comparar performance entre pontos com escalas
+                                diferentes.</p>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">Score Topologico</div>
+                        <div class="glossario-def">
+                            <p>Analisa os <strong>vizinhos no grafo hidraulico</strong> (flowchart). Se apenas este
+                                ponto
+                                esta anomalo mas vizinhos a montante e jusante estao normais, e provavel falha do sensor
+                                (score alto). Se vizinhos tambem divergem, pode ser evento real na rede (score baixo).
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">Fallback Estatistico</div>
+                        <div class="glossario-def">
+                            <p>Quando o ponto <strong>nao possui modelo ML treinado</strong>, o sistema usa media
+                                historica
+                                e interpolacao como metodo alternativo de predicao. Indicado pelo badge sem o icone
+                                <span class="modelo-badge" style="font-size:10px;"><ion-icon
+                                        name="checkmark-circle"></ion-icon> ML</span>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">Batch (Lote)</div>
+                        <div class="glossario-def">
+                            <p>Processamento automatico que analisa <strong>todos os pontos ativos</strong> de uma vez
+                                para
+                                uma data especifica. Percorre cada ponto, chama o detector de anomalias + predicao,
+                                classifica e gera pendencias. Tempo tipico: 2-5 minutos para ~53 pontos.</p>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">MERGE / UPSERT</div>
+                        <div class="glossario-def">
+                            <p>Operacao de banco de dados que <strong>insere ou atualiza</strong>. Se ja existe
+                                pendencia
+                                para o mesmo ponto+data+hora+tipo, atualiza os valores; se nao existe, insere nova.
+                                Garante
+                                idempotencia — rodar o batch 2x nao duplica dados.</p>
+                        </div>
+                    </div>
+
+                    <div class="glossario-item">
+                        <div class="glossario-termo">Idempotente</div>
+                        <div class="glossario-def">
+                            <p>Operacao que pode ser executada <strong>multiplas vezes</strong> sem alterar o resultado
+                                alem
+                                da primeira execucao. O batch e idempotente: rodar 3x para a mesma data gera o mesmo
+                                resultado que rodar 1x.</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="glossario-item">
-                    <div class="glossario-termo">R&sup2; (R-quadrado)</div>
-                    <div class="glossario-def">
-                        <p>Metrica de qualidade do modelo, varia de 0 a 1. Indica quanto da variacao dos dados o modelo
-                            consegue explicar. R&sup2; = 0.85 significa que o modelo explica 85% da variabilidade. Acima
-                            de 0.7 e considerado bom para dados de telemetria.</p>
+                <!-- ========== ABA METODOS DE CORRECAO ========== -->
+                <div id="abaMetodos" style="display:none;">
+
+                    <!-- Fluxo visual -->
+                    <div
+                        style="display:flex;align-items:center;gap:8px;padding:12px;background:#f0f9ff;border-radius:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;">
+                        <span
+                            style="background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">
+                            <ion-icon name="warning-outline" style="vertical-align:middle;"></ion-icon> Anomalia
+                            Detectada
+                        </span>
+                        <ion-icon name="arrow-forward-outline" style="color:#94a3b8;"></ion-icon>
+                        <span
+                            style="background:#dbeafe;color:#1e40af;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">
+                            <ion-icon name="git-compare-outline" style="vertical-align:middle;"></ion-icon> 4 Metodos
+                            Calculados
+                        </span>
+                        <ion-icon name="arrow-forward-outline" style="color:#94a3b8;"></ion-icon>
+                        <span
+                            style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">
+                            <ion-icon name="checkmark-circle-outline" style="vertical-align:middle;"></ion-icon> Score
+                            de Aderencia
+                        </span>
+                        <ion-icon name="arrow-forward-outline" style="color:#94a3b8;"></ion-icon>
+                        <span
+                            style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">
+                            <ion-icon name="person-outline" style="vertical-align:middle;"></ion-icon> Operador Decide
+                        </span>
+                    </div>
+
+                    <!-- METODO 1: PCHIP -->
+                    <div class="regra-metodo-card" style="margin-bottom:12px;">
+                        <div class="regra-metodo-header" onclick="this.parentElement.classList.toggle('aberto')"
+                            style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px;background:#fffbeb;border:1px solid #fbbf24;border-radius:8px;">
+                            <ion-icon name="analytics-outline" style="font-size:20px;color:#f59e0b;"></ion-icon>
+                            <div style="flex:1;">
+                                <strong style="font-size:13px;color:#92400e;">PCHIP &mdash; Interpolacao
+                                    Monotonica</strong>
+                                <div style="font-size:11px;color:#a16207;">Execucao: PHP puro | Dependencia: nenhuma
+                                </div>
+                            </div>
+                            <ion-icon name="chevron-down-outline"
+                                style="color:#a16207;transition:transform 0.2s;"></ion-icon>
+                        </div>
+                        <div class="regra-metodo-body"
+                            style="display:none;padding:12px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px;font-size:12px;color:#334155;">
+                            <p><strong>O que faz:</strong> Usa as horas validas como ancoras e interpola as horas
+                                anomalas usando curvas monotonica de Hermite (Fritsch-Carlson). O resultado passa
+                                exatamente pelas ancoras.</p>
+                            <p style="margin:8px 0;"><strong>Quando e melhor:</strong> Poucas horas anomalas isoladas
+                                (gaps pequenos), pois a interpolacao respeita a monotonia entre ancoras vizinhas.</p>
+                            <p style="margin:8px 0;"><strong>Limitacao:</strong> Se muitas horas consecutivas sao
+                                anomalas (ex: 6h seguidas), a interpolacao pode ser imprecisa pois nao ha ancoras
+                                proximas.</p>
+                            <div style="background:#f8fafc;padding:8px;border-radius:6px;margin-top:8px;">
+                                <strong>Score de Aderencia:</strong> Calculado via Leave-One-Out Cross-Validation
+                                (LOO-CV). Para cada hora valida, remove-a das ancoras, recalcula o PCHIP sem ela e
+                                compara com o valor real. Evita o score 10.0 artificial.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- METODO 2: XGBoost Rede -->
+                    <div class="regra-metodo-card" style="margin-bottom:12px;">
+                        <div class="regra-metodo-header" onclick="this.parentElement.classList.toggle('aberto')"
+                            style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;">
+                            <ion-icon name="hardware-chip-outline" style="font-size:20px;color:#3b82f6;"></ion-icon>
+                            <div style="flex:1;">
+                                <strong style="font-size:13px;color:#1e40af;">XGBoost Rede &mdash; Predicao
+                                    Multivariada</strong>
+                                <div style="font-size:11px;color:#3b82f6;">Execucao: TensorFlow container | Dependencia:
+                                    modelo treinado</div>
+                            </div>
+                            <ion-icon name="chevron-down-outline"
+                                style="color:#3b82f6;transition:transform 0.2s;"></ion-icon>
+                        </div>
+                        <div class="regra-metodo-body"
+                            style="display:none;padding:12px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px;font-size:12px;color:#334155;">
+                            <p><strong>O que faz:</strong> Usa o modelo XGBoost treinado com dados do ponto + tags
+                                auxiliares (vizinhanca topologica do grafo hidraulico). Cada predicao e independente
+                                &mdash; sem feedback ou drift.</p>
+                            <p style="margin:8px 0;"><strong>Quando e melhor:</strong> Pontos com modelo treinado (icone
+                                verde). Melhor para anomalias complexas onde o contexto da rede importa (ex: reducao de
+                                vazao por problema em ponto vizinho).</p>
+                            <p style="margin:8px 0;"><strong>Limitacao:</strong> Requer modelo treinado. Se nao houver,
+                                retorna null e e ignorado. Qualidade depende do R&sup2; do modelo.</p>
+                            <div style="background:#f8fafc;padding:8px;border-radius:6px;margin-top:8px;">
+                                <strong>Score de Aderencia:</strong> Compara predicoes vs valores reais nas horas
+                                validas. Formula:
+                                <code>(0.40&times;R&sup2; + 0.30&times;(1-MAE_norm) + 0.30&times;(1-RMSE_norm)) &times; 10</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- METODO 3: Media Movel Ponderada -->
+                    <div class="regra-metodo-card" style="margin-bottom:12px;">
+                        <div class="regra-metodo-header" onclick="this.parentElement.classList.toggle('aberto')"
+                            style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;">
+                            <ion-icon name="trending-up-outline" style="font-size:20px;color:#22c55e;"></ion-icon>
+                            <div style="flex:1;">
+                                <strong style="font-size:13px;color:#166534;">Media Movel Ponderada &mdash; Historico
+                                    Semanal</strong>
+                                <div style="font-size:11px;color:#16a34a;">Execucao: PHP puro | Dependencia: 7+ dias de
+                                    historico</div>
+                            </div>
+                            <ion-icon name="chevron-down-outline"
+                                style="color:#16a34a;transition:transform 0.2s;"></ion-icon>
+                        </div>
+                        <div class="regra-metodo-body"
+                            style="display:none;padding:12px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px;font-size:12px;color:#334155;">
+                            <p><strong>O que faz:</strong> Calcula a media ponderada dos ultimos 7 dias para a mesma
+                                hora e dia da semana. Dias mais recentes recebem peso maior (peso decrescente: 7/28,
+                                6/28, 5/28...).</p>
+                            <p style="margin:8px 0;"><strong>Quando e melhor:</strong> Pontos com padrao semanal
+                                estavel. Ex: reservatorios com demanda previsivel por dia da semana.</p>
+                            <p style="margin:8px 0;"><strong>Limitacao:</strong> Nao capta mudancas bruscas recentes. Se
+                                houve uma alteracao operacional nos ultimos dias, a media historica pode nao refletir.
+                            </p>
+                            <div style="background:#f8fafc;padding:8px;border-radius:6px;margin-top:8px;">
+                                <strong>Score de Aderencia:</strong> Mesmo calculo padrao (R&sup2;, MAE_norm, RMSE_norm)
+                                comparando media historica vs valor real nas horas validas do dia.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- METODO 4: Prophet -->
+                    <div class="regra-metodo-card" style="margin-bottom:12px;">
+                        <div class="regra-metodo-header" onclick="this.parentElement.classList.toggle('aberto')"
+                            style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px;background:#fdf4ff;border:1px solid #d8b4fe;border-radius:8px;">
+                            <ion-icon name="pulse-outline" style="font-size:20px;color:#a855f7;"></ion-icon>
+                            <div style="flex:1;">
+                                <strong style="font-size:13px;color:#6b21a8;">Prophet &mdash; Decomposicao
+                                    Sazonal</strong>
+                                <div style="font-size:11px;color:#9333ea;">Execucao: TensorFlow container | Dependencia:
+                                    endpoint /api/prophet</div>
+                            </div>
+                            <ion-icon name="chevron-down-outline"
+                                style="color:#9333ea;transition:transform 0.2s;"></ion-icon>
+                        </div>
+                        <div class="regra-metodo-body"
+                            style="display:none;padding:12px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px;font-size:12px;color:#334155;">
+                            <p><strong>O que faz:</strong> Decompoe a serie temporal em tendencia + sazonalidade
+                                (diaria/semanal) usando o algoritmo Prophet do Meta. Projeta valores respeitando padroes
+                                sazonais complexos.</p>
+                            <p style="margin:8px 0;"><strong>Quando e melhor:</strong> Pontos com sazonalidade forte e
+                                previsivel (ex: estacoes que variam significativamente entre dia/noite ou dias da
+                                semana).</p>
+                            <p style="margin:8px 0;"><strong>Limitacao:</strong> Endpoint /api/prophet pode nao estar
+                                disponivel. Se falhar, retorna null e e ignorado silenciosamente. Mais lento que os
+                                outros metodos.</p>
+                            <div style="background:#f8fafc;padding:8px;border-radius:6px;margin-top:8px;">
+                                <strong>Score de Aderencia:</strong> Mesmo calculo padrao. Tende a ter bom score em
+                                pontos com padroes sazonais regulares.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SCORE DE ADERENCIA -->
+                    <div
+                        style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;">
+                        <h4
+                            style="margin:0 0 8px;font-size:13px;color:#1e293b;display:flex;align-items:center;gap:6px;">
+                            <ion-icon name="star-outline" style="color:#f59e0b;"></ion-icon>
+                            Formula do Score de Aderencia (0-10)
+                        </h4>
+                        <div
+                            style="background:white;padding:10px;border-radius:6px;font-family:monospace;font-size:12px;color:#475569;border:1px solid #e2e8f0;">
+                            Score = (0.40 &times; R&sup2; + 0.30 &times; (1 - MAE<sub>norm</sub>) + 0.30 &times; (1 -
+                            RMSE<sub>norm</sub>)) &times; 10
+                        </div>
+                        <div style="margin-top:8px;font-size:11px;color:#64748b;">
+                            <p style="margin:4px 0;"><strong>R&sup2;:</strong> Coeficiente de determinacao (0 a 1).
+                                Quanto maior, melhor a estimativa explica a variacao real.</p>
+                            <p style="margin:4px 0;"><strong>MAE<sub>norm</sub>:</strong> Erro absoluto medio
+                                normalizado pela amplitude (max-min) dos valores reais.</p>
+                            <p style="margin:4px 0;"><strong>RMSE<sub>norm</sub>:</strong> Raiz do erro quadratico medio
+                                normalizado. Penaliza erros grandes.</p>
+                            <p style="margin:4px 0;"><strong>Amostras:</strong> Numero de horas validas usadas na
+                                comparacao.</p>
+                        </div>
+                    </div>
+
+                    <!-- AUTO -->
+                    <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:12px;">
+                        <h4
+                            style="margin:0 0 6px;font-size:13px;color:#1e40af;display:flex;align-items:center;gap:6px;">
+                            <ion-icon name="flash-outline"></ion-icon>
+                            Modo AUTO (Recomendado)
+                        </h4>
+                        <p style="font-size:12px;color:#334155;margin:0;">
+                            Quando o operador seleciona <strong>AUTO</strong>, o sistema aplica automaticamente o metodo
+                            com o <strong>maior score de aderencia</strong>.
+                            O campo <code>metodo_recomendado</code> no retorno da API indica qual metodo foi
+                            selecionado.
+                            O botao <strong>&ldquo;Aprovar rapido&rdquo;</strong> (&#10003;&#10003;) na tabela tambem
+                            usa AUTO sem abrir o modal.
+                        </p>
                     </div>
                 </div>
 
-                <div class="glossario-item">
-                    <div class="glossario-termo">MAE (Erro Medio Absoluto)</div>
-                    <div class="glossario-def">
-                        <p>Media das diferencas absolutas entre predicao e valor real. Exemplo: MAE = 3.5 L/s significa
-                            que o modelo erra em media 3.5 L/s. Usado como referencia para definir o threshold de
-                            anomalia do XGBoost (2x MAE).</p>
-                    </div>
-                </div>
+            </div><!-- /modal-body -->
+        </div><!-- /modal-container -->
 
-                <div class="glossario-item">
-                    <div class="glossario-termo">MAPE (Erro Percentual Medio)</div>
-                    <div class="glossario-def">
-                        <p>Mesma ideia do MAE, mas em <strong>percentual</strong>. MAPE = 15% significa que o modelo
-                            erra em media 15% do valor real. Util para comparar performance entre pontos com escalas
-                            diferentes.</p>
-                    </div>
-                </div>
+    </div><!-- .page-container -->
 
-                <div class="glossario-item">
-                    <div class="glossario-termo">Score Topologico</div>
-                    <div class="glossario-def">
-                        <p>Analisa os <strong>vizinhos no grafo hidraulico</strong> (flowchart). Se apenas este ponto
-                            esta anomalo mas vizinhos a montante e jusante estao normais, e provavel falha do sensor
-                            (score alto). Se vizinhos tambem divergem, pode ser evento real na rede (score baixo).</p>
-                    </div>
-                </div>
 
-                <div class="glossario-item">
-                    <div class="glossario-termo">Fallback Estatistico</div>
-                    <div class="glossario-def">
-                        <p>Quando o ponto <strong>nao possui modelo ML treinado</strong>, o sistema usa media historica
-                            e interpolacao como metodo alternativo de predicao. Indicado pelo badge sem o icone <span
-                                class="modelo-badge" style="font-size:10px;"><ion-icon
-                                    name="checkmark-circle"></ion-icon> ML</span>.</p>
-                    </div>
-                </div>
-
-                <div class="glossario-item">
-                    <div class="glossario-termo">Batch (Lote)</div>
-                    <div class="glossario-def">
-                        <p>Processamento automatico que analisa <strong>todos os pontos ativos</strong> de uma vez para
-                            uma data especifica. Percorre cada ponto, chama o detector de anomalias + predicao,
-                            classifica e gera pendencias. Tempo tipico: 2-5 minutos para ~53 pontos.</p>
-                    </div>
-                </div>
-
-                <div class="glossario-item">
-                    <div class="glossario-termo">MERGE / UPSERT</div>
-                    <div class="glossario-def">
-                        <p>Operacao de banco de dados que <strong>insere ou atualiza</strong>. Se ja existe pendencia
-                            para o mesmo ponto+data+hora+tipo, atualiza os valores; se nao existe, insere nova. Garante
-                            idempotencia — rodar o batch 2x nao duplica dados.</p>
-                    </div>
-                </div>
-
-                <div class="glossario-item">
-                    <div class="glossario-termo">Idempotente</div>
-                    <div class="glossario-def">
-                        <p>Operacao que pode ser executada <strong>multiplas vezes</strong> sem alterar o resultado alem
-                            da primeira execucao. O batch e idempotente: rodar 3x para a mesma data gera o mesmo
-                            resultado que rodar 1x.</p>
-                    </div>
+    <!-- ============================================
+     MODAL: DETALHE DO GRUPO (PONTO/DIA)
+     ============================================ -->
+    <div class="modal-overlay" id="modalDetalheGrupo">
+        <div class="modal-box" style="max-width:780px;">
+            <div class="modal-header">
+                <h3><ion-icon name="layers-outline"></ion-icon> Tratamento por Ponto/Dia</h3>
+                <button class="modal-close" onclick="fecharModal('modalDetalheGrupo')">&times;</button>
+            </div>
+            <div class="modal-body" id="modalDetalheGrupoBody" style="max-height:70vh;overflow-y:auto;">
+                <div style="text-align:center;padding:20px;">
+                    <div class="loading-spinner"></div>
                 </div>
             </div>
+            <div class="modal-footer"
+                style="display:flex;gap:10px;padding:12px 20px;border-top:1px solid #e2e8f0;background:#f8fafc;">
+                <button type="button" class="btn-grupo-acao todas" id="btnAplicarTodasGrupo"
+                    onclick="aplicarTodasHorasGrupo()">
+                    <ion-icon name="checkmark-done-outline"></ion-icon>
+                    Aplicar a TODAS as horas
+                </button>
+                <button type="button" class="btn-grupo-acao selecionadas" id="btnAplicarSelGrupo"
+                    onclick="aplicarHorasSelecionadasGrupo()">
+                    <ion-icon name="checkmark-outline"></ion-icon>
+                    Aplicar as selecionadas
+                </button>
+                <button type="button" class="btn-grupo-acao cancelar" onclick="fecharModal('modalDetalheGrupo')"
+                    style="margin-left:auto;">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
 
-        </div><!-- /modal-body -->
-    </div><!-- /modal-container -->
+    <!-- ============================================
+     MODAL: AJUSTAR VALOR
+     ============================================ -->
+    <div class="modal-overlay" id="modalAjustar">
+        <div class="modal-box" style="max-width:440px;">
+            <div class="modal-header">
+                <h3><ion-icon name="create-outline"></ion-icon> Ajustar Valor</h3>
+                <button class="modal-close" onclick="fecharModal('modalAjustar')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12px;color:#64748b;margin:0 0 8px;">Ponto: <strong id="ajustarPonto"></strong> |
+                    Hora:
+                    <strong id="ajustarHora"></strong>
+                </p>
+                <div style="display:flex;gap:12px;margin-bottom:12px;">
+                    <div style="flex:1;background:#fee2e2;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:10px;color:#991b1b;text-transform:uppercase;font-weight:600;">Valor Real
+                        </div>
+                        <div style="font-size:18px;font-weight:700;color:#dc2626;" id="ajustarVlReal">-</div>
+                    </div>
+                    <div style="flex:1;background:#dcfce7;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:10px;color:#166534;text-transform:uppercase;font-weight:600;">Sugerido
+                        </div>
+                        <div style="font-size:18px;font-weight:700;color:#16a34a;" id="ajustarVlSugerido">-</div>
+                    </div>
+                </div>
+                <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Novo
+                    valor:</label>
+                <input type="number" step="0.0001" class="input-valor" id="ajustarValorInput"
+                    placeholder="Informe o valor corrigido">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal cancelar" onclick="fecharModal('modalAjustar')">Cancelar</button>
+                <button class="btn-modal confirmar" onclick="confirmarAjuste()">Aplicar Ajuste</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+     MODAL: IGNORAR (justificativa)
+     ============================================ -->
+    <div class="modal-overlay" id="modalIgnorar">
+        <div class="modal-box" style="max-width:440px;">
+            <div class="modal-header">
+                <h3><ion-icon name="eye-off-outline"></ion-icon> Ignorar Pendencia</h3>
+                <button class="modal-close" onclick="fecharModal('modalIgnorar')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12px;color:#64748b;margin:0 0 8px;" id="ignorarInfo"></p>
+                <label
+                    style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Justificativa
+                    (obrigatoria):</label>
+                <textarea class="textarea-just" id="ignorarJustificativa" placeholder="Descreva o motivo..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal cancelar" onclick="fecharModal('modalIgnorar')">Cancelar</button>
+                <button class="btn-modal confirmar" onclick="confirmarIgnorar()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+     MODAL: REGRAS DOS METODOS DE CORRECAO
+     ============================================ -->
+    <div class="modal-overlay" id="modalRegrasCorrecao"
+        onclick="if(event.target===this)fecharModal('modalRegrasCorrecao')">
+        <div class="modal-box" style="max-width:720px;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#1e40af,#3b82f6);color:white;">
+                <h3 style="color:white;"><ion-icon name="book-outline"></ion-icon> Regras dos Metodos de Correcao</h3>
+                <button class="modal-close" onclick="fecharModal('modalRegrasCorrecao')"
+                    style="color:white;">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height:70vh;overflow-y:auto;padding:16px;">
+
+                <!-- Fluxo visual -->
+                <div
+                    style="display:flex;align-items:center;gap:8px;padding:12px;background:#f0f9ff;border-radius:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;">
+                    <span
+                        style="background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">
+                        <ion-icon name="warning-outline" style="vertical-align:middle;"></ion-icon> Anomalia Detectada
+                    </span>
+                    <ion-icon name="arrow-forward-outline" style="color:#94a3b8;"></ion-icon>
+                    <span
+                        style="background:#dbeafe;color:#1e40af;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">
+                        <ion-icon name="git-compare-outline" style="vertical-align:middle;"></ion-icon> 4 Metodos
+                        Calculados
+                    </span>
+                    <ion-icon name="arrow-forward-outline" style="color:#94a3b8;"></ion-icon>
+                    <span
+                        style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">
+                        <ion-icon name="checkmark-circle-outline" style="vertical-align:middle;"></ion-icon> Score de
+                        Aderencia
+                    </span>
+                    <ion-icon name="arrow-forward-outline" style="color:#94a3b8;"></ion-icon>
+                    <span
+                        style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">
+                        <ion-icon name="person-outline" style="vertical-align:middle;"></ion-icon> Operador Decide
+                    </span>
+                </div>
+
+                <!-- METODO 1: PCHIP -->
+                <div class="regra-metodo-card" style="margin-bottom:12px;">
+                    <div class="regra-metodo-header" onclick="this.parentElement.classList.toggle('aberto')"
+                        style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px;background:#fffbeb;border:1px solid #fbbf24;border-radius:8px;">
+                        <ion-icon name="analytics-outline" style="font-size:20px;color:#f59e0b;"></ion-icon>
+                        <div style="flex:1;">
+                            <strong style="font-size:13px;color:#92400e;">PCHIP — Interpolacao Monotonica</strong>
+                            <div style="font-size:11px;color:#a16207;">Execucao: PHP puro | Dependencia: nenhuma</div>
+                        </div>
+                        <ion-icon name="chevron-down-outline"
+                            style="color:#a16207;transition:transform 0.2s;"></ion-icon>
+                    </div>
+                    <div class="regra-metodo-body"
+                        style="display:none;padding:12px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px;font-size:12px;color:#334155;">
+                        <p><strong>O que faz:</strong> Usa as horas validas como ancoras e interpola as horas anomalas
+                            usando curvas monotonica de Hermite (Fritsch-Carlson). O resultado passa exatamente pelas
+                            ancoras.</p>
+                        <p style="margin:8px 0;"><strong>Quando e melhor:</strong> Poucas horas anomalas isoladas (gaps
+                            pequenos), pois a interpolacao respeita a monotonia entre ancoras vizinhas.</p>
+                        <p style="margin:8px 0;"><strong>Limitacao:</strong> Se muitas horas consecutivas sao anomalas
+                            (ex: 6h seguidas), a interpolacao pode ser imprecisa pois nao ha ancoras proximas.</p>
+                        <div style="background:#f8fafc;padding:8px;border-radius:6px;margin-top:8px;">
+                            <strong>Score de Aderencia:</strong> Calculado via Leave-One-Out Cross-Validation (LOO-CV).
+                            Para cada hora valida, remove-a das ancoras, recalcula o PCHIP sem ela e compara com o valor
+                            real. Evita o score 10.0 artificial.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- METODO 2: XGBoost Rede -->
+                <div class="regra-metodo-card" style="margin-bottom:12px;">
+                    <div class="regra-metodo-header" onclick="this.parentElement.classList.toggle('aberto')"
+                        style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;">
+                        <ion-icon name="hardware-chip-outline" style="font-size:20px;color:#3b82f6;"></ion-icon>
+                        <div style="flex:1;">
+                            <strong style="font-size:13px;color:#1e40af;">XGBoost Rede — Predicao Multivariada</strong>
+                            <div style="font-size:11px;color:#3b82f6;">Execucao: TensorFlow container | Dependencia:
+                                modelo treinado</div>
+                        </div>
+                        <ion-icon name="chevron-down-outline"
+                            style="color:#3b82f6;transition:transform 0.2s;"></ion-icon>
+                    </div>
+                    <div class="regra-metodo-body"
+                        style="display:none;padding:12px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px;font-size:12px;color:#334155;">
+                        <p><strong>O que faz:</strong> Usa o modelo XGBoost treinado com dados do ponto + tags
+                            auxiliares (vizinhanca topologica do grafo hidraulico). Cada predicao e independente — sem
+                            feedback ou drift.</p>
+                        <p style="margin:8px 0;"><strong>Quando e melhor:</strong> Pontos com modelo treinado (icone
+                            verde). Melhor para anomalias complexas onde o contexto da rede importa (ex: reducao de
+                            vazao por problema em ponto vizinho).</p>
+                        <p style="margin:8px 0;"><strong>Limitacao:</strong> Requer modelo treinado. Se nao houver,
+                            retorna null e e ignorado. Qualidade depende do R² do modelo.</p>
+                        <div style="background:#f8fafc;padding:8px;border-radius:6px;margin-top:8px;">
+                            <strong>Score de Aderencia:</strong> Compara predicoes vs valores reais nas horas validas.
+                            Formula: <code>(0.40×R² + 0.30×(1-MAE_norm) + 0.30×(1-RMSE_norm)) × 10</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- METODO 3: Media Movel Ponderada -->
+                <div class="regra-metodo-card" style="margin-bottom:12px;">
+                    <div class="regra-metodo-header" onclick="this.parentElement.classList.toggle('aberto')"
+                        style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;">
+                        <ion-icon name="trending-up-outline" style="font-size:20px;color:#22c55e;"></ion-icon>
+                        <div style="flex:1;">
+                            <strong style="font-size:13px;color:#166534;">Media Movel Ponderada — Historico
+                                Semanal</strong>
+                            <div style="font-size:11px;color:#16a34a;">Execucao: PHP puro | Dependencia: 7+ dias de
+                                historico</div>
+                        </div>
+                        <ion-icon name="chevron-down-outline"
+                            style="color:#16a34a;transition:transform 0.2s;"></ion-icon>
+                    </div>
+                    <div class="regra-metodo-body"
+                        style="display:none;padding:12px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px;font-size:12px;color:#334155;">
+                        <p><strong>O que faz:</strong> Calcula a media ponderada dos ultimos 7 dias para a mesma hora e
+                            dia da semana. Dias mais recentes recebem peso maior (peso decrescente: 7/28, 6/28,
+                            5/28...).</p>
+                        <p style="margin:8px 0;"><strong>Quando e melhor:</strong> Pontos com padrao semanal estavel.
+                            Ex: reservatorios com demanda previsivel por dia da semana.</p>
+                        <p style="margin:8px 0;"><strong>Limitacao:</strong> Nao capta mudancas bruscas recentes. Se
+                            houve uma alteracao operacional nos ultimos dias, a media historica pode nao refletir.</p>
+                        <div style="background:#f8fafc;padding:8px;border-radius:6px;margin-top:8px;">
+                            <strong>Score de Aderencia:</strong> Mesmo calculo padrao (R², MAE_norm, RMSE_norm)
+                            comparando media historica vs valor real nas horas validas do dia.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- METODO 4: Prophet -->
+                <div class="regra-metodo-card" style="margin-bottom:12px;">
+                    <div class="regra-metodo-header" onclick="this.parentElement.classList.toggle('aberto')"
+                        style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px;background:#fdf4ff;border:1px solid #d8b4fe;border-radius:8px;">
+                        <ion-icon name="pulse-outline" style="font-size:20px;color:#a855f7;"></ion-icon>
+                        <div style="flex:1;">
+                            <strong style="font-size:13px;color:#6b21a8;">Prophet — Decomposicao Sazonal</strong>
+                            <div style="font-size:11px;color:#9333ea;">Execucao: TensorFlow container | Dependencia:
+                                endpoint /api/prophet</div>
+                        </div>
+                        <ion-icon name="chevron-down-outline"
+                            style="color:#9333ea;transition:transform 0.2s;"></ion-icon>
+                    </div>
+                    <div class="regra-metodo-body"
+                        style="display:none;padding:12px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px;font-size:12px;color:#334155;">
+                        <p><strong>O que faz:</strong> Decompoe a serie temporal em tendencia + sazonalidade
+                            (diaria/semanal) usando o algoritmo Prophet do Meta. Projeta valores respeitando padroes
+                            sazonais complexos.</p>
+                        <p style="margin:8px 0;"><strong>Quando e melhor:</strong> Pontos com sazonalidade forte e
+                            previsivel (ex: estacoes que variam significativamente entre dia/noite ou dias da semana).
+                        </p>
+                        <p style="margin:8px 0;"><strong>Limitacao:</strong> Endpoint /api/prophet pode nao estar
+                            disponivel. Se falhar, retorna null e e ignorado silenciosamente. Mais lento que os outros
+                            metodos.</p>
+                        <div style="background:#f8fafc;padding:8px;border-radius:6px;margin-top:8px;">
+                            <strong>Score de Aderencia:</strong> Mesmo calculo padrao. Tende a ter bom score em pontos
+                            com padroes sazonais regulares.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCORE DE ADERENCIA -->
+                <div
+                    style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;">
+                    <h4 style="margin:0 0 8px;font-size:13px;color:#1e293b;display:flex;align-items:center;gap:6px;">
+                        <ion-icon name="star-outline" style="color:#f59e0b;"></ion-icon>
+                        Formula do Score de Aderencia (0-10)
+                    </h4>
+                    <div
+                        style="background:white;padding:10px;border-radius:6px;font-family:monospace;font-size:12px;color:#475569;border:1px solid #e2e8f0;">
+                        Score = (0.40 × R² + 0.30 × (1 - MAE<sub>norm</sub>) + 0.30 × (1 - RMSE<sub>norm</sub>)) × 10
+                    </div>
+                    <div style="margin-top:8px;font-size:11px;color:#64748b;">
+                        <p style="margin:4px 0;"><strong>R²:</strong> Coeficiente de determinacao (0 a 1). Quanto maior,
+                            melhor a estimativa explica a variacao real.</p>
+                        <p style="margin:4px 0;"><strong>MAE<sub>norm</sub>:</strong> Erro absoluto medio normalizado
+                            pela amplitude (max-min) dos valores reais.</p>
+                        <p style="margin:4px 0;"><strong>RMSE<sub>norm</sub>:</strong> Raiz do erro quadratico medio
+                            normalizado. Penaliza erros grandes.</p>
+                        <p style="margin:4px 0;"><strong>Amostras:</strong> Numero de horas validas usadas na
+                            comparacao.</p>
+                    </div>
+                </div>
+
+                <!-- AUTO -->
+                <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:12px;">
+                    <h4 style="margin:0 0 6px;font-size:13px;color:#1e40af;display:flex;align-items:center;gap:6px;">
+                        <ion-icon name="flash-outline"></ion-icon>
+                        Modo AUTO (Recomendado)
+                    </h4>
+                    <p style="font-size:12px;color:#334155;margin:0;">
+                        Quando o operador seleciona <strong>AUTO</strong>, o sistema aplica automaticamente o metodo com
+                        o <strong>maior score de aderencia</strong>.
+                        O campo <code>metodo_recomendado</code> no retorno da API indica qual metodo foi selecionado.
+                        O botao <strong>"Aprovar rapido"</strong> (✓✓) na tabela tambem usa AUTO sem abrir o modal.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Select2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- Chart.js para grafico de metodos A2★ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <script>
     /**
@@ -2388,7 +1474,7 @@ try {
      */
     function carregarPendencias() {
         const filtros = {
-            acao: 'listar',
+            acao: 'listar_agrupado',
             data: $('#filtroData').val() || '',
             status: $('#filtroStatus').val() || '0',
             classe: $('#filtroClasse').val() || '',
@@ -2436,7 +1522,7 @@ try {
                 document.getElementById('tabelaInfo').textContent =
                     totalRegistros + ' registro(s)';
 
-                renderizarTabela(data.pendencias || []);
+                renderizarTabelaAgrupada(data.grupos || []);
                 renderizarPaginacao();
                 limparSelecao();
             })
@@ -2456,13 +1542,15 @@ try {
     // ============================================
 
     /**
-     * Monta o HTML da tabela com as pendencias.
-     * @param {Array} pendencias - Lista de pendencias do backend
-     */
-    function renderizarTabela(pendencias) {
+ * Renderiza tabela agrupada por ponto de medicao/dia.
+ * Cada linha = 1 ponto + 1 dia, com badges das horas anomalas.
+ *
+ * @param {Array} grupos - Lista de grupos do backend (listar_agrupado)
+ */
+    function renderizarTabelaAgrupada(grupos) {
         const tbody = document.getElementById('tabelaBody');
 
-        if (!pendencias.length) {
+        if (!grupos.length) {
             tbody.innerHTML = `
             <tr><td colspan="10" class="empty-state">
                 <ion-icon name="checkmark-done-outline" style="color:#22c55e;"></ion-icon>
@@ -2474,96 +1562,123 @@ try {
         }
 
         let html = '';
-        pendencias.forEach(p => {
-            const cd = p.CD_CHAVE;
-            const selecionada = idsSelecionados.includes(cd) ? ' selecionada' : '';
+        grupos.forEach(g => {
+            // Chave unica do grupo: ponto_data
+            const grupoKey = g.CD_PONTO_MEDICAO + '_' + (g.DT_REFERENCIA || '').split('T')[0];
+
+            // Parsear arrays concatenados
+            const horas = (g.DS_HORAS || '').split(',').map(Number);
+            const ids = (g.DS_IDS || '').split(',').map(Number);
+            const statusHoras = (g.DS_STATUS_HORAS || '').split(',').map(Number);
+            const tiposHoras = (g.DS_TIPOS_HORAS || '').split(',');
+
+            // Verificar selecao
+            const todosIds = ids;
+            const selecionada = todosIds.some(id => idsSelecionados.includes(id)) ? ' selecionada' : '';
+
+            // Data formatada
+            const dtRef = (g.DT_REFERENCIA || '').split('T')[0];
+            const dtFormatada = formatarData(dtRef);
 
             // Tipo medidor badge
-            const tipoMedBadge = getTipoMedidorBadge(p.ID_TIPO_MEDIDOR);
+            const tipoMedBadge = getTipoMedidorBadge(g.ID_TIPO_MEDIDOR);
 
-            // Severidade badge
-            const sevBadge = `<span class="badge ${p.DS_SEVERIDADE}">${ucfirst(p.DS_SEVERIDADE)}</span>`;
+            // Horas como badges coloridas por status
+            let horasBadges = '';
+            horas.forEach((h, i) => {
+                const st = statusHoras[i] || 0;
+                let corClasse = 'hora-pendente';    // amarelo
+                if (st === 1 || st === 2) corClasse = 'hora-tratada';   // verde
+                if (st === 3) corClasse = 'hora-ignorada';              // cinza
+                horasBadges += `<span class="badge-hora ${corClasse}" title="ID #${ids[i]} - ${tiposHoras[i] || ''}">${String(h).padStart(2, '0')}h</span>`;
+            });
 
-            // Classe badge
-            const classeBadge = p.ID_CLASSE_ANOMALIA == 1
-                ? '<span class="badge tecnica">Tecnica</span>'
-                : '<span class="badge operacional">Operacional</span>';
+            // Contadores de status
+            const qtdPend = parseInt(g.QTD_PENDENTES) || 0;
+            const qtdTrat = parseInt(g.QTD_TRATADAS) || 0;
+            const qtdIgn = parseInt(g.QTD_IGNORADAS) || 0;
+            const qtdTotal = parseInt(g.QTD_HORAS) || 0;
 
-            // Confianca
-            const conf = parseFloat(p.VL_CONFIANCA || 0);
+            // Status geral
+            let statusGeral = '';
+            if (qtdPend === 0 && qtdTotal > 0) {
+                statusGeral = '<span class="badge aprovada">Concluido</span>';
+            } else if (qtdPend === qtdTotal) {
+                statusGeral = `<span class="badge pendente">${qtdPend} pendente(s)</span>`;
+            } else {
+                statusGeral = `<span class="badge pendente">${qtdPend}/${qtdTotal} pend.</span>`;
+            }
+
+            // Severidade
+            const sevBadge = `<span class="badge ${g.DS_SEVERIDADE_MAX}">${ucfirst(g.DS_SEVERIDADE_MAX)}</span>`;
+
+            // Classe predominante
+            const classeBadge = parseInt(g.ID_CLASSE_PREDOMINANTE) === 2
+                ? '<span class="badge operacional">Operacional</span>'
+                : '<span class="badge tecnica">Tecnica</span>';
+
+            // Confianca media
+            const conf = parseFloat(g.VL_CONFIANCA_MEDIA || 0);
             const confPct = (conf * 100).toFixed(1);
             const confNivel = conf >= 0.95 ? 'alta' : (conf >= 0.85 ? 'confiavel' : 'atencao');
             const confBadge = `<span class="badge conf-${confNivel}">${confPct}%</span>`;
             const confBar = `<div class="score-bar"><div class="score-bar-fill ${confNivel}" style="width:${confPct}%"></div></div>`;
 
-            // Status
-            const statusMap = { 0: 'pendente', 1: 'aprovada', 2: 'ajustada', 3: 'ignorada' };
-            const statusNome = statusMap[p.ID_STATUS] || 'pendente';
-            const statusBadge = `<span class="badge ${statusNome}">${ucfirst(statusNome)}</span>`;
-
-            // Valores
-            const vlReal = p.VL_REAL != null ? parseFloat(p.VL_REAL).toFixed(2) : '-';
-            const vlSug = p.VL_SUGERIDO != null ? parseFloat(p.VL_SUGERIDO).toFixed(2) : '-';
-
-            // Hora formatada
-            const hora = p.DS_HORA_FORMATADA || (String(p.NR_HORA).padStart(2, '0') + ':00');
-
-            // Tipo anomalia
-            const tipoAnom = p.DS_TIPO_ANOMALIA || 'Outro';
-
-            html += `<tr class="${selecionada}" data-cd="${cd}">`;
+            // Montar linha
+            html += `<tr class="${selecionada}" data-grupo="${grupoKey}" data-cd-ponto="${g.CD_PONTO_MEDICAO}" data-dt-ref="${dtRef}" data-ids="${ids.join(',')}">`;
 
             if (podeEditar) {
-                html += `<td><input type="checkbox" class="chk-sel chk-item" data-cd="${cd}" ${idsSelecionados.includes(cd) ? 'checked' : ''} onchange="toggleSelecao(${cd}, this.checked)"></td>`;
+                html += `<td><input type="checkbox" class="chk-sel chk-grupo" data-ids="${ids.join(',')}" 
+                onchange="toggleSelecaoGrupo(this)"></td>`;
             }
 
-            // Verifica modelo treinado via TensorFlow (mesmo padrao do operacoes.php)
-            const temModelo = pontosComModelo.has(parseInt(p.CD_PONTO_MEDICAO));
+            // Ponto (com badge de modelo treinado)
+            const temModelo = pontosComModelo.has(parseInt(g.CD_PONTO_MEDICAO));
             const modeloBadge = temModelo
-                ? '<span class="modelo-badge" title="Modelo ML treinado"><ion-icon name="checkmark-circle"></ion-icon> ML</span>'
-                : '';
+                ? '<ion-icon name="hardware-chip-outline" title="Modelo XGBoost treinado" style="color:#22c55e;font-size:13px;vertical-align:middle;margin-left:4px;"></ion-icon>'
+                : '<ion-icon name="hardware-chip-outline" title="Sem modelo treinado" style="color:#cbd5e1;font-size:13px;vertical-align:middle;margin-left:4px;"></ion-icon>';
 
             html += `
-            <td>
-                ${tipoMedBadge} ${modeloBadge}
-                <div style="font-weight:600;font-size:12px;margin-top:2px;" title="${p.DS_PONTO_NOME || ''}">${truncar(p.DS_PONTO_NOME || '-', 30)}</div>
-                <div style="font-size:10px;color:#94a3b8;font-family:monospace;">${p.DS_CODIGO_FORMATADO || ''}</div>
-            </td>
-            <td>
-                <div style="font-weight:500;">${formatarData(p.DT_REFERENCIA)}</div>
-                <div style="font-size:12px;color:#475569;font-weight:600;">${hora}</div>
-            </td>
-            <td><span style="font-size:11px;">${tipoAnom}</span></td>
-            <td>${classeBadge}</td>
-            <td>${sevBadge}</td>
-            <td>
-                <div class="valor-comparacao">
-                    <span class="vl-real">${vlReal}</span>
-                    ${vlSug !== '-' ? '<span class="vl-sugerido">' + vlSug + '</span>' : ''}
-                </div>
-            </td>
-            <td>${confBar} ${confBadge}</td>
-            <td>${statusBadge}</td>
-        `;
+                <td>
+                    <div style="font-weight:600;color:#1e293b;font-size:12px;" title="${g.DS_PONTO_NOME || ''}">${g.DS_CODIGO_FORMATADO || g.CD_PONTO_MEDICAO}${modeloBadge}</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${g.DS_PONTO_NOME || ''}">${g.DS_PONTO_NOME || '-'}</div>
+                </td>
+            `;
 
+            // Data
+            html += `<td><div style="font-weight:500;">${dtFormatada}</div></td>`;
+
+            // Tipo medidor
+            html += `<td>${tipoMedBadge}</td>`;
+
+            // Horas anomalas (badges)
+            html += `<td><div class="horas-container">${horasBadges}</div></td>`;
+
+            // Classe
+            html += `<td>${classeBadge}</td>`;
+
+            // Severidade
+            html += `<td>${sevBadge}</td>`;
+
+            // Confianca
+            html += `<td>${confBar} ${confBadge}</td>`;
+
+            // Status
+            html += `<td>${statusGeral}</td>`;
+
+            // Acoes
             if (podeEditar) {
-                const desabilitado = p.ID_STATUS != 0 ? ' style="opacity:0.3;pointer-events:none;"' : '';
+                const desabilitado = qtdPend === 0 ? ' style="opacity:0.3;pointer-events:none;"' : '';
                 html += `
                 <td>
                     <div class="acoes-rapidas"${desabilitado}>
-                        <button class="btn-acao aprovar" onclick="aprovarUm(${cd})" title="Aprovar (aplicar valor sugerido)">
-                            <ion-icon name="checkmark-outline"></ion-icon>
+                        <button class="btn-acao aprovar" onclick="aprovarGrupoRapido('${g.CD_PONTO_MEDICAO}', '${dtRef}', '${ids.join(',')}')" title="Aprovar todas com melhor metodo (AUTO)">
+                            <ion-icon name="checkmark-done-outline"></ion-icon>
                         </button>
-                        <button class="btn-acao ajustar" onclick="abrirAjustar(${cd})" title="Ajustar valor">
-                            <ion-icon name="create-outline"></ion-icon>
+                        <button class="btn-acao detalhe" onclick="abrirDetalheGrupo('${g.CD_PONTO_MEDICAO}', '${dtRef}', '${g.DS_CODIGO_FORMATADO}', '${ids.join(',')}', '${horas.join(',')}', '${statusHoras.join(',')}')" title="Ver detalhes e escolher metodo" style="opacity:1;pointer-events:auto;">
+                            <ion-icon name="eye-outline"></ion-icon>
                         </button>
-                        <button class="btn-acao ignorar" onclick="abrirIgnorar(${cd})" title="Ignorar">
-                            <ion-icon name="eye-off-outline"></ion-icon>
-                        </button>
-                        <button class="btn-acao detalhe" onclick="abrirDetalhe(${cd})" title="Ver detalhes" style="opacity:1;pointer-events:auto;">
-                            <ion-icon name="information-circle-outline"></ion-icon>
-                        </button>
-                        <button class="btn-acao validacao" onclick="irParaValidacao(${p.CD_PONTO_MEDICAO}, '${(p.DT_REFERENCIA || '').split('T')[0]}')" title="Abrir Validacao de Dados" style="opacity:1;pointer-events:auto;">
+                        <button class="btn-acao validacao" onclick="irParaValidacao(${g.CD_PONTO_MEDICAO}, '${dtRef}')" title="Abrir Validacao de Dados" style="opacity:1;pointer-events:auto;">
                             <ion-icon name="open-outline"></ion-icon>
                         </button>
                     </div>
@@ -2841,14 +1956,40 @@ try {
 
 
     // ============================================
-    // Detalhe
+    // A2★ — Variaveis globais de metodos de correcao
     // ============================================
 
+    /** Cache dos metodos carregados por pendencia */
+    var cacheMetodos = {};
+
+    /** Instancia do Chart.js para o grafico de 3 curvas */
+    var chartMetodos = null;
+
+    /** Metodo atualmente selecionado no dropdown */
+    var metodoSelecionado = null;
+
+    /** Dados da pendencia atualmente aberta no modal */
+    var pendenciaDetalheAtual = null;
+
+    // ============================================
+    // A2★ — Abrir detalhe com grafico e metodos
+    // ============================================
+
+    /**
+     * Abre o modal de detalhe de uma pendencia.
+     * Versao A2★: inclui grafico de 3 curvas + dropdown de metodos.
+     *
+     * @param {number} cd - CD_CHAVE da pendencia
+     */
     function abrirDetalhe(cd) {
         abrirModal('modalDetalhe');
+        pendenciaDetalheAtual = cd;
+        cacheMetodos = {}; // Limpar cache ao abrir nova pendencia
+        // Loading no body do modal
         document.getElementById('modalDetalheBody').innerHTML =
-            '<div style="text-align:center;padding:30px;"><div class="loading-spinner"></div></div>';
+            '<div style="text-align:center;padding:40px 0;"><div class="loading-spinner"></div><p style="font-size:12px;color:#64748b;margin-top:12px;">Carregando detalhes...</p></div>';
 
+        // Buscar dados da pendencia
         fetch('bd/operacoes/tratamentoLote.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2858,79 +1999,556 @@ try {
             .then(data => {
                 if (!data.success) {
                     document.getElementById('modalDetalheBody').innerHTML =
-                        '<p style="color:#dc2626;text-align:center;">' + (data.error || 'Erro') + '</p>';
+                        '<p style="color:#dc2626;text-align:center;">Erro: ' + (data.error || 'Desconhecido') + '</p>';
                     return;
                 }
 
-                const p = data.pendencia || {};
-                const s = data.scores || {};
-                const outras = data.outras_horas || [];
-
-                let html = '';
-
-                // Info basica
-                html += '<div class="detalhe-grid">';
-                html += detalheItem('Ponto', p.DS_PONTO_NOME || '-');
-                html += detalheItem('Codigo', p.DS_CODIGO_FORMATADO || '-');
-                html += detalheItem('Data', formatarData(p.DT_REFERENCIA));
-                html += detalheItem('Hora', (String(p.NR_HORA || 0).padStart(2, '0')) + ':00');
-                html += detalheItem('Tipo Anomalia', p.DS_TIPO_ANOMALIA || '-');
-                html += detalheItem('Classe', p.DS_CLASSE_ANOMALIA || '-');
-                html += detalheItem('Severidade', ucfirst(p.DS_SEVERIDADE || '-'));
-                html += detalheItem('Metodo', ucfirst(p.DS_METODO_DETECCAO || '-'));
-                html += detalheItem('Valor Real', fmtNum(p.VL_REAL));
-                html += detalheItem('Valor Sugerido', fmtNum(p.VL_SUGERIDO));
-                html += detalheItem('Media Historica', fmtNum(p.VL_MEDIA_HISTORICA));
-                html += detalheItem('Predicao XGBoost', fmtNum(p.VL_PREDICAO_XGBOOST));
-                html += detalheItem('Z-Score', fmtNum(p.VL_ZSCORE, 2));
-                html += detalheItem('Vizinhos Anomalos', p.QTD_VIZINHOS_ANOMALOS || 0);
-                html += '</div>';
-
-                // Descricao
-                if (p.DS_DESCRICAO) {
-                    html += `<div style="background:#f8fafc;border-radius:8px;padding:10px 14px;margin-bottom:12px;">
-                <label style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:600;">Descricao</label>
-                <p style="font-size:12px;color:#334155;margin:4px 0 0;">${escapeHtml(p.DS_DESCRICAO)}</p>
-            </div>`;
-                }
-
-                // Scores
-                html += '<h4 style="font-size:13px;font-weight:600;color:#334155;margin:12px 0 8px;">Score de Confianca Composto</h4>';
-                html += '<div class="scores-grid">';
-                html += scoreItem('Estatistico (30%)', s.VL_SCORE_ESTATISTICO);
-                html += scoreItem('Modelo (30%)', s.VL_SCORE_MODELO);
-                html += scoreItem('Topologico (20%)', s.VL_SCORE_TOPOLOGICO);
-                html += scoreItem('Historico (10%)', s.VL_SCORE_HISTORICO);
-                html += scoreItem('Padrao (10%)', s.VL_SCORE_PADRAO);
-                html += scoreItem('CONFIANCA FINAL', p.VL_CONFIANCA, true);
-                html += '</div>';
-
-                // Outras horas
-                if (outras.length > 0) {
-                    html += '<h4 style="font-size:13px;font-weight:600;color:#334155;margin:12px 0 8px;">Outras anomalias no mesmo dia</h4>';
-                    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
-                    outras.forEach(o => {
-                        const statusCor = o.ID_STATUS == 0 ? '#fbbf24' : (o.ID_STATUS == 1 || o.ID_STATUS == 2 ? '#22c55e' : '#94a3b8');
-                        html += `<span style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:11px;">
-                    <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${statusCor};margin-right:4px;"></span>
-                    ${o.DS_HORA_FORMATADA} — ${ucfirst(o.DS_SEVERIDADE)}
-                </span>`;
-                    });
-                    html += '</div>';
-                }
-
-                // Reserva GNN
-                html += `<div class="gnn-placeholder" style="margin-top:16px;">
-            <ion-icon name="git-network-outline"></ion-icon>
-            <p><strong>Contexto GNN (Fase B)</strong> — Coerencia sistemica e propagacao de eventos.</p>
-        </div>`;
-
-                document.getElementById('modalDetalheBody').innerHTML = html;
+                renderizarModalDetalheA2Star(data);
             })
             .catch(err => {
                 document.getElementById('modalDetalheBody').innerHTML =
                     '<p style="color:#dc2626;text-align:center;">Erro: ' + err.message + '</p>';
             });
+    }
+
+    /**
+     * Renderiza o conteudo do modal de detalhe (versao A2★).
+     * Inclui info basica + grafico + dropdown + scores.
+     *
+     * @param {object} data - Resposta do endpoint 'detalhe'
+     */
+    function renderizarModalDetalheA2Star(data) {
+        var p = data.pendencia || data;
+        var html = '';
+
+        // ------ Secao 1: Info basica (2 colunas) ------
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:16px;">';
+        html += infoCell('Ponto', escapeHtml(p.DS_PONTO_NOME || '-'));
+        html += infoCell('Codigo', '<code style="font-size:11px;background:#f1f5f9;padding:2px 6px;border-radius:4px;">' + escapeHtml(p.DS_CODIGO_FORMATADO || '-') + '</code>');
+        html += infoCell('Data', formatarData(p.DT_REFERENCIA || '-'));
+        html += infoCell('Hora', escapeHtml(p.DS_HORA_FORMATADA || (p.NR_HORA != null ? String(p.NR_HORA).padStart(2, '0') + ':00' : '-')));
+        html += infoCell('Tipo Anomalia', escapeHtml(p.DS_TIPO_ANOMALIA || '-'));
+        html += infoCell('Classe', escapeHtml(p.DS_CLASSE_ANOMALIA || '-'));
+        html += infoCell('Severidade', '<span class="badge-severidade ' + (p.DS_SEVERIDADE || 'media') + '">' + ucfirst(p.DS_SEVERIDADE || 'media') + '</span>');
+        html += infoCell('Confianca', fmtNum(p.VL_CONFIANCA * 100, 1) + '%');
+        html += infoCell('Valor Real', '<span style="color:#dc2626;font-weight:700;">' + fmtNum(p.VL_REAL, 2) + '</span>');
+        html += infoCell('Valor Sugerido', '<span style="color:#22c55e;font-weight:700;">' + fmtNum(p.VL_SUGERIDO, 2) + '</span>');
+        html += infoCell('Media Historica', fmtNum(p.VL_MEDIA_HISTORICA, 2));
+        html += infoCell('Predicao XGBoost', fmtNum(p.VL_PREDICAO_XGBOOST, 2));
+        html += infoCell('Z-Score', fmtNum(p.VL_ZSCORE, 2));
+        html += infoCell('Vizinhos Anomalos', (p.QTD_VIZINHOS_ANOMALOS || 0));
+        html += '</div>';
+
+        // Descricao
+        if (p.DS_DESCRICAO) {
+            html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:#475569;">'
+                + '<strong>Descri\u00e7\u00e3o:</strong> ' + escapeHtml(p.DS_DESCRICAO) + '</div>';
+        }
+
+        // ------ Secao 2: A2★ Grafico de metodos ------
+        html += '<div style="border-top:1px solid #e2e8f0;padding-top:16px;margin-top:8px;">';
+        html += '<h4 style="font-size:13px;font-weight:700;color:#1e293b;margin:0 0 12px;display:flex;align-items:center;gap:6px;">'
+            + '<ion-icon name="bar-chart-outline" style="font-size:16px;color:#3b82f6;"></ion-icon>'
+            + 'M\u00e9todos de Corre\u00e7\u00e3o</h4>';
+
+        // Dropdown de metodos
+        html += '<div class="metodo-selector-container">';
+        html += '<label>M\u00e9todo:</label>';
+        html += '<select id="selectMetodoCorrecao" style="width:100%;max-width:320px;"></select>';
+        html += '<span id="badgeScoreMetodo" class="metodo-score-badge" style="display:none;"></span>';
+        html += '</div>';
+
+        // Metricas do metodo selecionado
+        html += '<div class="metodo-metricas" id="metodoMetricas" style="display:none;"></div>';
+
+        // Container do grafico
+        html += '<div class="grafico-container" id="graficoMetodosContainer">';
+        html += '<div class="grafico-loading" id="graficoLoading">';
+        html += '<ion-icon name="sync-outline"></ion-icon>';
+        html += '<p>Calculando m\u00e9todos...</p>';
+        html += '</div>';
+        html += '<canvas id="chartMetodosCanvas"></canvas>';
+        html += '</div>';
+
+        // Legenda
+        html += '<div class="grafico-legenda">';
+        html += '<div class="grafico-legenda-item"><div class="grafico-legenda-dot real"></div>Valor Real (sensor)</div>';
+        html += '<div class="grafico-legenda-item"><div class="grafico-legenda-dot estimado"></div>Estimativa (m\u00e9todo)</div>';
+        html += '<div class="grafico-legenda-item"><div class="grafico-legenda-dot corrigido"></div>Valor Corrigido</div>';
+        html += '</div>';
+        html += '</div>';
+
+        // ------ Secao 3: Scores individuais ------
+        if (p.VL_SCORE_ESTATISTICO != null) {
+            html += '<div style="border-top:1px solid #e2e8f0;padding-top:16px;margin-top:16px;">';
+            html += '<h4 style="font-size:13px;font-weight:700;color:#1e293b;margin:0 0 12px;">Scores de Confian\u00e7a</h4>';
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;">';
+            html += scoreCell('Estat\u00edstico (30%)', p.VL_SCORE_ESTATISTICO);
+            html += scoreCell('Modelo (30%)', p.VL_SCORE_MODELO);
+            html += scoreCell('Topol\u00f3gico (20%)', p.VL_SCORE_TOPOLOGICO);
+            html += scoreCell('Hist\u00f3rico (10%)', p.VL_SCORE_HISTORICO);
+            html += scoreCell('Padr\u00e3o (10%)', p.VL_SCORE_PADRAO);
+            html += scoreCell('CONFIAN\u00c7A FINAL', p.VL_CONFIANCA, true);
+            html += '</div></div>';
+        }
+
+        // ------ Secao 4: Outras anomalias no dia ------
+        if (data.outras_horas && data.outras_horas.length > 0) {
+            html += '<div style="border-top:1px solid #e2e8f0;padding-top:16px;margin-top:16px;">';
+            html += '<h4 style="font-size:13px;font-weight:700;color:#1e293b;margin:0 0 8px;">Outras anomalias no mesmo dia</h4>';
+            html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+            data.outras_horas.forEach(function (o) {
+                var statusCor = o.ID_STATUS == 0 ? '#fbbf24' : (o.ID_STATUS == 1 || o.ID_STATUS == 2 ? '#22c55e' : '#94a3b8');
+                html += '<span style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:11px;">'
+                    + '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:' + statusCor + ';margin-right:4px;"></span>'
+                    + escapeHtml(o.DS_HORA_FORMATADA) + ' \u2014 ' + ucfirst(o.DS_SEVERIDADE)
+                    + '</span>';
+            });
+            html += '</div></div>';
+        }
+
+        // Reserva GNN
+        html += '<div class="gnn-placeholder" style="margin-top:16px;">'
+            + '<ion-icon name="git-network-outline"></ion-icon>'
+            + '<p><strong>Contexto GNN (Fase B)</strong> \u2014 Coer\u00eancia sist\u00eamica e propaga\u00e7\u00e3o de eventos.</p>'
+            + '</div>';
+
+        document.getElementById('modalDetalheBody').innerHTML = html;
+
+        // Inicializar Select2 no dropdown de metodos
+        setTimeout(function () {
+            initSelectMetodos(p);
+        }, 100);
+    }
+
+    /**
+     * Helper: celula de info basica no modal.
+     */
+    function infoCell(label, value) {
+        return '<div style="font-size:11px;"><span style="color:#94a3b8;display:block;">' + label + '</span>'
+            + '<span style="color:#1e293b;font-weight:600;">' + value + '</span></div>';
+    }
+
+    /**
+     * Helper: celula de score no modal.
+     */
+    function scoreCell(label, valor, destaque) {
+        var pct = valor != null ? (valor * 100).toFixed(1) : '-';
+        var cor = valor >= 0.85 ? '#22c55e' : (valor >= 0.70 ? '#3b82f6' : '#f59e0b');
+        var bg = destaque ? 'background:#f0f9ff;border:1px solid #bfdbfe;' : 'background:#f8fafc;border:1px solid #e2e8f0;';
+        return '<div style="' + bg + 'border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">'
+            + '<span style="font-size:11px;color:#64748b;">' + label + '</span>'
+            + '<span style="font-size:' + (destaque ? '15' : '13') + 'px;font-weight:700;color:' + cor + ';">' + pct + '%</span>'
+            + '</div>';
+    }
+
+    // ============================================
+    // A2★ — Inicializar dropdown de metodos
+    // ============================================
+
+    /**
+     * Inicializa o Select2 de metodos e dispara o calculo.
+     *
+     * @param {object} pendencia - Dados da pendencia
+     */
+    function initSelectMetodos(pendencia) {
+        var sel = document.getElementById('selectMetodoCorrecao');
+        if (!sel) return;
+
+        // Opcao inicial de loading
+        sel.innerHTML = '<option value="">Calculando m\u00e9todos...</option>';
+
+        // Inicializar Select2
+        $(sel).select2({
+            dropdownParent: document.getElementById('modalDetalhe'),
+            placeholder: 'Selecione um m\u00e9todo',
+            minimumResultsForSearch: Infinity, // Sem busca — poucos itens
+            width: '100%'
+        });
+
+        // Evento de troca
+        $(sel).on('change', function () {
+            var metodoId = $(this).val();
+            if (metodoId) {
+                selecionarMetodo(metodoId);
+            }
+        });
+
+        // Disparar calculo dos metodos
+        carregarMetodosCorrecao(pendencia);
+    }
+
+    /**
+     * Chama o endpoint metodoCorrecao.php e popula o dropdown.
+     *
+     * @param {object} pendencia - Dados da pendencia
+     */
+    function carregarMetodosCorrecao(pendencia) {
+        var cdPonto = pendencia.CD_PONTO_MEDICAO;
+        var dtRef = pendencia.DT_REFERENCIA;
+        var tipoMedidor = pendencia.ID_TIPO_MEDIDOR || 1;
+
+        // Verificar cache
+        var cacheKey = cdPonto + '_' + dtRef;
+        if (cacheMetodos[cacheKey]) {
+            popularDropdownMetodos(cacheMetodos[cacheKey]);
+            return;
+        }
+
+        fetch('bd/operacoes/metodoCorrecao.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                acao: 'calcular_metodos',
+                cd_ponto: cdPonto,
+                dt_referencia: dtRef,
+                tipo_medidor: tipoMedidor
+            })
+        })
+            .then(r => r.json())
+            .then(data => {
+                // Esconder loading do grafico
+                var loading = document.getElementById('graficoLoading');
+                if (loading) loading.style.display = 'none';
+
+                if (!data.success || !data.metodos || data.metodos.length === 0) {
+                    var sel = document.getElementById('selectMetodoCorrecao');
+                    if (sel) {
+                        sel.innerHTML = '<option value="">Nenhum m\u00e9todo dispon\u00edvel</option>';
+                        $(sel).trigger('change.select2');
+                    }
+                    return;
+                }
+
+                // Guardar no cache
+                cacheMetodos[cacheKey] = data;
+                popularDropdownMetodos(data);
+            })
+            .catch(err => {
+                var loading = document.getElementById('graficoLoading');
+                if (loading) loading.style.display = 'none';
+                console.error('Erro ao carregar metodos:', err);
+            });
+    }
+
+    /**
+     * Popula o dropdown de metodos com os resultados do calculo.
+     *
+     * @param {object} data - Resposta do metodoCorrecao.php
+     */
+    function popularDropdownMetodos(data) {
+        var sel = document.getElementById('selectMetodoCorrecao');
+        if (!sel) return;
+
+        var html = '<option value="auto">AUTO \u2014 Melhor m\u00e9todo (' + escapeHtml(data.metodo_recomendado || '') + ')</option>';
+
+        data.metodos.forEach(function (m) {
+            var scoreLabel = m.score_aderencia != null ? ' (' + m.score_aderencia.toFixed(2) + ')' : '';
+            html += '<option value="' + m.id + '">' + escapeHtml(m.nome) + scoreLabel + '</option>';
+        });
+
+        sel.innerHTML = html;
+
+        // Atualizar Select2
+        $(sel).trigger('change.select2');
+
+        // Selecionar AUTO por default (que exibe o melhor metodo)
+        $(sel).val('auto').trigger('change');
+    }
+
+    /**
+     * Callback ao selecionar um metodo no dropdown.
+     * Atualiza grafico + metricas + badge.
+     *
+     * @param {string} metodoId - ID do metodo selecionado ('auto', 'xgboost_rede', etc.)
+     */
+    function selecionarMetodo(metodoId) {
+        var cdPonto = pendenciaDetalheAtual;
+        // Buscar cache da pendencia atualmente aberta
+        var data = null;
+        for (var key in cacheMetodos) {
+            // A chave é cdPonto_dtReferencia — pegar a mais recente
+            data = cacheMetodos[key];
+        }
+        if (!data || !data.metodos) return;
+
+        // Encontrar metodo
+        var metodo;
+        if (metodoId === 'auto') {
+            metodo = data.metodos[0]; // Primeiro = maior score (ja ordenado)
+        } else {
+            metodo = data.metodos.find(function (m) { return m.id === metodoId; });
+        }
+        if (!metodo) return;
+
+        metodoSelecionado = metodo;
+
+        // Atualizar badge de score
+        var badge = document.getElementById('badgeScoreMetodo');
+        if (badge) {
+            var scoreClasse = metodo.score_aderencia >= 8 ? 'alta' : (metodo.score_aderencia >= 5 ? 'media' : 'baixa');
+            badge.className = 'metodo-score-badge ' + scoreClasse;
+            badge.innerHTML = '<ion-icon name="star" style="font-size:10px;"></ion-icon> ' + metodo.score_aderencia.toFixed(2);
+            badge.style.display = 'inline-flex';
+        }
+
+        // Atualizar metricas
+        atualizarMetricasMetodo(metodo);
+
+        // Atualizar grafico
+        atualizarGraficoMetodos(data.valores_reais, metodo.valores, data.horas_anomalas);
+    }
+
+    /**
+     * Atualiza os cards de metricas do metodo selecionado.
+     */
+    function atualizarMetricasMetodo(metodo) {
+        var container = document.getElementById('metodoMetricas');
+        if (!container) return;
+
+        var m = metodo.metricas || {};
+        var html = '';
+
+        html += '<div class="metodo-metrica-item"><div class="mmv">' + (metodo.score_aderencia != null ? metodo.score_aderencia.toFixed(2) : '-') + '</div><div class="mml">Ader\u00eancia</div></div>';
+
+        if (m.r2 != null) html += '<div class="metodo-metrica-item"><div class="mmv">' + (m.r2 * 100).toFixed(1) + '%</div><div class="mml">R\u00b2</div></div>';
+        if (m.mae != null) html += '<div class="metodo-metrica-item"><div class="mmv">' + m.mae.toFixed(2) + '</div><div class="mml">MAE</div></div>';
+        if (m.rmse != null) html += '<div class="metodo-metrica-item"><div class="mmv">' + m.rmse.toFixed(2) + '</div><div class="mml">RMSE</div></div>';
+        if (m.amostras != null) html += '<div class="metodo-metrica-item"><div class="mmv">' + m.amostras + '</div><div class="mml">Amostras</div></div>';
+
+        container.innerHTML = html;
+        container.style.display = 'flex';
+    }
+
+    // ============================================
+    // A2★ — Grafico Chart.js de 3 curvas
+    // ============================================
+
+    /**
+     * Cria ou atualiza o grafico com 3 datasets:
+     *   1. Laranja: valor real (sensor)
+     *   2. Verde pontilhado: estimativa do metodo
+     *   3. Azul: valor corrigido (estimativa nas horas anomalas, real nas demais)
+     *
+     * @param {object} valoresReais    Mapa hora => valor
+     * @param {object} valoresEstimados Mapa hora => valor do metodo
+     * @param {array}  horasAnomalas   Lista de horas anomalas
+     */
+    function atualizarGraficoMetodos(valoresReais, valoresEstimados, horasAnomalas) {
+        var canvas = document.getElementById('chartMetodosCanvas');
+        if (!canvas) return;
+
+        var labels = [];
+        var dataReal = [];
+        var dataEstimado = [];
+        var dataCorrigido = [];
+        var bgColors = [];
+
+        for (var h = 0; h < 24; h++) {
+            labels.push(String(h).padStart(2, '0') + ':00');
+
+            var vReal = valoresReais[h] != null ? valoresReais[h] : null;
+            var vEst = valoresEstimados[h] != null ? valoresEstimados[h] : null;
+
+            dataReal.push(vReal);
+            dataEstimado.push(vEst);
+
+            // Valor corrigido: nas horas anomalas usa estimativa, nas demais usa real
+            if (horasAnomalas.indexOf(h) >= 0) {
+                dataCorrigido.push(vEst); // Hora anomala → estimativa
+                bgColors.push('rgba(239, 68, 68, 0.08)'); // Fundo vermelho claro
+            } else {
+                dataCorrigido.push(vReal); // Hora normal → real
+                bgColors.push('transparent');
+            }
+        }
+
+        // Destruir grafico anterior se existir
+        if (chartMetodos) {
+            chartMetodos.destroy();
+            chartMetodos = null;
+        }
+
+        var ctx = canvas.getContext('2d');
+
+        chartMetodos = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Valor Real',
+                        data: dataReal,
+                        borderColor: '#f97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#f97316',
+                        tension: 0.3,
+                        fill: false,
+                        order: 2
+                    },
+                    {
+                        label: 'Estimativa',
+                        data: dataEstimado,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [6, 3],
+                        pointRadius: 2,
+                        pointBackgroundColor: '#22c55e',
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    },
+                    {
+                        label: 'Corrigido',
+                        data: dataCorrigido,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        pointBackgroundColor: function (ctx) {
+                            var idx = ctx.dataIndex;
+                            return horasAnomalas.indexOf(idx) >= 0 ? '#3b82f6' : 'rgba(59, 130, 246, 0.3)';
+                        },
+                        tension: 0.3,
+                        fill: false,
+                        order: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: { display: false }, // Usamos legenda custom
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleFont: { size: 12 },
+                        bodyFont: { size: 11 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            title: function (items) {
+                                var h = items[0].dataIndex;
+                                var ehAnomala = horasAnomalas.indexOf(h) >= 0;
+                                return items[0].label + (ehAnomala ? ' \u26a0 ANOMALA' : '');
+                            },
+                            label: function (item) {
+                                var val = item.raw != null ? item.raw.toFixed(2) : '-';
+                                return '  ' + item.dataset.label + ': ' + val;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(0,0,0,0.04)' },
+                        ticks: { font: { size: 10 }, maxRotation: 0 }
+                    },
+                    y: {
+                        grid: { color: 'rgba(0,0,0,0.06)' },
+                        ticks: { font: { size: 10 } },
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    }
+
+    // ============================================
+    // A2★ — Aprovar com metodo selecionado
+    // ============================================
+
+    /**
+     * Sobrescreve aprovarUm para incluir metodo e score.
+     * Chamar APOS a funcao original no arquivo.
+     */
+    var _aprovarUmOriginal = typeof aprovarUm === 'function' ? aprovarUm : null;
+
+    /**
+     * Aprova uma pendencia com metodo de correcao (A2★).
+     * Se o modal de detalhe esta aberto e tem metodo selecionado, envia junto.
+     *
+     * @param {number} cd - CD_CHAVE da pendencia
+     */
+    function aprovarUm(cd) {
+        // Montar payload com metodo se disponivel
+        var payload = { acao: 'aprovar', cd_pendencia: cd };
+
+        if (metodoSelecionado && pendenciaDetalheAtual === cd) {
+            payload.metodo_correcao = metodoSelecionado.id;
+            payload.score_aderencia = metodoSelecionado.score_aderencia;
+        }
+
+        if (!confirm('Aprovar esta pend\u00eancia?' +
+            (payload.metodo_correcao ? '\nM\u00e9todo: ' + metodoSelecionado.nome + ' (score: ' + metodoSelecionado.score_aderencia.toFixed(2) + ')' : '')
+        )) return;
+
+        chamarTratamento(payload);
+    }
+
+    /**
+     * Sobrescreve confirmarAjuste para incluir metodo.
+     */
+    var _confirmarAjusteOriginal = typeof confirmarAjuste === 'function' ? confirmarAjuste : null;
+
+    function confirmarAjuste() {
+        var valor = parseFloat(document.getElementById('ajustarValorInput').value);
+        if (isNaN(valor)) { alert('Informe um valor v\u00e1lido'); return; }
+        fecharModal('modalAjustar');
+
+        var payload = {
+            acao: 'ajustar',
+            cd_pendencia: pendenciaAtual,
+            valor: valor,
+            metodo_correcao: 'manual'
+        };
+
+        // Se tinha metodo selecionado no detalhe, usar ele
+        if (metodoSelecionado && pendenciaDetalheAtual === pendenciaAtual) {
+            payload.metodo_correcao = metodoSelecionado.id;
+            payload.score_aderencia = metodoSelecionado.score_aderencia;
+        }
+
+        chamarTratamento(payload);
+    }
+
+    // ============================================
+    // A2★ — Cleanup ao fechar modal
+    // ============================================
+
+    /**
+     * Extende o fecharModal para limpar grafico e cache.
+     */
+    var _fecharModalOriginal = typeof fecharModal === 'function' ? fecharModal : null;
+
+
+
+
+
+
+    /**
+ * Fecha o modal de Regras/Glossario/Metodos
+ */
+    function fecharRegras() {
+        var modal = document.getElementById('modalRegras');
+        if (modal) modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    /**
+     * Abre o modal de Regras/Glossario/Metodos
+     */
+    function abrirRegras() {
+        var modal = document.getElementById('modalRegras');
+        if (modal) modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     }
 
 
@@ -2980,12 +2598,22 @@ try {
         document.getElementById('modalRegras').classList.remove('active');
     }
 
-    /** Trocar aba Regras/Glossario */
+    /**
+ * Troca aba do modal de Regras/Glossario/Metodos.
+ * @param {string}      aba  Nome da aba (regras|glossario|metodos)
+ * @param {HTMLElement} btn  Botao clicado
+ */
     function trocarAbaRegra(aba, btn) {
-        document.getElementById('abaRegras').style.display = aba === 'regras' ? '' : 'none';
-        document.getElementById('abaGlossario').style.display = aba === 'glossario' ? '' : 'none';
+        // Desativar todas
         document.querySelectorAll('.regra-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('abaRegras').style.display = 'none';
+        document.getElementById('abaGlossario').style.display = 'none';
+        document.getElementById('abaMetodos').style.display = 'none';
+        // Ativar a clicada
         btn.classList.add('active');
+        if (aba === 'regras') document.getElementById('abaRegras').style.display = '';
+        else if (aba === 'glossario') document.getElementById('abaGlossario').style.display = '';
+        else if (aba === 'metodos') document.getElementById('abaMetodos').style.display = '';
     }
 
     document.addEventListener('keydown', function (e) {
@@ -3106,6 +2734,535 @@ try {
         div.textContent = msg;
         document.body.appendChild(div);
         setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 4000);
+    }
+
+
+    /**
+     * Controle de grupo selecionado na tabela agrupada.
+     * Marca/desmarca todos os IDs do grupo na selecao global.
+     *
+     * @param {HTMLInputElement} checkbox - Checkbox do grupo
+     */
+    function toggleSelecaoGrupo(checkbox) {
+        const ids = checkbox.dataset.ids.split(',').map(Number);
+        if (checkbox.checked) {
+            ids.forEach(id => {
+                if (!idsSelecionados.includes(id)) idsSelecionados.push(id);
+            });
+        } else {
+            ids.forEach(id => {
+                const idx = idsSelecionados.indexOf(id);
+                if (idx > -1) idsSelecionados.splice(idx, 1);
+            });
+        }
+        atualizarBarraMassa();
+    }
+
+
+    /**
+     * Aprovacao rapida de TODAS as horas pendentes do grupo.
+     * Usa metodo AUTO (melhor score) sem abrir modal.
+     *
+     * @param {string} cdPonto  - Codigo do ponto
+     * @param {string} dtRef    - Data de referencia
+     * @param {string} idsStr   - IDs concatenados por virgula
+     */
+    function aprovarGrupoRapido(cdPonto, dtRef, idsStr) {
+        const ids = idsStr.split(',').map(Number);
+        const qtd = ids.length;
+
+        if (!confirm(`Aprovar todas as ${qtd} hora(s) anomalas deste ponto com metodo AUTO?`)) return;
+
+        fetch('bd/operacoes/tratamentoLote.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                acao: 'aprovar_grupo',
+                cd_ponto: parseInt(cdPonto),
+                dt_referencia: dtRef,
+                metodo: 'AUTO',
+                ids: [] // vazio = todas as pendentes
+            })
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    toast(d.message || 'Grupo aprovado', 'ok');
+                    carregarEstatisticas();
+                } else {
+                    toast(d.error || 'Erro ao aprovar grupo', 'err');
+                }
+            })
+            .catch(() => toast('Erro de conexao', 'err'));
+    }
+
+
+    // ---- Variaveis do modal de detalhe do grupo ----
+    var grupoDetalheAtual = {
+        cdPonto: null,
+        dtRef: null,
+        codigoFormatado: null,
+        ids: [],
+        horas: [],
+        statusHoras: []
+    };
+
+
+    /**
+     * Abre o modal de detalhe do grupo com lista de horas e opcoes.
+     * Carrega metodos de correcao via metodoCorrecao.php.
+     *
+     * @param {string} cdPonto  - Codigo do ponto
+     * @param {string} dtRef    - Data de referencia
+     * @param {string} codFmt   - Codigo formatado
+     * @param {string} idsStr   - IDs concatenados por virgula
+     * @param {string} horasStr - Horas concatenadas por virgula
+     * @param {string} statusStr- Status por hora concatenados
+     */
+    function abrirDetalheGrupo(cdPonto, dtRef, codFmt, idsStr, horasStr, statusStr) {
+        // Salvar contexto do grupo
+        grupoDetalheAtual = {
+            cdPonto: parseInt(cdPonto),
+            dtRef: dtRef,
+            codigoFormatado: codFmt,
+            ids: idsStr.split(',').map(Number),
+            horas: horasStr.split(',').map(Number),
+            statusHoras: statusStr.split(',').map(Number)
+        };
+
+        // Limpar cache de metodos ao abrir novo grupo
+        cacheMetodos = {};
+
+        // Montar corpo do modal
+        const body = document.getElementById('modalDetalheGrupoBody');
+        const statusMap = { 0: 'Pendente', 1: 'Aprovada', 2: 'Ajustada', 3: 'Ignorada' };
+        const statusClasse = { 0: 'pendente', 1: 'aprovada', 2: 'ajustada', 3: 'ignorada' };
+
+        // Cabecalho com info do ponto
+        let htmlInfo = `
+        <div class="grupo-info-header">
+            <div class="grupo-info-item">
+                <span class="grupo-label">Ponto</span>
+                <span class="grupo-valor">${codFmt}</span>
+            </div>
+            <div class="grupo-info-item">
+                <span class="grupo-label">Data</span>
+                <span class="grupo-valor">${formatarData(dtRef)}</span>
+            </div>
+            <div class="grupo-info-item">
+                <span class="grupo-label">Total horas</span>
+                <span class="grupo-valor">${grupoDetalheAtual.horas.length}</span>
+            </div>
+        </div>
+    `;
+
+        // Lista de horas com checkboxes
+        let htmlHoras = `
+        <div class="grupo-horas-lista">
+            <div class="grupo-horas-header">
+                <label class="chk-label-all">
+                    <input type="checkbox" id="chkTodasHorasGrupo" checked onchange="toggleTodasHorasGrupo(this)">
+                    <span>Selecionar todas</span>
+                </label>
+                <span class="grupo-horas-count" id="grupoHorasCount">${grupoDetalheAtual.horas.length} selecionada(s)</span>
+            </div>
+            <div class="grupo-horas-grid">
+    `;
+
+        grupoDetalheAtual.horas.forEach((hora, i) => {
+            const st = grupoDetalheAtual.statusHoras[i] || 0;
+            const idPend = grupoDetalheAtual.ids[i];
+            const isPend = st === 0;
+            const stNome = statusMap[st] || 'Pendente';
+            const stClass = statusClasse[st] || 'pendente';
+
+            htmlHoras += `
+            <label class="grupo-hora-item ${stClass} ${!isPend ? 'disabled' : ''}" title="${stNome}">
+                <input type="checkbox" class="chk-hora-grupo" data-id="${idPend}" data-hora="${hora}"
+                    ${isPend ? 'checked' : 'disabled'} onchange="atualizarContadorHorasGrupo()">
+                <span class="hora-label">${String(hora).padStart(2, '0')}:00</span>
+                <span class="badge ${stClass}" style="font-size:9px;">${stNome}</span>
+            </label>
+        `;
+        });
+
+        htmlHoras += `
+            </div>
+        </div>
+    `;
+
+        // Dropdown de metodo de correcao
+        let htmlMetodo = `
+        <div class="grupo-metodo-section">
+            <label class="grupo-metodo-label">Metodo de correcao:</label>
+            <select id="selectMetodoGrupo" class="select-metodo-grupo">
+                <option value="AUTO">AUTO (melhor score)</option>
+                <option value="XGBOOST">XGBoost Rede</option>
+                <option value="PCHIP">PCHIP (Interpolacao)</option>
+                <option value="MEDIA">Media Movel Ponderada</option>
+                <option value="PROPHET">Prophet (Sazonal)</option>
+            </select>
+        </div>
+    `;
+
+        // Area do grafico (sera preenchida via AJAX)
+        let htmlGrafico = `
+        <div class="grupo-grafico-area" id="grupoGraficoArea">
+            <div style="text-align:center;padding:20px;">
+                <div class="loading-spinner"></div>
+                <p style="margin:8px 0 0;color:#94a3b8;font-size:11px;">Carregando metodos de correcao...</p>
+            </div>
+        </div>
+    `;
+
+        body.innerHTML = htmlInfo + htmlHoras + htmlMetodo + htmlGrafico;
+
+        // Inicializar Select2 no dropdown de metodo
+        setTimeout(() => {
+            $('#selectMetodoGrupo').select2({
+                width: '100%',
+                minimumResultsForSearch: Infinity, // sem busca (poucas opcoes)
+                dropdownParent: $('#modalDetalheGrupo .modal-box')
+            });
+        }, 100);
+
+        // Abrir modal
+        abrirModal('modalDetalheGrupo');
+
+        // Carregar grafico dos metodos de correcao (usa o endpoint metodoCorrecao.php existente)
+        carregarMetodosGrupo(cdPonto, dtRef);
+    }
+
+
+    /**
+     * Toggle todas as horas no modal do grupo.
+     * So afeta checkboxes habilitados (pendentes).
+     *
+     * @param {HTMLInputElement} chkAll - Checkbox mestre
+     */
+    function toggleTodasHorasGrupo(chkAll) {
+        document.querySelectorAll('.chk-hora-grupo:not(:disabled)').forEach(chk => {
+            chk.checked = chkAll.checked;
+        });
+        atualizarContadorHorasGrupo();
+    }
+
+
+    /**
+     * Atualiza o contador de horas selecionadas no modal.
+     */
+    function atualizarContadorHorasGrupo() {
+        const total = document.querySelectorAll('.chk-hora-grupo:checked').length;
+        const countEl = document.getElementById('grupoHorasCount');
+        if (countEl) countEl.textContent = total + ' selecionada(s)';
+    }
+
+
+    /**
+     * Carrega metodos de correcao para o grafico do grupo.
+     * Chama metodoCorrecao.php com o ponto e data.
+     *
+     * @param {string} cdPonto - Codigo do ponto
+     * @param {string} dtRef   - Data de referencia
+     */
+    function carregarMetodosGrupo(cdPonto, dtRef) {
+        // Buscar primeiro ID pendente para obter tipo de medidor
+        const primeiroPend = grupoDetalheAtual.ids[0];
+
+        fetch('bd/operacoes/metodoCorrecao.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                acao: 'calcular_metodos',
+                cd_ponto: parseInt(cdPonto),
+                dt_referencia: dtRef,
+                cd_pendencia: primeiroPend
+            })
+        })
+            .then(r => r.json())
+            .then(data => {
+                const area = document.getElementById('grupoGraficoArea');
+                if (!data || !data.success) {
+                    area.innerHTML = `
+                    <div style="text-align:center;padding:20px;color:#94a3b8;">
+                        <ion-icon name="analytics-outline" style="font-size:24px;"></ion-icon>
+                        <p style="margin:8px 0 0;font-size:12px;">${data?.error || 'Sem dados de metodos de correcao'}</p>
+                    </div>
+                `;
+                    return;
+                }
+
+                // Salvar no cache
+                cacheMetodos[cdPonto + '_' + dtRef] = data;
+
+                // Renderizar grafico
+                area.innerHTML = '<canvas id="canvasGrupoMetodos" style="width:100%;height:220px;"></canvas>';
+                renderizarGraficoGrupo(data);
+
+                // Mapear dropdown para IDs reais dos metodos retornados
+                var selMetodo = document.getElementById('selectMetodoGrupo');
+                if (selMetodo) {
+                    // Popular dropdown com metodos reais retornados
+                    var optsHtml = '<option value="AUTO">AUTO (' + (data.metodo_recomendado || '-') + ')</option>';
+                    (data.metodos || []).forEach(function (m) {
+                        optsHtml += '<option value="' + m.id + '">' + m.nome + ' (score: ' + parseFloat(m.score_aderencia).toFixed(1) + ')</option>';
+                    });
+                    selMetodo.innerHTML = optsHtml;
+
+                    // Reiniciar Select2
+                    try { $(selMetodo).select2('destroy'); } catch (e) { }
+                    $(selMetodo).select2({
+                        width: '100%',
+                        minimumResultsForSearch: Infinity,
+                        dropdownParent: $('#modalDetalheGrupo .modal-box')
+                    });
+
+                    // Ao trocar metodo, redesenhar grafico
+                    $(selMetodo).off('change').on('change', function () {
+                        var val = $(this).val();
+                        var cacheKey = grupoDetalheAtual.cdPonto + '_' + grupoDetalheAtual.dtRef;
+                        var cachedData = cacheMetodos[cacheKey];
+                        if (!cachedData) return;
+
+                        // AUTO = usar metodo_recomendado
+                        var metodoId = (val === 'AUTO') ? cachedData.metodo_recomendado : val;
+                        renderizarGraficoGrupo(cachedData, metodoId);
+                    });
+                }
+                // console.log('metodoCorrecao response:', JSON.stringify(data, null, 2));
+            })
+            .catch(err => {
+                const area = document.getElementById('grupoGraficoArea');
+                area.innerHTML = `<p style="text-align:center;color:#ef4444;font-size:12px;">Erro: ${err.message}</p>`;
+            });
+    }
+
+    /**
+     * Renderiza grafico Chart.js com as curvas do grupo.
+     * Usa a estrutura real do metodoCorrecao.php.
+     *
+     * @param {Object} data   - Resposta do metodoCorrecao.php
+     * @param {string} [metodoId] - ID do metodo a usar (default: metodo_recomendado)
+     */
+    var chartGrupoMetodos = null;
+
+    function renderizarGraficoGrupo(data, metodoId) {
+        const canvas = document.getElementById('canvasGrupoMetodos');
+        if (!canvas) return;
+
+        if (chartGrupoMetodos) {
+            chartGrupoMetodos.destroy();
+            chartGrupoMetodos = null;
+        }
+
+        // Valores reais: array indexado 0-23
+        const reaisArr = data.valores_reais || [];
+
+        // Encontrar metodo selecionado no array de metodos
+        const metodoSel = metodoId || data.metodo_recomendado || '';
+        const metodosArr = data.metodos || [];
+        let metodoObj = metodosArr.find(m => m.id === metodoSel);
+        if (!metodoObj && metodosArr.length > 0) metodoObj = metodosArr[0];
+        const estimArr = metodoObj ? (metodoObj.valores || []) : [];
+
+        // Horas anomalas
+        const horasAnomSet = new Set(data.horas_anomalas || grupoDetalheAtual.horas);
+
+        const labels = [];
+        const valoresReais = [];
+        const valoresEstimado = [];
+        const valoresCorrigido = [];
+
+        for (let h = 0; h < 24; h++) {
+            labels.push(String(h).padStart(2, '0') + ':00');
+
+            const real = reaisArr[h] != null ? parseFloat(reaisArr[h]) : null;
+            const est = estimArr[h] != null ? parseFloat(estimArr[h]) : null;
+
+            valoresReais.push(real);
+            valoresEstimado.push(est);
+
+            // Corrigido: nas horas anomalas usa estimativa, senao valor real
+            valoresCorrigido.push(horasAnomSet.has(h) && est != null ? est : real);
+        }
+
+        // Score de aderencia no titulo
+        const scoreText = metodoObj ? (' — Aderencia: ' + parseFloat(metodoObj.score_aderencia).toFixed(1) + '/10') : '';
+
+        const ctx = canvas.getContext('2d');
+        chartGrupoMetodos = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Valor Real',
+                        data: valoresReais,
+                        borderColor: '#f97316',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#f97316',
+                        tension: 0.3,
+                        fill: false,
+                        order: 2
+                    },
+                    {
+                        label: 'Estimativa (' + (metodoObj ? metodoObj.nome : '-') + ')' + scoreText,
+                        data: valoresEstimado,
+                        borderColor: '#22c55e',
+                        borderWidth: 2,
+                        borderDash: [6, 3],
+                        pointRadius: 2,
+                        pointBackgroundColor: '#22c55e',
+                        tension: 0.3,
+                        fill: false,
+                        order: 1
+                    },
+                    {
+                        label: 'Valor Corrigido',
+                        data: valoresCorrigido,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#3b82f6',
+                        tension: 0.3,
+                        fill: true,
+                        order: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { position: 'top', labels: { font: { size: 11 }, usePointStyle: true, padding: 12 } },
+                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + (ctx.parsed.y != null ? ctx.parsed.y.toFixed(2) : '-') } }
+                },
+                scales: {
+                    x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                    y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } }, beginAtZero: false }
+                }
+            },
+            plugins: [{
+                id: 'horasAnomalasBackground',
+                beforeDraw(chart) {
+                    const { ctx, chartArea, scales } = chart;
+                    if (!chartArea) return;
+                    const xScale = scales.x;
+                    const barW = xScale.getPixelForValue(1) - xScale.getPixelForValue(0);
+                    (data.horas_anomalas || []).forEach(h => {
+                        ctx.fillStyle = 'rgba(239, 68, 68, 0.06)';
+                        ctx.fillRect(xScale.getPixelForValue(h) - barW / 2, chartArea.top, barW, chartArea.bottom - chartArea.top);
+                    });
+                }
+            }]
+        });
+    }
+
+
+    /**
+     * OPCAO 1: Aplicar tratamento a TODAS as horas pendentes do grupo.
+     * Usa o metodo selecionado no dropdown.
+     */
+    function aplicarTodasHorasGrupo() {
+        const metodo = $('#selectMetodoGrupo').val() || 'AUTO';
+        const qtdPend = grupoDetalheAtual.statusHoras.filter(s => s === 0).length;
+
+        if (qtdPend === 0) {
+            toast('Nenhuma hora pendente neste grupo', 'info');
+            return;
+        }
+
+        if (!confirm(`Aplicar metodo ${metodo} em TODAS as ${qtdPend} hora(s) pendentes?`)) return;
+
+        executarAprovacaoGrupo(metodo, []); // vazio = todas
+    }
+
+
+    /**
+     * OPCAO 2: Aplicar tratamento SOMENTE as horas selecionadas (checkboxes marcados).
+     * Usa o metodo selecionado no dropdown.
+     */
+    function aplicarHorasSelecionadasGrupo() {
+        const metodo = $('#selectMetodoGrupo').val() || 'AUTO';
+
+        // Coletar IDs das horas marcadas
+        const idsSel = [];
+        document.querySelectorAll('.chk-hora-grupo:checked').forEach(chk => {
+            idsSel.push(parseInt(chk.dataset.id));
+        });
+
+        if (idsSel.length === 0) {
+            toast('Selecione pelo menos uma hora', 'info');
+            return;
+        }
+
+        if (!confirm(`Aplicar metodo ${metodo} em ${idsSel.length} hora(s) selecionada(s)?`)) return;
+
+        executarAprovacaoGrupo(metodo, idsSel);
+    }
+
+
+    /**
+     * Executa a aprovacao do grupo via AJAX.
+     * Envia para acao 'aprovar_grupo' no backend.
+     *
+     * @param {string} metodo   - Metodo de correcao
+     * @param {Array}  idsHoras - Array de CD_CHAVE (vazio = todas)
+     */
+    function executarAprovacaoGrupo(metodo, idsHoras) {
+        // Desabilitar botoes durante processamento
+        const btnTodas = document.getElementById('btnAplicarTodasGrupo');
+        const btnSel = document.getElementById('btnAplicarSelGrupo');
+        if (btnTodas) btnTodas.disabled = true;
+        if (btnSel) btnSel.disabled = true;
+
+        fetch('bd/operacoes/tratamentoLote.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                acao: 'aprovar_grupo',
+                cd_ponto: grupoDetalheAtual.cdPonto,
+                dt_referencia: grupoDetalheAtual.dtRef,
+                metodo: metodo,
+                ids: idsHoras
+            })
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    toast(d.message || 'Tratamento aplicado', 'ok');
+                    fecharModal('modalDetalheGrupo');
+                    carregarEstatisticas(); // Recarrega stats + tabela
+                } else {
+                    toast(d.error || 'Erro ao aplicar tratamento', 'err');
+                }
+
+                if (btnTodas) btnTodas.disabled = false;
+                if (btnSel) btnSel.disabled = false;
+            })
+            .catch(() => {
+                toast('Erro de conexao', 'err');
+                if (btnTodas) btnTodas.disabled = false;
+                if (btnSel) btnSel.disabled = false;
+            });
+    }
+
+    /**
+ * Troca aba no modal de Regras/Glossario/Metodos.
+ * @param {HTMLElement} btn  Botao clicado
+ * @param {string}      tab  ID da aba (deteccao|glossario|metodos)
+ */
+    function trocarAbaRegras(btn, tab) {
+        // Desativar todas as abas
+        document.querySelectorAll('.regras-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.regras-tab-pane').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+        // Ativar a aba clicada
+        btn.classList.add('active');
+        const pane = document.getElementById('pane' + tab.charAt(0).toUpperCase() + tab.slice(1));
+        if (pane) { pane.classList.add('active'); pane.style.display = 'block'; }
     }
 </script>
 
