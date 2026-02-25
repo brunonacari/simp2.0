@@ -3535,28 +3535,34 @@ $descartes = [
                 }
 
                 // Mapear colunas
+                // Funcao para remover acentos (normalizar para comparacao)
+                const removerAcentos = (str) => {
+                    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                };
+
                 const cabecalho = jsonData[0].map(c => (c || '').toString().toUpperCase().trim());
                 console.log('Cabeçalho:', cabecalho);
 
                 const colMap = {};
                 cabecalho.forEach((nome, idx) => {
-                    const nomeNorm = nome.replace(/\s+/g, ' ');
+                    // Normaliza removendo acentos para comparacao
+                    const nomeNorm = removerAcentos(nome.replace(/\s+/g, ' '));
 
                     if (nomeNorm.includes('DATA') && !nomeNorm.includes('HORA')) {
                         colMap['DATA'] = idx;
                     } else if (nomeNorm === 'HORA') {
                         colMap['HORA'] = idx;
-                    } else if (nomeNorm.includes('PONTO') || nomeNorm.includes('MEDICAO') || nomeNorm.includes('MEDICAO')) {
+                    } else if (nomeNorm.includes('PONTO') || nomeNorm.includes('MEDICAO')) {
                         colMap['PONTO_MEDICAO'] = idx;
-                    } else if ((nomeNorm.includes('TEMP') && nomeNorm.includes('ÁGUA')) || (nomeNorm.includes('TEMP') && nomeNorm.includes('AGUA'))) {
+                    } else if ((nomeNorm.includes('TEMP') && nomeNorm.includes('AGUA')) || (nomeNorm.includes('TEMP') && nomeNorm.includes('AGUA'))) {
                         colMap['TEMP_AGUA'] = idx;
                     } else if (nomeNorm.includes('TEMP') && nomeNorm.includes('AMB')) {
                         colMap['TEMP_AMB'] = idx;
-                    } else if (nomeNorm.includes('PRESSAO') || nomeNorm.includes('PRESSAO')) {
+                    } else if (nomeNorm.includes('PRESSAO')) {
                         colMap['PRESSAO'] = idx;
                     } else if (nomeNorm.includes('VOLUME')) {
                         colMap['VOLUME'] = idx;
-                    } else if (nomeNorm.includes('PERIODO') || nomeNorm.includes('PERIODO')) {
+                    } else if (nomeNorm.includes('PERIODO')) {
                         colMap['PERIODO'] = idx;
                     }
                 });
