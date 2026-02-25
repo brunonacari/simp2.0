@@ -1834,22 +1834,46 @@ try {
         if (tr) tr.classList.toggle('selecionada', checked);
     }
 
+    /**
+ * Marca/desmarca todos os checkboxes de grupo na tabela.
+ * Funciona com a estrutura agrupada (data-ids com multiplos IDs).
+ *
+ * @param {HTMLInputElement} chkTodos - Checkbox mestre do header
+ */
     function toggleTodos(chkTodos) {
-        document.querySelectorAll('.chk-item').forEach(chk => {
-            const cd = parseInt(chk.dataset.cd);
+        document.querySelectorAll('.chk-grupo').forEach(chk => {
             chk.checked = chkTodos.checked;
-            toggleSelecao(cd, chkTodos.checked);
+            // Extrair todos os IDs do grupo
+            const ids = (chk.dataset.ids || '').split(',').map(Number).filter(n => n > 0);
+            ids.forEach(id => {
+                if (chkTodos.checked && !idsSelecionados.includes(id)) {
+                    idsSelecionados.push(id);
+                } else if (!chkTodos.checked) {
+                    const idx = idsSelecionados.indexOf(id);
+                    if (idx > -1) idsSelecionados.splice(idx, 1);
+                }
+            });
         });
+        atualizarMassaBar();
     }
 
+    /**
+ * Limpa toda a selecao de pendencias.
+ * Desmarca checkboxes de grupo e individuais.
+ */
     function limparSelecao() {
         idsSelecionados = [];
+        // Desmarcar checkboxes de grupo (tabela agrupada)
+        document.querySelectorAll('.chk-grupo').forEach(chk => chk.checked = false);
+        // Desmarcar checkboxes individuais (caso existam)
         document.querySelectorAll('.chk-item').forEach(chk => chk.checked = false);
+        // Remover classe de selecao das linhas
         document.querySelectorAll('tr.selecionada').forEach(tr => tr.classList.remove('selecionada'));
+        // Desmarcar checkbox mestre
         const chkTodos = document.getElementById('chkTodos');
         if (chkTodos) chkTodos.checked = false;
         atualizarMassaBar();
-    }
+    }   
 
     function atualizarMassaBar() {
         const bar = document.getElementById('massaBar');
@@ -2780,11 +2804,11 @@ try {
 
 
     /**
-     * Controle de grupo selecionado na tabela agrupada.
-     * Marca/desmarca todos os IDs do grupo na selecao global.
-     *
-     * @param {HTMLInputElement} checkbox - Checkbox do grupo
-     */
+ * Controle de grupo selecionado na tabela agrupada.
+ * Marca/desmarca todos os IDs do grupo na selecao global.
+ *
+ * @param {HTMLInputElement} checkbox - Checkbox do grupo
+ */
     function toggleSelecaoGrupo(checkbox) {
         const ids = checkbox.dataset.ids.split(',').map(Number);
         if (checkbox.checked) {
@@ -2797,7 +2821,7 @@ try {
                 if (idx > -1) idsSelecionados.splice(idx, 1);
             });
         }
-        atualizarBarraMassa();
+        atualizarMassaBar(); // Corrigido: nome correto da funcao
     }
 
 
