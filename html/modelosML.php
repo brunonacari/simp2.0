@@ -27,9 +27,9 @@ include_once 'bd/conexao.php';
 // Recarregar permissões do banco
 recarregarPermissoesUsuario();
 
-// Permissão (usa mesma permissão de Treinamento IA)
-exigePermissaoTela('Treinamento IA', ACESSO_LEITURA);
-$podeEditar = podeEditarTela('Treinamento IA');
+// Permissão
+exigePermissaoTela('Modelos ML', ACESSO_LEITURA);
+$podeEditar = podeEditarTela('Modelos ML');
 
 include_once 'includes/menu.inc.php';
 

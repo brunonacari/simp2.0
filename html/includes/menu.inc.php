@@ -1334,7 +1334,20 @@ if (isset($_SESSION['msg'])) {
                                 <span class="user-detail-value"><?= count($_SESSION['permissoes'] ?? []) ?> funcionalidades</span>
                             </div>
                         </div>
-                    </div>               
+
+                        <?php
+                        // Mostrar botão "Simular Grupo" apenas para Administrador A-DDS (real ou simulando)
+                        $grupoRealUsuario = isset($_SESSION['simulacao_original']) ? $_SESSION['simulacao_original']['grupo'] : ($_SESSION['grupo'] ?? '');
+                        if ($grupoRealUsuario === 'Administrador A-DDS'):
+                        ?>
+                        <div class="user-detail-item" style="border-top: 1px solid #e2e8f0; padding-top: 12px;">
+                            <button onclick="abrirModalSimularGrupo()" class="btn-simular-grupo">
+                                <ion-icon name="swap-horizontal-outline"></ion-icon>
+                                Simular Grupo
+                            </button>
+                        </div>
+                        <?php endif; ?>
+                    </div>
 
                     <div class="user-dropdown-divider"></div>
 
@@ -1348,9 +1361,49 @@ if (isset($_SESSION['msg'])) {
     </div>
 </header>
 
+<?php if (!empty($_SESSION['simulando_grupo'])): ?>
+<div class="simulacao-banner">
+    <ion-icon name="warning-outline"></ion-icon>
+    Simulando grupo: <strong><?= htmlspecialchars($_SESSION['simulando_grupo_nome']) ?></strong>
+    <button onclick="desativarSimulacao()">Encerrar simulação</button>
+</div>
+<?php endif; ?>
+
 <!-- Sidebar Moderna -->
+<?php
+// Permissões dos itens do menu
+$menuPermissoes = [
+    'cadastros_gerais'    => temPermissaoTela('CADASTRO'),
+    'prog_manutencao'     => temPermissaoTela('Programação de Manutenção'),
+    'reg_manutencao'      => temPermissaoTela('Registro de Manutenção'),
+    'ponto_medicao'       => temPermissaoTela('Cadastro de Ponto de Medição'),
+    'motor_bomba'         => temPermissaoTela('Cadastro de Conjunto Motor-Bomba'),
+    'reg_vazao_pressao'   => temPermissaoTela('Registro de Vazão e Pressão'),
+    'entidade'            => temPermissaoTela('Cadastro de Entidade'),
+    'validacoes'          => temPermissaoTela('Validação dos Dados'),
+    'calculo_kpc'         => temPermissaoTela('Cálculo do KPC'),
+    'cadastros_adm'       => temPermissaoTela('CADASTROS ADMINISTRATIVOS'),
+    'flowchart'           => temPermissaoTela('flowchart'),
+    'modelos_ml'          => temPermissaoTela('Modelos ML'),
+    'tratamento_lote'     => temPermissaoTela('Tratamento em Lote'),
+    'treinamento_ia'      => temPermissaoTela('Treinamento IA'),
+    'consulta_log'        => temPermissaoTela('Consultar Log'),
+    'integracao_cco'      => temPermissaoTela('Integração CCO'),
+];
+
+// Visibilidade das seções (seção aparece se ao menos 1 item for visível)
+$secaoVisivel = [
+    'cadastros_basicos' => $menuPermissoes['cadastros_gerais'],
+    'manutencao'        => $menuPermissoes['prog_manutencao'] || $menuPermissoes['reg_manutencao'],
+    'cadastros'         => $menuPermissoes['ponto_medicao'] || $menuPermissoes['motor_bomba'] || $menuPermissoes['reg_vazao_pressao'] || $menuPermissoes['entidade'],
+    'operacao'          => $menuPermissoes['validacoes'],
+    'calculos'          => $menuPermissoes['calculo_kpc'],
+    'administracao'     => $menuPermissoes['cadastros_adm'] || $menuPermissoes['flowchart'] || $menuPermissoes['modelos_ml'] || $menuPermissoes['tratamento_lote'] || $menuPermissoes['treinamento_ia'] || $menuPermissoes['consulta_log'] || $menuPermissoes['integracao_cco'],
+];
+?>
 <aside class="modern-sidebar" id="modernSidebar">
 
+    <?php if ($secaoVisivel['cadastros_basicos']): ?>
     <!-- Seção: Cadastros Básicos -->
     <div class="sidebar-section">
         <div class="sidebar-section-title" onclick="toggleSection(this)" data-section="cadastros-basicos">
@@ -1375,7 +1428,9 @@ if (isset($_SESSION['msg'])) {
     </div>
 
     <div class="sidebar-divider"></div>
+    <?php endif; ?>
 
+    <?php if ($secaoVisivel['manutencao']): ?>
     <!-- Seção: Manutenção -->
     <div class="sidebar-section">
         <div class="sidebar-section-title" onclick="toggleSection(this)" data-section="manutencao">
@@ -1387,6 +1442,7 @@ if (isset($_SESSION['msg'])) {
         </div>
         <div class="sidebar-section-content" id="section-manutencao">
             <ul class="sidebar-nav">
+                <?php if ($menuPermissoes['prog_manutencao']): ?>
                 <li class="sidebar-item">
                     <a href="programacaoManutencao.php"
                         class="sidebar-link <?= in_array($paginaAtual, ['programacaoManutencao', 'programacaoManutencaoForm', 'programacaoManutencaoView']) ? 'active' : '' ?>"
@@ -1395,6 +1451,8 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Programação</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($menuPermissoes['reg_manutencao']): ?>
                 <li class="sidebar-item">
                     <a href="registroManutencao.php"
                         class="sidebar-link <?= in_array($paginaAtual, ['registroManutencao', 'registroManutencaoForm', 'registroManutencaoView']) ? 'active' : '' ?>"
@@ -1403,12 +1461,15 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Registro</span>
                     </a>
                 </li>
+                <?php endif; ?>
             </ul>
         </div>
     </div>
 
     <div class="sidebar-divider"></div>
+    <?php endif; ?>
 
+    <?php if ($secaoVisivel['cadastros']): ?>
     <!-- Seção: Cadastros -->
     <div class="sidebar-section">
         <div class="sidebar-section-title" onclick="toggleSection(this)" data-section="cadastros">
@@ -1420,6 +1481,7 @@ if (isset($_SESSION['msg'])) {
         </div>
         <div class="sidebar-section-content" id="section-cadastros">
             <ul class="sidebar-nav">
+                <?php if ($menuPermissoes['ponto_medicao']): ?>
                 <li class="sidebar-item">
                     <a href="pontoMedicao.php"
                         class="sidebar-link <?= $paginaAtual === 'pontoMedicao' ? 'active' : '' ?>"
@@ -1428,6 +1490,8 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Ponto de Medição</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($menuPermissoes['motor_bomba']): ?>
                 <li class="sidebar-item">
                     <a href="motorBomba.php" class="sidebar-link <?= $paginaAtual === 'motorBomba' ? 'active' : '' ?>"
                         data-title="Motor-Bomba">
@@ -1435,6 +1499,8 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Motobomba</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($menuPermissoes['reg_vazao_pressao']): ?>
                 <li class="sidebar-item">
                     <a href="registroVazaoPressao.php"
                         class="sidebar-link <?= $paginaAtual === 'registroVazaoPressao' ? 'active' : '' ?>"
@@ -1443,6 +1509,8 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Registro Vazão/Pressão</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($menuPermissoes['entidade']): ?>
                 <li class="sidebar-item">
                     <a href="entidade.php" class="sidebar-link <?= $paginaAtual === 'entidade' ? 'active' : '' ?>"
                         data-title="Entidade">
@@ -1450,12 +1518,15 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Entidade</span>
                     </a>
                 </li>
+                <?php endif; ?>
             </ul>
         </div>
     </div>
 
     <div class="sidebar-divider"></div>
+    <?php endif; ?>
 
+    <?php if ($secaoVisivel['operacao']): ?>
     <!-- Seção: Operação -->
     <div class="sidebar-section">
         <div class="sidebar-section-title" onclick="toggleSection(this)" data-section="operacao">
@@ -1479,7 +1550,9 @@ if (isset($_SESSION['msg'])) {
     </div>
 
     <div class="sidebar-divider"></div>
+    <?php endif; ?>
 
+    <?php if ($secaoVisivel['calculos']): ?>
     <div class="sidebar-section">
         <div class="sidebar-section-title" onclick="toggleSection(this)" data-section="calculos">
             <span class="section-icon">
@@ -1503,7 +1576,9 @@ if (isset($_SESSION['msg'])) {
     </div>
 
     <div class="sidebar-divider"></div>
+    <?php endif; ?>
 
+    <?php if ($secaoVisivel['administracao']): ?>
     <!-- Seção: Administração -->
     <div class="sidebar-section">
         <div class="sidebar-section-title" onclick="toggleSection(this)" data-section="administracao">
@@ -1515,6 +1590,7 @@ if (isset($_SESSION['msg'])) {
         </div>
         <div class="sidebar-section-content" id="section-administracao">
             <ul class="sidebar-nav">
+                <?php if ($menuPermissoes['cadastros_adm']): ?>
                 <li class="sidebar-item">
                     <a href="cadastrosAdministrativos.php"
                         class="sidebar-link <?= $paginaAtual === 'cadastrosAdministrativos' ? 'active' : '' ?>"
@@ -1523,6 +1599,8 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Cadastros Adm</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($menuPermissoes['flowchart']): ?>
                 <li class="sidebar-item">
                     <a href="entidadeCascata.php"
                         class="sidebar-link <?= $paginaAtual === 'entidadeCascata' ? 'active' : '' ?>"
@@ -1531,6 +1609,8 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Flowchart</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($menuPermissoes['modelos_ml']): ?>
                 <li class="sidebar-item">
                     <a href="modelosML.php" class="sidebar-link <?= $paginaAtual === 'modelosML' ? 'active' : '' ?>"
                         data-title="Modelos ML">
@@ -1538,6 +1618,8 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Modelos ML</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($menuPermissoes['tratamento_lote']): ?>
                 <li class="sidebar-item">
                     <a href="tratamentoLote.php" class="sidebar-link <?= $paginaAtual === 'tratamentoLote' ? 'active' : '' ?>"
                         data-title="Tratamento em Lote">
@@ -1545,6 +1627,8 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Tratamento Lote</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($menuPermissoes['treinamento_ia']): ?>
                 <li class="sidebar-item">
                     <a href="iaRegras.php" class="sidebar-link <?= $paginaAtual === 'iaRegras' ? 'active' : '' ?>"
                         data-title="Treinamento IA">
@@ -1552,7 +1636,8 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Treinamento IA</span>
                     </a>
                 </li>
-                
+                <?php endif; ?>
+                <?php if ($menuPermissoes['consulta_log']): ?>
                 <li class="sidebar-item">
                     <a href="log.php" class="sidebar-link <?= $paginaAtual === 'log' ? 'active' : '' ?>"
                         data-title="Consulta de Log">
@@ -1560,7 +1645,8 @@ if (isset($_SESSION['msg'])) {
                         <span class="sidebar-link-text">Consulta de Log</span>
                     </a>
                 </li>
-                <?php if (temPermissaoTela('Integração CCO')): ?>
+                <?php endif; ?>
+                <?php if ($menuPermissoes['integracao_cco']): ?>
                 <li class="sidebar-item">
                     <a href="#" class="sidebar-link" data-title="Integração CCO" onclick="abrirModalIntegracaoCCO(); return false;">
                         <ion-icon name="sync-outline"></ion-icon>
@@ -1571,6 +1657,7 @@ if (isset($_SESSION['msg'])) {
             </ul>
         </div>
     </div>
+    <?php endif; ?>
 
 </aside>
 
@@ -1616,6 +1703,42 @@ if (isset($_SESSION['msg'])) {
         </div>
     </div>
 </div>
+
+<!-- Modal Simular Grupo de Usuário -->
+<?php
+$grupoRealModal = isset($_SESSION['simulacao_original']) ? $_SESSION['simulacao_original']['grupo'] : ($_SESSION['grupo'] ?? '');
+if ($grupoRealModal === 'Administrador A-DDS'):
+?>
+<div id="modalSimularGrupo" class="modal-simular-grupo" style="display: none;">
+    <div class="modal-simular-grupo-overlay" onclick="fecharModalSimularGrupo()"></div>
+    <div class="modal-simular-grupo-content">
+        <div class="modal-simular-grupo-header">
+            <h3><ion-icon name="swap-horizontal-outline"></ion-icon> Simular Grupo de Usuário</h3>
+            <button class="modal-simular-grupo-close" onclick="fecharModalSimularGrupo()">
+                <ion-icon name="close-outline"></ion-icon>
+            </button>
+        </div>
+        <div class="modal-simular-grupo-body">
+            <?php if (!empty($_SESSION['simulando_grupo'])): ?>
+            <div class="simulacao-ativa-info">
+                <ion-icon name="information-circle-outline"></ion-icon>
+                <span>Simulando: <strong><?= htmlspecialchars($_SESSION['simulando_grupo_nome']) ?></strong></span>
+                <button onclick="desativarSimulacao()" class="btn-voltar-grupo">
+                    <ion-icon name="arrow-undo-outline"></ion-icon> Voltar ao meu grupo
+                </button>
+            </div>
+            <?php endif; ?>
+            <div class="busca-grupo-container">
+                <ion-icon name="search-outline"></ion-icon>
+                <input type="text" id="buscaGrupoSimulacao" placeholder="Buscar grupo..." oninput="buscarGruposSimulacaoDebounce(this.value)">
+            </div>
+            <div id="listaGruposSimulacao" class="lista-grupos-simulacao">
+                <div class="loading-grupos">Carregando grupos...</div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <style>
 /* Modal Integração CCO */
@@ -1944,6 +2067,339 @@ if (isset($_SESSION['msg'])) {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   SIMULAÇÃO DE GRUPO DE USUÁRIO
+   ============================================ */
+
+/* Banner de simulação ativa */
+.simulacao-banner {
+    position: fixed;
+    top: 60px;
+    left: 220px;
+    right: 0;
+    z-index: 1002;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.sidebar-collapsed .simulacao-banner {
+    left: 70px;
+}
+
+@media (max-width: 768px) {
+    .simulacao-banner {
+        left: 0;
+    }
+}
+
+.simulacao-banner ion-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.simulacao-banner button {
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #fff;
+    padding: 4px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.simulacao-banner button:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+/* Botão no dropdown */
+.btn-simular-grupo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-simular-grupo:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.btn-simular-grupo ion-icon {
+    font-size: 16px;
+}
+
+/* Modal */
+.modal-simular-grupo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-simular-grupo-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-simular-grupo-content {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    width: 520px;
+    max-width: 95vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSimularIn 0.3s ease-out;
+}
+
+@keyframes modalSimularIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-simular-grupo-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #fff;
+    padding: 18px 24px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-simular-grupo-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-simular-grupo-close {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.modal-simular-grupo-close:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.modal-simular-grupo-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Info de simulação ativa dentro do modal */
+.simulacao-ativa-info {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #92400e;
+}
+
+.simulacao-ativa-info ion-icon {
+    font-size: 20px;
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+.btn-voltar-grupo {
+    margin-left: auto;
+    background: #d97706;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.btn-voltar-grupo:hover {
+    background: #b45309;
+}
+
+/* Campo de busca */
+.busca-grupo-container {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.busca-grupo-container ion-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 18px;
+}
+
+.busca-grupo-container input {
+    width: 100%;
+    padding: 10px 12px 10px 40px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.busca-grupo-container input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Lista de grupos */
+.lista-grupos-simulacao {
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.loading-grupos {
+    text-align: center;
+    padding: 30px;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.grupo-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    gap: 12px;
+}
+
+.grupo-item:hover {
+    background: #f0f9ff;
+    border-color: #3b82f6;
+    transform: translateX(4px);
+}
+
+.grupo-item.grupo-atual {
+    background: #fffbeb;
+    border-color: #f59e0b;
+}
+
+.grupo-item-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.grupo-item.grupo-atual .grupo-item-icon {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.grupo-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.grupo-item-nome {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.grupo-item-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.grupo-item-meta span {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.nenhum-grupo {
+    text-align: center;
+    padding: 30px;
+    color: #94a3b8;
+    font-size: 14px;
 }
 </style>
 
@@ -2376,6 +2832,109 @@ if (isset($_SESSION['msg'])) {
             resultado.style.display = 'block';
         });
     }
+
+    // ============================================
+    // Simulação de Grupo de Usuário
+    // ============================================
+    let _debounceSimulacao = null;
+
+    function abrirModalSimularGrupo() {
+        const modal = document.getElementById('modalSimularGrupo');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        document.getElementById('buscaGrupoSimulacao').value = '';
+        carregarGruposSimulacao('');
+    }
+
+    function fecharModalSimularGrupo() {
+        const modal = document.getElementById('modalSimularGrupo');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function carregarGruposSimulacao(busca) {
+        const lista = document.getElementById('listaGruposSimulacao');
+        lista.innerHTML = '<div class="loading-grupos">Carregando grupos...</div>';
+
+        const params = new URLSearchParams({ busca: busca, pagina: 1, porPagina: 100 });
+        fetch('bd/grupoUsuario/getGruposUsuario.php?' + params)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success || !data.data.length) {
+                    lista.innerHTML = '<div class="nenhum-grupo">Nenhum grupo encontrado</div>';
+                    return;
+                }
+
+                const grupoAtualNome = <?= json_encode($_SESSION['grupo'] ?? '') ?>;
+
+                lista.innerHTML = data.data.map(g => {
+                    const isAtual = (g.DS_NOME === grupoAtualNome);
+                    return `
+                        <div class="grupo-item ${isAtual ? 'grupo-atual' : ''}"
+                             onclick="selecionarGrupoSimulacao(${g.CD_GRUPO_USUARIO}, '${g.DS_NOME.replace(/'/g, "\\'")}')">
+                            <div class="grupo-item-icon">
+                                <ion-icon name="${isAtual ? 'checkmark-outline' : 'people-outline'}"></ion-icon>
+                            </div>
+                            <div class="grupo-item-info">
+                                <div class="grupo-item-nome">${g.DS_NOME}${isAtual ? ' (atual)' : ''}</div>
+                                <div class="grupo-item-meta">
+                                    <span><ion-icon name="key-outline"></ion-icon> ${g.QTD_PERMISSOES} permissões</span>
+                                    <span><ion-icon name="person-outline"></ion-icon> ${g.QTD_USUARIOS} usuários</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            })
+            .catch(() => {
+                lista.innerHTML = '<div class="nenhum-grupo">Erro ao carregar grupos</div>';
+            });
+    }
+
+    function buscarGruposSimulacaoDebounce(valor) {
+        clearTimeout(_debounceSimulacao);
+        _debounceSimulacao = setTimeout(() => carregarGruposSimulacao(valor), 300);
+    }
+
+    function selecionarGrupoSimulacao(cdGrupo, nomeGrupo) {
+        if (!confirm('Simular permissões do grupo "' + nomeGrupo + '"?\n\nO menu e as permissões serão alterados temporariamente.')) return;
+
+        const formData = new FormData();
+        formData.append('cd_grupo', cdGrupo);
+
+        fetch('bd/grupoUsuario/simularGrupo.php', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            })
+            .catch(() => alert('Erro de conexão'));
+    }
+
+    function desativarSimulacao() {
+        const formData = new FormData();
+        formData.append('reset', 1);
+
+        fetch('bd/grupoUsuario/simularGrupo.php', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            })
+            .catch(() => alert('Erro de conexão'));
+    }
+
+    // Fechar modal com Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            fecharModalSimularGrupo();
+        }
+    });
 </script>
 
 <?php if (!empty($msgSistema)): ?>

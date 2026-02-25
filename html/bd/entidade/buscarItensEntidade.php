@@ -36,10 +36,12 @@ try {
 
     $buscaLike = '%' . $busca . '%';
 
-    $sql = "SELECT 
+    $sql = "SELECT
                 EVI.CD_ENTIDADE_VALOR AS cdValor,
+                EV.CD_ENTIDADE_TIPO AS cdTipo,
                 COUNT(*) AS totalMatch
             FROM SIMP.dbo.ENTIDADE_VALOR_ITEM EVI
+            INNER JOIN SIMP.dbo.ENTIDADE_VALOR EV ON EV.CD_CHAVE = EVI.CD_ENTIDADE_VALOR
             LEFT JOIN SIMP.dbo.PONTO_MEDICAO PM ON PM.CD_PONTO_MEDICAO = EVI.CD_PONTO_MEDICAO
             LEFT JOIN SIMP.dbo.LOCALIDADE L ON PM.CD_LOCALIDADE = L.CD_CHAVE
             WHERE (
@@ -53,7 +55,7 @@ try {
                 OR ISNULL(PM.DS_TAG_TEMP_AMBIENTE, '') LIKE :b8
                 OR ISNULL(L.CD_LOCALIDADE, '') LIKE :b9
             )
-            GROUP BY EVI.CD_ENTIDADE_VALOR";
+            GROUP BY EVI.CD_ENTIDADE_VALOR, EV.CD_ENTIDADE_TIPO";
 
     $stmt = $pdoSIMP->prepare($sql);
     $params = [];
@@ -66,6 +68,7 @@ try {
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $resultados[] = [
             'cdValor'    => (int)$row['cdValor'],
+            'cdTipo'     => (int)$row['cdTipo'],
             'totalMatch' => (int)$row['totalMatch']
         ];
     }

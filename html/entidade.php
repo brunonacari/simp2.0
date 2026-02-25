@@ -452,20 +452,6 @@ try {
                     </div>
                     <div class="form-group">
                         <label class="form-label">
-                            <ion-icon name="calendar-outline"></ion-icon>
-                            Data Início <span class="required">*</span>
-                        </label>
-                        <input type="date" name="dtInicio" id="inputItemDtInicio" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">
-                            <ion-icon name="calendar-outline"></ion-icon>
-                            Data Fim <span class="required">*</span>
-                        </label>
-                        <input type="date" name="dtFim" id="inputItemDtFim" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">
                             <ion-icon name="calculator-outline"></ion-icon>
                             Operação <span class="required">*</span>
                         </label>
@@ -850,7 +836,11 @@ try {
                 }
 
                 // Aplicar filtros se houver algum salvo
-                if (state.busca || state.descarte !== 'todos') {
+                if (state.busca && state.busca.trim().length >= 2) {
+                    buscarItensServidor(state.busca.trim(), function () {
+                        aplicarFiltros();
+                    });
+                } else if (state.busca || state.descarte !== 'todos') {
                     aplicarFiltros();
                 }
 
@@ -1079,7 +1069,7 @@ try {
     // ============================================
 
     function aplicarFiltros() {
-        const termoBusca = normalizarTexto(document.getElementById('filtroBusca').value);
+        const termoBusca = normalizarTexto(document.getElementById('filtroBusca').value.trim());
         const filtroDescarte = document.querySelector('input[name="filtroDescarte"]:checked')?.value || 'todos';
         const filtroFavoritos = document.querySelector('input[name="filtroFavoritos"]:checked')?.value || 'todos';
 
@@ -1448,11 +1438,15 @@ try {
          * @param {string} termo - Termo de busca
          * @param {function} callback - Função a chamar após a busca
          */
+    let _buscaServidorSeq = 0; // Controle de sequência para ignorar respostas antigas
+
     function buscarItensServidor(termo, callback) {
         // Limpar marcações anteriores
         document.querySelectorAll('.valor-card').forEach(vc => {
             vc.removeAttribute('data-item-match');
         });
+
+        const seq = ++_buscaServidorSeq;
 
         $.ajax({
             url: 'bd/entidade/buscarItensEntidade.php',
@@ -1460,20 +1454,57 @@ try {
             data: { busca: termo },
             dataType: 'json',
             success: function (response) {
+                // Ignorar resposta se já houve uma busca mais recente
+                if (seq !== _buscaServidorSeq) return;
+
                 if (response.success && response.data.length > 0) {
+                    // Identificar tipos que precisam ser carregados
+                    const tiposParaCarregar = new Set();
                     response.data.forEach(function (r) {
-                        const vc = document.getElementById('valor-' + r.cdValor);
-                        if (vc) {
-                            // Marcar que este valor tem itens matching
-                            vc.setAttribute('data-item-match', r.totalMatch);
+                        if (r.cdTipo) {
+                            const body = document.getElementById('tipo-body-' + r.cdTipo);
+                            if (body && body.dataset.loaded !== '1') {
+                                tiposParaCarregar.add(r.cdTipo);
+                            }
                         }
                     });
+
+                    if (tiposParaCarregar.size > 0) {
+                        // Carregar tipos pendentes antes de marcar data-item-match
+                        let carregados = 0;
+                        const total = tiposParaCarregar.size;
+                        tiposParaCarregar.forEach(function (cdTipo) {
+                            carregarValoresTipo(cdTipo, false, function () {
+                                carregados++;
+                                if (carregados >= total) {
+                                    // Todos os tipos carregados, agora marcar data-item-match
+                                    aplicarDataItemMatch(response.data);
+                                    if (typeof callback === 'function') callback();
+                                }
+                            });
+                        });
+                    } else {
+                        // Todos os tipos já estão carregados
+                        aplicarDataItemMatch(response.data);
+                        if (typeof callback === 'function') callback();
+                    }
+                } else {
+                    if (typeof callback === 'function') callback();
                 }
-                if (typeof callback === 'function') callback();
             },
             error: function () {
+                if (seq !== _buscaServidorSeq) return;
                 // Em caso de erro, continua com filtro local
                 if (typeof callback === 'function') callback();
+            }
+        });
+    }
+
+    function aplicarDataItemMatch(data) {
+        data.forEach(function (r) {
+            const vc = document.getElementById('valor-' + r.cdValor);
+            if (vc) {
+                vc.setAttribute('data-item-match', r.totalMatch);
             }
         });
     }
@@ -1693,8 +1724,6 @@ try {
         document.getElementById('modalItemTitle').textContent = cd ? 'Editar Vínculo' : 'Vincular Ponto de Medição';
         document.getElementById('inputItemCd').value = cd || '';
         document.getElementById('inputItemValor').value = cdValor || '';
-        document.getElementById('inputItemDtInicio').value = dtInicio;
-        document.getElementById('inputItemDtFim').value = dtFim;
 
         // Operação (+/-)
         // Para novos cadastros (cd vazio), marca '+' por padrão
@@ -1994,23 +2023,11 @@ try {
         const cd = document.getElementById('inputItemCd').value;
         const cdValor = document.getElementById('inputItemValor').value;
         const cdPonto = document.getElementById('inputItemPonto').value;
-        const dtInicio = document.getElementById('inputItemDtInicio').value;
-        const dtFim = document.getElementById('inputItemDtFim').value;
         const operacaoEl = document.querySelector('input[name="operacao"]:checked');
         const operacao = operacaoEl ? operacaoEl.value : '';
 
         if (!cdPonto) {
             showToast('Selecione um ponto de medição', 'erro');
-            return;
-        }
-
-        if (!dtInicio) {
-            showToast('A data de início é obrigatória', 'erro');
-            return;
-        }
-
-        if (!dtFim) {
-            showToast('A data de fim é obrigatória', 'erro');
             return;
         }
 
@@ -2026,7 +2043,7 @@ try {
         $.ajax({
             url: 'bd/entidade/salvarItem.php',
             type: 'POST',
-            data: { cd, cdValor, cdPonto, dtInicio, dtFim, operacao },
+            data: { cd, cdValor, cdPonto, operacao },
             dataType: 'json',
             success: function (response) {
                 if (btnSalvar) btnSalvar.disabled = false;
@@ -2318,6 +2335,11 @@ try {
             // Botões de edição (se tem permissão)
             if (_podeEditar) {
                 html += `
+                                <button class="btn-action add"
+                                        onclick="abrirModalItem(null, null, '', '', ${valor.cd})"
+                                        title="Adicionar Ponto de Medição">
+                                    <ion-icon name="add-outline"></ion-icon>
+                                </button>
                                 <button class="btn-action edit"
                                         onclick="abrirModalValor(${valor.cd}, ${nomeJson}, ${idJson}, ${cdTipo}, '${valor.fluxo || ''}')"
                                         title="Editar">
