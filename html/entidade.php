@@ -156,6 +156,19 @@ try {
 
     <!-- Área de Filtros -->
     <div class="filtros-container">
+        <div class="filtro-favoritos">
+            <span class="filtro-label">Favoritos:</span>
+            <div class="radio-group-filtro">
+                <label class="radio-filtro">
+                    <input type="radio" name="filtroFavoritos" value="todos" checked>
+                    <span>Todos</span>
+                </label>
+                <label class="radio-filtro favorito">
+                    <input type="radio" name="filtroFavoritos" value="favoritos">
+                    <span><ion-icon name="star"></ion-icon> Favoritos</span>
+                </label>
+            </div>
+        </div>
         <div class="filtro-busca">
             <ion-icon name="search-outline"></ion-icon>
             <input type="text" id="filtroBusca" class="form-control"
@@ -182,19 +195,6 @@ try {
                 </label>
             </div>
         </div> -->
-        <div class="filtro-favoritos">
-            <span class="filtro-label">Favoritos:</span>
-            <div class="radio-group-filtro">
-                <label class="radio-filtro">
-                    <input type="radio" name="filtroFavoritos" value="todos" checked>
-                    <span>Todos</span>
-                </label>
-                <label class="radio-filtro favorito">
-                    <input type="radio" name="filtroFavoritos" value="favoritos">
-                    <span><ion-icon name="star"></ion-icon> Favoritos</span>
-                </label>
-            </div>
-        </div>
         <div class="filtro-acoes">
             <button type="button" class="btn-acao-filtro" id="btnToggleAcordeoes" onclick="toggleTodosAcordeoes()"
                 title="Expandir/Recolher todos">
@@ -695,6 +695,10 @@ try {
 
     // Cache de valores carregados por tipo (evita re-fetch)
     const _valoresCache = {};
+
+    // Índice de busca client-side (carregado uma vez do servidor)
+    let _indiceBusca = [];
+    let _indiceBuscaCarregado = false;
 
     // Mapeamento de fluxo para texto e classe CSS
     const _fluxosTexto = { 1: 'Entrada', 2: 'Saída', 3: 'Municipal', 4: 'Não se Aplica' };
@@ -1429,75 +1433,153 @@ try {
         verificarEstadoAcordeoes();
     }
 
-    // Inicializar filtros
-    document.addEventListener('DOMContentLoaded', initFiltros);
+    // Inicializar filtros e carregar índice de busca
+    document.addEventListener('DOMContentLoaded', function () {
+        initFiltros();
+        carregarIndiceBusca();
+    });
 
     /**
-         * Busca no servidor quais valores contêm itens que correspondem ao termo.
-         * Marca os valor-cards com data-item-match para o filtro saber que tem match de item.
-         * @param {string} termo - Termo de busca
-         * @param {function} callback - Função a chamar após a busca
-         */
-    let _buscaServidorSeq = 0; // Controle de sequência para ignorar respostas antigas
+     * Carrega o índice de busca do servidor (uma única vez).
+     * Contém apenas os campos pesquisáveis de todos os itens.
+     * @param {function} callback - Função a chamar após o carregamento
+     */
+    function carregarIndiceBusca(callback) {
+        $.ajax({
+            url: 'bd/entidade/getIndiceBusca.php',
+            type: 'GET',
+            dataType: 'json',
+            success: function (response) {
+                if (response.success) {
+                    _indiceBusca = response.data || [];
+                    // Pré-normalizar todos os campos para busca rápida
+                    _indiceBusca.forEach(function (item) {
+                        item._busca = normalizarTexto(
+                            (item.vn || '') + ' ' +
+                            (item.vi || '') + ' ' +
+                            (item.tn || '') + ' ' +
+                            (item.ti || '') + ' ' +
+                            (item.n || '') + ' ' +
+                            (item.c || '') + ' ' +
+                            (item.tv || '') + ' ' +
+                            (item.tp || '') + ' ' +
+                            (item.tl || '') + ' ' +
+                            (item.tr || '') + ' ' +
+                            (item.ta || '') + ' ' +
+                            (item.te || '') + ' ' +
+                            (item.l || '')
+                        );
+                    });
+                    _indiceBuscaCarregado = true;
+                    console.log('[indiceBusca] Carregado:', _indiceBusca.length, 'itens');
+                }
+                if (typeof callback === 'function') callback();
+            },
+            error: function () {
+                console.warn('[indiceBusca] Erro ao carregar índice de busca');
+                if (typeof callback === 'function') callback();
+            }
+        });
+    }
 
+    /**
+     * Busca local no índice client-side quais valores contêm itens matching o termo.
+     * Substitui a antiga buscarItensServidor que fazia query pesada no banco.
+     *
+     * Fluxo: busca no índice → carrega tipos pendentes → carrega itens pendentes → callback
+     * Isso garante que quando aplicarFiltros() rodar, todos os itens matching já estão no DOM.
+     *
+     * @param {string} termo - Termo de busca
+     * @param {function} callback - Função a chamar após a busca
+     */
     function buscarItensServidor(termo, callback) {
         // Limpar marcações anteriores
         document.querySelectorAll('.valor-card').forEach(vc => {
             vc.removeAttribute('data-item-match');
         });
 
-        const seq = ++_buscaServidorSeq;
+        // Se o índice ainda não carregou, carregar primeiro
+        if (!_indiceBuscaCarregado) {
+            carregarIndiceBusca(function () {
+                buscarItensServidor(termo, callback);
+            });
+            return;
+        }
 
-        $.ajax({
-            url: 'bd/entidade/buscarItensEntidade.php',
-            type: 'GET',
-            data: { busca: termo },
-            dataType: 'json',
-            success: function (response) {
-                // Ignorar resposta se já houve uma busca mais recente
-                if (seq !== _buscaServidorSeq) return;
+        const termoNorm = normalizarTexto(termo);
 
-                if (response.success && response.data.length > 0) {
-                    // Identificar tipos que precisam ser carregados
-                    const tiposParaCarregar = new Set();
-                    response.data.forEach(function (r) {
-                        if (r.cdTipo) {
-                            const body = document.getElementById('tipo-body-' + r.cdTipo);
-                            if (body && body.dataset.loaded !== '1') {
-                                tiposParaCarregar.add(r.cdTipo);
-                            }
-                        }
-                    });
-
-                    if (tiposParaCarregar.size > 0) {
-                        // Carregar tipos pendentes antes de marcar data-item-match
-                        let carregados = 0;
-                        const total = tiposParaCarregar.size;
-                        tiposParaCarregar.forEach(function (cdTipo) {
-                            carregarValoresTipo(cdTipo, false, function () {
-                                carregados++;
-                                if (carregados >= total) {
-                                    // Todos os tipos carregados, agora marcar data-item-match
-                                    aplicarDataItemMatch(response.data);
-                                    if (typeof callback === 'function') callback();
-                                }
-                            });
-                        });
-                    } else {
-                        // Todos os tipos já estão carregados
-                        aplicarDataItemMatch(response.data);
-                        if (typeof callback === 'function') callback();
-                    }
-                } else {
-                    if (typeof callback === 'function') callback();
+        // Filtrar itens que casam com o termo usando o campo pré-normalizado
+        const matches = {};
+        _indiceBusca.forEach(function (item) {
+            if (item._busca.includes(termoNorm)) {
+                const key = item.v; // cdValor
+                if (!matches[key]) {
+                    matches[key] = { cdValor: item.v, cdTipo: item.t, totalMatch: 0 };
                 }
-            },
-            error: function () {
-                if (seq !== _buscaServidorSeq) return;
-                // Em caso de erro, continua com filtro local
-                if (typeof callback === 'function') callback();
+                matches[key].totalMatch++;
             }
         });
+
+        const resultados = Object.values(matches);
+
+        if (resultados.length === 0) {
+            if (typeof callback === 'function') callback();
+            return;
+        }
+
+        // PASSO 1: Carregar tipos (valor-cards) que ainda não estão no DOM
+        const tiposParaCarregar = new Set();
+        resultados.forEach(function (r) {
+            if (r.cdTipo) {
+                const body = document.getElementById('tipo-body-' + r.cdTipo);
+                if (body && body.dataset.loaded !== '1') {
+                    tiposParaCarregar.add(r.cdTipo);
+                }
+            }
+        });
+
+        function aposCarregarTipos() {
+            aplicarDataItemMatch(resultados);
+
+            // PASSO 2: Carregar itens dos valores com match que ainda não estão no DOM
+            const valoresParaCarregar = [];
+            resultados.forEach(function (r) {
+                const body = document.getElementById('valor-body-' + r.cdValor);
+                if (body && body.dataset.loaded !== '1') {
+                    valoresParaCarregar.push(r.cdValor);
+                }
+            });
+
+            if (valoresParaCarregar.length > 0) {
+                let itensCarregados = 0;
+                const totalValores = valoresParaCarregar.length;
+                valoresParaCarregar.forEach(function (cdValor) {
+                    carregarItensValor(cdValor, false, function () {
+                        itensCarregados++;
+                        if (itensCarregados >= totalValores) {
+                            if (typeof callback === 'function') callback();
+                        }
+                    });
+                });
+            } else {
+                if (typeof callback === 'function') callback();
+            }
+        }
+
+        if (tiposParaCarregar.size > 0) {
+            let carregados = 0;
+            const total = tiposParaCarregar.size;
+            tiposParaCarregar.forEach(function (cdTipo) {
+                carregarValoresTipo(cdTipo, false, function () {
+                    carregados++;
+                    if (carregados >= total) {
+                        aposCarregarTipos();
+                    }
+                });
+            });
+        } else {
+            aposCarregarTipos();
+        }
     }
 
     function aplicarDataItemMatch(data) {
@@ -2050,6 +2132,7 @@ try {
 
                 if (response.success) {
                     showToast(response.message, 'sucesso');
+                    carregarIndiceBusca(); // Atualizar índice de busca
 
                     if (cd) {
                         // EDIÇÃO: fecha modal e recarrega apenas os itens do valor afetado
@@ -2112,6 +2195,7 @@ try {
             success: function (response) {
                 if (response.success) {
                     showToast(response.message, 'sucesso');
+                    carregarIndiceBusca(); // Atualizar índice de busca
                     saveExpandedState();
                     saveFiltrosState();
                     // Recarrega valores do tipo pai sem reload da página
@@ -2165,6 +2249,7 @@ try {
                 if (response.success) {
                     if (response.success) {
                         showToast(response.message, 'sucesso');
+                        carregarIndiceBusca(); // Atualizar índice de busca
                         // Recarrega apenas os itens do valor afetado
                         if (cdValor) {
                             delete _itensCache[cdValor];
@@ -2382,16 +2467,22 @@ try {
      * Usa cache para não recarregar se já foi carregado.
      * @param {int} cdValor - CD_CHAVE do ENTIDADE_VALOR
      * @param {boolean} forceReload - Forçar recarga ignorando cache
+     * @param {function} callback - Função chamada após o carregamento (opcional)
      */
-    function carregarItensValor(cdValor, forceReload = false) {
+    function carregarItensValor(cdValor, forceReload = false, callback = null) {
         console.log('[carregarItensValor] Chamado para valor:', cdValor, 'forceReload:', forceReload);
         const body = document.getElementById('valor-body-' + cdValor);
         if (!body) {
-            console.error('[carregarItensValor] BODY NÃO ENCONTRADO: valor-body-' + cdValor); return;
+            console.error('[carregarItensValor] BODY NÃO ENCONTRADO: valor-body-' + cdValor);
+            if (callback) callback();
+            return;
         }
 
         // Se já carregou e não é forceReload, não faz nada
-        if (body.dataset.loaded === '1' && !forceReload) return;
+        if (body.dataset.loaded === '1' && !forceReload) {
+            if (callback) callback();
+            return;
+        }
 
         // Mostrar loading
         body.innerHTML = `
@@ -2435,6 +2526,7 @@ try {
                             <p>${response.message || 'Tente novamente'}</p>
                         </div>`;
                 }
+                if (callback) callback();
             },
             error: function () {
                 body.innerHTML = `
@@ -2443,6 +2535,7 @@ try {
                         <h3>Erro de comunicação</h3>
                         <p>Não foi possível carregar os pontos de medição</p>
                     </div>`;
+                if (callback) callback();
             }
         });
     }
