@@ -171,7 +171,7 @@ try {
         </div>
         <div class="filtro-busca">
             <ion-icon name="search-outline"></ion-icon>
-            <input type="text" id="filtroBusca" class="form-control"
+            <input type="text" id="filtroBusca" class="form-control" autofocus
                 placeholder="Buscar por tipo, valor, ponto de medição ou TAG...">
             <button type="button" id="btnLimparBusca" class="btn-limpar-busca" style="display: none;"
                 onclick="limparFiltros()">
@@ -448,6 +448,22 @@ try {
                                 style="display: none;" title="Limpar" onclick="limparPontoItem()">
                                 <ion-icon name="close-circle"></ion-icon>
                             </button>
+                        </div>
+                    </div>
+                    <div class="form-row" style="display: flex; gap: 12px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">
+                                <ion-icon name="calendar-outline"></ion-icon>
+                                Data Início
+                            </label>
+                            <input type="date" id="inputItemDtInicio" name="dtInicio" class="form-control">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">
+                                <ion-icon name="calendar-outline"></ion-icon>
+                                Data Fim
+                            </label>
+                            <input type="date" id="inputItemDtFim" name="dtFim" class="form-control">
                         </div>
                     </div>
                     <div class="form-group">
@@ -1814,6 +1830,11 @@ try {
         document.getElementById('operacaoMais').checked = (op == '1');
         document.getElementById('operacaoMenos').checked = (op == '2');
 
+        // Datas (ignorar data "infinita" 9999-12-31)
+        document.getElementById('inputItemDtInicio').value = dtInicio ? dtInicio.substring(0, 10) : '';
+        const dtFimVal = dtFim ? dtFim.substring(0, 10) : '';
+        document.getElementById('inputItemDtFim').value = (dtFimVal === '9999-12-31') ? '' : dtFimVal;
+
         // Limpar autocomplete
         document.getElementById('inputItemPonto').value = cdPonto || '';
         document.getElementById('inputItemPontoText').value = pontoLabel || '';
@@ -2105,6 +2126,8 @@ try {
         const cd = document.getElementById('inputItemCd').value;
         const cdValor = document.getElementById('inputItemValor').value;
         const cdPonto = document.getElementById('inputItemPonto').value;
+        const dtInicio = document.getElementById('inputItemDtInicio').value;
+        const dtFim = document.getElementById('inputItemDtFim').value;
         const operacaoEl = document.querySelector('input[name="operacao"]:checked');
         const operacao = operacaoEl ? operacaoEl.value : '';
 
@@ -2125,7 +2148,7 @@ try {
         $.ajax({
             url: 'bd/entidade/salvarItem.php',
             type: 'POST',
-            data: { cd, cdValor, cdPonto, operacao },
+            data: { cd, cdValor, cdPonto, dtInicio, dtFim, operacao },
             dataType: 'json',
             success: function (response) {
                 if (btnSalvar) btnSalvar.disabled = false;
@@ -2571,7 +2594,7 @@ try {
 
         itens.forEach(function (item) {
             const pontoLabel = (item.pontoCodigo || '') + ' ' + (item.pontoNome || '');
-            const pontoLabelJson = JSON.stringify(pontoLabel).replace(/'/g, "\\'");
+            const pontoLabelEscaped = pontoLabel.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
             const operacao = item.operacao;
             const draggable = (_podeEditar && temNrOrdem) ? 'draggable="true"' : '';
 
@@ -2636,7 +2659,7 @@ try {
 
             if (_podeEditar) {
                 html += `<button class="btn-action edit"
-                            onclick="abrirModalItem(${item.cd}, ${item.cdPonto}, '${item.dtInicioVal || ''}', '${item.dtFimVal || ''}', ${cdValor}, ${pontoLabelJson}, '${operacao || ''}')"
+                            onclick="abrirModalItem(${item.cd}, ${item.cdPonto}, '${item.dtInicioVal || ''}', '${item.dtFimVal || ''}', ${cdValor}, '${pontoLabelEscaped}', '${operacao || ''}')"
                             title="Editar">
                             <ion-icon name="pencil-outline"></ion-icon>
                          </button>

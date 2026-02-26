@@ -18,6 +18,8 @@ try {
     $cd = isset($_POST['cd']) && $_POST['cd'] !== '' ? (int)$_POST['cd'] : null;
     $cdValor = isset($_POST['cdValor']) && $_POST['cdValor'] !== '' ? (int)$_POST['cdValor'] : null;
     $cdPonto = isset($_POST['cdPonto']) && $_POST['cdPonto'] !== '' ? (int)$_POST['cdPonto'] : null;
+    $dtInicio = isset($_POST['dtInicio']) && $_POST['dtInicio'] !== '' ? $_POST['dtInicio'] : null;
+    $dtFim = isset($_POST['dtFim']) && $_POST['dtFim'] !== '' ? $_POST['dtFim'] : null;
     $operacao = isset($_POST['operacao']) && $_POST['operacao'] !== '' ? (int)$_POST['operacao'] : null;
 
     if ($cdPonto === null) {
@@ -28,19 +30,15 @@ try {
         throw new Exception('A operação é obrigatória');
     }
 
-    // Buscar nome e datas do ponto de medição
+    // Buscar nome do ponto de medição
     $nomePonto = "Ponto $cdPonto";
-    $dtInicio = null;
-    $dtFim = '9999-12-31';
     try {
-        $sqlPonto = "SELECT DS_NOME, DT_ATIVACAO, DT_DESATIVACAO FROM SIMP.dbo.PONTO_MEDICAO WHERE CD_PONTO_MEDICAO = :cdPonto";
+        $sqlPonto = "SELECT DS_NOME FROM SIMP.dbo.PONTO_MEDICAO WHERE CD_PONTO_MEDICAO = :cdPonto";
         $stmtPonto = $pdoSIMP->prepare($sqlPonto);
         $stmtPonto->execute([':cdPonto' => $cdPonto]);
         $rowPonto = $stmtPonto->fetch(PDO::FETCH_ASSOC);
         if ($rowPonto) {
             $nomePonto = $rowPonto['DS_NOME'];
-            $dtInicio = $rowPonto['DT_ATIVACAO'];
-            $dtFim = $rowPonto['DT_DESATIVACAO'] ?? '9999-12-31';
         }
     } catch (Exception $e) {}
 
