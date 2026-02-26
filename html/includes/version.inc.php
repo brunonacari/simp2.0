@@ -35,7 +35,9 @@ function getSimpVersion() {
         ];
     }
 
-    $version = "2.0.{$commitCount}";
+    // Baseline: 198 commits no momento da implantação do versionamento (v2.0.0)
+    $patch = max(0, (int)$commitCount - 198);
+    $version = "2.0.{$patch}";
     $data = [
         'version' => $version,
         'hash' => $shortHash,
