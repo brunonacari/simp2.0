@@ -1418,6 +1418,10 @@ try {
         // Disparar filtro automaticamente ao mudar qualquer select
         $('.filtro-select2').on('change', function () {
             paginaAtual = 1;
+            // Se mudou a data de referencia, recarregar tambem os cards de resumo
+            if (this.id === 'filtroData') {
+                carregarEstatisticasCards();
+            }
             carregarPendencias();
         });
     }
@@ -1428,38 +1432,65 @@ try {
     // ============================================
 
     /**
-     * Busca estatisticas e preenche cards + dropdown de datas.
+     * Atualiza APENAS os cards de resumo com base na data selecionada.
+     * Nao recria o dropdown de datas.
      */
-    function carregarEstatisticas() {
+    function carregarEstatisticasCards() {
+        const dataSel = document.getElementById('filtroData') ? document.getElementById('filtroData').value : '';
         fetch('bd/operacoes/tratamentoLote.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ acao: 'estatisticas' })
+            body: JSON.stringify({ acao: 'estatisticas', data: dataSel || null })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) return;
+                atualizarCards(data);
+            })
+            .catch(err => {
+                console.error('Erro ao carregar estatisticas:', err);
+            });
+    }
+
+    /**
+     * Preenche os cards de resumo a partir dos dados retornados.
+     */
+    function atualizarCards(data) {
+        const r = data.resumo || {};
+        document.getElementById('stPendentes').textContent = r.PENDENTES || 0;
+        document.getElementById('stTratadas').textContent = r.TRATADAS || 0;
+        document.getElementById('stTecnicas').textContent = r.TECNICAS_PENDENTES || 0;
+        document.getElementById('stOperacionais').textContent = r.OPERACIONAIS_PENDENTES || 0;
+        document.getElementById('stConfianca').textContent = r.CONFIANCA_MEDIA_PENDENTES
+            ? (parseFloat(r.CONFIANCA_MEDIA_PENDENTES) * 100).toFixed(1) + '%' : '-';
+        document.getElementById('stPontos').textContent = r.PONTOS_AFETADOS || 0;
+
+        if (data.dt_ultimo_batch) {
+            const dtBatch = new Date(data.dt_ultimo_batch);
+            const pad = n => String(n).padStart(2, '0');
+            document.getElementById('dtUltimoBatch').textContent =
+                pad(dtBatch.getDate()) + '/' + pad(dtBatch.getMonth() + 1) + '/' + dtBatch.getFullYear() +
+                ' ' + pad(dtBatch.getHours()) + ':' + pad(dtBatch.getMinutes());
+            document.getElementById('infoBatch').style.display = 'inline-flex';
+        }
+    }
+
+    /**
+     * Busca estatisticas e preenche cards + dropdown de datas.
+     */
+    function carregarEstatisticas() {
+        const dataSel = document.getElementById('filtroData') ? document.getElementById('filtroData').value : '';
+        fetch('bd/operacoes/tratamentoLote.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ acao: 'estatisticas', data: dataSel || null })
         })
             .then(r => r.json())
             .then(data => {
                 if (!data.success) return;
 
-                const r = data.resumo || {};
-
                 // Cards
-                document.getElementById('stPendentes').textContent = r.PENDENTES || 0;
-                document.getElementById('stTratadas').textContent = r.TRATADAS || 0;
-                document.getElementById('stTecnicas').textContent = r.TECNICAS_PENDENTES || 0;
-                document.getElementById('stOperacionais').textContent = r.OPERACIONAIS_PENDENTES || 0;
-                document.getElementById('stConfianca').textContent = r.CONFIANCA_MEDIA_PENDENTES
-                    ? (parseFloat(r.CONFIANCA_MEDIA_PENDENTES) * 100).toFixed(1) + '%' : '-';
-                document.getElementById('stPontos').textContent = r.PONTOS_AFETADOS || 0;
-
-                // Data do ultimo batch
-                if (data.dt_ultimo_batch) {
-                    const dtBatch = new Date(data.dt_ultimo_batch);
-                    const pad = n => String(n).padStart(2, '0');
-                    document.getElementById('dtUltimoBatch').textContent =
-                        pad(dtBatch.getDate()) + '/' + pad(dtBatch.getMonth() + 1) + '/' + dtBatch.getFullYear() +
-                        ' ' + pad(dtBatch.getHours()) + ':' + pad(dtBatch.getMinutes());
-                    document.getElementById('infoBatch').style.display = 'inline-flex';
-                }
+                atualizarCards(data);
 
                 // Dropdown de datas
                 const selData = document.getElementById('filtroData');
