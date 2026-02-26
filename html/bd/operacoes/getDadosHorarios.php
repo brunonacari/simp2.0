@@ -57,7 +57,7 @@ try {
                 COUNT(CASE WHEN ID_SITUACAO = 1 AND ID_TIPO_REGISTRO = 2 AND ID_TIPO_MEDICAO = 2 THEN 1 END) AS QTD_TRATADOS,
                 SUM(CASE WHEN ID_SITUACAO = 1 THEN ISNULL(NR_EXTRAVASOU, 0) ELSE 0 END) AS SOMA_EXTRAVASOU,
                 -- Usuário que tratou (pega o mais recente da hora com ID_TIPO_REGISTRO = 2)
-                (SELECT TOP 1 U.DS_NOME 
+                (SELECT TOP 1 U.DS_NOME
                  FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO R2
                  LEFT JOIN SIMP.dbo.USUARIO U ON U.CD_USUARIO = R2.CD_USUARIO_ULTIMA_ATUALIZACAO
                  WHERE R2.CD_PONTO_MEDICAO = RVP.CD_PONTO_MEDICAO
@@ -67,7 +67,29 @@ try {
                    AND R2.ID_TIPO_REGISTRO = 2
                    AND R2.ID_TIPO_MEDICAO = 2
                  ORDER BY R2.DT_ULTIMA_ATUALIZACAO DESC
-                ) AS DS_USUARIO_TRATOU
+                ) AS DS_USUARIO_TRATOU,
+                -- Motivo (evento) do tratamento mais recente
+                (SELECT TOP 1 R3.NR_MOTIVO
+                 FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO R3
+                 WHERE R3.CD_PONTO_MEDICAO = RVP.CD_PONTO_MEDICAO
+                   AND CAST(R3.DT_LEITURA AS DATE) = CAST(RVP.DT_LEITURA AS DATE)
+                   AND DATEPART(HOUR, R3.DT_LEITURA) = DATEPART(HOUR, RVP.DT_LEITURA)
+                   AND R3.ID_SITUACAO = 1
+                   AND R3.ID_TIPO_REGISTRO = 2
+                   AND R3.ID_TIPO_MEDICAO = 2
+                 ORDER BY R3.DT_ULTIMA_ATUALIZACAO DESC
+                ) AS NR_MOTIVO_TRATOU,
+                -- Observação (causa) do tratamento mais recente
+                (SELECT TOP 1 R4.DS_OBSERVACAO
+                 FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO R4
+                 WHERE R4.CD_PONTO_MEDICAO = RVP.CD_PONTO_MEDICAO
+                   AND CAST(R4.DT_LEITURA AS DATE) = CAST(RVP.DT_LEITURA AS DATE)
+                   AND DATEPART(HOUR, R4.DT_LEITURA) = DATEPART(HOUR, RVP.DT_LEITURA)
+                   AND R4.ID_SITUACAO = 1
+                   AND R4.ID_TIPO_REGISTRO = 2
+                   AND R4.ID_TIPO_MEDICAO = 2
+                 ORDER BY R4.DT_ULTIMA_ATUALIZACAO DESC
+                ) AS DS_OBSERVACAO_TRATOU
             FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO RVP
             WHERE CD_PONTO_MEDICAO = :cdPonto
               AND CAST(DT_LEITURA AS DATE) = :data
@@ -86,7 +108,7 @@ try {
                     COUNT(CASE WHEN ID_SITUACAO = 1 AND ID_TIPO_REGISTRO = 2 AND ID_TIPO_MEDICAO = 2 THEN 1 END) AS QTD_TRATADOS,
                     AVG(CASE WHEN ID_SITUACAO = 2 THEN {$coluna} ELSE NULL END) AS MEDIA_INATIVOS,
                     -- Usuário que tratou (pega o mais recente da hora com ID_TIPO_REGISTRO = 2)
-                    (SELECT TOP 1 U.DS_NOME 
+                    (SELECT TOP 1 U.DS_NOME
                     FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO R2
                     LEFT JOIN SIMP.dbo.USUARIO U ON U.CD_USUARIO = R2.CD_USUARIO_ULTIMA_ATUALIZACAO
                     WHERE R2.CD_PONTO_MEDICAO = RVP.CD_PONTO_MEDICAO
@@ -96,7 +118,29 @@ try {
                     AND R2.ID_TIPO_REGISTRO = 2
                     AND R2.ID_TIPO_MEDICAO = 2
                     ORDER BY R2.DT_ULTIMA_ATUALIZACAO DESC
-                    ) AS DS_USUARIO_TRATOU
+                    ) AS DS_USUARIO_TRATOU,
+                    -- Motivo (evento) do tratamento mais recente
+                    (SELECT TOP 1 R3.NR_MOTIVO
+                    FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO R3
+                    WHERE R3.CD_PONTO_MEDICAO = RVP.CD_PONTO_MEDICAO
+                    AND CAST(R3.DT_LEITURA AS DATE) = CAST(RVP.DT_LEITURA AS DATE)
+                    AND DATEPART(HOUR, R3.DT_LEITURA) = DATEPART(HOUR, RVP.DT_LEITURA)
+                    AND R3.ID_SITUACAO = 1
+                    AND R3.ID_TIPO_REGISTRO = 2
+                    AND R3.ID_TIPO_MEDICAO = 2
+                    ORDER BY R3.DT_ULTIMA_ATUALIZACAO DESC
+                    ) AS NR_MOTIVO_TRATOU,
+                    -- Observação (causa) do tratamento mais recente
+                    (SELECT TOP 1 R4.DS_OBSERVACAO
+                    FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO R4
+                    WHERE R4.CD_PONTO_MEDICAO = RVP.CD_PONTO_MEDICAO
+                    AND CAST(R4.DT_LEITURA AS DATE) = CAST(RVP.DT_LEITURA AS DATE)
+                    AND DATEPART(HOUR, R4.DT_LEITURA) = DATEPART(HOUR, RVP.DT_LEITURA)
+                    AND R4.ID_SITUACAO = 1
+                    AND R4.ID_TIPO_REGISTRO = 2
+                    AND R4.ID_TIPO_MEDICAO = 2
+                    ORDER BY R4.DT_ULTIMA_ATUALIZACAO DESC
+                    ) AS DS_OBSERVACAO_TRATOU
                 FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO RVP
                 WHERE CD_PONTO_MEDICAO = :cdPonto
                 AND CAST(DT_LEITURA AS DATE) = :data
@@ -120,7 +164,9 @@ try {
             'max' => $row['VALOR_MAX'] !== null ? floatval($row['VALOR_MAX']) : null,
             'qtd_registros' => (int) $row['QTD_REGISTROS'],
             'qtd_inativos' => (int) $row['QTD_INATIVOS'],
-            'tratado' => (int) $row['QTD_TRATADOS'] > 0
+            'tratado' => (int) $row['QTD_TRATADOS'] > 0,
+            'motivo_tratou' => isset($row['NR_MOTIVO_TRATOU']) ? (int) $row['NR_MOTIVO_TRATOU'] : null,
+            'observacao_tratou' => $row['DS_OBSERVACAO_TRATOU'] ?? null
         ];
 
         // Adicionar campos específicos por tipo

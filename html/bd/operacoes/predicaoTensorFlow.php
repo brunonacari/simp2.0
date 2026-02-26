@@ -53,6 +53,53 @@ register_shutdown_function(function () {
 
 try {
     // ========================================
+    // Autenticação e permissões
+    // ========================================
+    require_once __DIR__ . '/../verificarAuth.php';
+
+    /**
+     * Verifica se o usuário tem permissão de escrita em pelo menos uma das telas informadas.
+     * Retorna JSON de erro e encerra se não tiver.
+     */
+    function exigirPermissaoEscrita(array $telas)
+    {
+        foreach ($telas as $tela) {
+            if (podeEditarTela($tela)) {
+                return true;
+            }
+        }
+        retornarJSON_TF([
+            'success' => false,
+            'error' => 'Permissão negada. Requer acesso de escrita em: ' . implode(' ou ', $telas)
+        ]);
+    }
+
+    /**
+     * Verifica se o usuário tem permissão de leitura em pelo menos uma das telas informadas.
+     * Retorna JSON de erro e encerra se não tiver.
+     */
+    function exigirPermissaoLeitura(array $telas)
+    {
+        // Se não há permissões cadastradas, permite (modo implantação)
+        if (!isset($_SESSION['permissoes_nome']) || empty($_SESSION['permissoes_nome'])) {
+            return true;
+        }
+        foreach ($telas as $tela) {
+            if (temPermissaoTela($tela)) {
+                return true;
+            }
+        }
+        retornarJSON_TF([
+            'success' => false,
+            'error' => 'Permissão negada. Requer acesso em: ' . implode(' ou ', $telas)
+        ]);
+    }
+
+    // Telas que utilizam este endpoint
+    $TELAS_LEITURA = ['Validação dos Dados', 'Tratamento em Lote', 'Modelos ML'];
+    $TELAS_ESCRITA = ['Modelos ML'];
+
+    // ========================================
     // Configuração do microserviço TensorFlow
     // ========================================
 
@@ -92,6 +139,7 @@ try {
         // HEALTH CHECK - Verificar se o serviço está online
         // ----------------------------------------
         case 'health':
+            exigirPermissaoLeitura($TELAS_LEITURA);
             $resposta = chamarTensorFlow($tensorflowUrl . '/health', 'GET', null, 5);
             retornarJSON_TF([
                 'success' => true,
@@ -103,6 +151,7 @@ try {
         // PREDICT - Predição de valores horários
         // ----------------------------------------
         case 'predict':
+            exigirPermissaoLeitura($TELAS_LEITURA);
             $cdPonto = intval($dados['cd_ponto'] ?? 0);
             $data = $dados['data'] ?? '';
             $horas = $dados['horas'] ?? null;
@@ -141,6 +190,7 @@ try {
         // ANOMALIES - Detecção de anomalias
         // ----------------------------------------
         case 'anomalies':
+            exigirPermissaoLeitura($TELAS_LEITURA);
             $cdPonto = intval($dados['cd_ponto'] ?? 0);
             $data = $dados['data'] ?? '';
             $tipoMedidor = intval($dados['tipo_medidor'] ?? 1);
@@ -172,6 +222,7 @@ try {
         // CORRELATE - Correlação entre pontos
         // ----------------------------------------
         case 'correlate':
+            exigirPermissaoLeitura($TELAS_LEITURA);
             $cdPontoOrigem = intval($dados['cd_ponto_origem'] ?? 0);
             $cdPontosCandidatos = $dados['cd_pontos_candidatos'] ?? [];
             $dataInicio = $dados['data_inicio'] ?? '';
@@ -205,15 +256,7 @@ try {
         // TRAIN - Treinar modelo para um ponto
         // ----------------------------------------
         case 'train':
-            // Verificar permissão usando o sistema padrão do SIMP
-            session_start();
-            require_once __DIR__ . '/../verificarAuth.php';
-            if (!podeEditarTela('Treinamento IA')) {
-                retornarJSON_TF([
-                    'success' => false,
-                    'error' => 'Permissão negada. Você não tem acesso de escrita em Treinamento IA.'
-                ]);
-            }
+            exigirPermissaoEscrita($TELAS_ESCRITA);
 
             $cdPonto = intval($dados['cd_ponto'] ?? 0);
             $semanas = intval($dados['semanas'] ?? 24);
@@ -264,6 +307,7 @@ try {
         // STATUS - Status dos modelos treinados
         // ----------------------------------------
         case 'status':
+            exigirPermissaoLeitura($TELAS_LEITURA);
             $resposta = chamarTensorFlow(
                 $tensorflowUrl . '/api/model-status',
                 'GET',
@@ -277,15 +321,7 @@ try {
         // TRAIN_ALL - Treinar todos os pontos
         // ----------------------------------------
         case 'train_all':
-            session_start();
-            require_once __DIR__ . '/../verificarAuth.php';
-            if (!podeEditarTela('Treinamento IA')) {
-                retornarJSON_TF([
-                    'success' => false,
-                    'error' => 'Permissão negada.'
-                ]);
-            }
-
+            exigirPermissaoEscrita($TELAS_ESCRITA);
             $semanas = intval($dados['semanas'] ?? 24);
 
             // Dispara treino em background — retorna imediatamente com job_id
@@ -303,6 +339,7 @@ try {
         // TRAIN_ALL_STATUS - Progresso do treino em background
         // ----------------------------------------
         case 'train_all_status':
+            exigirPermissaoLeitura($TELAS_LEITURA);
             $resposta = chamarTensorFlow(
                 $tensorflowUrl . '/api/train-all/status',
                 'GET',
@@ -316,6 +353,7 @@ try {
         // LIST_RELATIONS - Listar associações TAG→Auxiliares
         // ----------------------------------------
         case 'list_relations':
+            exigirPermissaoLeitura($TELAS_LEITURA);
             $resposta = chamarTensorFlow($tensorflowUrl . '/api/relations', 'GET', null, 15);
             retornarJSON_TF($resposta);
             break;
@@ -324,6 +362,7 @@ try {
         // LIST_TAGS - Listar TAGs disponíveis
         // ----------------------------------------
         case 'list_tags':
+            exigirPermissaoLeitura($TELAS_LEITURA);
             $resposta = chamarTensorFlow($tensorflowUrl . '/api/available-tags', 'GET', null, 10);
             retornarJSON_TF($resposta);
             break;
@@ -332,12 +371,7 @@ try {
         // ADD_RELATION - Adicionar associação
         // ----------------------------------------
         case 'add_relation':
-            session_start();
-            require_once __DIR__ . '/../verificarAuth.php';
-            if (!podeEditarTela('Treinamento IA')) {
-                retornarJSON_TF(['success' => false, 'error' => 'Permissão negada.']);
-            }
-
+            exigirPermissaoEscrita($TELAS_ESCRITA);
             $tagPrincipal = trim($dados['tag_principal'] ?? '');
             $tagAuxiliar = trim($dados['tag_auxiliar'] ?? '');
 
@@ -358,12 +392,7 @@ try {
         // DELETE_RELATION - Remover uma associação
         // ----------------------------------------
         case 'delete_relation':
-            session_start();
-            require_once __DIR__ . '/../verificarAuth.php';
-            if (!podeEditarTela('Treinamento IA')) {
-                retornarJSON_TF(['success' => false, 'error' => 'Permissão negada.']);
-            }
-
+            exigirPermissaoEscrita($TELAS_ESCRITA);
             $tagPrincipal = trim($dados['tag_principal'] ?? '');
             $tagAuxiliar = trim($dados['tag_auxiliar'] ?? '');
 
@@ -384,12 +413,7 @@ try {
         // DELETE_ALL_RELATIONS - Remover todas de uma principal
         // ----------------------------------------
         case 'delete_all_relations':
-            session_start();
-            require_once __DIR__ . '/../verificarAuth.php';
-            if (!podeEditarTela('Treinamento IA')) {
-                retornarJSON_TF(['success' => false, 'error' => 'Permissão negada.']);
-            }
-
+            exigirPermissaoEscrita($TELAS_ESCRITA);
             $tagPrincipal = trim($dados['tag_principal'] ?? '');
             if (!$tagPrincipal) {
                 retornarJSON_TF(['success' => false, 'error' => 'tag_principal é obrigatório']);
@@ -408,12 +432,7 @@ try {
         // DELETE_MODEL - Excluir modelo treinado
         // ----------------------------------------
         case 'delete_model':
-            session_start();
-            require_once __DIR__ . '/../verificarAuth.php';
-            if (!podeEditarTela('Treinamento IA')) {
-                retornarJSON_TF(['success' => false, 'error' => 'Permissão negada.']);
-            }
-
+            exigirPermissaoEscrita($TELAS_ESCRITA);
             $cdPonto = intval($dados['cd_ponto'] ?? 0);
             if ($cdPonto <= 0) {
                 retornarJSON_TF(['success' => false, 'error' => 'cd_ponto inválido']);

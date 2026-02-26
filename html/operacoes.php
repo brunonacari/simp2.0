@@ -573,6 +573,9 @@ $letrasTipoMedidor = [
                                 <th>Mínimo</th>
                                 <th>Máximo</th>
                                 <th>Registros</th>
+                                <th>Evento</th>
+                                <th>Causa</th>
+                                <th>Tratado por</th>
                             </tr>
                         </thead>
                         <tbody id="validacaoTabelaBody">
@@ -601,8 +604,8 @@ $letrasTipoMedidor = [
                     </div>
                     <div class="validacao-form-row" style="margin-top: 12px;">
                         <div class="validacao-form-group" style="flex: 2;">
-                            <label>Observação (opcional)</label>
-                            <textarea id="validacaoObservacao" rows="2" placeholder="Motivo da correção..."
+                            <label>Causa</label>
+                            <textarea id="validacaoObservacao" rows="2" placeholder="Informe a causa..."
                                 <?= !$podeEditar ? 'disabled' : '' ?>></textarea>
                         </div>
                     </div>
@@ -616,11 +619,11 @@ $letrasTipoMedidor = [
                     <div class="validacao-nivel-tabs">
                         <button type="button" class="validacao-nivel-tab active" data-modo="manual"
                             onclick="alternarModoNivel('manual')" <?= !$podeEditar ? 'disabled' : '' ?>>
-                            <ion-icon name="create-outline"></ion-icon> Manual
+                            <ion-icon name="create-outline"></ion-icon> Validação por hora
                         </button>
                         <button type="button" class="validacao-nivel-tab" data-modo="intervalo"
                             onclick="alternarModoNivel('intervalo')" <?= !$podeEditar ? 'disabled' : '' ?>>
-                            <ion-icon name="time-outline"></ion-icon> Descarte por Intervalo
+                            <ion-icon name="time-outline"></ion-icon> Validação por intervalo
                         </button>
                     </div>
 
@@ -647,12 +650,12 @@ $letrasTipoMedidor = [
                     <div class="validacao-nivel-modo" id="modoIntervaloNivel" style="display: none;">
                         <div class="validacao-form-row">
                             <div class="validacao-form-group">
-                                <label>Início da Falha *</label>
+                                <label>Início do evento *</label>
                                 <input type="time" id="intervaloHoraInicio" <?= !$podeEditar ? 'disabled' : '' ?>
                                     onchange="calcularDistribuicaoIntervalo()">
                             </div>
                             <div class="validacao-form-group">
-                                <label>Fim da Falha *</label>
+                                <label>Fim do evento *</label>
                                 <input type="time" id="intervaloHoraFim" <?= !$podeEditar ? 'disabled' : '' ?>
                                     onchange="calcularDistribuicaoIntervalo()">
                             </div>
@@ -674,7 +677,7 @@ $letrasTipoMedidor = [
                     <!-- Motivo e Observação (comum aos dois modos) -->
                     <div class="validacao-form-row" style="margin-top: 12px;">
                         <div class="validacao-form-group">
-                            <label>Motivo *</label>
+                            <label>Evento *</label>
                             <div class="radio-group-validacao">
                                 <label class="radio-item-validacao">
                                     <input type="radio" name="validacaoMotivo" value="1" <?= !$podeEditar ? 'disabled' : '' ?>>
@@ -682,25 +685,34 @@ $letrasTipoMedidor = [
                                 </label>
                                 <label class="radio-item-validacao">
                                     <input type="radio" name="validacaoMotivo" value="2" <?= !$podeEditar ? 'disabled' : '' ?>>
-                                    <span class="radio-label">Extravasou</span>
+                                    <span class="radio-label">Extravasamento</span>
                                 </label>
                             </div>
                         </div>
                         <div class="validacao-form-group" style="flex: 2;">
-                            <label>Observação (opcional)</label>
-                            <textarea id="validacaoObservacaoNivel" rows="2" placeholder="Observação..." <?= !$podeEditar ? 'disabled' : '' ?>></textarea>
+                            <label>Causa</label>
+                            <textarea id="validacaoObservacaoNivel" rows="2" placeholder="Informe a causa..." <?= !$podeEditar ? 'disabled' : '' ?>></textarea>
                         </div>
                     </div>
                 </div>
             </div><!-- Fim da coluna principal -->
 
-            <!-- Coluna de IA (Direita) -->
-            <div class="validacao-coluna-ia" id="iaPanelValidacao">
+            <!-- Botão toggle do painel de IA -->
+            <button type="button" class="btn-toggle-ia-panel" id="btnToggleIAPanel" onclick="toggleIAPanel()" title="Análise Inteligente">
+                <ion-icon name="sparkles" id="iconToggleIA"></ion-icon>
+                <span class="btn-toggle-ia-label" id="lblToggleIA">IA</span>
+            </button>
+
+            <!-- Coluna de IA (Direita) - oculta por default -->
+            <div class="validacao-coluna-ia collapsed" id="iaPanelValidacao">
                 <div class="ia-panel-header">
                     <div class="ia-panel-title">
                         <ion-icon name="sparkles"></ion-icon>
                         Análise Inteligente
                     </div>
+                    <button type="button" class="btn-fechar-ia-panel" onclick="toggleIAPanel()" title="Ocultar painel">
+                        <ion-icon name="chevron-forward-outline"></ion-icon>
+                    </button>
                 </div>
 
                 <!-- Chat com IA -->
@@ -2781,6 +2793,25 @@ $letrasTipoMedidor = [
             });
 
             // ============================================
+            // Toggle do painel de Análise Inteligente
+            // ============================================
+
+            function toggleIAPanel() {
+                const panel = document.getElementById('iaPanelValidacao');
+                const toggleBtn = document.getElementById('btnToggleIAPanel');
+                if (!panel || !toggleBtn) return;
+
+                const isCollapsed = panel.classList.contains('collapsed');
+                if (isCollapsed) {
+                    panel.classList.remove('collapsed');
+                    toggleBtn.classList.add('active');
+                } else {
+                    panel.classList.add('collapsed');
+                    toggleBtn.classList.remove('active');
+                }
+            }
+
+            // ============================================
             // Funções de Validação de Dados
             // ============================================
 
@@ -2855,7 +2886,7 @@ $letrasTipoMedidor = [
                 if (apenasVisualizacao) {
                     infoTexto = 'Visualização dos dados hora a hora. Medidores de pressão não permitem validação manual.';
                 } else if (isTipoNivel) {
-                    infoTexto = 'Marque uma ou mais horas para registrar extravasamento. Informe a quantidade de minutos >= 100% e o motivo (Falha ou Extravasou).';
+                    infoTexto = 'Marque uma ou mais horas para registrar extravasamento. Informe a quantidade de minutos >= 100% e o evento (Falha ou Extravasamento).';
                 }
                 const infoEl = document.getElementById('validacaoInfoTexto');
                 if (infoEl) infoEl.textContent = infoTexto;
@@ -2884,9 +2915,16 @@ $letrasTipoMedidor = [
                 // Limpar chat da IA
                 limparChatIA();
 
-                // Mostrar/ocultar painel de IA (oculto para tipo 4 ou sem permissão de edição)
+                // Mostrar/ocultar painel de IA e botão toggle (oculto para tipo 4 ou sem permissão de edição)
                 const iaPanel = document.getElementById('iaPanelValidacao');
-                if (iaPanel) iaPanel.style.display = (apenasVisualizacao || !podeEditar) ? 'none' : 'block';
+                const toggleBtn = document.getElementById('btnToggleIAPanel');
+                if (apenasVisualizacao || !podeEditar) {
+                    if (iaPanel) iaPanel.style.display = 'none';
+                    if (toggleBtn) toggleBtn.style.display = 'none';
+                } else {
+                    if (iaPanel) { iaPanel.style.display = ''; iaPanel.classList.add('collapsed'); }
+                    if (toggleBtn) { toggleBtn.style.display = ''; toggleBtn.classList.remove('active'); }
+                }
 
                 // Mostrar modal
                 const modal = document.getElementById('modalValidacao');
@@ -2937,15 +2975,14 @@ $letrasTipoMedidor = [
                 // Abrir modal de validação normalmente
                 abrirModalValidacao(cdPonto, data, tipoMedidor, pontoNome, pontoCodigo);
 
-                // Aguardar o modal carregar e fazer scroll para área de IA
+                // Aguardar o modal carregar e expandir o painel de IA
                 setTimeout(() => {
-                    // Scroll para o painel de Análise Inteligente
+                    // Expandir o painel de Análise Inteligente
                     const iaPanel = document.getElementById('iaPanelValidacao');
-                    if (iaPanel) {
-                        iaPanel.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'nearest'
-                        });
+                    const toggleBtn = document.getElementById('btnToggleIAPanel');
+                    if (iaPanel && iaPanel.classList.contains('collapsed')) {
+                        iaPanel.classList.remove('collapsed');
+                        if (toggleBtn) toggleBtn.classList.add('active');
                     }
 
                     // Enviar a pergunta de análise
@@ -2959,7 +2996,7 @@ $letrasTipoMedidor = [
                 const tbody = document.getElementById('validacaoTabelaBody');
                 if (!tbody) return;
 
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;">Carregando...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;">Carregando...</td></tr>';
 
                 // Resetar resumo - recriar HTML padrão primeiro
                 const resumoContainer = document.getElementById('validacaoResumo');
@@ -3001,12 +3038,12 @@ $letrasTipoMedidor = [
                             // Carregar predição TensorFlow automaticamente
                             carregarDadosTensorFlow();
                         } else {
-                            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#dc2626;">${data.message || 'Erro ao carregar dados'}</td></tr>`;
+                            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#dc2626;">${data.message || 'Erro ao carregar dados'}</td></tr>`;
                         }
                     })
                     .catch(error => {
                         console.error('Erro:', error);
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#dc2626;">Erro de comunicação</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#dc2626;">Erro de comunicação</td></tr>';
                     });
             }
 
@@ -3091,7 +3128,7 @@ $letrasTipoMedidor = [
 
                 // Atualizar cabeçalho da tabela conforme o tipo
                 if (isTipoNivel && !desabilitarCheckbox) {
-                    // Para tipo 6: Hora, Mínimo, Máximo, Min >= 100, Registros, Tratado por
+                    // Para tipo 6: Hora, Mínimo, Máximo, Min >= 100, Registros, Evento, Causa, Tratado por
                     thead.innerHTML = `
             <th style="width:100px;">
                 <label style="display:flex;align-items:center;gap:6px;cursor:${desabilitarCheckbox ? 'default' : 'pointer'};">
@@ -3103,6 +3140,8 @@ $letrasTipoMedidor = [
             <th>Máximo</th>
             <th>Min >= 100</th>
             <th>Registros</th>
+            <th>Evento</th>
+            <th>Causa</th>
             <th>Tratado por</th>
         `;
                 } else if (isTipoNivel && desabilitarCheckbox) {
@@ -3112,6 +3151,8 @@ $letrasTipoMedidor = [
             <th>Máximo</th>
             <th>Min >= 100</th>
             <th>Registros</th>
+            <th>Evento</th>
+            <th>Causa</th>
             <th>Tratado por</th>
         `;
                 } else if (desabilitarCheckbox) {
@@ -3121,6 +3162,8 @@ $letrasTipoMedidor = [
             <th>Mínimo</th>
             <th>Máximo</th>
             <th>Registros</th>
+            <th>Evento</th>
+            <th>Causa</th>
             <th>Tratado por</th>
         `;
                 } else {
@@ -3135,6 +3178,8 @@ $letrasTipoMedidor = [
             <th>Mínimo</th>
             <th>Máximo</th>
             <th>Registros</th>
+            <th>Evento</th>
+            <th>Causa</th>
             <th>Tratado por</th>
         `;
                 }
@@ -3154,7 +3199,9 @@ $letrasTipoMedidor = [
                         max: null,
                         qtd_registros: 0,
                         tratado: false,
-                        soma_extravasou: 0
+                        soma_extravasou: 0,
+                        motivo_tratou: null,
+                        observacao_tratou: null
                     };
                     const horaStr = String(h).padStart(2, '0') + ':00';
                     const temDados = d.qtd_registros > 0;
@@ -3178,6 +3225,8 @@ $letrasTipoMedidor = [
                 <td>${temDados ? formatarNumero(d.max) + ' ' + unidade : '<span style="color:#94a3b8">-</span>'}</td>
                 <td style="${d.soma_extravasou > 0 ? 'color:#dc2626;font-weight:600;' : ''}">${temDados ? (d.soma_extravasou || 0) + ' min' : '<span style="color:#94a3b8">0</span>'}</td>
                 <td>${d.qtd_registros > 0 ? d.qtd_registros : '<span style="color:#94a3b8">0</span>'}</td>
+                <td>${d.motivo_tratou ? (d.motivo_tratou === 1 ? '<span style="color:#f59e0b;font-weight:500;">Falha</span>' : '<span style="color:#dc2626;font-weight:500;">Extravasamento</span>') : '<span style="color:#94a3b8">-</span>'}</td>
+                <td title="${d.observacao_tratou || ''}">${d.observacao_tratou ? '<span style="color:#475569;font-size:11px;">' + (d.observacao_tratou.length > 30 ? d.observacao_tratou.substring(0, 30) + '...' : d.observacao_tratou) + '</span>' : '<span style="color:#94a3b8">-</span>'}</td>
                 <td>${d.usuario_tratou ? '<span style="color:#059669;font-weight:500;">' + d.usuario_tratou + '</span>' : '<span style="color:#94a3b8">-</span>'}</td>
             </tr>`;
                     } else {
@@ -3186,8 +3235,8 @@ $letrasTipoMedidor = [
                         html += `<tr data-hora="${h}" class="${selecionada ? 'selecionada' : ''} ${tratado ? 'tratado' : ''} ${classeCompletude}">
                 <td class="hora-col">
                     <label style="display:flex;align-items:center;gap:6px;cursor:${desabilitarCheckbox ? 'default' : 'pointer'};">
-                        ${!desabilitarCheckbox ? `<input type="checkbox" class="hora-checkbox" value="${h}" 
-                               ${selecionada ? 'checked' : ''} 
+                        ${!desabilitarCheckbox ? `<input type="checkbox" class="hora-checkbox" value="${h}"
+                               ${selecionada ? 'checked' : ''}
                                onchange="toggleHora(${h}, ${d.media !== null ? d.media : 'null'})">` : ''}
                         ${horaStr}
                         ${tratado ? '<span class="badge-tratado" title="Dados validados">✓</span>' : ''}
@@ -3197,6 +3246,8 @@ $letrasTipoMedidor = [
                 <td>${temDados ? formatarNumero(d.min) + ' ' + unidade : '<span style="color:#94a3b8">-</span>'}</td>
                 <td>${temDados ? formatarNumero(d.max) + ' ' + unidade : '<span style="color:#94a3b8">-</span>'}</td>
                 <td>${d.qtd_registros > 0 ? d.qtd_registros : '<span style="color:#94a3b8">0</span>'}</td>
+                <td>${d.motivo_tratou ? (d.motivo_tratou === 1 ? '<span style="color:#f59e0b;font-weight:500;">Falha</span>' : '<span style="color:#dc2626;font-weight:500;">Extravasamento</span>') : '<span style="color:#94a3b8">-</span>'}</td>
+                <td title="${d.observacao_tratou || ''}">${d.observacao_tratou ? '<span style="color:#475569;font-size:11px;">' + (d.observacao_tratou.length > 30 ? d.observacao_tratou.substring(0, 30) + '...' : d.observacao_tratou) + '</span>' : '<span style="color:#94a3b8">-</span>'}</td>
                 <td>${d.usuario_tratou ? '<span style="color:#059669;font-weight:500;">' + d.usuario_tratou + '</span>' : '<span style="color:#94a3b8">-</span>'}</td>
             </tr>`;
                     }
@@ -4952,12 +5003,12 @@ $letrasTipoMedidor = [
                     const motivoEl = document.querySelector('input[name="validacaoMotivo"]:checked');
 
                     if (!motivoEl) {
-                        showToast('Selecione o motivo (Falha ou Extravasou)', 'erro');
+                        showToast('Selecione o evento (Falha ou Extravasamento)', 'erro');
                         return;
                     }
 
                     const motivo = parseInt(motivoEl.value);
-                    const motivoTexto = motivo === 1 ? 'Falha' : 'Extravasou';
+                    const motivoTexto = motivo === 1 ? 'Falha' : 'Extravasamento';
                     const observacao = document.getElementById('validacaoObservacaoNivel').value.trim();
                     const modoIntervalo = document.getElementById('modoIntervaloNivel')?.style.display !== 'none';
 
@@ -4999,7 +5050,7 @@ $letrasTipoMedidor = [
                             return `  ${hFmt}:00 → ${d.minutos} min (${hFmt}:${String(d.minutoInicio).padStart(2, '0')} a ${hFmt}:${String(d.minutoFim).padStart(2, '0')})`;
                         }).join('\n');
 
-                        if (!confirm(`Confirma o descarte por intervalo?\n\nPeríodo: ${horaInicio} às ${horaFim} (${totalMin} minutos)\nMotivo: ${motivoTexto}\n\nDistribuição:\n${detalheDistribuicao}\n\nEsta ação irá:\n- Descartar registros existentes nas horas afetadas\n- Criar ${totalNovosRegistros} novos registros (60 por hora) com Nível=100%\n- Marcar NR_EXTRAVASOU=1 nos minutos exatos do intervalo`)) {
+                        if (!confirm(`Confirma a validação por intervalo?\n\nPeríodo: ${horaInicio} às ${horaFim} (${totalMin} minutos)\nEvento: ${motivoTexto}\n\nDistribuição:\n${detalheDistribuicao}\n\nEsta ação irá:\n- Descartar registros existentes nas horas afetadas\n- Criar ${totalNovosRegistros} novos registros (60 por hora) com Nível=100%\n- Marcar NR_EXTRAVASOU=1 nos minutos exatos do intervalo`)) {
                             return;
                         }
                     } else {
@@ -5014,7 +5065,7 @@ $letrasTipoMedidor = [
                         payload.minutosExtravasou = minutosExtravasou;
 
                         const totalNovosRegistros = validacaoHorasSelecionadas.length * 60;
-                        if (!confirm(`Confirma a validação?\n\nHoras: ${horasTexto}\nMinutos >= 100: ${minutosExtravasou} por hora\nMotivo: ${motivoTexto}\n\nEsta ação irá:\n- Descartar registros existentes nas horas selecionadas\n- Criar ${totalNovosRegistros} novos registros (60 por hora) com Nível=100%\n- Distribuir NR_EXTRAVASOU=1 aleatoriamente em ${minutosExtravasou} registros por hora`)) {
+                        if (!confirm(`Confirma a validação?\n\nHoras: ${horasTexto}\nMinutos >= 100: ${minutosExtravasou} por hora\nEvento: ${motivoTexto}\n\nEsta ação irá:\n- Descartar registros existentes nas horas selecionadas\n- Criar ${totalNovosRegistros} novos registros (60 por hora) com Nível=100%\n- Distribuir NR_EXTRAVASOU=1 aleatoriamente em ${minutosExtravasou} registros por hora`)) {
                             return;
                         }
                     }

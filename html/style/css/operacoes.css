@@ -1825,6 +1825,67 @@ input[type="date"].form-control {
     box-sizing: border-box;
 }
 
+/* Botão toggle do painel de IA */
+.btn-toggle-ia-panel {
+    position: relative;
+    width: 32px;
+    min-width: 32px;
+    background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+    border: none;
+    border-left: 1px solid #e2e8f0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0;
+    color: #1e40af;
+    transition: background 0.2s, width 0.2s;
+    z-index: 2;
+}
+
+.btn-toggle-ia-panel:hover {
+    background: linear-gradient(135deg, #dbeafe 0%, #dcfce7 100%);
+}
+
+.btn-toggle-ia-panel.active {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.btn-toggle-ia-panel ion-icon {
+    font-size: 18px;
+}
+
+.btn-toggle-ia-label {
+    font-size: 10px;
+    font-weight: 600;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    letter-spacing: 1px;
+}
+
+/* Botão fechar dentro do painel de IA */
+.btn-fechar-ia-panel {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 18px;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, background 0.2s;
+}
+
+.btn-fechar-ia-panel:hover {
+    color: #1e40af;
+    background: rgba(30, 64, 175, 0.1);
+}
+
 /* Coluna de IA (direita) */
 .validacao-coluna-ia {
     width: 547px;
@@ -1835,12 +1896,25 @@ input[type="date"].form-control {
     flex-direction: column;
     overflow: hidden;
     box-sizing: border-box;
+    transition: width 0.3s ease, min-width 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+}
+
+.validacao-coluna-ia.collapsed {
+    width: 0;
+    min-width: 0;
+    padding: 0;
+    border-left: none;
+    overflow: hidden;
+    opacity: 0;
 }
 
 .validacao-coluna-ia .ia-panel-header {
     padding: 16px;
     border-bottom: 1px solid #bfdbfe;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .validacao-coluna-ia .ia-panel-title {
@@ -3994,6 +4068,11 @@ select#selectAno,
         overflow: visible !important;
     }
 
+    /* Ocultar botão toggle no mobile */
+    .btn-toggle-ia-panel {
+        display: none !important;
+    }
+
     /* Coluna de IA depois (abaixo de tudo) */
     .validacao-coluna-ia {
         order: 2 !important;
@@ -4003,6 +4082,12 @@ select#selectAno,
         border-left: none !important;
         border-top: 1px solid #e2e8f0 !important;
         flex-shrink: 0 !important;
+    }
+
+    .validacao-coluna-ia.collapsed {
+        width: 100% !important;
+        min-width: 100% !important;
+        opacity: 1 !important;
     }
 
     /* Ajustar altura das mensagens de IA no mobile */

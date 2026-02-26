@@ -111,7 +111,7 @@ try {
         case 'sync_apply':
             session_start();
             @include_once __DIR__ . '/../verificarAuth.php';
-            if (function_exists('podeEditarTela') && !podeEditarTela('Treinamento IA')) {
+            if (function_exists('podeEditarTela') && !podeEditarTela('flowchart')) {
                 retornarJSON_FC(['success' => false, 'error' => 'Permissão negada.']);
             }
 

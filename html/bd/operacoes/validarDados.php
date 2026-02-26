@@ -170,7 +170,7 @@ try {
                 debugLog('Validação intervalo OK', $minutosDistribuidos);
             }
             if ($motivo !== 1 && $motivo !== 2) {
-                throw new Exception('Selecione o motivo (Falha ou Extravasou)');
+                throw new Exception('Selecione o evento (Falha ou Extravasamento)');
             }
 
             $totalInativados = 0;
@@ -292,7 +292,7 @@ try {
                 @include_once '../logHelper.php';
                 if (function_exists('registrarLog')) {
                     $qtdHoras = count($horas);
-                    $motivoTexto = $motivo == 1 ? 'Falha' : 'Extravasou';
+                    $motivoTexto = $motivo == 1 ? 'Falha' : 'Extravasamento';
                     $horasTexto = implode(', ', array_map(function($h) { return str_pad($h, 2, '0', STR_PAD_LEFT) . ':00'; }, $horas));
                     $identificador = "$nomePonto - $data";
                     
@@ -304,27 +304,27 @@ try {
                         }
                         $detalheTexto = implode(', ', $detalheDist);
                         registrarLog('Validação dos Dados', 'VALIDACAO_NIVEL_INTERVALO', 
-                            "Descarte por intervalo ({$intervaloInicio} às {$intervaloFim}). {$qtdHoras} hora(s): {$detalheTexto}. Motivo: $motivoTexto. $totalInativados descartados, $totalInseridos inseridos.",
+                            "Descarte por intervalo ({$intervaloInicio} às {$intervaloFim}). {$qtdHoras} hora(s): {$detalheTexto}. Evento: $motivoTexto. $totalInativados descartados, $totalInseridos inseridos.",
                             ['cdPonto' => $cdPonto, 'data' => $data, 'horas' => $horas, 'intervaloInicio' => $intervaloInicio, 'intervaloFim' => $intervaloFim, 'minutosDistribuidos' => $minutosDistribuidos, 'motivo' => $motivoTexto, 'identificador' => $identificador]);
                     } else {
                         registrarLog('Validação dos Dados', 'VALIDACAO_NIVEL', 
-                            "Validou dados de nível ($qtdHoras hora(s): $horasTexto). Motivo: $motivoTexto. $totalInativados descartados, $totalInseridos inseridos.",
+                            "Validou dados de nível ($qtdHoras hora(s): $horasTexto). Evento: $motivoTexto. $totalInativados descartados, $totalInseridos inseridos.",
                             ['cdPonto' => $cdPonto, 'data' => $data, 'horas' => $horas, 'minutosExtravasou' => $minutosExtravasou, 'motivo' => $motivoTexto, 'identificador' => $identificador]);
                     }
                 }
             } catch (Exception $logEx) {}
 
             $qtdHoras = count($horas);
-            $motivoTexto = $motivo == 1 ? 'Falha' : 'Extravasou';
+            $motivoTexto = $motivo == 1 ? 'Falha' : 'Extravasamento';
             
             if ($modoIntervalo) {
                 $totalMinIntervalo = 0;
                 foreach ($minutosDistribuidos as $d) {
                     $totalMinIntervalo += (int)$d['minutos'];
                 }
-                $mensagem = "Descarte por intervalo realizado! Período: {$intervaloInicio} às {$intervaloFim} ({$totalMinIntervalo} min). {$totalInativados} registros descartados e {$totalInseridos} novos criados em {$qtdHoras} hora(s). Motivo: {$motivoTexto}.";
+                $mensagem = "Validação por intervalo realizada! Período: {$intervaloInicio} às {$intervaloFim} ({$totalMinIntervalo} min). {$totalInativados} registros descartados e {$totalInseridos} novos criados em {$qtdHoras} hora(s). Evento: {$motivoTexto}.";
             } else {
-                $mensagem = "Dados de nível validados! {$totalInativados} registros descartados e {$totalInseridos} novos criados em {$qtdHoras} hora(s). Min >= 100: {$minutosExtravasou} por hora. Motivo: {$motivoTexto}.";
+                $mensagem = "Dados de nível validados! {$totalInativados} registros descartados e {$totalInseridos} novos criados em {$qtdHoras} hora(s). Min >= 100: {$minutosExtravasou} por hora. Evento: {$motivoTexto}.";
             }
 
             echo json_encode([
