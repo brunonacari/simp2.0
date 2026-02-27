@@ -835,7 +835,8 @@ try {
 
         localStorage.setItem(STORAGE_KEY_FILTROS, JSON.stringify({
             busca: busca,
-            descarte: descarte
+            descarte: descarte,
+            favoritos: favoritos
         }));
     }
 
@@ -855,18 +856,23 @@ try {
                     if (radio) radio.checked = true;
                 }
 
+                if (state.favoritos) {
+                    const radio = document.querySelector(`input[name="filtroFavoritos"][value="${state.favoritos}"]`);
+                    if (radio) radio.checked = true;
+                }
+
                 // Aplicar filtros se houver algum salvo
+                const temFavoritos = state.favoritos && state.favoritos !== 'todos';
                 if (state.busca && state.busca.trim().length >= 2) {
                     buscarItensServidor(state.busca.trim(), function () {
                         aplicarFiltros();
                     });
+                } else if (temFavoritos) {
+                    carregarTodosValores(function () {
+                        aplicarFiltros();
+                    });
                 } else if (state.busca || state.descarte !== 'todos') {
                     aplicarFiltros();
-                }
-
-                if (state.favoritos) {
-                    const radio = document.querySelector(`input[name="filtroFavoritos"][value="${state.favoritos}"]`);
-                    if (radio) radio.checked = true;
                 }
             }
         } catch (e) {
@@ -1070,8 +1076,17 @@ try {
         const radiosFavoritos = document.querySelectorAll('input[name="filtroFavoritos"]');
         radiosFavoritos.forEach(radio => {
             radio.addEventListener('change', function () {
-                aplicarFiltros();
-                saveFiltrosState();
+                if (this.value === 'favoritos') {
+                    // Favoritos dependem dos valor-cards no DOM (lazy-loaded).
+                    // Carregar todos os tipos primeiro, depois aplicar filtros.
+                    carregarTodosValores(function () {
+                        aplicarFiltros();
+                        saveFiltrosState();
+                    });
+                } else {
+                    aplicarFiltros();
+                    saveFiltrosState();
+                }
             });
         });
     }
@@ -1125,19 +1140,45 @@ try {
                 return;
             }
 
-            // Se nao ha busca textual e nao ha filtro de favoritos, mostrar tipo e processar valores
-            if (!termoBusca && filtroFavoritos === 'todos' && filtroDescarte === 'todos') {
-                tipoCard.classList.remove('filtro-oculto');
-                totalTiposVisiveis++;
+            // Se não há busca textual, tratar tipos e valores diretamente
+            if (!termoBusca) {
+                let tipoVisivel = false;
 
-                tipoCard.querySelectorAll('.valor-card').forEach(v => {
-                    v.classList.remove('filtro-oculto');
-                    totalValoresVisiveis++;
-                });
-                tipoCard.querySelectorAll('.item-row').forEach(i => {
-                    i.classList.remove('filtro-oculto');
-                    totalItensVisiveis++;
-                });
+                if (filtroFavoritos === 'todos') {
+                    // Sem filtro de favoritos: mostrar tipo e todos seus filhos
+                    tipoVisivel = true;
+                    tipoCard.querySelectorAll('.valor-card').forEach(v => {
+                        v.classList.remove('filtro-oculto');
+                        totalValoresVisiveis++;
+                    });
+                    tipoCard.querySelectorAll('.item-row').forEach(i => {
+                        i.classList.remove('filtro-oculto');
+                        totalItensVisiveis++;
+                    });
+                } else {
+                    // Filtro de favoritos ativo: mostrar apenas valores favoritados
+                    tipoCard.querySelectorAll('.valor-card').forEach(valorCard => {
+                        const isFavorito = valorCard.dataset.favorito === '1';
+                        if (isFavorito) {
+                            valorCard.classList.remove('filtro-oculto');
+                            totalValoresVisiveis++;
+                            tipoVisivel = true;
+                            valorCard.querySelectorAll('.item-row').forEach(i => {
+                                i.classList.remove('filtro-oculto');
+                                totalItensVisiveis++;
+                            });
+                        } else {
+                            valorCard.classList.add('filtro-oculto');
+                        }
+                    });
+                }
+
+                if (tipoVisivel) {
+                    tipoCard.classList.remove('filtro-oculto');
+                    totalTiposVisiveis++;
+                } else {
+                    tipoCard.classList.add('filtro-oculto');
+                }
                 return;
             }
 
@@ -2301,6 +2342,46 @@ try {
      * @param {boolean} forceReload - Forçar recarga ignorando cache
      * @param {function} callback - Função chamada após o carregamento (opcional)
      */
+    /**
+     * Carrega valores de TODOS os tipos que ainda não foram carregados.
+     * Necessário quando filtros que dependem de dados dos valores (como favoritos)
+     * são ativados sem que os tipos tenham sido expandidos.
+     */
+    function carregarTodosValores(callback) {
+        const tiposParaCarregar = [];
+        document.querySelectorAll('.tipo-card-body').forEach(body => {
+            if (body.dataset.loaded !== '1') {
+                const cdTipo = body.id.replace('tipo-body-', '');
+                if (cdTipo) tiposParaCarregar.push(cdTipo);
+            }
+        });
+
+        if (tiposParaCarregar.length === 0) {
+            if (callback) callback();
+            return;
+        }
+
+        let ativo = 0;
+        const MAX_CONCORRENTE = 3;
+
+        function processar() {
+            while (ativo < MAX_CONCORRENTE && tiposParaCarregar.length > 0) {
+                const cdTipo = tiposParaCarregar.shift();
+                ativo++;
+                carregarValoresTipo(cdTipo, false, function () {
+                    ativo--;
+                    if (tiposParaCarregar.length === 0 && ativo === 0) {
+                        if (callback) callback();
+                    } else {
+                        processar();
+                    }
+                });
+            }
+        }
+
+        processar();
+    }
+
     function carregarValoresTipo(cdTipo, forceReload = false, callback = null) {
         const body = document.getElementById('tipo-body-' + cdTipo);
         if (!body) return;
@@ -2346,9 +2427,11 @@ try {
                         }
                     }
 
-                    // Re-aplicar filtros se houver busca ativa
+                    // Re-aplicar filtros se houver filtro ativo (busca, favoritos ou descarte)
                     const filtroBusca = document.getElementById('filtroBusca');
-                    if (filtroBusca && filtroBusca.value.trim()) {
+                    const filtroFavAtivo = document.querySelector('input[name="filtroFavoritos"]:checked')?.value !== 'todos';
+                    const filtroDescAtivo = document.querySelector('input[name="filtroDescarte"]:checked')?.value !== 'todos';
+                    if ((filtroBusca && filtroBusca.value.trim()) || filtroFavAtivo || filtroDescAtivo) {
                         aplicarFiltros();
                     }
 

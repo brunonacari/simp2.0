@@ -1665,7 +1665,7 @@
 
     .grupo-horas-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
         gap: 4px;
         padding: 8px;
     }
@@ -1702,6 +1702,38 @@
         font-weight: 600;
         font-family: monospace;
         color: #334155;
+        min-width: 40px;
+    }
+
+    .hora-valores {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        font-family: monospace;
+        font-size: 10px;
+        margin-left: auto;
+        color: #64748b;
+    }
+
+    .hora-vl-real {
+        color: #f97316;
+        font-weight: 500;
+    }
+
+    .hora-seta {
+        color: #94a3b8;
+        font-size: 9px;
+    }
+
+    .hora-vl-corrigido {
+        color: #64748b;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+
+    .hora-vl-corrigido.valor-alterado {
+        color: #22c55e;
+        font-weight: 600;
     }
 
     /* ---- Secao de metodo de correcao ---- */
@@ -1797,7 +1829,7 @@
         }
 
         .grupo-horas-grid {
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
         }
 
         .horas-container {
@@ -1827,7 +1859,7 @@
 
     @media (max-width: 480px) {
         .grupo-horas-grid {
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            grid-template-columns: 1fr;
         }
     }
 

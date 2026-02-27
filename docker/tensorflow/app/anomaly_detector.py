@@ -74,6 +74,13 @@ class AnomalyDetector:
         anomalias = []
 
         # ========================================
+        # Camada 0: Detectar gaps (horas sem dados)
+        # ========================================
+        anomalias.extend(
+            self._detectar_gaps(dados_dia)
+        )
+
+        # ========================================
         # Camada 1: Regras determinísticas
         # ========================================
         anomalias.extend(
@@ -125,6 +132,35 @@ class AnomalyDetector:
         }
 
     # ============================================
+    # Camada 0: Detectar Gaps (horas sem dados)
+    # ============================================
+
+    def _detectar_gaps(self, dados_dia: pd.DataFrame) -> List[Dict]:
+        """
+        Detecta horas completamente sem dados (gaps de comunicação).
+        O DataFrame só contém horas que possuem registros, então horas
+        ausentes indicam falha de comunicação do equipamento.
+        """
+        anomalias = []
+        horas_presentes = set(int(row.get('hora', -1)) for _, row in dados_dia.iterrows())
+
+        for hora in range(24):
+            if hora not in horas_presentes:
+                anomalias.append({
+                    'hora': hora,
+                    'hora_formatada': f"{hora:02d}:00",
+                    'valor_real': None,
+                    'valor_esperado': None,
+                    'score': 0.95,
+                    'severidade': 'critica',
+                    'tipo': 'gap_comunicacao',
+                    'descricao': f'Hora {hora:02d}:00 sem nenhum registro - falha de comunicação',
+                    'metodo': 'regras'
+                })
+
+        return anomalias
+
+    # ============================================
     # Camada 1: Regras Determinísticas
     # ============================================
 
@@ -145,7 +181,7 @@ class AnomalyDetector:
             qtd = int(row.get('qtd_registros', 0))
 
             if valor is None or pd.isna(valor):
-                # Hora sem dados
+                # Hora com registro mas valor nulo
                 anomalias.append({
                     'hora': hora,
                     'hora_formatada': f"{hora:02d}:00",
@@ -154,15 +190,15 @@ class AnomalyDetector:
                     'score': 0.9,
                     'severidade': 'alta',
                     'tipo': 'sem_dados',
-                    'descricao': f'Hora {hora:02d}:00 sem dados (ausência de comunicação)',
-                    'metodo': 'regra'
+                    'descricao': f'Hora {hora:02d}:00 sem dados válidos',
+                    'metodo': 'regras'
                 })
                 continue
 
             valor = float(valor)
 
-            # Vazão negativa (impossível)
-            if tipo_medidor == 1 and valor < 0:
+            # Vazão negativa (impossível) - tipos de vazão: 1, 2, 8
+            if tipo_medidor in (1, 2, 8) and valor < 0:
                 anomalias.append({
                     'hora': hora,
                     'hora_formatada': f"{hora:02d}:00",
@@ -172,21 +208,21 @@ class AnomalyDetector:
                     'severidade': 'critica',
                     'tipo': 'valor_negativo',
                     'descricao': f'Vazão negativa ({valor:.2f} L/s) - impossível fisicamente',
-                    'metodo': 'regra'
+                    'metodo': 'regras'
                 })
 
-            # Nível acima de 100%
-            if tipo_medidor == 3 and valor > 105:
+            # Nível acima de 100% (tipo 6 = Nível Reservatório)
+            if tipo_medidor == 6 and valor >= 100:
                 anomalias.append({
                     'hora': hora,
                     'hora_formatada': f"{hora:02d}:00",
                     'valor_real': round(valor, 2),
                     'valor_esperado': 100,
-                    'score': 0.85,
-                    'severidade': 'alta',
-                    'tipo': 'nivel_excedido',
-                    'descricao': f'Nível acima de 100% ({valor:.1f}%) - possível extravasamento',
-                    'metodo': 'regra'
+                    'score': 0.95 if valor > 105 else 0.85,
+                    'severidade': 'critica' if valor > 105 else 'alta',
+                    'tipo': 'fora_faixa',
+                    'descricao': f'Nível em {valor:.1f}% (>= 100%) - risco de extravasamento',
+                    'metodo': 'regras'
                 })
 
             # Registros incompletos (< 50 de 60 esperados)
@@ -200,7 +236,7 @@ class AnomalyDetector:
                     'severidade': 'baixa',
                     'tipo': 'dados_incompletos',
                     'descricao': f'Apenas {qtd}/60 registros na hora {hora:02d}:00',
-                    'metodo': 'regra'
+                    'metodo': 'regras'
                 })
 
         return anomalias

@@ -88,7 +88,7 @@ class DatabaseManager:
             cd_ponto: Código do ponto de medição
             data_base: Data de referência (YYYY-MM-DD)
             semanas: Quantidade de semanas de histórico
-            tipo_medidor: 1=vazão, 2=pressão, 3=nível
+            tipo_medidor: 1=Macromedidor, 2=Pitométrica, 4=Pressão, 6=Nível, 8=Hidrômetro
 
         Returns:
             DataFrame com o histórico ou None se erro
@@ -273,17 +273,20 @@ class DatabaseManager:
     def _get_campo_valor(tipo_medidor: int) -> str:
         """
         Retorna o nome do campo SQL baseado no tipo de medidor.
-        Mesma lógica usada no PHP (getAnaliseIA.php).
+        Compatível com IDs do banco SIMP (1,2,4,6,8).
 
         Args:
-            tipo_medidor: 1=vazão, 2=pressão, 3=nível reservatório
+            tipo_medidor: 1=Macromedidor, 2=Pitométrica, 4=Pressão,
+                          6=Nível Reservatório, 8=Hidrômetro
 
         Returns:
             Nome do campo SQL
         """
         campos = {
-            1: 'VL_VAZAO_EFETIVA',    # Vazão (L/s)
-            2: 'VL_PRESSAO',           # Pressão (mca)
-            3: 'VL_RESERVATORIO'       # Nível do reservatório (%)
+            1: 'VL_VAZAO_EFETIVA',    # Macromedidor - Vazão (L/s)
+            2: 'VL_VAZAO_EFETIVA',    # Estação Pitométrica - Vazão (L/s)
+            4: 'VL_PRESSAO',           # Medidor de Pressão (mca)
+            6: 'VL_RESERVATORIO',      # Nível do reservatório (%)
+            8: 'VL_VAZAO_EFETIVA',    # Hidrômetro - Vazão (L/s)
         }
         return campos.get(tipo_medidor, 'VL_VAZAO_EFETIVA')

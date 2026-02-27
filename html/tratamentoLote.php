@@ -1748,7 +1748,7 @@ try {
                         <button class="btn-acao aprovar" onclick="aprovarGrupoRapido('${g.CD_PONTO_MEDICAO}', '${dtRef}', '${ids.join(',')}')" title="Aprovar todas com melhor metodo (AUTO)">
                             <ion-icon name="checkmark-done-outline"></ion-icon>
                         </button>
-                        <button class="btn-acao detalhe" onclick="abrirDetalheGrupo('${g.CD_PONTO_MEDICAO}', '${dtRef}', '${g.DS_CODIGO_FORMATADO}', '${ids.join(',')}', '${horas.join(',')}', '${statusHoras.join(',')}')" title="Ver detalhes e escolher metodo" style="opacity:1;pointer-events:auto;">
+                        <button class="btn-acao detalhe" onclick="abrirDetalheGrupo('${g.CD_PONTO_MEDICAO}', '${dtRef}', '${g.DS_CODIGO_FORMATADO}', '${ids.join(',')}', '${horas.join(',')}', '${statusHoras.join(',')}', '${g.DS_VALORES_REAIS || ''}', '${g.DS_VALORES_SUGERIDOS || ''}')" title="Ver detalhes e escolher metodo" style="opacity:1;pointer-events:auto;">
                             <ion-icon name="eye-outline"></ion-icon>
                         </button>
                         <button class="btn-acao validacao" onclick="irParaValidacao(${g.CD_PONTO_MEDICAO}, '${dtRef}')" title="Abrir Validacao de Dados" style="opacity:1;pointer-events:auto;">
@@ -2901,7 +2901,9 @@ try {
         codigoFormatado: null,
         ids: [],
         horas: [],
-        statusHoras: []
+        statusHoras: [],
+        valoresReais: {},
+        valoresSugeridos: {}
     };
 
 
@@ -2909,22 +2911,39 @@ try {
      * Abre o modal de detalhe do grupo com lista de horas e opcoes.
      * Carrega metodos de correcao via metodoCorrecao.php.
      *
-     * @param {string} cdPonto  - Codigo do ponto
-     * @param {string} dtRef    - Data de referencia
-     * @param {string} codFmt   - Codigo formatado
-     * @param {string} idsStr   - IDs concatenados por virgula
-     * @param {string} horasStr - Horas concatenadas por virgula
-     * @param {string} statusStr- Status por hora concatenados
+     * @param {string} cdPonto    - Codigo do ponto
+     * @param {string} dtRef      - Data de referencia
+     * @param {string} codFmt     - Codigo formatado
+     * @param {string} idsStr     - IDs concatenados por virgula
+     * @param {string} horasStr   - Horas concatenadas por virgula
+     * @param {string} statusStr  - Status por hora concatenados
+     * @param {string} reaisStr   - Valores reais por hora concatenados
+     * @param {string} sugeridosStr - Valores sugeridos por hora concatenados
      */
-    function abrirDetalheGrupo(cdPonto, dtRef, codFmt, idsStr, horasStr, statusStr) {
+    function abrirDetalheGrupo(cdPonto, dtRef, codFmt, idsStr, horasStr, statusStr, reaisStr, sugeridosStr) {
+        // Parsear valores reais e sugeridos indexados por hora
+        var horasArr = horasStr.split(',').map(Number);
+        var reaisRaw = (reaisStr || '').split(',');
+        var sugeridosRaw = (sugeridosStr || '').split(',');
+        var valReais = {};
+        var valSugeridos = {};
+        horasArr.forEach(function(h, i) {
+            var vr = reaisRaw[i];
+            valReais[h] = (vr && vr !== 'null' && vr !== '') ? parseFloat(vr) : null;
+            var vs = sugeridosRaw[i];
+            valSugeridos[h] = (vs && vs !== 'null' && vs !== '') ? parseFloat(vs) : null;
+        });
+
         // Salvar contexto do grupo
         grupoDetalheAtual = {
             cdPonto: parseInt(cdPonto),
             dtRef: dtRef,
             codigoFormatado: codFmt,
             ids: idsStr.split(',').map(Number),
-            horas: horasStr.split(',').map(Number),
-            statusHoras: statusStr.split(',').map(Number)
+            horas: horasArr,
+            statusHoras: statusStr.split(',').map(Number),
+            valoresReais: valReais,
+            valoresSugeridos: valSugeridos
         };
 
         // Limpar cache de metodos ao abrir novo grupo
@@ -2973,11 +2992,21 @@ try {
             const stNome = statusMap[st] || 'Pendente';
             const stClass = statusClasse[st] || 'pendente';
 
+            const vlReal = grupoDetalheAtual.valoresReais[hora];
+            const vlRealFmt = vlReal != null ? vlReal.toFixed(2) : '-';
+            const vlSug = grupoDetalheAtual.valoresSugeridos[hora];
+            const vlSugFmt = vlSug != null ? vlSug.toFixed(2) : '-';
+
             htmlHoras += `
             <label class="grupo-hora-item ${stClass} ${!isPend ? 'disabled' : ''}" title="${stNome}">
                 <input type="checkbox" class="chk-hora-grupo" data-id="${idPend}" data-hora="${hora}"
                     ${isPend ? 'checked' : 'disabled'} onchange="atualizarContadorHorasGrupo()">
                 <span class="hora-label">${String(hora).padStart(2, '0')}:00</span>
+                <span class="hora-valores">
+                    <span class="hora-vl-real" title="Valor real">${vlRealFmt}</span>
+                    <span class="hora-seta">→</span>
+                    <span class="hora-vl-corrigido" data-hora="${hora}" title="Valor corrigido">${vlSugFmt}</span>
+                </span>
                 <span class="badge ${stClass}" style="font-size:9px;">${stNome}</span>
             </label>
         `;
@@ -3058,6 +3087,37 @@ try {
 
 
     /**
+     * Atualiza os valores corrigidos exibidos em cada hora do modal,
+     * conforme o metodo de correcao selecionado.
+     *
+     * @param {Object} data     - Resposta do metodoCorrecao.php (com metodos[].valores)
+     * @param {string} metodoId - ID do metodo selecionado
+     */
+    function atualizarValoresCorrigidosHoras(data, metodoId) {
+        var metodosArr = data.metodos || [];
+        var metodoObj = metodosArr.find(function(m) { return m.id === metodoId; });
+        if (!metodoObj && metodosArr.length > 0) metodoObj = metodosArr[0];
+        var estimArr = metodoObj ? (metodoObj.valores || []) : [];
+        var horasAnomSet = new Set(data.horas_anomalas || grupoDetalheAtual.horas);
+
+        document.querySelectorAll('.hora-vl-corrigido').forEach(function(el) {
+            var h = parseInt(el.getAttribute('data-hora'));
+            if (isNaN(h)) return;
+            var est = estimArr[h] != null ? parseFloat(estimArr[h]) : null;
+            if (horasAnomSet.has(h) && est != null) {
+                el.textContent = est.toFixed(2);
+                el.classList.add('valor-alterado');
+            } else {
+                // Hora nao anomala: manter valor real
+                var vlReal = grupoDetalheAtual.valoresReais[h];
+                el.textContent = vlReal != null ? vlReal.toFixed(2) : '-';
+                el.classList.remove('valor-alterado');
+            }
+        });
+    }
+
+
+    /**
      * Carrega metodos de correcao para o grafico do grupo.
      * Chama metodoCorrecao.php com o ponto e data.
      *
@@ -3094,6 +3154,9 @@ try {
                 // Salvar no cache
                 cacheMetodos[cdPonto + '_' + dtRef] = data;
 
+                // Atualizar valores corrigidos nas horas com metodo recomendado
+                atualizarValoresCorrigidosHoras(data, data.metodo_recomendado);
+
                 // Renderizar grafico
                 area.innerHTML = '<canvas id="canvasGrupoMetodos" style="width:100%;height:220px;"></canvas>';
                 renderizarGraficoGrupo(data);
@@ -3116,7 +3179,7 @@ try {
                         dropdownParent: $('#modalDetalheGrupo .modal-box')
                     });
 
-                    // Ao trocar metodo, redesenhar grafico
+                    // Ao trocar metodo, redesenhar grafico e atualizar valores nas horas
                     $(selMetodo).off('change').on('change', function () {
                         var val = $(this).val();
                         var cacheKey = grupoDetalheAtual.cdPonto + '_' + grupoDetalheAtual.dtRef;
@@ -3126,6 +3189,7 @@ try {
                         // AUTO = usar metodo_recomendado
                         var metodoId = (val === 'AUTO') ? cachedData.metodo_recomendado : val;
                         renderizarGraficoGrupo(cachedData, metodoId);
+                        atualizarValoresCorrigidosHoras(cachedData, metodoId);
                     });
                 }
                 // console.log('metodoCorrecao response:', JSON.stringify(data, null, 2));

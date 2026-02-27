@@ -827,6 +827,15 @@ function listarPendenciasAgrupado(PDO $pdo, array $filtros): array
         $params[':busca4'] = $termo;
     }
 
+    // Reservatorio (ID_TIPO_MEDIDOR = 6): somente pendencias com VL_RESERVATORIO >= 100
+    $where[] = "(P.ID_TIPO_MEDIDOR != 6
+                 OR EXISTS (
+                     SELECT 1 FROM SIMP.dbo.REGISTRO_VAZAO_PRESSAO RVP
+                     WHERE RVP.CD_PONTO_MEDICAO = P.CD_PONTO_MEDICAO
+                       AND CAST(RVP.DT_LEITURA AS DATE) = CAST(P.DT_REFERENCIA AS DATE)
+                       AND RVP.VL_RESERVATORIO >= 100
+                 ))";
+
     $whereClause = count($where) > 0 ? 'WHERE ' . implode(' AND ', $where) : '';
 
     // ---- Ordenacao ----

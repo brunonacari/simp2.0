@@ -30,6 +30,7 @@ import uuid
 import subprocess
 from datetime import datetime
 
+import pandas as pd
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
@@ -499,7 +500,7 @@ def predict():
         data (str): Data alvo no formato YYYY-MM-DD
         horas (list[int], opcional): Lista de horas específicas [0-23]
         semanas_historico (int, opcional): Semanas de histórico (default: 12)
-        tipo_medidor (int, opcional): 1=vazão, 2=pressão, 3=nível
+        tipo_medidor (int, opcional): 1=Macromedidor, 2=Pitométrica, 4=Pressão, 6=Nível, 8=Hidrômetro
     
     Retorna:
         predicoes (list): Lista com hora, valor_predito, confianca, metodo
@@ -565,7 +566,7 @@ def detect_anomalies():
     Recebe:
         cd_ponto (int): Código do ponto de medição
         data (str): Data para análise no formato YYYY-MM-DD
-        tipo_medidor (int, opcional): 1=vazão, 2=pressão, 3=nível
+        tipo_medidor (int, opcional): 1=Macromedidor, 2=Pitométrica, 4=Pressão, 6=Nível, 8=Hidrômetro
         sensibilidade (float, opcional): Limiar de anomalia 0.0-1.0 (default: 0.8)
     
     Retorna:
@@ -600,11 +601,9 @@ def detect_anomalies():
         historico = db.get_historico_horario(cd_ponto, data, 12, tipo_medidor)
         
         if dados_dia is None or len(dados_dia) == 0:
-            return jsonify({
-                'success': False,
-                'error': 'Sem dados para o dia informado'
-            }), 200
-        
+            # Dia inteiro sem dados = 24 horas de gap de comunicação
+            dados_dia = pd.DataFrame(columns=['hora', 'valor', 'qtd_registros', 'valor_min', 'valor_max'])
+
         # Detectar anomalias
         resultado = anomaly_detector.detect(
             cd_ponto=cd_ponto,
