@@ -3914,18 +3914,26 @@ $letrasTipoMedidor = [
                 const grupoAtual = document.getElementById('grupoExtravasouAtual');
                 const grupoMinutos = document.getElementById('grupoMinutosExtravasou');
                 const grupoPorHora = document.getElementById('grupoMinutosPorHora');
+                const tabIntervalo = document.querySelector('.validacao-nivel-tab[data-modo="intervalo"]');
 
                 // Sempre ocultar os campos antigos (single input)
                 if (grupoAtual) grupoAtual.style.display = 'none';
                 if (grupoMinutos) grupoMinutos.style.display = 'none';
 
                 if (isFalha) {
-                    // Falha: ocultar lista por hora
+                    // Falha: ocultar lista por hora e ocultar aba de intervalo
                     if (grupoPorHora) grupoPorHora.style.display = 'none';
+                    if (tabIntervalo) tabIntervalo.style.display = 'none';
+                    // Se estava no modo intervalo, voltar para manual
+                    const modoIntervaloEl = document.getElementById('modoIntervaloNivel');
+                    if (modoIntervaloEl && modoIntervaloEl.style.display !== 'none') {
+                        alternarModoNivel('manual');
+                    }
                 } else {
-                    // Extravasamento: mostrar lista de minutos por hora
+                    // Extravasamento: mostrar lista de minutos por hora e mostrar aba de intervalo
                     renderizarMinutosPorHora();
                     if (grupoPorHora) grupoPorHora.style.display = '';
+                    if (tabIntervalo) tabIntervalo.style.display = '';
                 }
 
                 atualizarBotaoValidar();

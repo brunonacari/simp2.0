@@ -3,6 +3,7 @@
 header('Content-Type: application/json');
 session_start();
 include_once '../conexao.php';
+@include_once '../logHelper.php';
 
 try {
     $cdRegistroManutencao = isset($_POST['cd_registro_manutencao']) ? (int)$_POST['cd_registro_manutencao'] : 0;
@@ -54,6 +55,14 @@ try {
         $stmt = $pdoSIMP->prepare($sql);
         $stmt->execute($params);
 
+        // Log de atualização
+        try {
+            if (function_exists('registrarLogUpdate')) {
+                registrarLogUpdate('Registro de Manutenção', 'Calibração Deprimogênio', $cdChave, "Manutenção $cdRegistroManutencao",
+                    ['cd_registro_manutencao' => $cdRegistroManutencao, 'vl_k_medio' => $vlKMedio, 'op_atualiza_k' => $opAtualizaK]);
+            }
+        } catch (Exception $logEx) {}
+
         echo json_encode([
             'success' => true,
             'message' => 'Calibração atualizada com sucesso!',
@@ -98,6 +107,14 @@ try {
 
         $novoCdChave = $pdoSIMP->lastInsertId();
 
+        // Log de inserção
+        try {
+            if (function_exists('registrarLogInsert')) {
+                registrarLogInsert('Registro de Manutenção', 'Calibração Deprimogênio', $novoCdChave, "Manutenção $cdRegistroManutencao",
+                    ['cd_registro_manutencao' => $cdRegistroManutencao, 'vl_k_medio' => $vlKMedio, 'op_atualiza_k' => $opAtualizaK]);
+            }
+        } catch (Exception $logEx) {}
+
         echo json_encode([
             'success' => true,
             'message' => 'Calibração cadastrada com sucesso!',
@@ -106,6 +123,13 @@ try {
     }
 
 } catch (PDOException $e) {
+    try {
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Registro de Manutenção', 'SALVAR_CALIBRACAO', $e->getMessage(),
+                ['cd_registro_manutencao' => $cdRegistroManutencao ?? '', 'cd_chave' => $cdChave ?? '']);
+        }
+    } catch (Exception $logEx) {}
+
     echo json_encode([
         'success' => false,
         'message' => 'Erro ao salvar calibração: ' . $e->getMessage()

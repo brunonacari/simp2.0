@@ -18,6 +18,7 @@ try {
     verificarPermissaoAjax('CADASTRO DE PONTO', ACESSO_ESCRITA);
 
     include_once '../conexao.php';
+    @include_once '../logHelper.php';
 
     $cdPonto = isset($_POST['cd_ponto_medicao']) && $_POST['cd_ponto_medicao'] !== ''
         ? (int) $_POST['cd_ponto_medicao'] : null;
@@ -53,6 +54,14 @@ try {
     $sql = "UPDATE SIMP.dbo.PONTO_MEDICAO SET " . implode(', ', $setClauses) . " WHERE CD_PONTO_MEDICAO = ?";
     $stmt = $pdoSIMP->prepare($sql);
     $stmt->execute([$cdPonto]);
+
+    // Log de limpeza de TAGs
+    try {
+        if (function_exists('registrarLogUpdate')) {
+            registrarLogUpdate('Ponto de Medição', 'Limpar TAGs', $cdPonto, "Ponto $cdPonto",
+                ['tags_removidas' => $setClauses, 'quantidade' => count($setClauses)]);
+        }
+    } catch (Exception $logEx) {}
 
     echo json_encode([
         'success' => true,

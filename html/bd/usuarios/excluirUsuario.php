@@ -8,6 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 try {
     require_once '../verificarAuth.php';
     include_once '../conexao.php';
+    @include_once '../logHelper.php';
 
     $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 
@@ -87,6 +88,14 @@ try {
         exit;
     }
 
+    // Buscar dados completos do usuário para log antes de excluir
+    $dadosUsuario = null;
+    try {
+        $stmtDados = $pdoSIMP->prepare("SELECT DS_LOGIN, DS_MATRICULA, DS_NOME, DS_EMAIL, CD_GRUPO_USUARIO, OP_BLOQUEADO FROM SIMP.dbo.USUARIO WHERE CD_USUARIO = ?");
+        $stmtDados->execute([$id]);
+        $dadosUsuario = $stmtDados->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
+
     // Excluir o usuário
     $sql = "DELETE FROM SIMP.dbo.USUARIO WHERE CD_USUARIO = ?";
     $stmt = $pdoSIMP->prepare($sql);
@@ -96,12 +105,25 @@ try {
         throw new Exception('Nenhum registro foi excluído');
     }
 
+    // Log de exclusão
+    try {
+        if (function_exists('registrarLogDelete')) {
+            registrarLogDelete('Cadastros Administrativos', 'Usuário', $id, $usuario['DS_NOME'], $dadosUsuario ?: []);
+        }
+    } catch (Exception $logEx) {}
+
     echo json_encode([
         'success' => true,
         'message' => 'Usuário "' . $usuario['DS_NOME'] . '" excluído com sucesso!'
     ]);
 
 } catch (PDOException $e) {
+    try {
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Cadastros Administrativos', 'DELETE_USUARIO', $e->getMessage(), ['id' => $id ?? '']);
+        }
+    } catch (Exception $logEx) {}
+
     // Tratar erro de FK de forma amigável
     if (strpos($e->getMessage(), 'REFERENCE constraint') !== false) {
         echo json_encode([

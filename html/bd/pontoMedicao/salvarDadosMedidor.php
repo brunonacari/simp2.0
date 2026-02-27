@@ -29,6 +29,7 @@ require_once '../verificarAuth.php';
 verificarPermissaoAjax('CADASTRO DE PONTO', ACESSO_ESCRITA);
 
 include_once '../conexao.php';
+@include_once '../logHelper.php';
 
 try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -275,6 +276,14 @@ try {
 
         file_put_contents($debugLog, "UPDATE executado! Rows: " . $stmt->rowCount() . "\n", FILE_APPEND);
 
+        // Log de atualização
+        try {
+            if (function_exists('registrarLogUpdate')) {
+                registrarLogUpdate('Ponto de Medição', "Dados Medidor ($tabela)", $existe['CD_CHAVE'], "Ponto $cdPontoMedicao",
+                    ['tabela' => $tabela, 'cd_ponto_medicao' => $cdPontoMedicao, 'id_tipo_medidor' => $idTipoMedidor]);
+            }
+        } catch (Exception $logEx) {}
+
         $msg = 'Dados do medidor atualizados com sucesso!';
     } else {
         // INSERT - Aplicar defaults para campos NOT NULL que não foram preenchidos
@@ -307,6 +316,14 @@ try {
 
         file_put_contents($debugLog, "INSERT executado! ID: $newId\n", FILE_APPEND);
 
+        // Log de inserção
+        try {
+            if (function_exists('registrarLogInsert')) {
+                registrarLogInsert('Ponto de Medição', "Dados Medidor ($tabela)", $newId, "Ponto $cdPontoMedicao",
+                    ['tabela' => $tabela, 'cd_ponto_medicao' => $cdPontoMedicao, 'id_tipo_medidor' => $idTipoMedidor]);
+            }
+        } catch (Exception $logEx) {}
+
         $msg = 'Dados do medidor cadastrados com sucesso!';
     }
 
@@ -324,6 +341,13 @@ try {
     echo json_encode($response);
 
 } catch (PDOException $e) {
+    try {
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Ponto de Medição', 'SALVAR_DADOS_MEDIDOR', $e->getMessage(),
+                ['cd_ponto_medicao' => $cdPontoMedicao ?? '', 'id_tipo_medidor' => $idTipoMedidor ?? '']);
+        }
+    } catch (Exception $logEx) {}
+
     file_put_contents($debugLog, "PDO ERROR: " . $e->getMessage() . "\nCode: " . $e->getCode() . "\n", FILE_APPEND);
 
     // Traduzir erros comuns do SQL Server

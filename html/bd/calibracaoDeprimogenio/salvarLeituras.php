@@ -3,6 +3,7 @@
 header('Content-Type: application/json');
 session_start();
 include_once '../conexao.php';
+@include_once '../logHelper.php';
 
 try {
     $cdCalibracaoDeprimogenio = isset($_POST['cd_calibracao_deprimogenio']) ? (int)$_POST['cd_calibracao_deprimogenio'] : 0;
@@ -63,6 +64,15 @@ try {
 
     $pdoSIMP->commit();
 
+    // Log de alteração em massa
+    try {
+        if (function_exists('registrarLogAlteracaoMassa')) {
+            registrarLogAlteracaoMassa('Registro de Manutenção', 'Leituras Calibração Deprimogênio', count($leituras),
+                "Substituição de leituras da calibração $cdCalibracaoDeprimogenio",
+                ['cd_calibracao_deprimogenio' => $cdCalibracaoDeprimogenio, 'total_leituras' => count($leituras)]);
+        }
+    } catch (Exception $logEx) {}
+
     echo json_encode([
         'success' => true,
         'message' => 'Leituras salvas com sucesso!'
@@ -72,6 +82,13 @@ try {
     if ($pdoSIMP->inTransaction()) {
         $pdoSIMP->rollBack();
     }
+    try {
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Registro de Manutenção', 'SALVAR_LEITURAS', $e->getMessage(),
+                ['cd_calibracao_deprimogenio' => $cdCalibracaoDeprimogenio ?? '']);
+        }
+    } catch (Exception $logEx) {}
+
     echo json_encode([
         'success' => false,
         'message' => 'Erro ao salvar leituras: ' . $e->getMessage()

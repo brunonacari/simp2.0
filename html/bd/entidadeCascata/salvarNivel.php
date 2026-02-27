@@ -24,6 +24,7 @@ if (!podeEditarTela('Cadastro de Entidade')) {
 
 try {
     include_once '../conexao.php';
+    @include_once '../logHelper.php';
 
     $cd            = isset($_POST['cd']) && $_POST['cd'] !== '' ? (int)$_POST['cd'] : null;
     $nome          = isset($_POST['nome']) ? trim($_POST['nome']) : '';
@@ -52,6 +53,14 @@ try {
             ':ehSistema' => $ehSistema, ':cd' => $cd
         ]);
 
+        // Log de atualização
+        try {
+            if (function_exists('registrarLogUpdate')) {
+                registrarLogUpdate('Cadastro de Entidade', 'Nível Cascata', $cd, $nome,
+                    ['DS_NOME' => $nome, 'DS_ICONE' => $icone, 'DS_COR' => $cor, 'NR_ORDEM' => $ordem, 'OP_PERMITE_PONTO' => $permitePonto]);
+            }
+        } catch (Exception $logEx) {}
+
         echo json_encode(['success' => true, 'message' => 'Nível atualizado!', 'cd' => $cd], JSON_UNESCAPED_UNICODE);
     } else {
         // INSERT
@@ -72,9 +81,24 @@ try {
         $stmtId = $pdoSIMP->query("SELECT SCOPE_IDENTITY() AS ID");
         $novoId = $stmtId->fetch(PDO::FETCH_ASSOC)['ID'];
 
+        // Log de inserção
+        try {
+            if (function_exists('registrarLogInsert')) {
+                registrarLogInsert('Cadastro de Entidade', 'Nível Cascata', $novoId, $nome,
+                    ['DS_NOME' => $nome, 'DS_ICONE' => $icone, 'DS_COR' => $cor, 'NR_ORDEM' => $ordem, 'OP_PERMITE_PONTO' => $permitePonto]);
+            }
+        } catch (Exception $logEx) {}
+
         echo json_encode(['success' => true, 'message' => 'Nível cadastrado!', 'cd' => (int)$novoId], JSON_UNESCAPED_UNICODE);
     }
 
 } catch (Exception $e) {
+    try {
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Cadastro de Entidade', $cd ? 'UPDATE_NIVEL' : 'INSERT_NIVEL', $e->getMessage(),
+                ['nome' => $nome ?? '', 'cd' => $cd ?? '']);
+        }
+    } catch (Exception $logEx) {}
+
     echo json_encode(['success' => false, 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
 }

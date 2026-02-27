@@ -8,6 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 session_start();
 include_once '../conexao.php';
+@include_once '../logHelper.php';
 
 try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -104,6 +105,14 @@ try {
             ':cd_usuario' => $cdUsuario,
             ':cd_chave' => $cdChave
         ]);
+
+        // Log de atualização
+        try {
+            if (function_exists('registrarLogUpdate')) {
+                registrarLogUpdate('Ponto de Medição', 'Meta Mensal', $cdChave, "Ponto $cdPontoMedicao - $mesMeta/$anoMeta",
+                    ['cd_ponto_medicao' => $cdPontoMedicao, 'mes' => $mesMeta, 'ano' => $anoMeta, 'id_tipo_medidor' => $idTipoMedidor]);
+            }
+        } catch (Exception $logEx) {}
 
         echo json_encode([
             'success' => true,
@@ -213,6 +222,17 @@ try {
     } else {
         $msg = $registrosAtualizados > 0 ? 'Meta atualizada com sucesso!' : 'Meta cadastrada com sucesso!';
     }
+
+    // Log de operação em massa
+    try {
+        if ($anoInteiro && function_exists('registrarLogAlteracaoMassa')) {
+            registrarLogAlteracaoMassa('Ponto de Medição', 'Meta Mensal', $registrosSalvos + $registrosAtualizados,
+                "Salvar metas para ano $anoMeta", ['cd_ponto_medicao' => $cdPontoMedicao, 'ano' => $anoMeta, 'novos' => $registrosSalvos, 'atualizados' => $registrosAtualizados]);
+        } elseif (function_exists('registrarLogInsert')) {
+            registrarLogInsert('Ponto de Medição', 'Meta Mensal', $cdPontoMedicao, "Ponto $cdPontoMedicao - $mesMeta/$anoMeta",
+                ['cd_ponto_medicao' => $cdPontoMedicao, 'mes' => $mesMeta, 'ano' => $anoMeta]);
+        }
+    } catch (Exception $logEx) {}
 
     echo json_encode([
         'success' => true,

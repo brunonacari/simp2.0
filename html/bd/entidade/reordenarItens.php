@@ -15,6 +15,7 @@ if (!podeEditarTela('Cadastro de Entidade')) {
 
 try {
     include_once '../conexao.php';
+    @include_once '../logHelper.php';
 
     // Verificar se coluna NR_ORDEM existe
     $temNrOrdem = false;
@@ -52,6 +53,14 @@ try {
             ':cd' => (int)$cdItem
         ]);
     }
+
+    // Log de reordenação
+    try {
+        if (function_exists('registrarLogAlteracaoMassa')) {
+            registrarLogAlteracaoMassa('Cadastro de Entidade', 'Itens de Entidade (Ordem)', count($itens),
+                'Reordenação de itens', ['itens_reordenados' => count($itens)]);
+        }
+    } catch (Exception $logEx) {}
 
     echo json_encode([
         'success' => true,

@@ -8,6 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 try {
     require_once '../verificarAuth.php';
     include_once '../conexao.php';
+    @include_once '../logHelper.php';
 
     $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 
@@ -38,6 +39,14 @@ try {
         ':id' => $id
     ]);
 
+    // Log de alteração de bloqueio
+    try {
+        if (function_exists('registrarLogUpdate')) {
+            registrarLogUpdate('Cadastros Administrativos', 'Usuário (Bloqueio)', $id, $usuario['DS_NOME'],
+                ['anterior' => ['OP_BLOQUEADO' => $statusAtual], 'novo' => ['OP_BLOQUEADO' => $novoStatus], 'acao' => $statusTexto]);
+        }
+    } catch (Exception $logEx) {}
+
     echo json_encode([
         'success' => true,
         'message' => "Usuário {$statusTexto} com sucesso!",
@@ -45,6 +54,12 @@ try {
     ]);
 
 } catch (Exception $e) {
+    try {
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Cadastros Administrativos', 'ALTERNAR_BLOQUEIO', $e->getMessage(), ['id' => $id ?? '']);
+        }
+    } catch (Exception $logEx) {}
+
     echo json_encode([
         'success' => false,
         'message' => 'Erro ao alterar status: ' . $e->getMessage()

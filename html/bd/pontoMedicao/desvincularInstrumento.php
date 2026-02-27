@@ -19,6 +19,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 try {
     include_once '../conexao.php';
+    @include_once '../logHelper.php';
 
     // ============================================
     // Validação dos parâmetros
@@ -98,12 +99,27 @@ try {
         $pdoSIMP->prepare($sqlLimpaTag)->execute([$cdPontoMedicao]);
     }
 
+    // Log de desvinculação
+    try {
+        if (function_exists('registrarLogUpdate')) {
+            registrarLogUpdate('Ponto de Medição', "Desvincular Instrumento ($tabela)", $cdChave, "Ponto $cdPontoMedicao",
+                ['cd_chave' => $cdChave, 'cd_ponto_medicao' => $cdPontoMedicao, 'tabela' => $tabela]);
+        }
+    } catch (Exception $logEx) {}
+
     echo json_encode([
         'success' => true,
         'message' => 'Instrumento desvinculado com sucesso!'
     ]);
 
 } catch (Exception $e) {
+    try {
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Ponto de Medição', 'DESVINCULAR_INSTRUMENTO', $e->getMessage(),
+                ['cd_chave' => $cdChave ?? '', 'cd_ponto_medicao' => $cdPontoMedicao ?? '']);
+        }
+    } catch (Exception $logEx) {}
+
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()

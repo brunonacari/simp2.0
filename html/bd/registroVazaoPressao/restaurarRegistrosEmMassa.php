@@ -145,6 +145,15 @@ try {
     $debug['por_situacao_apos'] = $porSituacaoApos;
     $debug['registros_apos'] = $registrosApos;
     
+    // Log de alteração em massa
+    try {
+        if (function_exists('registrarLogAlteracaoMassa')) {
+            registrarLogAlteracaoMassa('Registro de Vazão', 'Registro Vazão/Pressão', $restaurados,
+                "Restauração em massa de $restaurados registro(s)",
+                ['chaves' => $chavesValidas, 'cd_usuario' => $cdUsuario]);
+        }
+    } catch (Exception $logEx) {}
+
     echo json_encode([
         'success' => true,
         'message' => "$restaurados registro(s) restaurado(s) com sucesso",
@@ -158,12 +167,19 @@ try {
         $pdoSIMP->rollBack();
         $debug['rollback'] = 'executado';
     }
-    
+
+    try {
+        if (function_exists('registrarLogErro')) {
+            registrarLogErro('Registro de Vazão', 'RESTAURAR_MASSA', $e->getMessage(),
+                ['chaves' => $chavesValidas ?? []]);
+        }
+    } catch (Exception $logEx) {}
+
     $debug['erro_tipo'] = 'PDOException';
     $debug['erro_msg'] = $e->getMessage();
-    
+
     echo json_encode([
-        'success' => false, 
+        'success' => false,
         'message' => 'Erro PDO: ' . $e->getMessage(),
         'debug' => $debug
     ]);

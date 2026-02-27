@@ -28,6 +28,37 @@ try {
     $tipo = isset($_GET['tipo']) && $_GET['tipo'] !== '' ? (int) $_GET['tipo'] : null;
     $busca = isset($_GET['busca']) ? trim($_GET['busca']) : '';
 
+    // Limite máximo de intervalo de datas: 30 dias
+    $maxDias = 30;
+
+    // Se não informou datas, aplicar padrão (últimos 7 dias)
+    if (!$dataInicio && !$dataFim) {
+        $dataFim = date('Y-m-d 23:59:59');
+        $dataInicio = date('Y-m-d 00:00:00', strtotime('-7 days'));
+    } elseif (!$dataInicio) {
+        // Tem fim mas não tem início: início = fim - 30 dias
+        $dataInicio = date('Y-m-d 00:00:00', strtotime($dataFim . ' -' . $maxDias . ' days'));
+    } elseif (!$dataFim) {
+        // Tem início mas não tem fim: fim = início + 30 dias (ou hoje, o que for menor)
+        $fimCalculado = date('Y-m-d 23:59:59', strtotime($dataInicio . ' +' . $maxDias . ' days'));
+        $hoje = date('Y-m-d 23:59:59');
+        $dataFim = min($fimCalculado, $hoje);
+    }
+
+    // Validar que o intervalo não excede o máximo
+    $tsInicio = strtotime($dataInicio);
+    $tsFim = strtotime($dataFim);
+    if ($tsInicio && $tsFim) {
+        $diffDias = ($tsFim - $tsInicio) / 86400;
+        if ($diffDias > $maxDias) {
+            echo json_encode([
+                'success' => false,
+                'message' => "O intervalo de datas não pode exceder {$maxDias} dias. Reduza o período de pesquisa."
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+
     // Construir WHERE
     $where = [];
     $params = [];

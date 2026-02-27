@@ -6,7 +6,7 @@
 
 include_once 'includes/header.inc.php';
 include_once 'includes/menu.inc.php';
-include_once 'bd/conexao.php'; 
+include_once 'bd/conexao.php';
 
 // Verifica permissão de acesso à tela
 // Recarregar permissões do banco (garante que estão atualizadas)
@@ -23,10 +23,6 @@ $usuarios = $sqlUsuarios->fetchAll(PDO::FETCH_ASSOC);
 $sqlFuncionalidades = $pdoSIMP->query("SELECT CD_FUNCIONALIDADE, DS_NOME FROM SIMP.dbo.FUNCIONALIDADE ORDER BY DS_NOME");
 $funcionalidades = $sqlFuncionalidades->fetchAll(PDO::FETCH_ASSOC);
 
-// Buscar unidades para filtro
-$sqlUnidades = $pdoSIMP->query("SELECT CD_UNIDADE, DS_NOME FROM SIMP.dbo.UNIDADE ORDER BY DS_NOME");
-$unidades = $sqlUnidades->fetchAll(PDO::FETCH_ASSOC);
-
 // Tipos de Log (ajustar conforme sua necessidade)
 $tiposLog = [
     1 => 'Informação',
@@ -35,6 +31,8 @@ $tiposLog = [
     4 => 'Debug'
 ];
 ?>
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
 <style>
     /* ============================================
@@ -130,7 +128,7 @@ $tiposLog = [
 
     .filtros-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: 16px;
     }
 
@@ -167,10 +165,38 @@ $tiposLog = [
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
+    /* Select2 match com estilo dos filtros */
+    .filtro-group .select2-container--default .select2-selection--single {
+        height: 42px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+        padding: 5px 8px;
+    }
+
+    .filtro-group .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 30px;
+        color: #1e293b;
+        font-size: 14px;
+    }
+
+    .filtro-group .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px;
+    }
+
+    .filtro-group .select2-container--default.select2-container--open .select2-selection--single {
+        border-color: #3b82f6;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
     .filtros-actions {
         display: flex;
         gap: 10px;
-        align-items: flex-end;
+        align-items: center;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #f1f5f9;
     }
 
     .btn-filtrar {
@@ -306,8 +332,46 @@ $tiposLog = [
         font-weight: 500;
     }
 
+    .td-acao {
+        white-space: nowrap;
+    }
+
+    .td-acao .badge-acao {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        letter-spacing: 0.3px;
+    }
+
+    .badge-acao-insert { background: #dcfce7; color: #166534; }
+    .badge-acao-update { background: #dbeafe; color: #1e40af; }
+    .badge-acao-delete { background: #fee2e2; color: #991b1b; }
+    .badge-acao-login { background: #f0fdf4; color: #15803d; }
+    .badge-acao-logout { background: #fefce8; color: #854d0e; }
+    .badge-acao-login_falha { background: #fef2f2; color: #dc2626; }
+    .badge-acao-erro { background: #fef2f2; color: #dc2626; }
+    .badge-acao-consulta { background: #f0f9ff; color: #0369a1; }
+    .badge-acao-update_massa { background: #ede9fe; color: #5b21b6; }
+    .badge-acao-default { background: #f1f5f9; color: #475569; }
+
     .td-descricao {
-        max-width: 350px;
+        max-width: 400px;
+        min-width: 200px;
+    }
+
+    .descricao-resumo {
+        font-size: 13px;
+        color: #334155;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .descricao-truncate {
@@ -320,6 +384,37 @@ $tiposLog = [
 
     .descricao-truncate:hover {
         color: #3b82f6;
+    }
+
+    /* Botão de detalhes inline */
+    .btn-icon {
+        background: none;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 5px 8px;
+        cursor: pointer;
+        color: #64748b;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+    }
+
+    .btn-icon:hover {
+        background: #f1f5f9;
+        color: #3b82f6;
+        border-color: #3b82f6;
+    }
+
+    /* Linha clicável */
+    tbody tr {
+        cursor: pointer;
+        transition: background 0.1s ease;
+    }
+
+    tbody tr:hover {
+        background: #f0f7ff;
     }
 
     /* Badges de Tipo */
@@ -619,7 +714,6 @@ $tiposLog = [
 
         .filtros-actions {
             flex-direction: column;
-            width: 100%;
         }
 
         .filtros-actions button {
@@ -692,17 +786,6 @@ $tiposLog = [
                 </select>
             </div>
             <div class="filtro-group">
-                <label>Unidade</label>
-                <select id="filtroUnidade">
-                    <option value="">Todas</option>
-                    <?php foreach ($unidades as $unidade): ?>
-                        <option value="<?= $unidade['CD_UNIDADE'] ?>">
-                            <?= htmlspecialchars($unidade['DS_NOME']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="filtro-group">
                 <label>Tipo</label>
                 <select id="filtroTipo">
                     <option value="">Todos</option>
@@ -715,16 +798,20 @@ $tiposLog = [
                 <label>Nome/Descrição</label>
                 <input type="text" id="filtroBusca" placeholder="Buscar por texto...">
             </div>
-            <div class="filtros-actions">
-                <button type="button" class="btn-filtrar" onclick="buscarLogs(1)">
-                    <ion-icon name="search-outline"></ion-icon>
-                    Pesquisar
-                </button>
-                <button type="button" class="btn-limpar" onclick="limparFiltros()">
-                    <ion-icon name="refresh-outline"></ion-icon>
-                    Limpar
-                </button>
-            </div>
+        </div>
+        <div class="filtros-actions">
+            <button type="button" class="btn-filtrar" onclick="buscarLogs(1)">
+                <ion-icon name="search-outline"></ion-icon>
+                Pesquisar
+            </button>
+            <button type="button" class="btn-limpar" onclick="limparFiltros()">
+                <ion-icon name="refresh-outline"></ion-icon>
+                Limpar
+            </button>
+            <span style="font-size: 12px; color: #94a3b8; margin-left: 8px;">
+                <ion-icon name="information-circle-outline" style="vertical-align: middle; font-size: 14px;"></ion-icon>
+                Intervalo máximo: 30 dias
+            </span>
         </div>
     </div>
 
@@ -744,15 +831,13 @@ $tiposLog = [
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 80px;">Código</th>
                         <th style="width: 150px;">Data/Hora</th>
                         <th>Usuário</th>
                         <th>Funcionalidade</th>
                         <th style="width: 80px;">Tipo</th>
-                        <th>Nome</th>
+                        <th style="width: 110px;">Ação</th>
                         <th>Descrição</th>
-                        <th style="width: 100px;">Versão</th>
-                        <th style="width: 60px;"></th>
+                        <th style="width: 50px;"></th>
                     </tr>
                 </thead>
                 <tbody id="tabelaLogs">
@@ -828,6 +913,7 @@ $tiposLog = [
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
     // ============================================
@@ -852,54 +938,6 @@ $tiposLog = [
 
     // ============================================
     // Inicialização Select2 nos dropdowns
-    // ============================================
-    function initSelect2() {
-        // Usuário
-        $('#filtroUsuario').select2({
-            placeholder: 'Todos',
-            allowClear: true,
-            width: '100%',
-            language: {
-                noResults: function () { return 'Nenhum resultado encontrado'; },
-                searching: function () { return 'Buscando...'; }
-            }
-        });
-
-        // Funcionalidade
-        $('#filtroFuncionalidade').select2({
-            placeholder: 'Todas',
-            allowClear: true,
-            width: '100%',
-            language: {
-                noResults: function () { return 'Nenhum resultado encontrado'; },
-                searching: function () { return 'Buscando...'; }
-            }
-        });
-
-        // Unidade
-        $('#filtroUnidade').select2({
-            placeholder: 'Todas',
-            allowClear: true,
-            width: '100%',
-            language: {
-                noResults: function () { return 'Nenhum resultado encontrado'; },
-                searching: function () { return 'Buscando...'; }
-            }
-        });
-
-        // Tipo
-        $('#filtroTipo').select2({
-            placeholder: 'Todos',
-            allowClear: true,
-            width: '100%',
-            minimumResultsForSearch: Infinity // Desabilita busca (poucos itens)
-        });
-    }
-
-    // ============================================
-    // Funções auxiliares de data/hora
-    // ============================================
-
     // ============================================
     // Funções auxiliares de data/hora
     // ============================================
@@ -955,9 +993,34 @@ $tiposLog = [
     // ============================================
     // Buscar logs via AJAX
     // ============================================
+    const MAX_DIAS_PESQUISA = 30;
+
     function buscarLogs(pagina = 1) {
         const loading = document.getElementById('loadingOverlay');
         const tbody = document.getElementById('tabelaLogs');
+
+        // Validar datas antes de enviar
+        const dataInicioVal = document.getElementById('filtroDataInicio').value;
+        const dataFimVal = document.getElementById('filtroDataFim').value;
+
+        if (!dataInicioVal || !dataFimVal) {
+            showToast('Informe as datas de início e fim para pesquisar', 'erro');
+            return;
+        }
+
+        const tsInicio = new Date(dataInicioVal).getTime();
+        const tsFim = new Date(dataFimVal).getTime();
+
+        if (tsFim < tsInicio) {
+            showToast('A data fim deve ser maior que a data início', 'erro');
+            return;
+        }
+
+        const diffDias = (tsFim - tsInicio) / (1000 * 60 * 60 * 24);
+        if (diffDias > MAX_DIAS_PESQUISA) {
+            showToast(`O intervalo máximo de pesquisa é de ${MAX_DIAS_PESQUISA} dias. Reduza o período.`, 'erro');
+            return;
+        }
 
         loading.classList.add('active');
 
@@ -969,7 +1032,6 @@ $tiposLog = [
             dataFim: document.getElementById('filtroDataFim').value.replace('T', ' '),
             cdUsuario: $('#filtroUsuario').val() || '',
             cdFuncionalidade: $('#filtroFuncionalidade').val() || '',
-            cdUnidade: $('#filtroUnidade').val() || '',
             tipo: $('#filtroTipo').val() || '',
             busca: document.getElementById('filtroBusca').value
         };
@@ -992,18 +1054,19 @@ $tiposLog = [
                     response.data.forEach(item => {
                         const tipo = tiposLog[item.TP_LOG] || { nome: 'Desconhecido', classe: 'badge-default' };
                         const dataFormatada = formatarDataHora(item.DT_LOG);
+                        const acaoBadge = formatarAcao(item.NM_LOG);
+                        const descResumo = formatarDescricaoResumo(item.DS_LOG);
 
                         html += `
-                        <tr>
-                            <td class="td-code">${item.CD_LOG}</td>
+                        <tr onclick="abrirDetalhes(${item.CD_LOG})">
                             <td class="td-datetime">${dataFormatada}</td>
-                            <td class="td-usuario">${escapeHtml(item.DS_USUARIO) || '-'}</td>
+                            <td class="td-usuario">${escapeHtml(item.DS_USUARIO) || '<span style="color:#94a3b8">Sistema</span>'}</td>
                             <td class="td-funcionalidade">${escapeHtml(item.DS_FUNCIONALIDADE) || '-'}</td>
-                            <td class="td-unidade">${escapeHtml(item.DS_UNIDADE) || '-'}</td>
-                            <td class="td-tipo"><span class="badge ${tipo.classe}">${tipo.nome}</span></td>
-                            <td class="td-nome">${escapeHtml(item.NM_LOG) || '-'}</td>
-                            <td class="td-acoes">
-                                <button class="btn-icon" onclick="abrirDetalhes(${item.CD_LOG})" title="Ver detalhes">
+                            <td><span class="badge ${tipo.classe}">${tipo.nome}</span></td>
+                            <td class="td-acao">${acaoBadge}</td>
+                            <td class="td-descricao"><div class="descricao-resumo">${descResumo}</div></td>
+                            <td>
+                                <button class="btn-icon" onclick="event.stopPropagation(); abrirDetalhes(${item.CD_LOG})" title="Ver detalhes">
                                     <ion-icon name="eye-outline"></ion-icon>
                                 </button>
                             </td>
@@ -1013,8 +1076,8 @@ $tiposLog = [
                     tbody.innerHTML = html;
                 } else {
                     tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="empty-state">
+                    <tr style="cursor:default;">
+                        <td colspan="7" class="empty-state">
                             <ion-icon name="document-text-outline"></ion-icon>
                             <p>Nenhum registro encontrado</p>
                         </td>
@@ -1139,7 +1202,6 @@ $tiposLog = [
         // Resetar Select2
         $('#filtroUsuario').val('').trigger('change');
         $('#filtroFuncionalidade').val('').trigger('change');
-        $('#filtroUnidade').val('').trigger('change');
         $('#filtroTipo').val('').trigger('change');
 
         // Limpar campo de busca
@@ -1156,6 +1218,61 @@ $tiposLog = [
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    /**
+     * Formata o NM_LOG em um badge colorido por tipo de ação
+     */
+    function formatarAcao(nmLog) {
+        if (!nmLog) return '<span class="badge-acao badge-acao-default">-</span>';
+        const acao = nmLog.toUpperCase().trim();
+
+        const mapa = {
+            'INSERT':        { label: 'INSERT',       classe: 'badge-acao-insert' },
+            'UPDATE':        { label: 'UPDATE',       classe: 'badge-acao-update' },
+            'DELETE':        { label: 'DELETE',       classe: 'badge-acao-delete' },
+            'LOGIN':         { label: 'LOGIN',        classe: 'badge-acao-login' },
+            'LOGOUT':        { label: 'LOGOUT',       classe: 'badge-acao-logout' },
+            'LOGIN_FALHA':   { label: 'LOGIN FALHA',  classe: 'badge-acao-login_falha' },
+            'CONSULTA':      { label: 'CONSULTA',     classe: 'badge-acao-consulta' },
+            'UPDATE_MASSA':  { label: 'MASSA',        classe: 'badge-acao-update_massa' },
+        };
+
+        // Verifica correspondência exata primeiro
+        if (mapa[acao]) {
+            const m = mapa[acao];
+            return `<span class="badge-acao ${m.classe}">${m.label}</span>`;
+        }
+
+        // Verifica por prefixo/conteúdo
+        if (acao.includes('_ERRO') || acao.includes('ERRO'))  return `<span class="badge-acao badge-acao-erro">ERRO</span>`;
+        if (acao.includes('INSERT'))     return `<span class="badge-acao badge-acao-insert">INSERT</span>`;
+        if (acao.includes('UPDATE'))     return `<span class="badge-acao badge-acao-update">UPDATE</span>`;
+        if (acao.includes('DELETE'))     return `<span class="badge-acao badge-acao-delete">DELETE</span>`;
+        if (acao.includes('LOGIN'))      return `<span class="badge-acao badge-acao-login">LOGIN</span>`;
+        if (acao.includes('VALIDACAO'))  return `<span class="badge-acao badge-acao-update">VALIDAÇÃO</span>`;
+
+        return `<span class="badge-acao badge-acao-default">${escapeHtml(nmLog)}</span>`;
+    }
+
+    /**
+     * Extrai a primeira linha significativa da descrição (antes dos "--- Dados Adicionais ---")
+     */
+    function formatarDescricaoResumo(dsLog) {
+        if (!dsLog) return '<span style="color:#94a3b8">-</span>';
+
+        // Remove seção de dados adicionais JSON
+        let texto = dsLog.split('--- Dados Adicionais ---')[0].trim();
+
+        // Se vazio após remoção, usa o texto original
+        if (!texto) texto = dsLog;
+
+        // Limita a 200 caracteres
+        if (texto.length > 200) {
+            texto = texto.substring(0, 200) + '...';
+        }
+
+        return escapeHtml(texto);
     }
 
     function showToast(message, type = 'info') {
@@ -1197,10 +1314,31 @@ $tiposLog = [
     document.addEventListener('DOMContentLoaded', function () {
         // Inicializa Select2 nos dropdowns
         if (typeof $ !== 'undefined' && $.fn.select2) {
-            $('#filtroUsuario, #filtroFuncionalidade, #filtroUnidade, #filtroTipo').select2({
+            $('#filtroUsuario').select2({
                 placeholder: 'Todos',
                 allowClear: true,
                 width: '100%',
+                language: {
+                    noResults: function () { return 'Nenhum resultado encontrado'; },
+                    searching: function () { return 'Buscando...'; }
+                }
+            });
+
+            $('#filtroFuncionalidade').select2({
+                placeholder: 'Todas',
+                allowClear: true,
+                width: '100%',
+                language: {
+                    noResults: function () { return 'Nenhum resultado encontrado'; },
+                    searching: function () { return 'Buscando...'; }
+                }
+            });
+
+            $('#filtroTipo').select2({
+                placeholder: 'Todos',
+                allowClear: true,
+                width: '100%',
+                minimumResultsForSearch: Infinity,
                 language: {
                     noResults: function () { return 'Nenhum resultado encontrado'; }
                 }

@@ -267,11 +267,8 @@ try {
                 
                 debugLog('SQL Insert', $sqlInsert);
                 
-                // Montar observação com detalhes do intervalo
+                // Montar observação
                 $obsTexto = $observacao ?: 'Valor inserido/corrigido manualmente via sistema';
-                if ($modoIntervalo && $intervaloInicio && $intervaloFim) {
-                    $obsTexto = ($observacao ? $observacao . ' | ' : '') . "Descarte por intervalo: {$intervaloInicio} às {$intervaloFim}";
-                }
                 
                 $stmtInsert = $pdoSIMP->prepare($sqlInsert);
                 
